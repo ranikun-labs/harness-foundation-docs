@@ -782,9 +782,106 @@ Result Review
 = 작업 수행 후 결과 검수
 ```
 
+## 26. Human Review: Choose the Next Step
+
+Work-start는 다음 행동을 결정하지 않습니다.
+
+사용자는 현재 정보와 작업 범위를 검토한 뒤,
+바로 Handoff하거나,
+계획을 먼저 작성하거나,
+부족한 Context를 보충할 수 있습니다.
+
+Work-start Candidate는 기본 선택값을 만들지 않는다.
+사용자가 명시적으로 선택하기 전 상태는 다음과 같다.
+
+```text
+Needs human review
+```
+
+중립 표시 예:
+
+```markdown
+## Human Review: Choose the Next Step
+
+- [ ] Direct Handoff
+  범위와 수행 방법이 충분히 명확하다.
+
+- [ ] Plan First
+  영향 범위나 수행 순서를 먼저 정리해야 한다.
+
+- [ ] Gather Context
+  Repository 밖의 자료나 결정이 추가로 필요할 수 있다.
+
+Selected by:
+Reason:
+Unresolved context:
+```
+
+Contract 의미:
+
+```text
+Direct Handoff
+= 사용자가 Handoff Candidate를 검토한 뒤
+  Worker Session에 수동 전달하기로 선택
+
+Plan First
+= 사용자가 별도 Planning Skill 또는 Manual Planning Process를 수행하고
+  검토된 계획 참조를 Candidate에 반영하기로 선택
+
+Gather Context
+= 사용자가 외부 자료나 추가 입력을 수동 확인한 뒤
+  Work-start 또는 Handoff Candidate를 다시 검토하기로 선택
+```
+
+다음은 Work-start Contract가 아니다.
+
+```text
+시스템의 Next Step 자동 선택
+기본 선택값 자동 지정
+작업 복잡도 확정 판정
+Planning Skill 자동 호출
+Planning 자동 실행
+선택 결과에 따른 자동 Workflow 분기
+Handoff 자동 승인
+```
+
+## 27. External Context Checkpoint
+
+External Context Checkpoint는 시스템이 확인한 Fact가 아니라,
+사용자가 확인할 수 있는 후보 목록이다.
+
+```text
+Internal Wiki or Confluence
+Issue Tracker
+Drive or Notion
+Design files
+Other repositories
+Recent decisions from Slack or email
+Production-only configuration
+```
+
+구분:
+
+```text
+Possible external context
+≠ 외부 자료가 실제 존재함
+
+Needs human review
+≠ Missing으로 확정됨
+
+Manual review
+≠ Connector 호출
+
+External context candidate
+≠ 자동 검색 결과
+```
+
+V1에서 사용자는 자료 이름, URL, 문서 경로 또는 참조를 수동으로 기록할 수 있다.
+Work-start는 이를 자동 검색 결과나 confirmed fact로 표현하지 않는다.
+
 ---
 
-## 26. 자동 실행 금지
+## 28. 자동 실행 금지
 
 다음은 Human Review 이전에 수행하지 않는다.
 
@@ -803,7 +900,7 @@ Project Context Promotion
 
 # Part VII. Error and Failure
 
-## 27. 오류 상태
+## 29. 오류 상태
 
 ```text
 invalid_input
@@ -833,7 +930,7 @@ Repository와 다른 파일을 수정하지 않음
 
 ---
 
-## 28. Partial Output
+## 30. Partial Output
 
 Partial Output은 다음을 명시해야 한다.
 
@@ -849,7 +946,7 @@ recommended_next_action
 
 ---
 
-## 29. Repository 변경 금지
+## 31. Repository 변경 금지
 
 Work-start는 기본적으로 다음을 수정하지 않는다.
 
@@ -873,7 +970,7 @@ Remote
 
 # Part VIII. Validation
 
-## 30. Contract Validation
+## 32. Contract Validation
 
 최소 Validation:
 
@@ -900,7 +997,7 @@ Git Index 또는 Repository Metadata를 수정하지 않는가
 
 ---
 
-## 31. 최소 Fixture
+## 33. 최소 Fixture
 
 ### 정상 입력
 
@@ -986,7 +1083,7 @@ Execution Policy Candidate가 최종 Policy로 승격되지 않음
 
 ---
 
-## 32. 완료 조건
+## 34. 완료 조건
 
 Work-start Contract 완료 조건:
 
@@ -1017,7 +1114,7 @@ Repository 수정 없음
 
 # Part IX. Non-goals
 
-## 33. V1 비목표
+## 35. V1 비목표
 
 ```text
 Managed Task Entity
@@ -1035,7 +1132,7 @@ Runtime Recommendation Service
 
 ---
 
-## 34. 채택하지 않는 방향
+## 36. 채택하지 않는 방향
 
 ### Work-start가 모든 Context를 자동 수집
 
@@ -1061,7 +1158,7 @@ Task-scoped Candidate와 Durable Context를 구분한다.
 
 # Part X. Open Decisions
 
-## 35. 미결정 사항
+## 37. 미결정 사항
 
 1. Work-start Summary의 정확한 파일명
 2. Markdown과 YAML 병행 여부
@@ -1082,7 +1179,7 @@ Task-scoped Candidate와 Durable Context를 구분한다.
 
 ---
 
-## 36. 불변조건
+## 38. 불변조건
 
 1. Work-start는 Candidate 생성 단계다.
 2. Work-start는 Local-only로 동작 가능해야 한다.
@@ -1101,7 +1198,7 @@ Task-scoped Candidate와 Durable Context를 구분한다.
 
 ---
 
-## 37. 관련 문서
+## 39. 관련 문서
 
 ```text
 docs/product/v1-completion-criteria.md
@@ -1115,7 +1212,7 @@ docs/testing/v1-fixture-plan.md
 
 ---
 
-## 38. 검수 관점
+## 40. 검수 관점
 
 ### 제품
 

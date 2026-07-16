@@ -593,6 +593,97 @@ Skill Routing, Project Context를 Adapt하는 것이다.
 새 Task Engine
 ```
 
+### Clarification — Human Review Next Step Selection
+
+```text
+This is a DEC-051 clarification.
+It does not create a new Decision,
+does not supersede DEC-051,
+and does not change the V1 P0 / V1 Alpha / V2 boundary.
+```
+
+Human Review is not limited to a single approve-or-reject action.
+After Work-start produces a Candidate, the user reviews the current
+Context, Scope, and Handoff Candidate and chooses the next manual step:
+
+```text
+Direct Handoff
+= the user judges Goal, Scope, Allowed Actions,
+  Prohibited Actions, Do Not Touch, Validation,
+  and Completion Criteria clear enough for manual Worker handoff.
+
+Plan First
+= the user judges that impact, order, or decomposition should be
+  planned first through a Planning Skill or Manual Planning Process.
+  A reviewed plan reference may then be reflected in the Handoff Candidate.
+
+Gather Context
+= the user judges that repository-local information is insufficient
+  and manually checks additional context before reviewing the Task,
+  Project Context, or Handoff Candidate again.
+```
+
+These choices are user-facing review options, not system-selected outcomes.
+
+```text
+default_next_step: none
+system_selected_next_step: none
+automatic_planning: not_supported
+automatic_external_context_search: not_supported
+automatic_workflow_branching: not_supported
+automatic_handoff_approval: not_supported
+```
+
+If the user has not explicitly selected a next step, the Candidate remains:
+
+```text
+Needs human review
+```
+
+External Context Checkpoint means a manual candidate checklist only.
+
+```text
+Possible external context:
+- Internal Wiki or Confluence
+- Issue Tracker
+- Drive or Notion
+- Design files
+- Other repositories
+- Recent decisions from Slack or email
+- Production-only configuration
+
+Possible external context
+≠ external context confirmed to exist
+
+Manual review
+≠ Connector invocation
+
+External context candidate
+≠ automatic search result
+```
+
+State separation remains:
+
+```text
+Decision Accepted
+≠ Implementation Completed
+≠ Runtime Supported
+≠ Fixture Passed
+≠ Product Released
+
+Foundation Clarification
+= documented here
+
+oh-my-ai Next Step implementation
+= not implemented by this Decision
+
+Next Step Fixture
+= not implemented by this Decision
+
+Cross-session Full Manual E2E
+= not performed by this Decision
+```
+
 ### Rationale
 
 ```text

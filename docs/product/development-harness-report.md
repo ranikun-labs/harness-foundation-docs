@@ -261,16 +261,19 @@ Subscription 종료나 Entitlement 실패는 Local 데이터 삭제 권한이 �
 | Instruction Cascade | Implemented | 필수 | 유지 |
 | Skill Registry / Index | Implemented | 중요 | 유지 |
 | Prompt Routing Hook | Implemented | 중요 | Fixture 보강 |
-| Work-start | Partial | 필수 | Handoff Seed로 수정 |
-| Handoff Prompt | Partial | 필수 | Structured Handoff Contract로 수정 |
+| Work-start | Implemented / Fixture verified | 필수 | Structured Handoff Candidate 생성 유지 |
+| Handoff Prompt | Implemented | 필수 | Structured Handoff Contract 유지 |
 | Project Context | Partial | 중요 | Durable Context 경계 보강 |
 | Execution Policy | Implemented | 필수 | 유지 |
 | Local Usage Log | Implemented | 선택 | 유지 |
-| Result Basic | Missing | 필수 | 신규 |
+| Result Basic | Implemented | 필수 | 수동 반환 Template 유지 |
 | Static Capability Metadata | Missing | 필수 | 신규 |
-| Handoff Review / Export Flow | Missing | 필수 | 신규 |
-| Result Review / Import Flow | Missing | 필수 | 신규 |
-| End-to-end Fixture | Missing | 필수 | 신규 |
+| Handoff Review / Export Flow | Implemented / Manual | 필수 | Human Review와 수동 Copy/Paste 유지 |
+| Result Review / Import Flow | Contract-only / Manual | 필수 | 자동 Import는 V2로 유지 |
+| End-to-end Fixture | Procedure defined / Repository-local verified | 필수 | Cross-session Full E2E는 미수행 |
+| Human Review Next Step Guidance | Documented clarification / Not implemented | 필수 | Direct Handoff / Plan First / Gather Context 경계 정렬 |
+| Automatic Planning | Not supported | V2 후보 | V1 자동 실행 금지 |
+| External Connector | Not supported | V2 후보 | V1 수동 확인 경계 유지 |
 | Automatic Session Capture | Documented-only | V2 | 이관 |
 | Cloud / Auth / Billing | Contract-only | V2 Commercial | Pro 진입과 Account 기능으로 이관, V2 Update 선결 조건 아님 |
 | Work-start Skill Matcher | Implemented / Partial Contract | 필수 | Routing 정렬 |
@@ -1137,16 +1140,19 @@ V1 대표 가치는 Runtime-neutral Contract다.
 
 | 단계 | 상태 |
 |---|---:|
-| Task 입력 | Partial |
-| Context 후보 생성 | Implemented / Partial |
+| Task 입력 | Implemented |
+| Context 후보 생성 | Implemented / Candidate |
 | Skill 후보 생성 | Implemented |
-| Structured Handoff Candidate | Partial |
-| Handoff Human Review | Missing as formal flow |
+| Structured Handoff Candidate | Implemented |
+| Handoff Human Review | Implemented / Manual |
+| Human Review Next Step Clarification | Documented / Product not implemented |
 | Runtime 직접 시작 | Manual / Available |
-| Manual Copy/Paste | Missing as formal flow |
-| Result Basic | Missing |
-| Result Human Review | Missing |
-| E2E Fixture | Missing |
+| Manual Copy/Paste | Implemented / Manual |
+| Result Basic | Implemented / Manual Template |
+| Result Human Review | Contract-only / Manual |
+| Positive / Negative Fixture | Implemented / Repository-local verified |
+| Manual E2E Procedure | Defined |
+| Cross-session Full Manual E2E | Not performed |
 
 ---
 
