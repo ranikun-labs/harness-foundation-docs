@@ -370,6 +370,373 @@ superseded_by: []
 
 ---
 
+## DEC-051 — Lean V1 Product Boundary는 Local Manual Artifact Workflow다
+
+**Status:** accepted
+**Owner:** product
+**Decision scope:** product
+**Implementation status:** not_verified
+**Reviewed at:** 2026-07-15
+
+### Decision Scope
+
+```text
+Scope in:
+- Lean V1 Product Boundary
+- V1 P0 / V1 Alpha / V2 기능 경계
+- Structured Handoff Candidate와 Result Basic 수동 Artifact 경계
+- 기존 V1 Decision의 Partial Supersession 범위
+
+Scope out:
+- 새 Task Engine
+- 새 Packet Lifecycle
+- 새 Session Identity
+- 새 Runtime Adapter
+- Managed Task
+- Managed Result Channel
+- Worktree Orchestration
+- Cloud / Auth / Billing
+```
+
+### Context
+
+```text
+Foundation Package Construction은 완료됐으나
+Canonical Product Baseline Acceptance는
+Lean V1 Product Boundary 반영 전이라 미완료 상태였다.
+
+기존 V1 Decision은 Local-only, Human-controlled,
+Evidence Candidate, Runtime 자동 실행 금지 원칙을 유지하지만
+일부 문서와 Decision은 Validator, Runtime Projection,
+Manual Import Gate를 V1 P0 필수 흐름처럼 표현한다.
+
+Lean V1은 제품 범위를 줄여
+수동 Handoff 전달과 수동 Result Basic 반환을
+V1의 완결된 Local Manual Artifact Workflow로 확정한다.
+```
+
+### Options Considered
+
+```text
+Option A:
+기존 Foundation V1 경계를 유지하고
+Contract Validator, Runtime Capability Check,
+Runtime Projection, Manual Import Gate를 V1 P0로 둔다.
+
+결과:
+V1 범위가 커지고 Implementation Completion,
+Fixture Passed, Runtime Supported, Product Released 상태가
+Decision Accepted와 섞일 위험이 있다.
+
+Option B:
+Lean V1 Product Boundary를 채택하고
+Validator와 Shell 고도화는 V1 Alpha,
+Managed Result Return과 Runtime Invocation은 V2로 이동한다.
+
+결과:
+V1은 Local Manual Artifact Workflow로 완결되고
+자동 Orchestration과 Managed Workflow는 후속 버전으로 분리된다.
+```
+
+### Decision
+
+```text
+Lean V1
+= Local Manual Artifact Workflow
+
+Canonical V1 사용자 Workflow:
+
+사용자 Task 입력
+→ Skill Routing
+→ Work-start Candidate
+→ Project Context 참조
+→ Structured Handoff Candidate
+→ Human Review
+→ Worker Session에 수동 Copy/Paste
+→ Worker가 Result Basic 수동 형식으로 반환
+→ Human Review
+
+V1은 자동 Runtime Orchestration 제품이 아니다.
+```
+
+V1 P0:
+
+```text
+Skill Routing
+Prompt Hook
+Work-start
+Project Context
+Structured Handoff Candidate
+Manual Copy/Paste
+Local Candidate Artifact
+Result Basic 수동 Template
+Human Review
+최소 Positive / Negative Fixture
+Manual E2E Demo
+Doctor
+재현 가능한 최소 설치·실행 경로 1개
+```
+
+`재현 가능한 최소 설치·실행 경로 1개`는 다음만 의미한다.
+
+```text
+사용자가 로컬 환경에서 제품 설치와 기본 Workflow 실행을
+한 가지 공식 경로로 재현할 수 있음
+```
+
+다음은 V1 P0 요구가 아니다.
+
+```text
+npm과 Homebrew 동시 지원
+복수 OS Installer
+자동 업데이트
+완성된 범용 CLI Product Shell
+```
+
+V1 Alpha:
+
+```text
+Handoff Validator
+Result Validator
+Generic Markdown Export 고도화
+CLI Product Shell 고도화
+Runtime별 정적 사용 안내 고도화
+```
+
+구분:
+
+```text
+범용 Validator 제품 기능
+= V1 Alpha
+
+Fixture를 통한 최소 Contract 검증
+= V1 P0
+```
+
+V1 Fixture에는 최소한 다음 검증이 남는다.
+
+```text
+필수 필드 누락 실패
+Scope / Do Not Touch 보존
+Validation Not Performed의 정직한 표시
+미수행 검증을 Pass로 표시하지 않음
+```
+
+V2:
+
+```text
+Managed Task
+Task Registry
+Session Linking
+Worker Result Channel
+Result 자동 저장
+Main Result 자동 감지
+Task·Result Correlation
+Completion Detection
+Review Queue
+Context 자동 Import
+Runtime Invocation
+Managed History·Search
+Worktree 자동 생성
+Worker Branch Lifecycle
+복수 Worker Coordination
+Merge·Apply Gate 자동화
+```
+
+Result Basic 경계:
+
+```text
+Result Basic Format
+= V1 수동 Artifact Contract
+
+Managed Result Return
+= V2 저장·감지·연결·완료 인식·Queue·Import 기능
+
+Result Basic Contract
+≠ Result Channel
+≠ Task Correlation
+≠ Completion Detection
+≠ Review Queue
+≠ Context Import
+```
+
+Result Basic은 Human Review 전 canonical Truth나 완료 증명이 아니다.
+
+Structured Handoff 경계:
+
+```text
+기존 handoff-prompt
+= 다음 세션에 전달할 Prompt를 만드는 Skill
+
+Structured Handoff Candidate
+= Goal, Scope, Do Not Touch, Validation,
+  Expected Result 등의 필드를 고정한
+  provider-neutral 수동 전달 Contract
+
+Structured Handoff Candidate
+≠ Worker 자동 생성
+≠ Runtime 자동 Invocation
+≠ Session Linking
+≠ Result 자동 반환
+```
+
+현재 방향은 `work-start`, `handoff-prompt`,
+Skill Routing, Project Context를 Adapt하는 것이다.
+
+다음으로 해석하지 않는다.
+
+```text
+새 Handoff Engine
+새 Packet Lifecycle
+새 Work-start 검색기
+새 Runtime Adapter 계층
+새 Task Engine
+```
+
+### Rationale
+
+```text
+V1의 사용자 문제는 AI 세션을 바꿀 때
+목적·범위·금지 사항·검증 조건이 유실되고,
+Worker가 무엇을 했고 무엇을 검증하지 않았는지
+불명확해지는 것이다.
+
+이 문제는 자동 Runtime Orchestration 없이도
+Structured Handoff Candidate와
+수동 Result Basic Format으로 먼저 해결할 수 있다.
+
+Validator, Runtime Invocation, Result 자동 감지·연결,
+Review Queue, Context Import를 V1 P0에 포함하면
+Lean V1의 설치·신뢰·반복 사용 검증보다
+Managed Workflow 구현 부담이 먼저 커진다.
+```
+
+### Constraints
+
+```text
+Decision Accepted
+≠ Implementation Completed
+≠ Runtime Supported
+≠ Fixture Passed
+≠ Product Released
+
+V1은 자동 Runtime 실행을 요구하지 않는다.
+V1은 자동 Result 수집을 요구하지 않는다.
+V1은 Managed Task / Run / Result Entity를 요구하지 않는다.
+V1은 Worktree 자동 생성이나 복수 Worker Coordination을 요구하지 않는다.
+V1은 Cloud / Auth / Billing을 요구하지 않는다.
+```
+
+### Consequences
+
+```text
+V1 P0 Release 판단은
+수동 Handoff 전달
+→ Worker 수행
+→ 수동 Result Basic 반환
+→ Human Review
+까지의 Local Manual Artifact Workflow를 기준으로 한다.
+
+Handoff Validator와 Result Validator 제품 기능은 V1 Alpha로 이동한다.
+
+Managed Result Return, Runtime Invocation,
+Task·Result Correlation, Completion Detection,
+Review Queue, Context Import는 V2 범위로 이동한다.
+
+기존 Local-only, Human-controlled, Evidence Candidate,
+Runtime 자동 실행 금지, Human Review,
+최소 Manual E2E 원칙은 계속 유효하다.
+
+후속 Targeted Update에서 영향 문서를 Lean V1 경계와 정렬해야 한다.
+```
+
+### Affected Documents
+
+직접 후속 Targeted Update 후보:
+
+```text
+docs/master/product-architecture-master.md
+docs/product/development-harness-report.md
+docs/product/v1-completion-criteria.md
+docs/roadmap/product-roadmap.md
+docs/contracts/handoff-basic-contract.md
+docs/contracts/result-basic-contract.md
+docs/testing/v1-fixture-plan.md
+docs/poc/v2-local-invocation-poc.md
+README.md
+```
+
+연쇄 확인 후보:
+
+```text
+docs/contracts/work-start-contract.md
+docs/contracts/runtime-capability-contract.md
+docs/product/README.md
+docs/roadmap/README.md
+docs/handoffs/README.md
+```
+
+### Supersession
+
+```text
+supersedes: []
+superseded_by: []
+partial_supersedes:
+  - DEC-008
+  - DEC-010
+  - DEC-011
+  - DEC-031
+full_supersession: none
+```
+
+Partial Supersession 범위:
+
+```text
+DEC-008:
+  remaining_valid_scope:
+    - Local-only
+    - Human-controlled
+    - 자동 Runtime 실행 금지
+    - 자동 Result 수집 금지
+  superseded_scope:
+    - V1 P0에 Contract Validator, Runtime Capability Check,
+      Runtime Projection, Manual Import Gate가 필수라는 범위
+
+DEC-010:
+  remaining_valid_scope:
+    - Structured Handoff가 Goal, Scope, 금지 사항,
+      Validation, Expected Result를 보존하는 Task Contract라는 원칙
+  superseded_scope:
+    - V1 P0에서 Validator, 승인 상태, Export 차단,
+      Runtime Projection이 필수라는 범위
+
+DEC-011:
+  remaining_valid_scope:
+    - Result Basic은 Evidence Candidate
+    - Human Review 전 Truth가 아님
+  superseded_scope:
+    - 범용 Result Validator가 V1 P0 필수 Gate라는 범위
+
+DEC-031:
+  remaining_valid_scope:
+    - 최소 1개 Runtime을 사용한 Manual E2E가
+      V1 Release Gate라는 원칙
+  superseded_scope:
+    - Result Validation과 Manual Import 관리 Gate 전체를
+      V1 E2E에서 반드시 검증해야 한다는 범위
+```
+
+### Implementation and Verification
+
+```text
+implementation_completed: not_verified
+fixture_passed: not_verified
+runtime_supported: not_verified
+product_released: not_verified
+```
+
+---
+
 # Part II. Architecture Decisions
 
 ## DEC-005 — Shared Platform과 Domain Extension 책임을 분리한다
@@ -629,6 +996,16 @@ docs/contracts/README.md
 ```text
 supersedes: []
 superseded_by: []
+superseded_scope:
+  - V1 P0에 Contract Validator, Runtime Capability Check,
+    Runtime Projection, Manual Import Gate가 필수라는 범위
+remaining_valid_scope:
+  - Local-only
+  - Human-controlled
+  - 자동 Runtime 실행 금지
+  - 자동 Result 수집 금지
+replacement_decision_refs:
+  - DEC-051
 ```
 
 ---
@@ -737,6 +1114,14 @@ docs/testing/v1-fixture-plan.md
 ```text
 supersedes: []
 superseded_by: []
+superseded_scope:
+  - V1 P0에서 Validator, 승인 상태, Export 차단,
+    Runtime Projection이 필수라는 범위
+remaining_valid_scope:
+  - Structured Handoff가 Goal, Scope, 금지 사항,
+    Validation, Expected Result를 보존하는 Task Contract라는 원칙
+replacement_decision_refs:
+  - DEC-051
 ```
 
 ---
@@ -786,6 +1171,13 @@ docs/testing/v1-fixture-plan.md
 ```text
 supersedes: []
 superseded_by: []
+superseded_scope:
+  - 범용 Result Validator가 V1 P0 필수 Gate라는 범위
+remaining_valid_scope:
+  - Result Basic은 Evidence Candidate
+  - Human Review 전 Truth가 아님
+replacement_decision_refs:
+  - DEC-051
 ```
 
 ---
@@ -1828,6 +2220,14 @@ docs/testing/v1-fixture-plan.md
 ```text
 supersedes: []
 superseded_by: []
+superseded_scope:
+  - Result Validation과 Manual Import 관리 Gate 전체를
+    V1 E2E에서 반드시 검증해야 한다는 범위
+remaining_valid_scope:
+  - 최소 1개 Runtime을 사용한 Manual E2E가
+    V1 Release Gate라는 원칙
+replacement_decision_refs:
+  - DEC-051
 ```
 
 ---
