@@ -30,6 +30,7 @@ source_inputs:
 이 문서는 `oh-my-ai` V2 후보 기능인 Local Runtime Invocation의 기술 가능성, 안전 경계, 제품 가치를 검증하기 위한 POC 계획을 정의한다.
 
 이 문서는 V2 제품 요구사항을 확정하는 Contract가 아니다.
+또한 V1 Release Requirement가 아니다. DEC-051 기준 Lean V1은 Local Manual Artifact Workflow이며, Runtime Invocation과 Managed Result Return을 요구하지 않는다.
 
 검증 흐름:
 
@@ -69,6 +70,7 @@ V1
 V2 POC
 = Local Runtime Invocation 가능성 검증
 = Local Result Capture 가능성 검증
+= Managed Result Return 후보 검증
 
 V2 Product
 = POC 통과 후 별도 Product Contract에서 확정
@@ -82,6 +84,9 @@ Automatic Runtime Selection
 Cloud Task Queue
 Remote Execution
 Managed SessionBinding
+Session Linking
+Result 자동 정규화
+Task / Result Correlation
 Organization Approval
 ```
 
@@ -1784,7 +1789,7 @@ Manual Flow 대비 가치 부족
 
 1. 이 문서는 Experiment Plan이다.
 2. V1 Manual Workflow를 변경하지 않는다.
-3. Local Runtime Invocation만 검증한다.
+3. Local Runtime Invocation과 Managed Result Return 후보만 검증한다.
 4. Code·Prompt·Context·Result 원문을 Cloud로 보내지 않는다.
 5. Runtime 선택과 Invocation은 Human-controlled다.
 6. Capability·Policy·Availability를 분리한다.

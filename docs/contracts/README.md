@@ -196,7 +196,7 @@ Scope Deviation
 Blocker
 Sensitive Data Status
 Human Result Review
-Manual Import Candidate
+수동 Evidence Candidate
 ```
 
 **소유하지 않는 책임**
@@ -320,28 +320,23 @@ Execution Policy
 ## 8. V1 Contract 흐름
 
 ```text
-User Task
+Work-start Candidate
    ↓
-Work-start Contract
-   ↓
-Candidate Review
-   ↓
-Handoff Basic Contract
-   ↓
-Runtime Capability Contract
-   ↓
-Execution Policy Contract
-   ↓
-Runtime Projection
-   ↓
-Manual Runtime Execution
-   ↓
-Result Basic Contract
+Structured Handoff Candidate
    ↓
 Human Review
    ↓
-Manual Import Candidate
+Manual Copy/Paste
+   ↓
+Result Basic
+   ↓
+Human Review
 ```
+
+Contract 자체의 의미와 필수 필드는 V1 P0에 남는다.
+범용 Contract Validator와 Runtime별 Projection 고도화는 V1 Alpha 품질 기능이다.
+Runtime Invocation, Managed Result Return, Manual Import 관리 기능은 V2 범위다.
+Execution Policy Contract는 유지하지만 V1 수동 Workflow의 필수 자동 Gate로 해석하지 않는다.
 
 ---
 

@@ -254,21 +254,19 @@ LLM 또는 Human의 자유형 의미 판단만으로 P0 Pass를 확정하지 않
 필수 흐름:
 
 ```text
-Work-start
-→ Candidate Review
+Task 입력
+→ Work-start
 → Structured Handoff Candidate
-→ Handoff Contract Validation
-→ Handoff Human Approval
-→ Capability Check
-→ Policy Check
-→ Action Approval
-→ Runtime Projection
-→ Projection Review
-→ Manual Execution
-→ Result Validation
-→ Human Result Review
-→ Manual Import Candidate
+→ Human Review
+→ 수동 Runtime 전달
+→ Worker 수행
+→ Result Basic 수동 반환
+→ Human Review
 ```
+
+범용 Handoff Validator, 범용 Result Validator, Runtime Projection은 V1 Alpha 또는 이후 품질 기능이다.
+Fixture를 통한 최소 Contract 검증은 V1 P0에 남는다.
+Runtime 자동 Invocation과 Result 자동 수집·Import는 V2 범위다.
 
 필수 비동치:
 
@@ -282,7 +280,7 @@ Policy Review
 Result Accept
 ≠ Repository Apply
 
-Manual Import Candidate
+Result Basic
 ≠ 자동 Import
 ≠ 자동 Repository 반영
 ```

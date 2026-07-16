@@ -22,7 +22,8 @@ source_inputs:
 
 ## 1. 문서 목적
 
-이 문서는 `oh-my-ai` V1에서 Runtime별 기능 가능 범위를 정직하게 표현하기 위한 Static Capability Contract를 정의한다.
+이 문서는 Runtime별 기능 가능 범위를 정직하게 표현하기 위한 Static Capability Contract를 정의한다.
+DEC-051 기준 Lean V1 P0의 필수 흐름은 Manual Copy/Paste이며, Runtime Projection과 Runtime별 정적 사용 안내 고도화는 V1 Alpha 품질 범위다.
 
 Capability의 목적은 Runtime을 선택하거나 우열을 평가하는 것이 아니다.
 
@@ -35,6 +36,8 @@ Approved Handoff
 → 지원·조건부·미지원·미확인 표시
 → Human Review
 ```
+
+위 흐름은 V1 Alpha 품질 기능 또는 V2 Runtime Invocation 준비 범위이며, V1 P0 Release Gate가 아니다.
 
 Capability Contract는 다음을 방지한다.
 
@@ -351,6 +354,7 @@ last_verified_by: manual_fixture
 ## 9. Advertised Runtime
 
 `advertised_support: true`는 다음을 의미한다.
+이 Gate는 Runtime을 공개 지원 대상으로 선언할 때의 품질 기준이며, Lean V1 P0가 복수 Runtime Projection을 요구한다는 뜻이 아니다.
 
 ```text
 capability_metadata_status = valid
@@ -1061,7 +1065,7 @@ compatibility-report.md
 조건부 출력:
 
 ```text
-지원 대상으로 선언한 Runtime Projection
+V1 Alpha에서 지원 대상으로 선언한 Runtime Projection
 ```
 
 예:

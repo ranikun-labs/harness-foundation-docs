@@ -387,19 +387,20 @@ docs/product/v1-completion-criteria.md
 
 ## 8.1 제품 정의
 
-V1은 무료 Local Artifact Workflow다.
+DEC-051 기준 Lean V1은 무료 Local Manual Artifact Workflow다.
 
 기본 흐름:
 
 ```text
-Work-start
-→ Structured Handoff Markdown
-→ 사용자 검수
-→ 사용자가 Claude Code / Codex 등을 직접 실행
-→ Handoff 수동 전달
-→ Result Basic Markdown
-→ 사용자 검수
-→ 필요한 내용을 Main Session 또는 Repository에 수동 반영
+사용자 Task 입력
+→ Skill Routing
+→ Work-start Candidate
+→ Project Context 참조
+→ Structured Handoff Candidate
+→ Human Review
+→ Worker Session에 수동 Copy/Paste
+→ Worker가 Result Basic 수동 형식으로 반환
+→ Human Review
 ```
 
 V1의 핵심 가치는 자동 실행이 아니다.
@@ -418,22 +419,28 @@ V1의 핵심 가치는 자동 실행이 아니다.
 ```text
 Local Installation
 Instruction Cascade
-Execution Policy Projection
 Skill Registry
 Basic Skill Routing
 Prompt Routing Hook
 Work-start
-Structured Handoff
+Project Context
+Structured Handoff Candidate
+Manual Copy/Paste
+Local Candidate Artifact
 Result Basic
-Runtime Instruction Adapter
-Static Capability Metadata
-Local Context
+Result Basic 수동 Template
 Minimal Fixtures
-Local Usage Log
+Manual E2E Demo
+Doctor
 Provenance Sections
 Truthfulness Sections
 Human Review
+재현 가능한 최소 설치·실행 경로 1개
 ```
+
+`재현 가능한 최소 설치·실행 경로 1개`는
+npm과 Homebrew 동시 지원, 복수 OS Installer,
+자동 업데이트, 완성된 범용 CLI Product Shell을 의미하지 않는다.
 
 ## 8.3 V1 제외 기능
 
@@ -447,6 +454,12 @@ ExecutionWorkspace Entity
 ResultArtifact ID
 Automatic Prompt Delivery
 Automatic Result Collection
+Managed Result Return
+Task / Result Correlation
+Completion Detection
+Review Queue
+Context 자동 Import
+Runtime Invocation
 Worktree Lifecycle Management
 Agent Orchestration
 Cloud Sync
@@ -501,11 +514,22 @@ V2부터 Handoff와 Result가 단순 문서에서 관리형 Entity로 승격된�
 
 ```text
 WorkItem / Task
+Task Registry
 SessionBinding
 ExecutionRun
 Optional ExecutionWorkspace
 ResultArtifact
 HumanReview
+Managed Result Return
+Task / Result Correlation
+Completion Detection
+Review Queue
+Context Import
+Runtime Invocation
+Worktree 자동 생성
+Worker Branch Lifecycle
+복수 Worker Coordination
+Merge / Apply Gate
 ```
 
 ## 9.2 기본 흐름
@@ -599,6 +623,8 @@ V2 상품은 Auth와 Entitlement를 포함하는 Pro 제품이다.
 6. Task / Result 귀속
 7. Human Review
 ```
+
+이 PoC는 V2 후보 기능 검증이며 V1 Release Requirement가 아니다.
 
 이 단계의 Identifier는 영구 Session Identity가 아니다.
 
@@ -1300,10 +1326,12 @@ Local Invocation과 Result Collection 검증보다 구현 비용이 앞선다.
 ### Phase 1 — V1 Community
 
 ```text
-Local Artifact Workflow
+Local Manual Artifact Workflow
 Public Contract
 Minimal Fixtures
-Local Usage Log
+Manual E2E Demo
+Doctor
+재현 가능한 최소 설치·실행 경로 1개
 V1 Release
 ```
 
@@ -1314,6 +1342,8 @@ Local Correlation
 Prompt Injection
 Provider Metadata
 Result Collection
+Runtime Invocation
+Managed Result Return 후보 검증
 Human Review
 ```
 
@@ -1385,7 +1415,7 @@ Self-hosted
 - Scope 누락 감소
 - 검증 상태 명시율
 - Result 재사용 가능성
-- Runtime 간 전달 성공률
+- 수동 Copy/Paste 왕복 성공률
 
 ### V2
 

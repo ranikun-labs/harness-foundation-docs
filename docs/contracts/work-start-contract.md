@@ -39,9 +39,9 @@ Work-start는 다음 단계의 입력을 준비한다.
 
 ```text
 Work-start
-→ Structured Handoff
+→ Structured Handoff Candidate
 → Human Review
-→ Runtime Projection
+→ Manual Copy/Paste
 ```
 
 이 문서는 Work-start를 Managed Task Entity, 자동 Worker 실행기, Cloud Context 수집기로 확장하지 않는다.
@@ -83,7 +83,7 @@ Work-start
 = Candidate Seed
 
 Structured Handoff
-= 승인된 작업 전달 계약
+= Human Review 전 작업 전달 Candidate
 
 Result Basic
 = 검토 가능한 작업 결과

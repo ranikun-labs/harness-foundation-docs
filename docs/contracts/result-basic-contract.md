@@ -33,9 +33,9 @@ Result Basic의 목적은 Worker 응답을 자동 Truth로 받아들이는 것�
 Worker Output
 → Structured Evidence Candidate
 → Human Review
-→ Accept / Edit / Reject
-→ Manual Import 또는 후속 작업
 ```
+
+V1에서는 Worker가 Result Basic을 수동 Markdown 형식으로 반환하고, 사용자가 Validation / Risk를 Human Review한다.
 
 Result Basic은 다음을 명확히 분리한다.
 
@@ -53,7 +53,7 @@ Scope 이탈
 차단 사유
 ```
 
-이 문서는 Result를 Cloud Entity, 자동 수집 결과, 자동 승인 결과, Canonical Project Context로 확장하지 않는다.
+이 문서는 Result를 Cloud Entity, 자동 저장 결과, 자동 감지 결과, 자동 승인 결과, Canonical Project Context로 확장하지 않는다.
 
 ---
 
@@ -73,20 +73,27 @@ Scope Deviation 표시
 Remaining Risk 표시
 Partial / Failed / Blocked 표시
 Human Review 입력 제공
-Manual Import 후보 제공
+수동 Evidence Candidate 제공
 ```
 
 ## 2.2 Result Basic이 소유하지 않는 책임
 
 ```text
 Result 자동 승인
+Result 자동 저장
+Result 자동 감지
+Task / Result Correlation
+Completion Detection
+Review Queue
 Canonical Truth 승격
 Project Context 자동 수정
+Context Promotion
 Repository 자동 반영
 Commit
 Push
 PR 생성
 SessionBinding
+Managed Result Return
 Managed Result ID
 Cloud 저장
 Billing / Entitlement
@@ -126,7 +133,8 @@ Project Context
 11. Result가 없거나 손상됐다고 작업 성공으로 기록하지 않는다.
 12. Cloud·Auth 없이 작성·검수·반영할 수 있어야 한다.
 13. 단일 Runtime으로 사용할 수 있어야 한다.
-14. Result Import는 수동 Human Gate 뒤에만 가능하다.
+14. Result Basic은 Human Review 전 canonical Truth, 완료 증명, 자동 승인, Repository Apply 허가, Context Promotion 허가가 아니다.
+15. Result Basic Contract는 Result Channel, Task Correlation, Completion Detection, Review Queue, Context Import와 동일하지 않다.
 
 ---
 
@@ -1152,7 +1160,7 @@ violation_detected
 not_checked
 ```
 
-`violation_detected` 또는 `not_checked` 상태의 Result는 Manual Import할 수 없다.
+`violation_detected` 또는 `not_checked` 상태의 Result는 Human Review에서 위험으로 표시해야 한다.
 
 Secret-like Value가 발견되면:
 
@@ -1289,11 +1297,26 @@ rejected_claims:
 
 ---
 
-# Part X. Manual Import
+# Part X. Managed Result Return Boundary
+
+V1 P0의 Result Basic Format은 수동 Artifact Contract다.
+Managed Result Return은 V2 저장·감지·연결·완료 인식·Queue·Import 기능이다.
+
+Result Basic은 다음과 동일하지 않다.
+
+```text
+자동 Result 저장
+자동 Result 감지
+Task / Result Correlation
+Completion Detection
+Review Queue
+Manual Import 관리 기능
+Context Promotion
+```
 
 ## 36. Import 대상
 
-Accepted Result에서 다음을 수동 반영할 수 있다.
+V2 Managed Workflow 또는 별도 Human Gate 이후 다음 후보를 다룰 수 있다.
 
 ```text
 Main Session Summary
@@ -1310,6 +1333,8 @@ Issue / Backlog Candidate
 
 ## 37. Import 조건
 
+다음 조건은 V1 P0 Release Gate가 아니라 V2 Managed Result Return 또는 별도 Review Gate의 후보 조건이다.
+
 ```text
 review_state가 accepted 또는 edited_and_accepted
 receipt_status가 received
@@ -1320,7 +1345,7 @@ Import 유형과 반영 범위를 Human이 명시적으로 선택
 Rejected Claim과 미승인 Evidence 제외
 ```
 
-`accept_result`는 Result Candidate 수용만 의미한다.
+`accept_result`는 Result Candidate 수용만 의미하며 V1 P0의 전용 UX 요구가 아니다.
 
 다음 승인은 별도다.
 
@@ -1388,7 +1413,7 @@ Do Not Touch
 Remaining Risk
 ```
 
-V1에서 Result Import와 Repository Writer를 동일 기능으로 묶지 않는다.
+Result Basic과 Repository Writer를 동일 기능으로 묶지 않는다.
 
 ---
 
@@ -1580,13 +1605,12 @@ Files Read를 Files Changed로 표시
 ## 48. Manual E2E Fixture
 
 ```text
-Approved Handoff
-→ Runtime Projection
-→ Worker Execution
-→ Result Basic Candidate
+Structured Handoff Candidate
 → Human Review
-→ Accept / Edit / Reject
-→ Manual Import
+→ Manual Copy/Paste
+→ Worker Execution
+→ Result Basic 수동 반환
+→ Human Review
 ```
 
 검증:
@@ -1597,7 +1621,7 @@ Completion Criteria 결과
 Validation 수행·미수행
 Scope Deviation
 Remaining Risk
-Rejected Claim 제외
+수행하지 못한 검증을 Pass로 표시하지 않음
 Project Context 자동 승격 없음
 ```
 
@@ -1615,7 +1639,6 @@ Validation 수행·미수행 분리
 Completion Criteria 연결
 Scope Deviation 정의
 Human Review 정의
-Manual Import 정의
 Positive / Negative / Truthfulness Fixture 정의
 ```
 
@@ -1624,13 +1647,13 @@ Implementation 완료:
 ```text
 Result Candidate 생성
 Handoff Reference 연결
-Contract Validation
-Human Edit
-Accept / Reject
-Manual Import Export
+수동 Markdown 반환
+Human Review
 Missing / Invalid / Partial Result 처리
 Fixture 통과
 ```
+
+범용 Result Validator 제품 기능과 Managed Result Return은 V1 P0 완료 조건이 아니다.
 
 ---
 
@@ -1915,7 +1938,7 @@ Durable 후보만 별도 Promotion한다.
 10. Scope Deviation을 숨기지 않는다.
 11. Unknown Repository 상태를 임의 생성하지 않는다.
 12. Secret 원문을 Result에 기록하지 않는다.
-13. Accepted Result만 Manual Import 후보가 된다.
+13. Result Basic은 Human Review 전 완료 증명이나 Repository Apply 허가가 아니다.
 14. Result 전체를 Project Context로 자동 승격하지 않는다.
 15. Repository 반영은 별도 Human Gate다.
 16. Missing·Invalid Result를 성공으로 처리하지 않는다.

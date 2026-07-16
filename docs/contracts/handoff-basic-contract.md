@@ -22,7 +22,7 @@ source_inputs:
 
 ## 1. 문서 목적
 
-이 문서는 `oh-my-ai` V1의 Structured Handoff 기본 계약을 정의한다.
+이 문서는 `oh-my-ai` V1의 Structured Handoff Candidate 기본 계약을 정의한다.
 
 Handoff의 목적은 특정 작업을 Worker Runtime에 전달할 때 다음을 보존하는 것이다.
 
@@ -44,14 +44,15 @@ Return Contract
 
 Handoff는 Prompt 꾸밈 문서가 아니다.
 
-Handoff는 다음 사이의 승인된 작업 계약이다.
+V1에서 Handoff는 provider-neutral Markdown으로 작성되는 수동 전달용 작업 Contract Candidate다.
+Human Review 후 사용자가 Worker Session에 수동 Copy/Paste한다.
 
 ```text
 사용자 또는 Main Session
 → Worker Runtime
 ```
 
-이 문서는 Handoff를 Managed Task Entity, 자동 Prompt Delivery, SessionBinding, Cloud Workflow로 확장하지 않는다.
+이 문서는 Handoff를 Runtime Invocation, Worker 자동 생성, Result Return, Action Approval, Managed Task Entity, 자동 Prompt Delivery, SessionBinding, Cloud Workflow로 확장하지 않는다.
 
 ---
 
@@ -80,6 +81,7 @@ Session 생성
 Worker 선택
 파일 잠금
 Writer Lease
+Result 자동 반환
 Result 자동 수집
 Result 자동 승인
 Project Context 자동 승격
@@ -95,10 +97,10 @@ Work-start
 = Candidate Seed
 
 Handoff
-= Human-approved Task Contract
+= Structured Handoff Candidate
 
-Runtime Projection
-= Handoff 의미의 Runtime별 표현
+Manual Copy/Paste
+= Human Review 후 Worker Session에 수동 전달
 
 Result Basic
 = Worker가 반환하는 Evidence Candidate
@@ -123,6 +125,7 @@ Project Context
 10. 실행하지 않은 검증을 요구 충족으로 표시하지 않는다.
 11. Cloud와 Auth 없이 생성·검수·전달 가능해야 한다.
 12. 단일 Runtime으로도 사용 가능해야 한다.
+13. Structured Handoff Candidate는 Worker 자동 생성, Runtime 자동 Invocation, Session Linking, Result 자동 반환을 의미하지 않는다.
 
 ---
 
@@ -130,7 +133,7 @@ Project Context
 
 ## 4. Handoff Identity
 
-V1 Handoff는 Local Artifact다.
+V1 Handoff는 Local Candidate Artifact다.
 
 필수 식별자:
 
@@ -921,16 +924,17 @@ review_notes:
 
 ## 27. 승인 전 금지
 
-다음은 `review_state: approved` 전에는 수행하지 않는다.
+V1 P0에서는 Human Review 전 다음을 수행하지 않는다.
 
 ```text
-Runtime Projection Export
 Worker Runtime 실행
 파일 수정
 Shell 명령 실행
 Cloud 업로드
 Project Context Promotion
 ```
+
+Runtime Projection Export와 Export 차단은 V1 Alpha 품질 기능이며 V1 P0 필수 Gate가 아니다.
 
 ---
 
@@ -951,6 +955,8 @@ defer
 # Part VII. Runtime Projection
 
 ## 29. Projection 원칙
+
+Runtime Projection은 V1 Alpha 품질 기능이다. V1 P0의 필수 산출물은 provider-neutral Markdown Structured Handoff Candidate이며, 사용자가 Human Review 후 수동 전달한다.
 
 Canonical Handoff는 Runtime-neutral 의미를 가진다.
 
@@ -993,7 +999,7 @@ generic-handoff.md
 조건부 출력:
 
 ```text
-V1 지원 대상으로 선언한 각 Runtime의 Projection
+V1 Alpha에서 지원 대상으로 선언한 각 Runtime의 Projection
 ```
 
 예:
@@ -1003,7 +1009,7 @@ claude-handoff.md
 codex-handoff.md
 ```
 
-모든 Runtime Projection을 동시에 제공하는 것은 V1 필수 조건이 아니다.
+모든 Runtime Projection을 동시에 제공하는 것은 V1 P0 필수 조건이 아니다.
 
 ---
 
@@ -1313,9 +1319,8 @@ Contract 완료:
 필수 필드 정의
 상태 모델 정의
 Review Gate 정의
-Validation 정의
+최소 Fixture 검증 정의
 Expiration 정의
-Projection 규칙 정의
 Positive / Negative Fixture 정의
 ```
 
@@ -1324,12 +1329,12 @@ Implementation 완료:
 ```text
 Handoff Candidate 생성
 Human Edit
-Validation / Lint
-Approve / Reject
-Generic Export
-지원 Runtime Projection
-Semantic Preservation Fixture
+Manual Copy/Paste 가능한 provider-neutral Markdown
+Scope / Do Not Touch 보존 Fixture
+필수 필드 누락 Negative Fixture
 ```
+
+범용 Handoff Validator, Runtime Projection, Generic Markdown Export 고도화, Semantic Preservation Fixture는 V1 Alpha 품질 기능이다.
 
 ---
 

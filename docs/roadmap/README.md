@@ -111,7 +111,7 @@ POC
 
 # Part II. Version Model
 
-## 3. V1 — Free Local-only Artifact Product
+## 3. V1 — Free Local Manual Artifact Workflow
 
 V1의 핵심 목적:
 
@@ -124,27 +124,17 @@ V1 핵심 흐름:
 
 ```text
 User Task
-→ Work-start
-→ Candidate Review
-→ Structured Handoff
-→ Contract Validation
-→ Handoff Approval
-→ Runtime Capability Check
-→ Execution Policy Check
-→ Policy Review
-→ 필요한 Action Approval 확인
-→ Runtime Projection
-→ Projection Review
-→ Manual Runtime Execution
-→ Result Basic Candidate
+→ Skill Routing
+→ Work-start Candidate
+→ Project Context 참조
+→ Structured Handoff Candidate
+→ Human Review
+→ Worker Session에 수동 Copy/Paste
+→ Worker가 Result Basic 수동 형식으로 반환
 → Human Result Review
-→ Manual Import Candidate
 ```
 
-Policy Review는 Action Approval을 포함하지 않는다.
-
-Projection Review는 Runtime 실행 승인이나
-Action Approval을 포함하지 않는다.
+V1은 Runtime Invocation, Result 자동 감지, Review Queue, Context Import, Worktree 자동화를 제공하지 않는다.
 
 Action Approval은 `approval_required` 행동이 있을 때만 요구되며,
 Handoff Scope를 확장할 수 없다.

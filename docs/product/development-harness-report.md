@@ -99,13 +99,15 @@ Skill Routing
 하지만 현재 확정된 V1 제품 정의는 다음과 같다.
 
 ```text
-Work-start
-→ Structured Handoff
+사용자 Task 입력
+→ Skill Routing
+→ Work-start Candidate
+→ Project Context 참조
+→ Structured Handoff Candidate
 → Human Review
-→ 사용자 수동 Runtime 실행
-→ Result Basic
+→ Worker Session에 수동 Copy/Paste
+→ Worker가 Result Basic 수동 형식으로 반환
 → Human Review
-→ 수동 반영
 ```
 
 현재 Repository는 위 흐름의 기반 자산을 보유하고 있으나, 전체 위임·회수 Loop가 아직 닫히지 않았다.
@@ -117,7 +119,7 @@ Work-start
 = Local Skill / Context / Adapter Harness
 
 현재 V1 목표
-= Runtime-neutral Local Artifact Handoff / Result Workflow
+= Local Manual Artifact Workflow
 ```
 
 새 V1 기준의 추정 진척률:
@@ -133,9 +135,12 @@ Work-start
 ```text
 Runtime-neutral Handoff Contract
 Result Basic Contract
-Manual Create / Review / Export / Import Flow
-Static Capability Metadata
+Manual Copy/Paste Flow
+Human Review
 Routing / Hook / Truthfulness Fixtures
+Manual E2E
+Doctor
+최소 설치·실행 경로
 Public Product Documentation Alignment
 ```
 
@@ -162,13 +167,15 @@ Non-destructive Installation
 ## 4.2 V1에서 추가로 완성해야 하는 것
 
 ```text
-구조화된 Handoff
-Runtime-neutral Projection
-Result Basic
-Validation Truthfulness
-Accept / Edit / Reject
-Manual Return Flow
-Fixture 기반 회귀 검증
+기존 Work-start 출력 정렬
+기존 handoff-prompt의 Structured Handoff Candidate 보강
+Result Basic 수동 Template
+Manual Copy/Paste 흐름
+Human Review
+최소 Positive / Negative Fixture
+Manual E2E
+Doctor
+최소 설치·실행 경로
 ```
 
 ## 4.3 V1이 아닌 것
@@ -186,6 +193,16 @@ Managed Memory
 Task Graph
 Runtime Broker
 Sidecar
+Runtime Invocation
+Managed Result Return
+Result 자동 저장
+Result 자동 감지
+Task / Result Correlation
+Completion Detection
+Review Queue
+Context 자동 Import
+Worktree 자동 생성
+복수 Worker Coordination
 Organization Governance
 ```
 
@@ -851,8 +868,7 @@ Partial
 Work-start Candidate
 → Handoff Candidate 생성
 → Human Review
-→ Runtime Projection
-→ Manual Export / Copy
+→ Manual Copy/Paste
 ```
 
 최소 Human Review Surface:
@@ -892,11 +908,10 @@ Missing
 Worker Result
 → Result Basic Candidate
 → Human Review
-→ Accept / Edit / Reject
-→ Main Session 또는 Repository 수동 반영
 ```
 
 V1에서 자동 Context Promotion을 하지 않는다.
+Result Basic은 Human Review 전 canonical Truth, 완료 증명, Repository Apply 허가, Context Promotion 허가가 아니다.
 
 ---
 
@@ -1070,7 +1085,7 @@ V1 대표 가치는 Runtime-neutral Contract다.
 6. Handoff를 수동 전달
 7. Worker가 Result Basic 작성
 8. 사용자가 Files / Commands / Validation / Risk 검수
-9. Accepted Fact만 Main Session 또는 Repository에 반영
+9. 사용자가 Result Basic을 Human Review
 ```
 
 현재 판정:
@@ -1083,10 +1098,9 @@ V1 대표 가치는 Runtime-neutral Contract다.
 | Structured Handoff Candidate | Partial |
 | Handoff Human Review | Missing as formal flow |
 | Runtime 직접 시작 | Manual / Available |
-| Runtime Projection | Partial |
+| Manual Copy/Paste | Missing as formal flow |
 | Result Basic | Missing |
 | Result Human Review | Missing |
-| Accepted Fact Import | Manual but undefined |
 | E2E Fixture | Missing |
 
 ---
@@ -1146,15 +1160,21 @@ Result Basic Contract
 Static Capability Contract
 Routing Metadata / Consumer Contract 정렬
 Project Context / Handoff 책임 정렬
-Handoff / Result Contract Validation 또는 Lint
 Minimum Per-feature Fixtures
 Manual End-to-End Flow
+Doctor
+최소 설치·실행 경로
 ```
 
 ### P1 — Release Quality
 
 ```text
 Runtime Projection Fixture
+Handoff Validator
+Result Validator
+Generic Markdown Export 고도화
+CLI Product Shell 고도화
+Runtime별 정적 사용 안내 고도화
 Generated Output Drift Verification
 Context Drift Warning
 Review Surface 정리
@@ -1287,12 +1307,12 @@ scripts/work-start-skill-match.mjs
 
 ---
 
-## 29. PR 4 — Runtime Capability and Projection
+## 29. PR 4 — V1 Alpha Runtime Guidance and Validator Quality
 
 목적:
 
 ```text
-Generic Handoff 의미를 Runtime별로 안전하게 투영
+V1 P0 수동 Artifact 흐름 위에 품질 기능을 추가
 ```
 
 수정 후보:
@@ -1300,22 +1320,24 @@ Generic Handoff 의미를 Runtime별로 안전하게 투영
 ```text
 instructions/adapters/*
 runtime capability metadata
-projection verification scripts
+validator / guidance verification scripts
 ```
 
 포함:
 
 - Static Capability
-- Claude Projection
-- Codex Projection
+- Runtime별 정적 사용 안내 고도화
+- Handoff Validator
+- Result Validator
 - Unsupported Capability 표시
-- Capability / Projection 최소 Fixture
+- Capability / Validator Fixture
 - Semantic Preservation Fixture
 
 제외:
 
 - Dynamic Runtime Broker
 - Managed Runtime Recommendation
+- Runtime Invocation
 
 ---
 
@@ -1333,7 +1355,6 @@ Result Basic Candidate를 생성·검수·반영하는 수동 Loop 완성
 skills/result-basic/SKILL.md
 scripts/result-create.*
 scripts/result-review.*
-scripts/result-import.*
 ```
 
 포함:
@@ -1342,8 +1363,8 @@ scripts/result-import.*
 - Commands / Validation 분리
 - Scope Deviation
 - Remaining Risk
-- Accept / Edit / Reject
-- Manual Import
+- Human Review
+- Validation Not Performed를 Pass로 표시하지 않는 최소 Fixture
 - Result / Truthfulness 최소 Fixture
 
 제외:
@@ -1351,6 +1372,8 @@ scripts/result-import.*
 - Automatic Truth Promotion
 - Automatic Context Update
 - Cloud Result Collection
+- Managed Result Return
+- Result 자동 저장·감지·연결
 
 ---
 
