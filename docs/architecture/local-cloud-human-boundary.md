@@ -518,7 +518,41 @@ Premium 실행 승인
 Account Closure 확인
 ```
 
-## 9.4 Commercial Failure Isolation
+## 9.4 Community와 Commercial Access 경계
+
+V2 CLI 업데이트는 Login 또는 Subscription과 동일하지 않다.
+
+```text
+Update
+≠ Login
+
+Login
+≠ Subscription
+
+Authentication
+≠ Entitlement
+
+Community Access
+≠ Authentication Required
+```
+
+Anonymous Community는 Cloud·Billing·Entitlement 서버 장애와 무관하게
+Local Manual Workflow를 계속 사용할 수 있어야 한다.
+
+Signed-in Free는 Product-facing 상태다.
+내부 Architecture는 후속 Decision에서 최소 다음 축을 분리해야 한다.
+
+```text
+Identity:
+anonymous | authenticated
+
+Commercial Access:
+community | trial | pro | future power
+```
+
+이 문서는 위 축을 구체 State Schema로 확정하지 않는다.
+
+## 9.5 Commercial Failure Isolation
 
 다음은 유지한다.
 

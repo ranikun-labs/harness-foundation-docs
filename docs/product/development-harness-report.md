@@ -206,6 +206,51 @@ Worktree 자동 생성
 Organization Governance
 ```
 
+## 4.4 V2 Commercial Boundary 해석
+
+이 보고서에서 `Cloud / Auth / Billing` 또는 `Entitlement`를 V2로 이관한다고 표현하는 것은
+V2 CLI 업데이트가 곧 Login 또는 Subscription을 요구한다는 뜻이 아니다.
+
+Canonical Product Boundary:
+
+```text
+V2 CLI Update
+≠ Login
+
+Login
+≠ Subscription
+
+Authentication
+≠ Entitlement
+
+Architecture Version
+≠ Commercial Tier
+```
+
+Development Harness의 Commercial Tier는 다음처럼 해석한다.
+
+```text
+Community
+= 로그인 없는 Local Manual Workflow
++ V2 CLI에서도 유지
+
+Signed-in Free
+= Authentication 완료
++ 활성 유료 Subscription 없음
++ Community 기능 유지
+
+Pro
+= Local Managed Workflow의 관리와 검증
+
+future Power
+= Cloud Sync, Cross-device Resume, Backup, Web Review,
+  개인용 Remote Worker, 고급 자동화 후보
+```
+
+Subscription 종료나 Entitlement 실패는 Local 데이터 삭제 권한이 아니다.
+기존 Local Artifact 열람과 Community 기능은 유지하며,
+신규 Pro 관리 작업만 제한할 수 있다.
+
 ---
 
 ## 5. 현재 상태 요약
@@ -227,7 +272,7 @@ Organization Governance
 | Result Review / Import Flow | Missing | 필수 | 신규 |
 | End-to-end Fixture | Missing | 필수 | 신규 |
 | Automatic Session Capture | Documented-only | V2 | 이관 |
-| Cloud / Auth / Billing | Contract-only | V2 | 이관 |
+| Cloud / Auth / Billing | Contract-only | V2 Commercial | Pro 진입과 Account 기능으로 이관, V2 Update 선결 조건 아님 |
 | Work-start Skill Matcher | Implemented / Partial Contract | 필수 | Routing 정렬 |
 | Artifact Registry Check | Implemented | 품질 | 유지 |
 | Repository Setup / Governance | Implemented | 운영 | 유지 |

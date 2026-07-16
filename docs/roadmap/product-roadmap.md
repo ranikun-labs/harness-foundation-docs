@@ -24,7 +24,7 @@ source_inputs: []
 
 목적은 다음과 같다.
 
-1. V1, V2, V3의 상품 범위를 명확히 구분한다.
+1. V1, V2, V3 Architecture Version과 Commercial Tier의 범위를 명확히 구분한다.
 2. 상품 출시 순서와 기술 검증 순서를 분리한다.
 3. Development Harness와 Finance Harness의 병행 가능 범위를 정의한다.
 4. Identity, Entitlement, Billing의 도입 시점을 구분한다.
@@ -42,14 +42,23 @@ source_inputs: []
 
 ## 2. 로드맵 원칙
 
-### 2.1 상품 버전과 기술 단계는 다르다
+### 2.1 Architecture Version, Commercial Tier, 기술 단계는 다르다
 
-상품 버전:
+Architecture Version:
 
 ```text
-V1 Community
-V2 Pro
-V3 Team / Enterprise
+V1 Local Manual Artifact Workflow
+V2 Personal Managed Workflow Architecture
+V3 Team / Workspace / Organization Governance Architecture
+```
+
+Commercial Tier:
+
+```text
+Community
+Signed-in Free
+Pro
+future Power
 ```
 
 기술 단계:
@@ -71,11 +80,25 @@ Organization Governance
 예:
 
 ```text
-V2 Pro 상품
-= Auth + Entitlement + Managed Workflow
+Pro Commercial Tier
+= Authentication + Pro Commercial Access + Local Managed Workflow
 
 V2 Local Invocation PoC
 = Auth 없이도 먼저 검증 가능
+```
+
+```text
+V2 CLI Update
+≠ Login
+
+Login
+≠ Subscription
+
+V2 Architecture
+≠ Pro Commercial Tier
+
+future Power
+≠ V3
 ```
 
 ### 2.2 현재 단계에 필요한 최소 범위만 구현한다
@@ -169,10 +192,10 @@ Phase 3
 V2 Managed Workflow Technical Core
 
 Phase 4
-V2 Commercial Launch
+V2 Pro Commercial Launch
 
 Phase 5
-V2 Managed Intelligence Expansion
+V2 Managed Intelligence and future Power Candidate Expansion
 
 Phase 5F
 Finance Product Physicalization
@@ -303,6 +326,7 @@ V2 Local Invocation PoC 진입 전 필요한 수준까지만 확정한다.
 
 ```text
 무료
+로그인 없음
 Local-only
 Human-controlled
 Local Manual Artifact Workflow
@@ -321,6 +345,9 @@ Local Manual Artifact Workflow
 → Worker가 Result Basic 수동 형식으로 반환
 → Human Review
 ```
+
+Community는 Lean V1에서 처음 제공되지만 V2 CLI에서도 제거되지 않는다.
+V2로 업데이트해도 Community 기능은 로그인 없이 계속 사용할 수 있어야 한다.
 
 ### 5.2 핵심 사용자 가치
 
@@ -615,17 +642,28 @@ Main과 Worker가 직접 Session 메시지를 교환하는 구조를 Core Contra
 
 ---
 
-## 8. Phase 4 — V2 Commercial Launch
+## 8. Phase 4 — V2 Pro Commercial Launch
 
 ### 8.1 목표
 
-V2 Managed Workflow를 개인 Pro 상품으로 운영 가능하게 만든다.
+V2 Managed Workflow를 개인 Pro Commercial Tier로 운영 가능하게 만든다.
+
+Pro의 핵심 가치는 다음이다.
+
+```text
+Local Workflow의 관리와 검증
+```
+
+V2 CLI 업데이트 자체는 Login 또는 Subscription을 요구하지 않는다.
+Pro 기능 진입 시 Authentication을 요구할 수 있다.
 
 ### 8.2 포함 범위
 
 ```text
-User
 Authentication
+Signed-in Free
+Pro Commercial Access
+User
 User-bound Device
 Plan
 Entitlement
@@ -641,6 +679,27 @@ Feature Gate
 
 `Package Channel`과 `Offline Grace`는 실제 배포·라이선스 모델에서 필요한 경우에만 최초 Launch 범위에 포함한다.
 
+다음은 Product Boundary다.
+
+```text
+Anonymous Community
+= Login 없이 Community Local 기능 사용
+
+Signed-in Free
+= Authentication 완료
++ 활성 유료 Subscription 없음
++ Community 기능 유지
++ Trial·Account·Device·구매 권한 확인 가능
+
+Pro
+= Authentication 필요
++ Pro Commercial Access 필요
++ Local Managed Workflow의 관리·검증 기능
+```
+
+Trial, 제한된 무료 Pro 사용량, Grace, 가격은 변경 가능한 Launch Policy다.
+구체 수치는 이 Roadmap에 고정하지 않는다.
+
 ### 8.3 책임 구분
 
 ```text
@@ -655,6 +714,22 @@ Entitlement
 ```
 
 하나의 Feature Flag로 합치지 않는다.
+
+```text
+Update
+≠ Login
+
+Login
+≠ Subscription
+
+Authentication
+≠ Entitlement
+
+Subscription
+≠ Trial
+≠ Quota
+≠ Local Data Access
+```
 
 ### 8.4 Identity 원칙
 
@@ -680,14 +755,18 @@ Identity는 독립 논리 경계다.
 - 삭제와 Account Closure 경로 존재
 - V1 Community 기능이 Pro 결제 없이 계속 사용 가능
 - Billing 장애가 Local V1 실행을 차단하지 않음
+- Subscription 종료 후 기존 Local 데이터 열람 유지
+- 신규 Pro 관리 작업 제한과 Community Access 유지가 분리됨
 
 ---
 
-## 9. Phase 5 — V2 Managed Intelligence Expansion
+## 9. Phase 5 — V2 Managed Intelligence and future Power Candidate Expansion
 
 ### 9.1 목표
 
 Managed Workflow의 품질과 효율을 높이는 Candidate 기반 Intelligence를 추가한다.
+
+이 단계의 일부 기능은 Pro 최초 Launch가 아니라 future Power Commercial Tier 후보로 남긴다.
 
 ### 9.2 포함 후보
 
@@ -717,6 +796,22 @@ Long-running Worker
 Optional Sidecar
 Remote Workspace
 ```
+
+### 9.3.1 future Power 후보
+
+```text
+Encrypted Cloud Sync
+Cross-device Resume
+Cloud Backup / Restore
+Web Review
+개인용 Remote Worker
+고급 자동화
+```
+
+future Power는 새 Architecture Version이 아니며 V3도 아니다.
+Power라는 최종 상품명, 가격, 출시 시점은 확정하지 않는다.
+
+조직 공유 Worker, RBAC, Team Audit, Organization Policy는 V3에 남긴다.
 
 ### 9.4 승격 원칙
 
@@ -1089,7 +1184,7 @@ Storage / Retention Design
 | V1 Release | V1 Contract, Fixtures, Public Docs | Auth, Billing, Sidecar |
 | Local Invocation PoC | V1 범위 안정화, Runtime Adapter 이해 | Identity Platform 완성 |
 | V2 Technical Core | PoC 결과, Task/Run/Result 설계 | 정식 Auth, Billing, Managed Memory |
-| V2 Commercial Launch | V2 Technical Core, Auth, User-bound Device, Entitlement | V3 Governance |
+| V2 Pro Commercial Launch | V2 Technical Core, Auth, User-bound Device, Entitlement | V3 Governance |
 | Finance Contract MVP | Finance Docs, Safety 기준 | Development V2 전체 |
 | Local Finance Experiment | Finance Contract MVP | OCR, Market Data, Finance Cloud Backend |
 | Finance Product | Finance Contract, Product UI, 필요한 Identity | Development Managed Intelligence 전체 |

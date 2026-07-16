@@ -730,7 +730,32 @@ Commercial Capability
 
 V1 Community에는 Commercial Entitlement가 없다.
 
-V2+에서 제품별 Entitlement가 도입된다.
+V2+에서 제품별 Entitlement가 도입될 수 있다.
+
+Commercial Tier는 Architecture Version과 동일한 축이 아니다.
+
+```text
+Community
+= 로그인 없는 Local Manual Workflow
+
+Signed-in Free
+= Authentication 완료
++ 활성 유료 Subscription 없음
+
+Pro
+= Local Managed Workflow의 관리·검증
+
+future Power
+= 개인용 Cloud Sync·복구·고급 자동화 후보
+```
+
+```text
+V2 Architecture
+≠ Pro Commercial Tier
+
+future Power
+≠ V3
+```
 
 초기에는 각 Product Service가 Product Entitlement를 소유할 수 있다.
 
