@@ -157,7 +157,7 @@ Phase 0
 Product and Contract Baseline
 
 Phase 1
-V1 Community — Local Artifact Workflow
+V1 Community — Local Manual Artifact Workflow
 
 Phase 1F
 Finance Contract MVP and Local Finance Experiment
@@ -297,7 +297,7 @@ V2 Local Invocation PoC 진입 전 필요한 수준까지만 확정한다.
 
 # Part II. Development Harness
 
-## 5. Phase 1 — V1 Community: Local Artifact Workflow
+## 5. Phase 1 — V1 Community: Local Manual Artifact Workflow
 
 ### 5.1 상품 정의
 
@@ -305,29 +305,30 @@ V2 Local Invocation PoC 진입 전 필요한 수준까지만 확정한다.
 무료
 Local-only
 Human-controlled
-Artifact-based
+Local Manual Artifact Workflow
 ```
 
 기본 흐름:
 
 ```text
-Work-start
-→ Structured Handoff
-→ 사용자 검수
-→ 사용자가 Runtime 직접 실행
-→ Handoff 수동 전달
-→ Result Basic
-→ 사용자 검수
-→ 수동 반영
+사용자 Task 입력
+→ Skill Routing
+→ Work-start Candidate
+→ Project Context 참조
+→ Structured Handoff Candidate
+→ Human Review
+→ Worker Session에 수동 Copy/Paste
+→ Worker가 Result Basic 수동 형식으로 반환
+→ Human Review
 ```
 
 ### 5.2 핵심 사용자 가치
 
 - Session 간 Context 손실 감소
 - 작업 범위와 수정 금지 영역 보존
-- Runtime 전달 품질 향상
+- 수동 Runtime 전달 품질 향상
 - 검증 상태 명시
-- 결과 재사용 가능
+- Worker가 수행·미수행 검증과 남은 위험을 정직하게 반환
 - Provider 종속 감소
 - 로컬 데이터 경계 유지
 
@@ -336,22 +337,23 @@ Work-start
 ```text
 Local Installation
 Instruction Cascade
-Execution Policy Projection
 Skill Registry
 Basic Skill Routing
 Prompt Routing Hook
 Work-start
-Structured Handoff
-Result Basic
-Runtime Instruction Adapter
-Static Capability Metadata
-Local Context
-Minimal Fixtures
-Local Usage Log
-Provenance
-Truthfulness
+Project Context
+Structured Handoff Candidate
+Manual Copy/Paste
+Local Candidate Artifact
+Result Basic 수동 Template
 Human Review
+최소 Positive / Negative Fixture
+Manual E2E Demo
+Doctor
+재현 가능한 최소 설치·실행 경로 1개
 ```
+
+재현 가능한 최소 설치·실행 경로 1개는 한 가지 공식 경로로 로컬 설치와 기본 Workflow 실행을 재현할 수 있음을 의미한다. npm과 Homebrew 동시 지원, 복수 OS Installer, 자동 업데이트, 완성된 범용 CLI Product Shell을 뜻하지 않는다.
 
 ### 5.4 제외 범위
 
@@ -366,9 +368,22 @@ ExecutionWorkspace Entity
 ResultArtifact ID
 Automatic Prompt Delivery
 Automatic Result Collection
+Result 자동 저장
+Main Result 자동 감지
+Task / Result Correlation
+Completion Detection
+Review Queue
+Context 자동 Import
+Runtime Invocation
+Managed Result Return
+Task Registry
 Cloud Sync
 Managed Memory
 Learning Loop
+Worktree 자동 생성
+Worker Branch Lifecycle
+복수 Worker Coordination
+Merge / Apply Gate 자동화
 Mandatory Sidecar
 Organization Governance
 ```
@@ -379,14 +394,15 @@ Organization Governance
 - Skill 후보 계산은 `skills/*/SKILL.md`의 routing metadata와 generated `skills/skill-index.json`을 단일 Source of Truth로 사용하며, Work-start 문서의 수동 매핑표와 상충하지 않음
 - Handoff에 Scope, Do Not Touch, Facts, Assumptions, Open Issues가 포함됨
 - Result에 Validation Performed / Not Performed가 포함됨
-- 지원 Runtime의 Static Capability가 선언됨
-- Execution Policy가 Handoff와 Runtime Instruction에 일관되게 투영됨
 - 최소 Fixture가 반복 실행 가능
   - Work-start 입력과 Artifact 출력
   - Skill Routing positive / negative sample
   - Prompt Hook match / no-match / broken-index fail-open
   - Handoff 필수 필드 보존
   - Result의 Validation Performed / Not Performed 구분
+  - 필수 필드 누락 실패
+  - Scope / Do Not Touch 보존
+  - 미수행 검증을 Pass로 표시하지 않음
 - 지원하지 않는 기능을 지원한다고 보고하지 않음
 - 실행하지 않은 검증을 Pass로 기록하지 않음
 - Cloud 없이 전체 Workflow를 완료할 수 있음
@@ -394,10 +410,10 @@ Organization Governance
 ### 5.6 제품 완료 조건
 
 - 신규 사용자가 문서만으로 설치·사용 가능
-- 최소 2개 Runtime에 Handoff를 전달할 수 있음
-- Result를 Main Session 또는 Repository에 다시 반영할 수 있음
+- 최소 1개 Runtime에 Handoff를 수동 Copy/Paste로 전달할 수 있음
+- Worker가 Result Basic 수동 형식으로 반환할 수 있음
+- 사용자가 Result Basic의 Validation / Risk를 Human Review할 수 있음
 - V1 공개 기능과 비범위가 README에 명시됨
-- 공개 Adapter / Capability / Policy Contract가 존재함
 - V1 Release Note가 존재함
 - 기존 사용자 설정이나 설치 경로 변경이 있는 경우 Migration 안내가 존재함
 
@@ -428,6 +444,8 @@ Local Task
 → Task / Result Correlation
 → Human Review
 ```
+
+Phase 2의 Runtime Invocation, Result Collection, Task / Result Correlation은 V2 실험이며 V1 Release Requirement가 아니다.
 
 ### 6.2 PoC 범위
 
@@ -476,7 +494,7 @@ User-bound Global Identity
 
 PoC가 실패하더라도 다음 Product Decision은 자동 폐기하지 않는다.
 
-- V1은 Local Artifact Workflow
+- V1은 Local Manual Artifact Workflow
 - V2는 Managed Workflow
 - Provider Session ID는 Adapter Metadata
 - Human Review 유지
@@ -522,13 +540,24 @@ HumanReview
 
 ```text
 Task Identity
+Task Registry
 Parent–Child Task
 Worker Task
 SessionBinding
 ExecutionRun
-Local Invocation
+Runtime Invocation
 ResultArtifact
 Result Collection
+Managed Result Return
+Result Detection
+Task / Result Correlation
+Completion Detection
+Review Queue
+Context Import
+Worktree 자동 생성
+Worker Branch Lifecycle
+복수 Worker Coordination
+Merge / Apply Gate 자동화
 Human Review
 Minimal Metadata Sync
 Local Device Reference

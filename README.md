@@ -164,7 +164,7 @@ Repository 이름 변경
 
 ```text
 무료
-Local-only Artifact Product
+Local Manual Artifact Workflow
 Manual Human-controlled Workflow
 ```
 
@@ -172,22 +172,14 @@ V1 핵심 흐름:
 
 ```text
 User Task
-→ Work-start
-→ Candidate Review
-→ Structured Handoff
-→ Contract Validation
-→ Handoff Approval
-→ Runtime Capability Check
-→ Execution Policy Check
-→ Policy Review
-→ 필요한 Action Approval
-→ Runtime Projection
-→ Projection Review
-→ Manual Runtime Execution
-→ Result Basic Candidate
-→ Result Contract Validation
-→ Human Result Review
-→ Manual Import Candidate
+→ Skill Routing
+→ Work-start Candidate
+→ Project Context 참조
+→ Structured Handoff Candidate
+→ Human Review
+→ Worker Session에 수동 Copy/Paste
+→ Worker가 Result Basic 수동 형식으로 반환
+→ Human Review
 ```
 
 V1 비범위:
@@ -197,12 +189,23 @@ Cloud Login
 Billing
 Entitlement
 Managed Task / Run / Result
+Managed Result Return
 Remote Execution
 Automatic Runtime Selection
 Automatic Prompt Delivery
 Automatic Result Collection
+Result 자동 저장
+Result 자동 감지
+Task / Result Correlation
+Completion Detection
+Review Queue
+Context 자동 Import
+Runtime Invocation
 Automatic Repository Apply
 Automatic Project Context Promotion
+Worktree 자동화
+복수 Worker Coordination
+Merge / Apply Gate 자동화
 Workspace
 RBAC
 SSO

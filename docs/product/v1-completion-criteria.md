@@ -47,7 +47,7 @@ V1 Community는 다음 제품이다.
 ```text
 무료
 Local-only
-Artifact-based
+Local Manual Artifact Workflow
 Runtime-neutral
 Human-controlled
 Cloud-independent
@@ -56,15 +56,15 @@ Cloud-independent
 기본 흐름:
 
 ```text
-Work-start
-→ Context / Skill Candidate
+사용자 Task 입력
+→ Skill Routing
+→ Work-start Candidate
+→ Project Context 참조
 → Structured Handoff Candidate
 → Human Review
-→ Runtime Projection
-→ 사용자가 Runtime 직접 실행
-→ Result Basic Candidate
+→ Worker Session에 수동 Copy/Paste
+→ Worker가 Result Basic 수동 형식으로 반환
 → Human Review
-→ 수동 반영
 ```
 
 V1의 핵심 가치는 다음과 같다.
@@ -114,23 +114,25 @@ V1은 Contract와 Workflow 전체가 함께 닫혀야 한다.
 ```text
 Local Installation
 Instruction Cascade
-Runtime Instruction Projection
 Skill Registry
 Skill Routing
 Prompt Routing Hook
 Work-start
-Structured Handoff
-Result Basic
-Static Capability Metadata
-Execution Policy
-Local Context
-Local Usage Log
+Project Context
+Structured Handoff Candidate
+Manual Copy/Paste
+Local Candidate Artifact
+Result Basic 수동 Template
 Human Review
-Minimal Fixtures
-Manual Export / Import
+최소 Positive / Negative Fixture
+Manual E2E Demo
+Doctor
+재현 가능한 최소 설치·실행 경로 1개
 Truthfulness
 Provenance
 ```
+
+재현 가능한 최소 설치·실행 경로 1개는 사용자가 한 가지 공식 경로로 로컬 설치와 기본 Workflow 실행을 재현할 수 있음을 의미한다. npm과 Homebrew 동시 지원, 복수 OS Installer, 자동 업데이트, 완성된 범용 CLI Product Shell은 V1 P0 요구가 아니다.
 
 ---
 
@@ -155,6 +157,21 @@ SkillOpt
 Runtime Broker
 Sidecar
 Remote Execution
+Managed Task
+Task Registry
+Worker Result Channel
+Result 자동 저장
+Main Result 자동 감지
+Task / Result Correlation
+Completion Detection
+Review Queue
+Context 자동 Import
+Runtime Invocation
+Managed Result Return
+Worktree 자동 생성
+Worker Branch Lifecycle
+복수 Worker Coordination
+Merge / Apply Gate 자동화
 Organization Governance
 ```
 
@@ -225,6 +242,7 @@ Excluded Sensitive Inputs
 ## 7. Structured Handoff Contract
 
 Handoff는 특정 작업을 Worker Runtime에 전달하는 단기 Artifact다.
+V1 P0의 산출물은 Human Review 전 승인 완료 상태나 실행 허가가 아닌 `Structured Handoff Candidate`다.
 
 필수 필드:
 
@@ -272,12 +290,13 @@ Required Field 정의
 Confirmed Fact와 Confirmed Decision의 Source 또는 Provenance 표현 가능
 Good Example 존재
 Bad Example 존재
-Lint 또는 Validation 존재
 Runtime-neutral 표현 유지
-최소 1개 V1 지원 Runtime Projection 존재
-V1 지원 Runtime으로 공개되는 각 Adapter는 Projection Fixture 통과
-Semantic Preservation Fixture 통과
+Manual Copy/Paste 가능한 provider-neutral Markdown 존재
+Scope / Do Not Touch 보존 Fixture 존재
+필수 필드 누락 Negative Fixture 존재
 ```
+
+범용 Handoff Validator, Export 차단, Runtime Projection 제품 기능은 V1 Alpha 품질 기능이며 V1 P0 완료 조건이 아니다.
 
 `handoff_ref`는 Local Artifact 간 상관관계를 위한 로컬 참조값이다.
 
@@ -449,10 +468,9 @@ Capability / Policy 분리 Fixture 통과
 
 ```text
 Work-start Candidate
-→ Handoff Candidate 생성
+→ Structured Handoff Candidate 생성
 → Human Review
-→ Runtime Projection
-→ Manual Export / Copy
+→ Manual Copy/Paste
 ```
 
 Human Review 필수 항목:
@@ -475,9 +493,9 @@ Validation Required
 - Work-start 출력에서 Handoff Candidate 생성 가능
 - 사람이 필드를 수정 가능
 - 필수 필드 누락 시 경고
-- 최소 1개 V1 지원 Runtime용 Projection 가능
-- 지원 대상으로 공개한 각 Runtime용 Projection 가능
-- Generic Markdown Export 가능
+- provider-neutral Markdown을 수동 전달 가능
+- Structured Handoff Candidate가 새 Handoff Engine, Packet Lifecycle, Task Engine으로 표현되지 않음
+- Runtime Invocation, Session Linking, Result 자동 반환과 분리됨
 - 사용자 승인 전 자동 실행하지 않음
 
 ---
@@ -488,10 +506,8 @@ Validation Required
 
 ```text
 Worker Result
-→ Result Basic Candidate
+→ Result Basic 수동 형식
 → Human Review
-→ Accept / Edit / Reject
-→ Main Session 또는 Repository 수동 반영
 ```
 
 Human Review 필수 항목:
@@ -514,11 +530,12 @@ Next Action
 
 - Result Basic Candidate 생성 가능
 - Handoff와 연결 가능
-- Accept / Edit / Reject 가능
 - Validation 미수행 표시 가능
 - Scope 이탈 표시 가능
-- Main Session 반영용 Export 가능
+- 수행하지 못한 검증을 Pass로 표시하지 않음
 - Project Context 자동 승격 금지
+
+Accept / Edit / Reject 전용 UX, Result Create / Review / Import 관리 기능, Repository 반영용 Export는 V1 P0 필수 조건이 아니다.
 
 ---
 
@@ -758,13 +775,14 @@ Invalid Handoff
 Good / Bad Example
 ```
 
-### Runtime Projection
+### V1 Alpha Validator / Export
 
 ```text
-Claude Projection
-Codex Projection
-Unsupported Capability
-Semantic Preservation
+Handoff Validator
+Result Validator
+Generic Markdown Export 고도화
+CLI Product Shell 고도화
+Runtime별 정적 사용 안내 고도화
 ```
 
 ### Result
@@ -793,12 +811,14 @@ Unverified Claim
 ### Manual E2E
 
 ```text
-Work-start
-→ Handoff
-→ Runtime Projection
-→ Result Basic
+사용자 Task 입력
+→ Work-start
+→ Structured Handoff Candidate
 → Human Review
-→ Manual Import
+→ 수동 Runtime 전달
+→ Worker 수행
+→ Result Basic 수동 반환
+→ Human Review
 ```
 
 ---
@@ -923,13 +943,11 @@ Result Basic Contract
 Static Capability Contract
 Routing Metadata / Consumer Contract 정렬
 Project Context / Handoff 책임 정렬
-Handoff / Result Validation 또는 Lint
+최소 Contract Fixture 검증
 Manual Handoff Flow
 Manual Result Return Flow
 Minimum Per-feature Fixtures
-Runtime Projection Fixture
 Good / Bad Artifact Examples
-Execution Policy Contract와 Fixture
 Manual End-to-End Pass
 Truthfulness Gate
 Fresh Install 검증
@@ -968,6 +986,8 @@ P1 항목은 원칙적으로 Release 전에 완료한다.
 
 Semantic Preservation, Privacy, Contract Fixture와 같은 P0 항목은 Known Limitation으로 이관할 수 없다.
 
+범용 Validator 제품 기능과 Runtime Projection Fixture는 V1 Alpha 품질 항목이다. Fixture를 통한 최소 Contract 검증과 Manual E2E는 V1 P0에 남는다.
+
 ---
 
 ## 26. P2 Post-release
@@ -979,6 +999,17 @@ Local Artifact History
 Additional Domain Skills
 Optional Search Backend
 Enhanced Context Ranking
+Managed Result Return
+Task Registry
+Session Linking
+Runtime Invocation
+Result Detection
+Completion Detection
+Review Queue
+Context Import
+Worktree 자동화
+복수 Worker Coordination
+Merge / Apply Gate 자동화
 ```
 
 P2 미구현은 V1 Release를 막지 않는다.
@@ -999,10 +1030,8 @@ P2 미구현은 V1 Release를 막지 않는다.
 ### Implementation
 
 - [ ] Work-start 출력 정렬
-- [ ] Handoff Create / Review / Export
-- [ ] Claude Projection
-- [ ] Codex Projection
-- [ ] Result Create / Review / Import
+- [ ] Structured Handoff Candidate 생성 / Human Review / Manual Copy
+- [ ] Result Basic 수동 Template / Human Review
 - [ ] Generated Drift Check
 - [ ] Hook Fail-open
 - [ ] Usage Log Privacy
@@ -1011,7 +1040,6 @@ P2 미구현은 V1 Release를 막지 않는다.
 
 - [ ] Routing Fixture
 - [ ] Handoff Fixture
-- [ ] Projection Fixture
 - [ ] Result Fixture
 - [ ] Truthfulness Fixture
 - [ ] Manual E2E
@@ -1031,13 +1059,11 @@ P2 미구현은 V1 Release를 막지 않는다.
 ### Manual Verification
 
 - [ ] Fresh install
-- [ ] 최소 1개 V1 지원 Runtime의 single-runtime flow
-- [ ] 지원 대상으로 공개한 각 추가 Runtime의 Adapter 검증
+- [ ] 최소 1개 Runtime의 Manual Copy/Paste flow
 - [ ] Missing Result path
 - [ ] Validation Not Performed path
 - [ ] Scope Deviation path
-- [ ] Accept / Edit / Reject
-- [ ] Manual Import
+- [ ] Human Review
 
 ---
 
@@ -1052,12 +1078,12 @@ P2 미구현은 V1 Release를 막지 않는다.
 2. Work-start가 Context와 Skill Candidate를 생성한다.
 3. Structured Handoff Candidate를 생성할 수 있다.
 4. 사용자가 Scope와 Do Not Touch를 검수할 수 있다.
-5. Handoff를 Claude 또는 Codex에 전달할 수 있다.
-6. Worker가 Result Basic을 반환할 수 있다.
+5. Handoff를 Worker Session에 수동 Copy/Paste로 전달할 수 있다.
+6. Worker가 Result Basic 수동 형식으로 반환할 수 있다.
 7. 사용자가 Files / Commands / Validation / Risk를 검수할 수 있다.
 8. 실행하지 않은 검증이 Pass로 표시되지 않는다.
-9. Result를 Accept / Edit / Reject할 수 있다.
-10. Accepted Result만 수동 반영할 수 있다.
+9. Result Basic이 Human Review 전 canonical Truth나 완료 증명으로 취급되지 않는다.
+10. 최소 Positive / Negative Fixture와 Manual E2E Demo가 존재한다.
 11. Cloud 없이 전체 흐름이 완료된다.
 12. 단일 Runtime으로 전체 흐름이 완료된다.
 13. Negative Fixture와 Manual E2E가 통과한다.

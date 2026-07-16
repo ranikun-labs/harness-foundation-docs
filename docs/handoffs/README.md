@@ -92,7 +92,10 @@ Session Handoff는 다른 세션이 작업을 재개할 수 있을 만큼 구체
 ## 3. Structured Handoff
 
 Structured Handoff는 실제 작업의 Goal·Scope·금지 사항과
-Return Contract를 고정하는 Human-approved Task Contract Artifact다.
+Return Contract를 고정하는 Task Contract Artifact다.
+
+DEC-051 기준 V1 산출물은 Human Review 전 `Structured Handoff Candidate`이며,
+사용자가 검토한 뒤 Worker Session에 수동 Copy/Paste한다.
 
 Structured Handoff Approval은
 Action Approval·Invocation Approval·Runtime Execution Approval을

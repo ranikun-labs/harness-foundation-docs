@@ -247,15 +247,13 @@ Development 구현 상태가 Finance Contract의 Truth Source가 아니다.
 ## 7. V1
 
 ```text
-무료 Local-only Artifact Product
+무료 Local Manual Artifact Workflow
 Manual Human-controlled Workflow
 Work-start Basic
-Structured Handoff
-Runtime Projection
-Manual Runtime Execution
-Result Basic
+Structured Handoff Candidate
+Manual Copy/Paste
+Result Basic 수동 형식
 Human Review
-Manual Import Candidate
 ```
 
 V1 비범위:
@@ -265,12 +263,23 @@ Cloud Login
 Billing
 Entitlement
 Managed Task / Run / Result
+Managed Result Return
 Remote Execution
 Automatic Runtime Selection
 Automatic Prompt Delivery
 Automatic Result Collection
+Result 자동 저장
+Result 자동 감지
+Task / Result Correlation
+Completion Detection
+Review Queue
+Context 자동 Import
+Runtime Invocation
 Automatic Repository Apply
 Automatic Project Context Promotion
+Worktree 자동화
+복수 Worker Coordination
+Merge / Apply Gate 자동화
 Workspace·Organization Policy
 ```
 

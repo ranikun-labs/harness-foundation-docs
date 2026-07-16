@@ -44,12 +44,10 @@ V1 Fixture는 다음을 검증해야 한다.
 Work-start Candidate 생성
 Skill Routing
 Handoff Contract
-Runtime Projection
-Capability Compatibility
-Execution Policy
+Structured Handoff Candidate
+Manual Copy/Paste
 Result Basic
 Human Review
-Manual Import
 Truthfulness
 Local-only 경계
 ```
@@ -65,9 +63,9 @@ Local-only 경계
 5. Fixture는 실행 결과를 사람이 해석해야만 Pass되는 구조를 피한다.
 6. Fixture ID는 안정적으로 유지한다.
 7. Fixture 결과는 Evidence로 참조 가능해야 한다.
-8. Contract Schema와 Runtime Projection을 함께 검증한다.
+8. V1 P0는 Contract Schema, 필수 필드 누락, Scope / Do Not Touch 보존, 미수행 검증의 정직한 표시를 검증한다.
 9. 최소 1개 지원 Runtime으로 Manual E2E를 닫는다.
-10. 공개 지원 Runtime마다 Projection Fixture를 통과해야 한다.
+10. Runtime Projection Matrix와 공개 지원 Runtime별 Projection Fixture는 V1 Alpha 품질 범위다.
 11. P0 Fixture 실패는 Known Limitation으로 우회하지 않는다.
 12. Cloud, Auth, Billing 없이 실행 가능해야 한다.
 13. Secret 원문을 Fixture에 넣지 않는다.
@@ -688,6 +686,8 @@ reviewed_by 없음
 ---
 
 # Part VI. Runtime Projection Fixtures
+
+이 Part의 Runtime Projection Fixture는 V1 Alpha 품질 범위다. V1 P0 Release Gate는 provider-neutral Structured Handoff Candidate와 Manual Copy/Paste E2E를 요구한다.
 
 ## 16. Semantic Preservation
 
@@ -1370,16 +1370,13 @@ Good Example 자체가 Contract Validation을 통과해야 한다.
 ```text
 User Task
 → Work-start
-→ Candidate Review
-→ Structured Handoff
-→ Contract Validation
-→ Runtime Capability Check
-→ Execution Policy Check
-→ Runtime Projection
-→ Manual Runtime Execution
-→ Result Basic Candidate
+→ Skill / Context Candidate
+→ Structured Handoff Candidate
 → Human Review
-→ Manual Import Candidate
+→ 수동 Runtime 전달
+→ Worker 수행
+→ Result Basic 수동 반환
+→ Human Review
 ```
 
 필수 Assertion:
@@ -1387,19 +1384,13 @@ User Task
 ```text
 Cloud 의존 없음
 최소 1개 Runtime 사용
-Handoff 승인 전 실행 없음
-Capability·Policy·Approval·Availability 상태 분리
-Handoff Approval과 Action Approval 분리
-Policy Review와 Action Approval 분리
-Projection Semantic Preservation 통과
-Result Contract Validation 통과
+Human Review 전 실행 없음
 Worker Self-review 없음
-Accepted and Valid Result만 Import Candidate
-Result Accept와 Repository Apply 승인 분리
 Repository 자동 반영 없음
 Project Context 자동 승격 없음
 Validation 미수행 표현 가능
 Scope Deviation 표현 가능
+미수행 검증을 Pass로 표시하지 않음
 ```
 
 Manual Human Checkpoint Evidence:
@@ -1425,7 +1416,6 @@ notes
 
 ```text
 Runtime Metadata valid
-Projection Fixture passed
 Manual E2E passed
 Known Limitation documented
 Quick Start truthful
@@ -1465,14 +1455,14 @@ Quick Start truthful
 Work-start Positive / Negative
 Routing Positive / No-match / Broken-index
 Handoff Contract Validation
-Projection Semantic Preservation
-Capability Truthfulness
-Execution Policy Approval Boundary
+필수 필드 누락 실패
+Scope / Do Not Touch 보존
 Result Basic Truthfulness
+Validation Not Performed 정직한 표시
+미수행 검증을 Pass로 표시하지 않음
 Secret Exclusion
 Fresh Install
 Minimum Single-runtime E2E
-Advertised Runtime별 Projection / E2E
 Good / Bad Artifact Examples
 Fixture Schema Validation
 Assertion Determinism
@@ -1615,7 +1605,7 @@ Repository에 Commit할지는 별도 결정이다.
 7. Secret 원문을 Fixture에 저장하지 않는다.
 8. Good Example은 실제 Validation을 통과한다.
 9. 최소 1개 Runtime으로 Manual E2E를 닫는다.
-10. 공개 지원 Runtime마다 Projection과 E2E를 검증한다.
+10. 공개 지원 Runtime마다 Projection을 검증하는 것은 V1 Alpha 품질 범위다.
 11. 모든 Runtime 동시 지원은 V1 필수가 아니다.
 12. 수행하지 않은 Fixture를 Passed로 기록하지 않는다.
 13. P0 실패를 Known Limitation으로 우회하지 않는다.
