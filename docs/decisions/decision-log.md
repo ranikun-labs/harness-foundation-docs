@@ -737,6 +737,710 @@ product_released: not_verified
 
 ---
 
+## DEC-052 — Community Continuity and Pro Entry Boundary
+
+**Status:** accepted
+**Owner:** product
+**Decision type:** product
+**Decision scope:** product
+**Decision date:** 2026-07-16
+**Implementation status:** not_started
+**Reviewed at:** 2026-07-16
+
+### Decision Scope
+
+```text
+Scope in:
+- V2 CLI 업데이트 후 Anonymous Community 지속 원칙
+- Update, Login, Subscription, Authentication, Entitlement의 Product 경계
+- Pro 기능 진입 시 Authentication 요구 경계
+- Signed-in Free의 Product-facing 의미
+- Subscription 종료 후 Community와 Local 데이터 유지 원칙
+
+Scope out:
+- Authentication State Schema
+- Subscription State Schema
+- Trial State Schema
+- Entitlement State Schema
+- Quota Schema
+- Local Data State Schema
+- Token 발급·저장
+- OAuth Provider 선택
+- Billing Provider와 가격
+- Trial 기간과 무료 사용량
+- Update Check 구현
+```
+
+### Context
+
+```text
+DEC-001은 V1을 Cloud·Auth·Billing·Entitlement 없이 완결되는
+무료 Local-only Artifact Product로 정의했다.
+
+DEC-003은 V1 / V2 / V3 제품 경계를 분리하면서
+V2를 개인 Pro Control Plane으로 표현했다.
+
+DEC-051은 Lean V1을 Local Manual Artifact Workflow로 재정의하고
+Managed Workflow와 Runtime Invocation을 V2로 이동했다.
+
+이후 V2 CLI와 Commercialization을 논의할 때
+V2 업데이트가 곧 Login 요구 또는 Subscription 요구로 읽힐 수 있다.
+이 해석은 Community 확산, Local-first 원칙,
+Billing·Entitlement 장애 시 기본 기능 유지 원칙과 충돌한다.
+```
+
+### Problem
+
+```text
+Update, Login, Subscription, Authentication, Entitlement를
+하나의 Funnel 단계처럼 고정하면 다음 문제가 생긴다.
+
+- V1 Community 사용자가 V2 CLI로 업데이트하는 순간 Login을 강제받는 것으로 오해된다.
+- Login이 곧 유료 Subscription 또는 Pro 권한으로 오해된다.
+- Entitlement 실패가 Local 데이터 삭제나 Community 차단 권한으로 확대될 수 있다.
+- Signed-in Free가 내부 데이터 모델의 단일 영구 상태로 고정될 위험이 있다.
+```
+
+### Options Considered
+
+```text
+Option A:
+V2 CLI 사용을 Login과 Subscription 진입점으로 통합한다.
+
+결과:
+Commercial Funnel은 단순하지만
+Community Local 사용 지속성과 Local-first 신뢰가 약해진다.
+
+Option B:
+V2 CLI 업데이트, Login, Subscription을 분리하고
+Pro 기능 진입 시점에만 Authentication을 요구한다.
+
+결과:
+Anonymous Community를 유지하면서도
+Pro 기능, Trial, 구매 확인, Device 확인을 위한 Account 경로를 열 수 있다.
+```
+
+### Decision
+
+```text
+V2 CLI로 업데이트해도 Anonymous Community 사용은 유지한다.
+
+Community Local 기능은 Login 없이 사용 가능하다.
+
+Update
+≠ Login
+
+Login
+≠ Subscription
+
+Authentication
+≠ Entitlement
+
+Community Access
+≠ Authentication Required
+
+Subscription Expiration
+≠ Community Access Removal
+```
+
+Anonymous Community:
+
+```text
+- 계정 없음
+- 로그인 없음
+- Community Local 기능 사용 가능
+- V2 CLI 업데이트 후에도 사용 유지
+- Billing·Entitlement 서버 장애와 무관하게 기본 기능 유지
+```
+
+Pro Entry:
+
+```text
+사용자가 Pro 기능에 진입할 때 Authentication을 요구할 수 있다.
+Authentication은 Identity 확인이며,
+Pro Commercial Access 또는 Subscription 자체가 아니다.
+```
+
+Signed-in Free:
+
+```text
+Signed-in Free는 Product-facing 상태로 제공할 수 있다.
+
+의미:
+- Authentication 완료
+- 활성 유료 Subscription 없음
+- Community 기능 유지
+- Trial·Account·Device·구매 권한 확인 기능에 접근 가능
+```
+
+Signed-in Free는 다음 단일 영구 상태 필드로 고정하지 않는다.
+
+```text
+user_status = SIGNED_IN_FREE
+```
+
+후속 Architecture Decision은 내부 개념을 최소 다음 축으로 분리해야 한다.
+
+```text
+Identity:
+anonymous | authenticated
+
+Commercial Access:
+community | trial | pro | future power
+```
+
+Subscription Exit:
+
+```text
+구독 종료
+→ 로컬 사용자 데이터 삭제 금지
+→ 기존 데이터 열람 유지
+→ Community 기능 유지
+→ 신규 Pro 관리 작업만 제한 가능
+```
+
+```text
+Entitlement
+≠ Local 데이터 소유권
+≠ 사용자 파일 삭제 권한
+```
+
+Trial과 제한된 무료 Pro 사용량은 제공할 수 있으나
+Trial·Quota는 변경 가능한 Launch Policy다.
+Community 기능은 Trial·Quota와 독립이다.
+
+구체 Trial 기간, 무료 사용량, Grace 기간, 가격,
+Founding 조건은 이 Decision에 고정하지 않는다.
+
+### Rationale
+
+```text
+Community는 Local Manual Workflow 확산과 신뢰의 기반이다.
+
+V2 CLI 업데이트를 Login 또는 Subscription과 결합하면
+기존 Community 사용자는 업데이트 자체를 위험한 상업 Funnel로 인식할 수 있다.
+
+Pro 기능 진입 시 Authentication을 요구하면
+상업 기능과 Account 기능을 제공하면서도
+기본 Local Community 사용을 계속 보장할 수 있다.
+
+Signed-in Free를 Product-facing 언어로 허용하되
+내부 모델을 Identity와 Commercial Access로 분리하면
+Account, Trial, Quota, Entitlement, Local Data Access를
+하나의 취약한 상태열로 합치는 문제를 피할 수 있다.
+```
+
+### Consequences
+
+```text
+V2 Commercial Funnel은 다음 순서를 따른다.
+
+V1 Community 사용자
+→ V2 출시 안내
+→ 사용자가 V2 CLI로 Update
+→ Community 기능은 로그인 없이 계속 사용
+→ 사용자가 Pro 기능 진입
+→ Authentication 요구
+→ Signed-in Free
+→ Trial 또는 제한적 Pro 사용 가능
+→ Subscription 선택
+→ Pro Commercial Access
+```
+
+```text
+Billing 또는 Entitlement 서버 장애는
+Community Local 기능을 차단하지 않는다.
+
+Subscription 종료 또는 Entitlement 실패는
+기존 Local Artifact, Repository, Result, Diff, Journal 삭제 권한이 아니다.
+
+신규 Pro 관리 작업의 제한은 가능하지만
+기존 데이터 열람과 Community Local 사용은 유지한다.
+```
+
+### Risks
+
+```text
+Account UX에서 Signed-in Free와 Pro Access를 명확히 설명하지 않으면
+사용자는 로그인했는데 왜 Pro 기능이 제한되는지 혼동할 수 있다.
+
+후속 Architecture Decision에서 상태 축을 다시 합치면
+이 Product Boundary가 약화된다.
+
+Trial·Quota·가격을 운영 실험으로 남기기 때문에
+Launch 시점에는 별도 Private Launch Experiment Policy가 필요하다.
+```
+
+### Non-goals
+
+```text
+Authentication State Schema 정의
+Subscription State Schema 정의
+Trial State Schema 정의
+Entitlement State Schema 정의
+Quota Schema 정의
+Local Data State Schema 정의
+OAuth Provider 선택
+Token Lifecycle 정의
+Billing Provider 선택
+가격 확정
+Trial 기간 확정
+일일 무료량 확정
+Update Check 구현
+```
+
+### Status Separation
+
+```text
+decision_accepted: true
+implementation_completed: not_started
+implementation_status: not_started
+runtime_supported: not_verified
+runtime_support_status: not_supported
+fixture_passed: not_verified
+fixture_status: not_verified
+product_released: not_released
+product_release_status: not_released
+```
+
+### Affected Documents
+
+```text
+docs/master/product-architecture-master.md
+docs/product/development-harness-report.md
+docs/roadmap/product-roadmap.md
+docs/architecture/local-cloud-human-boundary.md
+```
+
+### Supersession
+
+```text
+supersedes: []
+superseded_by: []
+partial_supersedes:
+  - DEC-003
+full_supersession: none
+```
+
+Partial Supersession 범위:
+
+```text
+DEC-003:
+  remaining_valid_scope:
+    - V1 / V2 / V3 경계를 섞지 않는 원칙
+    - V2 기능은 POC와 별도 Product Decision을 거쳐 확정한다는 원칙
+    - V3는 Workspace / Project / Team Product라는 방향
+  superseded_scope:
+    - V2가 곧 Pro 전용 상품이며
+      V2 CLI 업데이트가 Login 또는 Subscription 진입과 동일하다는 해석
+  reason:
+    - V2 CLI 업데이트와 Pro Commercial Funnel을 분리해
+      Anonymous Community 지속성을 보장해야 한다.
+  replacement_rule:
+    - V2 CLI 업데이트는 Community 사용을 차단하지 않는다.
+    - Login은 Pro 기능 진입 또는 Account 기능 사용 시 요구할 수 있다.
+    - Subscription과 Entitlement는 Authentication과 별도 Commercial Access 판단이다.
+```
+
+Clarification:
+
+```text
+DEC-016:
+  Authentication은 Availability 또는 Identity 경계와 관련되며
+  Entitlement와 동일하지 않다.
+  Entitlement는 Commercial Access 판단이지 Local 데이터 소유권이 아니다.
+```
+
+### References
+
+```text
+DEC-001
+DEC-003
+DEC-016
+DEC-051
+docs/architecture/local-cloud-human-boundary.md
+docs/contracts/execution-policy-contract.md
+docs/contracts/runtime-capability-contract.md
+```
+
+---
+
+## DEC-053 — V2 Commercial Tier Boundary
+
+**Status:** accepted
+**Owner:** product
+**Decision type:** product
+**Decision scope:** product
+**Decision date:** 2026-07-16
+**Implementation status:** not_started
+**Reviewed at:** 2026-07-16
+
+### Decision Scope
+
+```text
+Scope in:
+- Architecture Version과 Commercial Tier 분리
+- Community / Signed-in Free / Pro / future Power 상품 경계
+- Pro의 Local Managed Workflow 가치 정의
+- future Power의 개인용 Cloud·Automation 후보 경계
+- V3 Team / Workspace / Organization Governance 경계
+- 기존 V2 Roadmap의 Cloud·Remote·Automation 후보 재배치
+
+Scope out:
+- Power 최종 상품명
+- Power 가격과 출시 시점
+- Cloud Sync 구현
+- Remote Runtime 구현
+- Worker Automation 구현
+- Team / Enterprise 구현
+- Auth·Billing·Entitlement 상세 Architecture
+```
+
+### Context
+
+```text
+기존 Roadmap은 V1 Community, V2 Pro, V3 Team / Enterprise로
+제품 버전을 설명했다.
+
+이 표현은 단순하지만 Architecture Version과 Commercial Tier가
+동일한 축처럼 읽힐 수 있다.
+
+DEC-051 이후 V1은 Local Manual Artifact Workflow로 확정됐고,
+Managed Task, Session Linking, Managed Result Return,
+Runtime Invocation은 V2로 이동했다.
+
+동시에 DEC-041, DEC-042, DEC-043, DEC-044는
+Remote Execution, Cloud Result Store, Team Product,
+Organization Policy·RBAC·SSO를 후속 또는 V3로 분리했다.
+```
+
+### Problem
+
+```text
+V2를 Pro와 동일시하면 다음 혼선이 생긴다.
+
+- V2 CLI를 설치하면 Community가 사라지는 것으로 오해된다.
+- Cloud Sync, Cross-device Resume, Cloud Backup, Web Review가
+  최초 Pro 범위처럼 읽힌다.
+- 개인 Remote Worker와 조직 공유 Worker가 같은 V3 기능처럼 섞인다.
+- Power 같은 상위 개인용 상품 후보가 새 Architecture Version으로 오해된다.
+```
+
+### Options Considered
+
+```text
+Option A:
+V1 Community / V2 Pro / V3 Enterprise라는 단일 축을 유지한다.
+
+결과:
+문구는 단순하지만 제품 출시, Architecture Evolution,
+Commercial Packaging이 계속 충돌한다.
+
+Option B:
+Architecture Version과 Commercial Tier를 분리한다.
+
+결과:
+V2 CLI에서도 Community를 유지하면서
+Pro와 future Power를 같은 V2/V2.x Architecture 위의
+상업 Tier로 배치할 수 있다.
+```
+
+### Decision
+
+Architecture Version:
+
+```text
+V1
+= Local Manual Artifact Workflow
+
+V2
+= Personal Managed Workflow Architecture
+
+V3
+= Team / Workspace / Organization Governance Architecture
+```
+
+Commercial Tier:
+
+```text
+Community
+Signed-in Free
+Pro
+future Power
+```
+
+다음 비동치를 유지한다.
+
+```text
+V1
+≠ Community만 의미하는 상품 Tier
+
+V2
+≠ Pro만 의미하는 상품 Tier
+
+Power
+≠ 새로운 Architecture Version
+
+Power
+≠ V3
+
+V3
+= Team / Organization Governance Architecture
+```
+
+### Commercial Tier Boundary
+
+Community:
+
+```text
+= Local Manual Workflow
++ 로그인 없음
++ Structured Handoff Candidate
++ Result Basic
++ Human Review
++ 수동 Copy/Paste
+```
+
+Community는 Lean V1에서 처음 제공되지만
+V2 CLI에서도 제거되지 않는다.
+
+Signed-in Free:
+
+```text
+= Authentication 완료
++ 활성 유료 Subscription 없음
++ Community 기능 유지
++ Trial·Account·Device·구매 권한 확인 기능 접근
+```
+
+Signed-in Free는 Product-facing 상태이며
+내부 영구 Schema는 후속 Architecture Decision 범위다.
+
+Pro:
+
+```text
+= Authentication 필요
++ Pro Commercial Access 필요
++ Local Managed Workflow
++ 관리·검증
++ Handoff Validation
++ Result Validation
++ Handoff와 Result 비교
++ Local Task 관리
++ Local History / Search
++ 같은 장비에서 Agent Switch
++ Project Profile
+```
+
+Pro의 핵심 가치는 다음이다.
+
+```text
+Local Workflow의 관리와 검증
+```
+
+future Power:
+
+```text
+= 향후 개인용 상위 Commercial Tier 후보
++ Encrypted Cloud Sync 후보
++ Cross-device Resume 후보
++ Cloud Backup·Restore 후보
++ Web Review 후보
++ 개인용 Remote Worker 후보
++ 고급 자동화 후보
+```
+
+Power의 핵심 가치는 다음이다.
+
+```text
+기기 간 동기화·복구와 개인용 고급 자동화
+```
+
+다음은 확정하지 않는다.
+
+```text
+Power라는 최종 상품명
+Power 가격
+Power 출시 시점
+모든 Remote Runtime 기능의 Power 편입
+```
+
+V3:
+
+```text
+= Team
++ Workspace
++ Organization
++ RBAC
++ Audit
++ Enterprise Governance
++ 조직 공유 Worker
++ 조직 Policy
+```
+
+```text
+개인 Remote Worker
+= Power 후보
+
+조직 공유 Worker·RBAC·Audit
+= V3
+```
+
+### Rationale
+
+```text
+Architecture Version은 제품이 어떤 관리 책임과 실행 모델을
+지원할 수 있는지를 나타낸다.
+
+Commercial Tier는 같은 Architecture 위에서
+사용자에게 어떤 가치와 권한을 포장해 제공하는지를 나타낸다.
+
+두 축을 분리하면 V2 CLI에서도 Community를 유지하면서
+Pro는 Local Managed Workflow의 관리·검증 가치에 집중하고,
+Cloud Sync와 Cross-device Resume 같은 고비용 기능은
+future Power 후보로 늦출 수 있다.
+
+V3는 개인용 상위 기능이 아니라
+조직 Governance와 Enterprise 책임이 필요한 단계로 유지된다.
+```
+
+### Consequences
+
+```text
+최초 Pro는 Local Managed Workflow의 관리·검증 기능을 중심으로 한다.
+
+Cloud Sync, Cross-device Resume, Cloud Backup·Restore,
+Web Review, 개인 Remote Worker, 고급 자동화는
+future Power 후보로 재배치한다.
+
+Organization 공유 Worker, RBAC, Audit, SSO,
+Organization Policy는 V3 경계에 남긴다.
+
+V2 Technical Core 또는 POC 문서에 기능이 존재한다는 사실은
+해당 기능이 Pro Launch에 포함된다는 의미가 아니다.
+```
+
+### Risks
+
+```text
+Commercial Tier와 Architecture Version을 분리하면
+Roadmap 설명이 길어진다.
+
+Power 후보를 열어두면 Launch 전 상품명과 가격 논의가
+Product Boundary보다 앞설 위험이 있다.
+
+Pro에서 Cloud Sync를 제외하면
+Cross-device 기대가 큰 사용자에게는 가치 설명을 별도로 준비해야 한다.
+```
+
+### Non-goals
+
+```text
+Power 상품명 확정
+Power 가격 확정
+Power 출시 시점 확정
+Trial 기간 확정
+무료 Pro 사용량 확정
+Remote Runtime 구현
+Cloud Sync 구현
+Billing Provider 선택
+Organization Governance 구현
+```
+
+### Status Separation
+
+```text
+decision_accepted: true
+implementation_completed: not_started
+implementation_status: not_started
+runtime_supported: not_verified
+runtime_support_status: not_supported
+fixture_passed: not_verified
+fixture_status: not_verified
+product_released: not_released
+product_release_status: not_released
+```
+
+### Affected Documents
+
+```text
+docs/master/product-architecture-master.md
+docs/product/development-harness-report.md
+docs/roadmap/product-roadmap.md
+docs/architecture/shared-core-and-extensions.md
+```
+
+### Supersession
+
+```text
+supersedes: []
+superseded_by: []
+partial_supersedes:
+  - DEC-003
+  - DEC-041
+full_supersession: none
+```
+
+Partial Supersession 범위:
+
+```text
+DEC-003:
+  remaining_valid_scope:
+    - V1 / V2 / V3 제품 경계를 섞지 않는 원칙
+    - V2 기능은 별도 Product Decision을 거쳐 확정한다는 원칙
+    - V3는 Team Product 방향이라는 원칙
+  superseded_scope:
+    - V1 / V2 / V3를 Community / Pro / Team Commercial Tier와
+      동일 축으로 해석하는 범위
+  reason:
+    - Architecture Evolution과 Commercial Packaging이 서로 다른 축이기 때문이다.
+  replacement_rule:
+    - V1 / V2 / V3는 Architecture Version이다.
+    - Community / Signed-in Free / Pro / future Power는 Commercial Tier다.
+    - future Power는 새 Architecture Version이 아니며 V3도 아니다.
+
+DEC-041:
+  remaining_valid_scope:
+    - Remote Runtime Execution은 Local Invocation POC와 분리한다.
+    - Local Invocation 검증 전 Remote Execution 도입 금지
+  superseded_scope:
+    - Remote Execution의 Product Tier 배치가 미정인 범위
+  reason:
+    - 개인 Remote Worker와 조직 공유 Worker는 보안·권한·사용자 가치가 다르다.
+  replacement_rule:
+    - 개인 Remote Worker는 future Power 후보로 검토한다.
+    - 조직 공유 Worker, RBAC, Audit은 V3 Governance 경계에 남긴다.
+```
+
+Clarification:
+
+```text
+DEC-043:
+  Team / Workspace / Organization Product 구현은 V3로 유지한다.
+
+DEC-044:
+  Organization Policy·RBAC·SSO는 V3 Enterprise 경계로 유지한다.
+
+DEC-051:
+  V2로 이동한 Managed 기능은 Architecture 후보이며,
+  모든 V2 기능이 최초 Pro 또는 future Power Launch 범위라는 의미가 아니다.
+```
+
+### References
+
+```text
+DEC-003
+DEC-041
+DEC-043
+DEC-044
+DEC-051
+docs/master/product-architecture-master.md
+docs/roadmap/product-roadmap.md
+docs/architecture/shared-core-and-extensions.md
+```
+
+---
+
 # Part II. Architecture Decisions
 
 ## DEC-005 — Shared Platform과 Domain Extension 책임을 분리한다

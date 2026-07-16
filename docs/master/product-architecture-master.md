@@ -29,7 +29,7 @@ source_inputs: []
 다음 질문에 대한 통합 답변을 제공한다.
 
 1. 이 제품군이 해결하려는 문제는 무엇인가
-2. V1, V2, V3는 각각 어떤 상품인가
+2. V1, V2, V3 Architecture Version과 Commercial Tier는 어떻게 다른가
 3. Development Harness와 Finance Harness는 어떤 관계인가
 4. Shared Platform과 Shared Core는 무엇인가
 5. Local, Cloud, Human은 각각 무엇을 담당하는가
@@ -223,9 +223,15 @@ Shared Platform
 
 ```text
 Development Harness
-├── V1 Community Local Workflow
-└── V2 Pro Managed Workflow
-    └── V3 Team / Enterprise Governance
+├── V1 Local Manual Workflow Architecture
+├── V2 Personal Managed Workflow Architecture
+└── V3 Team / Enterprise Governance Architecture
+
+Commercial Tiers
+├── Community
+├── Signed-in Free
+├── Pro
+└── future Power
 
 Finance Harness
 ├── Learn
@@ -351,19 +357,56 @@ Trace
 
 ## 7. 버전 전략 개요
 
+Architecture Version:
+
 ```text
-V1 Community
-= 무료 Local Artifact Workflow
+V1
+= Local Manual Artifact Workflow
 
-V2 Pro
-= Task ID 중심 Managed Workflow
-= Local Execution Runtime + Private Cloud Control Plane
+V2
+= Personal Managed Workflow Architecture
+= Local Managed Workflow와 관리·검증 기능
 
-V3 Team / Enterprise
-= Workspace / Project / Organization Governance
+V3
+= Team / Workspace / Organization Governance Architecture
+```
+
+Commercial Tier:
+
+```text
+Community
+= 로그인 없는 Local Manual Workflow
+
+Signed-in Free
+= Authentication 완료
++ 활성 유료 Subscription 없음
++ Community 기능 유지
+
+Pro
+= Local Managed Workflow의 관리·검증
+
+future Power
+= 개인용 Cloud Sync·복구·고급 자동화 후보
+```
+
+다음 비동치를 유지한다.
+
+```text
+V2
+≠ Pro만 의미하는 상품 Tier
+
+Power
+≠ V3
+
+Update
+≠ Login
+
+Login
+≠ Subscription
 ```
 
 버전 차이는 기능 개수보다 관리 책임의 수준으로 구분한다.
+Commercial Tier는 같은 Architecture 위에서 제공되는 상품 포장과 사용 권한을 의미한다.
 
 이후 V1, V2, V3 섹션은 각 버전의 목표 제품 경계를 정의한다.
 문서에 기능이 포함돼 있다는 사실은 현재 Repository에 구현 완료됐다는 의미가 아니다.
@@ -378,7 +421,7 @@ docs/product/v1-completion-criteria.md
 | 버전 | 핵심 관리 단위 | 실행 | Cloud | 사람 역할 |
 |---|---|---|---|---|
 | V1 | Markdown Artifact | 수동 실행 | 없음 | 전달·검수·반영 |
-| V2 | Task / Run / Result Entity | Local Runtime | Managed Metadata·Candidate | 승인·Accept/Edit/Reject |
+| V2 | Task / Run / Result Entity | Local Runtime | 선택적 Managed Metadata·Candidate | 승인·Accept/Edit/Reject |
 | V3 | Workspace / Project / Organization | Policy 기반 Local/Managed | 조직 Governance | 조직 정책·감사·승인 |
 
 ---
@@ -498,19 +541,28 @@ V1에 Database, Global ID, Lifecycle State Machine을 도입하지 않는다.
 
 ---
 
-## 9. V2 Pro
+## 9. V2 Personal Managed Workflow와 Pro
 
 ## 9.1 제품 정의
 
-V2는 개인 사용자를 위한 Task ID 중심 Managed Workflow다.
+V2는 개인 사용자를 위한 Task ID 중심 Managed Workflow Architecture다.
 
 ```text
-V2 Pro
-= Local Execution Runtime
-+ Private Cloud Control Plane
+V2 Architecture
+= Local Managed Workflow
++ Task / Run / Result Entity
++ Human Review
++ 선택적 Managed Metadata
 ```
 
-V2부터 Handoff와 Result가 단순 문서에서 관리형 Entity로 승격된다.
+Pro는 V2 Architecture 위에서 제공되는 Commercial Tier다.
+Pro의 핵심 가치는 Local Workflow의 관리와 검증이다.
+
+V2 CLI로 업데이트해도 Community Local 기능은 로그인 없이 유지된다.
+Authentication은 Pro 기능 진입 시 요구할 수 있으며,
+Login은 Subscription 또는 Entitlement와 동일하지 않다.
+
+V2 Managed Workflow에서는 Handoff와 Result가 단순 문서에서 관리형 Entity로 승격될 수 있다.
 
 ```text
 WorkItem / Task
@@ -562,8 +614,6 @@ Main
 ## 9.3 V2 Core Launch
 
 ```text
-User / Auth / Device
-Entitlement
 Task Identity
 Worker Task
 SessionBinding
@@ -574,6 +624,20 @@ Parent–Child Linking
 Human Review
 Minimal Metadata Sync
 ```
+
+Commercial Pro Launch에서는 다음이 추가될 수 있다.
+
+```text
+Authentication
+User-bound Device
+Pro Commercial Access
+Entitlement Check
+Subscription
+Billing
+Usage / Quota
+```
+
+위 항목은 Local Invocation PoC 또는 V2 Technical Core의 선결 조건이 아니다.
 
 ## 9.4 V2 Expansion
 
@@ -602,13 +666,34 @@ Automation Candidate
 
 Learning Loop과 Managed Memory를 V2 최초 출시의 선결 조건으로 만들지 않는다.
 
+## 9.6 future Power 후보
+
+future Power는 새 Architecture Version이 아니다.
+V2 또는 V2.x Architecture 위에 올라갈 수 있는 향후 상위 Commercial Tier 후보이다.
+
+후보:
+
+```text
+Encrypted Cloud Sync
+Cross-device Resume
+Cloud Backup / Restore
+Web Review
+개인용 Remote Worker
+고급 자동화
+```
+
+Power라는 최종 상품명, 가격, 출시 시점은 확정하지 않는다.
+조직 공유 Worker, RBAC, Audit, Organization Policy는 V3에 남긴다.
+
 ---
 
 ## 10. V2 기술 PoC와 상품 출시의 구분
 
 상품 정의와 기술 검증 순서는 다르다.
 
-V2 상품은 Auth와 Entitlement를 포함하는 Pro 제품이다.
+V2 Architecture는 Pro Commercial Tier와 동일하지 않다.
+Pro 기능 진입에는 Auth와 Entitlement가 필요할 수 있지만
+V2 CLI 업데이트 자체는 Login 또는 Subscription을 요구하지 않는다.
 
 그러나 구현 검증은 다음 순서로 진행할 수 있다.
 
@@ -646,15 +731,22 @@ local_execution_reference
 ### 10.3 Commercialization
 
 ```text
-12. Auth
-13. Entitlement
-14. Subscription
-15. Billing
-16. Package Channel
-17. Offline Grace
+12. Pro 기능 진입
+13. Authentication
+14. Signed-in Free
+15. Trial 또는 제한적 Pro 사용
+16. Subscription 선택
+17. Pro Commercial Access
+18. Package Channel 후보
+19. Offline Grace 후보
 ```
 
 Identity Platform 완성은 Local Invocation PoC의 선결 조건이 아니다.
+구체 Trial 기간, 무료 사용량, Grace 기간, 가격은 이 문서에 고정하지 않는다.
+
+Subscription 종료는 Local 데이터 삭제 권한이 아니다.
+기존 데이터 열람과 Community 기능은 유지하며,
+신규 Pro 관리 작업만 제한할 수 있다.
 
 ---
 
