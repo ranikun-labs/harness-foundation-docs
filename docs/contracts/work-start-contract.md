@@ -739,7 +739,78 @@ Branch와 Commit이 확인되지 않으면 `unknown`으로 기록한다.
 
 # Part VI. Human Review
 
-## 24. Review 대상
+## 24. Runtime Entry and Consent
+
+Canonical Product Action:
+
+```text
+canonical_action_id: work-start
+```
+
+Entry mode:
+
+```text
+explicit
+suggested
+```
+
+Approval:
+
+```text
+not_required
+pending
+accepted
+declined
+```
+
+허용 조합:
+
+```text
+explicit + not_required
+suggested + accepted
+```
+
+거부 조합:
+
+```text
+suggested + pending
+suggested + declined
+```
+
+의미:
+
+```text
+explicit + not_required
+→ 사용자가 Runtime Entry를 명시 호출했으므로 Work-start Engine 실행 가능
+
+suggested + pending
+→ Suggestion Candidate만 표시
+→ Engine 호출 금지
+→ Artifact 생성 금지
+
+suggested + accepted
+→ 사용자가 제안을 승인했으므로 Work-start Engine 실행 가능
+
+suggested + declined
+→ Engine 호출 금지
+→ Artifact 생성 금지
+→ 동일 사용자 요청에 재제안 금지
+```
+
+Intent Detection은 실행 권한이 아니다.
+
+```text
+Intent Match
+≠ User Consent
+≠ Engine Invocation
+```
+
+`make work-start TASK="..."`는 공통 Engine의 내부 Developer Interface다.
+사용자용 Product Entry는 Runtime Adapter가 제공한다.
+
+---
+
+## 25. Review 대상
 
 사용자는 다음을 검토할 수 있어야 한다.
 
@@ -757,7 +828,7 @@ Handoff Seed
 
 ---
 
-## 25. Review 결과
+## 26. Review 결과
 
 ```text
 accept_seed
@@ -782,7 +853,7 @@ Result Review
 = 작업 수행 후 결과 검수
 ```
 
-## 26. Human Review: Choose the Next Step
+## 27. Human Review: Choose the Next Step
 
 Work-start는 다음 행동을 결정하지 않습니다.
 
@@ -845,7 +916,7 @@ Planning 자동 실행
 Handoff 자동 승인
 ```
 
-## 27. External Context Checkpoint
+## 28. External Context Checkpoint
 
 External Context Checkpoint는 시스템이 확인한 Fact가 아니라,
 사용자가 확인할 수 있는 후보 목록이다.
@@ -881,7 +952,7 @@ Work-start는 이를 자동 검색 결과나 confirmed fact로 표현하지 않�
 
 ---
 
-## 28. 자동 실행 금지
+## 29. 자동 실행 금지
 
 다음은 Human Review 이전에 수행하지 않는다.
 
@@ -900,7 +971,7 @@ Project Context Promotion
 
 # Part VII. Error and Failure
 
-## 29. 오류 상태
+## 30. 오류 상태
 
 ```text
 invalid_input
@@ -930,7 +1001,7 @@ Repository와 다른 파일을 수정하지 않음
 
 ---
 
-## 30. Partial Output
+## 31. Partial Output
 
 Partial Output은 다음을 명시해야 한다.
 
@@ -946,7 +1017,7 @@ recommended_next_action
 
 ---
 
-## 31. Repository 변경 금지
+## 32. Repository 변경 금지
 
 Work-start는 기본적으로 다음을 수정하지 않는다.
 
@@ -970,7 +1041,7 @@ Remote
 
 # Part VIII. Validation
 
-## 32. Contract Validation
+## 33. Contract Validation
 
 최소 Validation:
 
@@ -997,7 +1068,7 @@ Git Index 또는 Repository Metadata를 수정하지 않는가
 
 ---
 
-## 33. 최소 Fixture
+## 34. 최소 Fixture
 
 ### 정상 입력
 
@@ -1083,7 +1154,7 @@ Execution Policy Candidate가 최종 Policy로 승격되지 않음
 
 ---
 
-## 34. 완료 조건
+## 35. 완료 조건
 
 Work-start Contract 완료 조건:
 
@@ -1114,7 +1185,7 @@ Repository 수정 없음
 
 # Part IX. Non-goals
 
-## 35. V1 비목표
+## 36. V1 비목표
 
 ```text
 Managed Task Entity
@@ -1132,7 +1203,7 @@ Runtime Recommendation Service
 
 ---
 
-## 36. 채택하지 않는 방향
+## 37. 채택하지 않는 방향
 
 ### Work-start가 모든 Context를 자동 수집
 
@@ -1158,7 +1229,7 @@ Task-scoped Candidate와 Durable Context를 구분한다.
 
 # Part X. Open Decisions
 
-## 37. 미결정 사항
+## 38. 미결정 사항
 
 1. Work-start Summary의 정확한 파일명
 2. Markdown과 YAML 병행 여부
@@ -1179,7 +1250,7 @@ Task-scoped Candidate와 Durable Context를 구분한다.
 
 ---
 
-## 38. 불변조건
+## 39. 불변조건
 
 1. Work-start는 Candidate 생성 단계다.
 2. Work-start는 Local-only로 동작 가능해야 한다.
@@ -1198,7 +1269,7 @@ Task-scoped Candidate와 Durable Context를 구분한다.
 
 ---
 
-## 39. 관련 문서
+## 40. 관련 문서
 
 ```text
 docs/product/v1-completion-criteria.md
@@ -1212,7 +1283,7 @@ docs/testing/v1-fixture-plan.md
 
 ---
 
-## 40. 검수 관점
+## 41. 검수 관점
 
 ### 제품
 

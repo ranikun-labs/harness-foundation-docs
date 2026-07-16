@@ -119,6 +119,9 @@ Availability는 Local 환경 점검 결과로 별도 표현할 수 있지만 Cap
 11. Capability는 사용자 결제·플랜 권한을 표현하지 않는다.
 12. Capability Metadata가 없다고 Runtime 실행 자체를 자동 차단하지 않는다.
 13. 단, 지원을 증명할 수 없는 기능은 `unknown` 또는 `unsupported`로 처리한다.
+14. Runtime Entry Capability는 Engine 실행 동의와 분리한다.
+15. Intent Detection Capability는 User Consent가 아니다.
+16. Suggestion만으로 Work-start Artifact를 생성하지 않는다.
 
 ---
 
@@ -1325,6 +1328,52 @@ Structured Result 직접 지원과 Manual Conversion 분리
 Semantic Preservation
 ```
 
+Runtime Entry Capability:
+
+```text
+explicit_entry
+suggestion
+confirmation
+command_discovery
+session_suppression
+artifact_path_display
+```
+
+의미:
+
+```text
+explicit_entry
+= 사용자가 Runtime에서 Work-start Product Action을 명시 호출할 수 있음
+
+suggestion
+= Runtime Adapter가 자연어 Intent에 대해 Work-start를 제안할 수 있음
+  단, Engine 호출이나 Artifact 생성을 의미하지 않음
+
+confirmation
+= Runtime Adapter가 제안에 대한 사용자 승인 또는 거절을 구분할 수 있음
+
+command_discovery
+= 사용자가 Runtime 안에서 Work-start Entry를 발견할 수 있음
+
+session_suppression
+= 사용자가 거절한 동일 요청에 대해 재제안을 억제할 수 있음
+
+artifact_path_display
+= 실행 후 실제 생성된 Work-start Artifact 경로를 표시할 수 있음
+```
+
+Runtime Display Name과 구체 문법은 Adapter가 결정한다.
+
+```text
+Claude Code:
+  display example: /work-start
+
+Codex:
+  display example: $work-start 또는 /skills → work-start
+```
+
+Product Contract는 slash 문법을 canonical requirement로 고정하지 않는다.
+
 ---
 
 ## 44. Positive Fixture
@@ -1353,6 +1402,17 @@ Manual Step 존재
 → Result Basic
 ```
 
+### Runtime Entry Capability
+
+```text
+최소 1개 Runtime
+→ explicit_entry supported
+→ suggestion supported 또는 documented fallback
+→ confirmation supported 또는 explicit follow-up fallback
+→ command_discovery supported
+→ artifact_path_display supported
+```
+
 ---
 
 ## 45. Negative Fixture
@@ -1372,6 +1432,9 @@ Projection이 Do Not Touch 약화
 Evidence 없는 supported 판정
 Availability unavailable을 Capability unsupported로 영구 저장
 Human Approval을 Conditional Capability 조건으로 기록
+Intent Detection을 User Consent로 기록
+Suggestion만으로 Engine Invocation supported 처리
+Suggestion만으로 Artifact 생성
 현재 Runtime 미설치를 Unsupported로 기록
 Authentication 부재를 Capability Unsupported로 기록
 Evidence 없는 Unsupported 판정
@@ -1444,6 +1507,8 @@ Implementation 완료:
 ```text
 최소 1개 Runtime Metadata 작성
 지원 Runtime별 Projection 구현
+최소 1개 Runtime Entry 구현
+Runtime-specific Manual E2E 통과
 Compatibility Report 생성
 Capability / Policy 충돌 검사
 Advertised Runtime Gate

@@ -883,6 +883,10 @@ V1에서는 위 표현을 사용하지 않는다.
 
 V1은 하나의 Runtime만으로도 완결 가능해야 한다.
 
+사용자용 Product Entry는 Runtime Adapter가 제공한다.
+`make work-start TASK="..."`는 내부 Engine·Developer Interface로 유지하며,
+사용자용 Runtime Entry 완료를 대체하지 않는다.
+
 필수 데모:
 
 ```text
@@ -902,6 +906,13 @@ Claude와 Codex를 동시에 사용해야만 V1 가치가 성립해서는 안 �
 완료 조건:
 
 - 최소 1개 V1 지원 Runtime 설치
+- 최소 1개 V1 지원 Runtime에서 사용자용 Work-start Entry 제공
+- 명시적 사용자 Entry가 공통 Work-start Engine을 호출
+- 자연어 Intent 감지는 Suggestion Candidate로만 표시
+- 사용자 승인 전 Engine 호출과 Artifact 생성 없음
+- 사용자 승인 후 공통 Work-start Engine 실행
+- 사용자 Skip 또는 Decline 시 Engine 호출과 Artifact 생성 없음
+- 실행 결과에 Artifact 경로 표시
 - Work-start 실행
 - Handoff 생성
 - Runtime 실행
@@ -950,6 +961,7 @@ Manual Result Return Flow
 Minimum Per-feature Fixtures
 Good / Bad Artifact Examples
 Manual End-to-End Pass
+Minimum Runtime Entry Manual E2E
 Truthfulness Gate
 Fresh Install 검증
 Single-runtime Quick Start
@@ -1054,6 +1066,8 @@ P2 미구현은 V1 Release를 막지 않는다.
 ### Implementation
 
 - [ ] Work-start 출력 정렬
+- [ ] 최소 1개 Runtime의 사용자용 Work-start Entry
+- [ ] Runtime Entry Consent Guard
 - [ ] Structured Handoff Candidate 생성 / Human Review / Manual Copy
 - [ ] Human Review Next Step 선택지 / Needs human review 경계
 - [ ] Result Basic 수동 Template / Human Review
@@ -1064,6 +1078,8 @@ P2 미구현은 V1 Release를 막지 않는다.
 ### Fixture
 
 - [ ] Routing Fixture
+- [ ] Runtime Entry Fixture
+- [ ] Suggestion / Approval / Decline Fixture
 - [ ] Handoff Fixture
 - [ ] Result Fixture
 - [ ] Truthfulness Fixture
@@ -1084,6 +1100,10 @@ P2 미구현은 V1 Release를 막지 않는다.
 ### Manual Verification
 
 - [ ] Fresh install
+- [ ] 명시적 Runtime Entry
+- [ ] 자연어 Suggestion 후 승인 전 Artifact 없음
+- [ ] 승인 후 Artifact 생성
+- [ ] Skip 또는 Decline 후 Artifact 없음
 - [ ] 최소 1개 Runtime의 Manual Copy/Paste flow
 - [ ] Missing Result path
 - [ ] Validation Not Performed path
@@ -1103,19 +1123,22 @@ P2 미구현은 V1 Release를 막지 않는다.
 2. Work-start가 Context와 Skill Candidate를 생성한다.
 3. Structured Handoff Candidate를 생성할 수 있다.
 4. 사용자가 Scope와 Do Not Touch를 검수할 수 있다.
-5. 사용자가 Direct Handoff / Plan First / Gather Context 중 다음 수동 단계를 선택할 수 있다.
-6. 선택 전 Candidate가 Needs human review 상태를 유지한다.
-7. 선택 결과가 자동 Planning, Connector 호출, Runtime 실행, Handoff 승인으로 이어지지 않는다.
-8. Handoff를 Worker Session에 수동 Copy/Paste로 전달할 수 있다.
-9. Worker가 Result Basic 수동 형식으로 반환할 수 있다.
-10. 사용자가 Files / Commands / Validation / Risk를 검수할 수 있다.
-11. 실행하지 않은 검증이 Pass로 표시되지 않는다.
-12. Result Basic이 Human Review 전 canonical Truth나 완료 증명으로 취급되지 않는다.
-13. 최소 Positive / Negative Fixture와 Manual E2E Demo가 존재한다.
-14. Cloud 없이 전체 흐름이 완료된다.
-15. 단일 Runtime으로 전체 흐름이 완료된다.
-16. Negative Fixture와 Manual E2E가 통과한다.
-17. Public Documentation이 실제 동작과 일치한다.
+5. 최소 1개 Runtime에서 사용자용 Work-start Entry가 제공된다.
+6. 명시적 Entry 또는 사용자 승인된 Suggestion만 Work-start Engine을 호출한다.
+7. Suggestion 또는 Decline 상태에서는 Engine 호출과 Artifact 생성이 없다.
+8. 사용자가 Direct Handoff / Plan First / Gather Context 중 다음 수동 단계를 선택할 수 있다.
+9. 선택 전 Candidate가 Needs human review 상태를 유지한다.
+10. 선택 결과가 자동 Planning, Connector 호출, Runtime 실행, Handoff 승인으로 이어지지 않는다.
+11. Handoff를 Worker Session에 수동 Copy/Paste로 전달할 수 있다.
+12. Worker가 Result Basic 수동 형식으로 반환할 수 있다.
+13. 사용자가 Files / Commands / Validation / Risk를 검수할 수 있다.
+14. 실행하지 않은 검증이 Pass로 표시되지 않는다.
+15. Result Basic이 Human Review 전 canonical Truth나 완료 증명으로 취급되지 않는다.
+16. 최소 Positive / Negative Fixture와 Manual E2E Demo가 존재한다.
+17. Cloud 없이 전체 흐름이 완료된다.
+18. 단일 Runtime으로 전체 흐름이 완료된다.
+19. Negative Fixture와 Manual E2E가 통과한다.
+20. Public Documentation이 실제 동작과 일치한다.
 ```
 
 ---

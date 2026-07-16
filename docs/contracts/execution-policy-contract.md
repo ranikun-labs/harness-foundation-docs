@@ -122,6 +122,8 @@ V1에서 Entitlement는 비범위다.
 13. Policy 변경 시 기존 승인 재사용을 금지한다.
 14. Manual Execution 전 최종 Human Gate를 유지한다.
 15. Cloud·Auth 없이 Local Artifact로 표현할 수 있어야 한다.
+16. Work-start Product Approval은 Runtime Sandbox, File Permission, Shell Approval, Network Approval, Git Approval을 우회하지 않는다.
+17. Runtime Entry Consent는 Engine Invocation 동의일 뿐, 파일 수정·명령 실행·네트워크 접근·Git 작업 승인이 아니다.
 
 ---
 
@@ -672,7 +674,60 @@ Policy / Repository State
 
 # Part V. Common Action Policies
 
-## 19. File Read
+## 19. Work-start Product Action
+
+```text
+action_id: work-start
+```
+
+Entry consent:
+
+```text
+EXPLICIT
+APPROVED
+SUGGESTED
+DECLINED
+```
+
+Policy result:
+
+```text
+EXPLICIT
+→ Work-start Engine invocation allowed
+→ Runtime File/Shell/Network/Git approvals unchanged
+
+APPROVED
+→ Work-start Engine invocation allowed
+→ Runtime File/Shell/Network/Git approvals unchanged
+
+SUGGESTED
+→ Work-start Engine invocation prohibited
+→ Artifact creation prohibited
+
+DECLINED
+→ Work-start Engine invocation prohibited
+→ Artifact creation prohibited
+→ same-request re-suggestion prohibited
+```
+
+분리:
+
+```text
+Intent Match
+≠ User Consent
+≠ Engine Invocation
+
+Work-start Product Approval
+≠ Runtime Sandbox Approval
+≠ File Permission
+≠ Shell Approval
+≠ Network Approval
+≠ Git Approval
+```
+
+---
+
+## 20. File Read
 
 기본:
 
@@ -690,7 +745,7 @@ Handoff Scope 밖 파일
 
 ---
 
-## 20. File Write
+## 21. File Write
 
 기본:
 
@@ -710,7 +765,7 @@ Tracked File overwrite
 
 ---
 
-## 21. File Delete and Rename
+## 22. File Delete and Rename
 
 기본:
 
@@ -728,7 +783,7 @@ bulk delete / recursive delete
 
 ---
 
-## 22. Shell Execution
+## 23. Shell Execution
 
 기본:
 
@@ -763,7 +818,7 @@ production deployment command
 
 ---
 
-## 23. Git Inspect
+## 24. Git Inspect
 
 예:
 
@@ -791,7 +846,7 @@ Dirty Worktree 확인은 기존 변경을 수정할 권한을 부여하지 않�
 
 ---
 
-## 24. Git Stage / Commit / Push
+## 25. Git Stage / Commit / Push
 
 기본:
 
@@ -821,7 +876,7 @@ PR Metadata
 
 ---
 
-## 25. Network and Connector
+## 26. Network and Connector
 
 기본:
 
@@ -842,7 +897,7 @@ Credential transmission
 
 ---
 
-## 26. Runtime Execution
+## 27. Runtime Execution
 
 ```text
 Handoff Review 승인
@@ -858,7 +913,7 @@ V1에서 Runtime을 자동 실행하지 않는다.
 
 ---
 
-## 27. Result Import
+## 28. Result Import
 
 ```text
 accept_result
@@ -880,7 +935,7 @@ action.context.promote
 
 # Part VI. Repository State
 
-## 28. Dirty Worktree
+## 29. Dirty Worktree
 
 Dirty Worktree 상태:
 
@@ -918,7 +973,7 @@ Worker는 기존 변경을 자동 폐기하거나 덮어쓰지 않는다.
 
 ---
 
-## 29. Path Safety
+## 30. Path Safety
 
 최소 검증:
 
@@ -936,7 +991,7 @@ Git Metadata 경로 제외
 
 # Part VII. Policy Artifact
 
-## 30. Policy Artifact 필수 필드
+## 31. Policy Artifact 필수 필드
 
 ```text
 schema_version
@@ -968,7 +1023,7 @@ review_notes
 
 ---
 
-## 31. Policy 상태 축
+## 32. Policy 상태 축
 
 ### Policy Validation Status
 
@@ -1015,7 +1070,7 @@ unresolved
 
 ---
 
-## 32. Review State
+## 33. Review State
 
 ```text
 not_reviewed
@@ -1040,7 +1095,7 @@ review_notes
 
 # Part VIII. Drift and Expiration
 
-## 33. Material Drift
+## 34. Material Drift
 
 다음 Material Drift는 Policy를 `expired`로 만든다.
 
@@ -1065,7 +1120,7 @@ Scope 밖 Repository 변경
 
 ---
 
-## 34. Expiration
+## 35. Expiration
 
 다음 경우 `policy_lifecycle_status: expired`다.
 
@@ -1083,7 +1138,7 @@ Expired Policy는 실행에 사용할 수 없다.
 
 # Part IX. Human Review
 
-## 35. Review 대상
+## 36. Review 대상
 
 사용자는 최소 다음을 검토한다.
 
@@ -1104,7 +1159,7 @@ Expiration
 
 ---
 
-## 36. Review 결과
+## 37. Review 결과
 
 ```text
 approve_policy
@@ -1126,7 +1181,7 @@ defer_review
 
 # Part X. Error and Degraded State
 
-## 37. Missing Policy
+## 38. Missing Policy
 
 ```text
 policy_artifact_receipt_status: missing
@@ -1142,7 +1197,7 @@ Human Review 요청
 
 ---
 
-## 38. Invalid Policy
+## 39. Invalid Policy
 
 예:
 
@@ -1162,7 +1217,7 @@ policy_validation_status: invalid
 
 ---
 
-## 39. Incomplete Policy
+## 40. Incomplete Policy
 
 예:
 
@@ -1188,7 +1243,7 @@ execution_readiness_status: awaiting_approval
 
 ---
 
-## 40. Conflicting Policy
+## 41. Conflicting Policy
 
 예:
 
@@ -1209,7 +1264,7 @@ policy_validation_status: conflicting
 
 # Part XI. Validation and Fixture
 
-## 41. Contract Validation
+## 42. Contract Validation
 
 최소 Validation:
 
@@ -1239,7 +1294,7 @@ Review State 권한
 
 ---
 
-## 42. Positive Fixture
+## 43. Positive Fixture
 
 ### Read-only Analysis
 
@@ -1271,7 +1326,7 @@ Approval valid
 
 ---
 
-## 43. Negative Fixture
+## 44. Negative Fixture
 
 ```text
 Unknown Capability를 allowed로 실행
@@ -1304,7 +1359,7 @@ Approval 철회 후 실행 계획 재사용
 
 ---
 
-## 44. Truthfulness Fixture
+## 45. Truthfulness Fixture
 
 ```text
 Capability Supported
@@ -1325,7 +1380,7 @@ Unknown
 
 ---
 
-## 45. Drift Fixture
+## 46. Drift Fixture
 
 ```text
 Handoff Version 변경
@@ -1346,7 +1401,7 @@ Human Review 재수행
 
 ---
 
-## 46. 완료 조건
+## 47. 완료 조건
 
 Contract 완료:
 
@@ -1381,7 +1436,7 @@ Fixture 통과
 
 # Part XII. Example
 
-## 47. Policy Artifact Example
+## 48. Policy Artifact Example
 
 ```yaml
 schema_version: "1.0"
@@ -1513,7 +1568,7 @@ review_notes: []
 
 # Part XIII. Non-goals
 
-## 48. V1 비목표
+## 49. V1 비목표
 
 ```text
 Cloud Policy Service
@@ -1530,7 +1585,7 @@ Writer Lease
 
 ---
 
-## 49. 채택하지 않는 방향
+## 50. 채택하지 않는 방향
 
 ### Capability와 Policy 통합
 
@@ -1556,7 +1611,7 @@ Hard Safety Rule과 Do Not Touch는 유지한다.
 
 # Part XIV. Open Decisions
 
-## 50. 미결정 사항
+## 51. 미결정 사항
 
 1. Policy Artifact 파일 형식
 2. Action ID Registry 경로
@@ -1577,7 +1632,7 @@ Hard Safety Rule과 Do Not Touch는 유지한다.
 
 ---
 
-## 51. 불변조건
+## 52. 불변조건
 
 1. Capability와 Execution Policy를 분리한다.
 2. Policy Allowed가 Capability Supported를 의미하지 않는다.
@@ -1602,7 +1657,7 @@ Hard Safety Rule과 Do Not Touch는 유지한다.
 
 ---
 
-## 52. 관련 문서
+## 53. 관련 문서
 
 ```text
 docs/product/v1-completion-criteria.md
@@ -1615,7 +1670,7 @@ docs/architecture/local-cloud-human-boundary.md
 
 ---
 
-## 53. 검수 관점
+## 54. 검수 관점
 
 ### 제품
 

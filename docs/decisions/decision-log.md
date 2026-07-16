@@ -684,6 +684,85 @@ Cross-session Full Manual E2E
 = not performed by this Decision
 ```
 
+### Clarification — Runtime Entry Consent Boundary
+
+```text
+This is a DEC-051 clarification.
+It does not create a new Product Decision,
+does not create a new Architecture Decision,
+does not supersede DEC-051,
+and does not change the Lean V1 Product Boundary.
+```
+
+Lean V1 still uses the same Local Manual Artifact Workflow, but V1 Release requires at least one user-facing Runtime Entry and a Runtime-specific Full Manual E2E.
+
+```text
+P0 Runtime:
+- Claude Code
+
+Follow-up Runtime:
+- Codex
+
+Internal Developer Interface:
+- make work-start TASK="..."
+```
+
+Canonical Product Action:
+
+```text
+work-start
+```
+
+Entry and consent states:
+
+```text
+EXPLICIT
+SUGGESTED
+APPROVED
+DECLINED
+```
+
+Allowed:
+
+```text
+EXPLICIT
+→ Engine invocation allowed
+
+APPROVED
+→ Engine invocation allowed
+```
+
+Forbidden:
+
+```text
+SUGGESTED
+→ Engine invocation prohibited
+→ Artifact creation prohibited
+
+DECLINED
+→ Engine invocation prohibited
+→ Artifact creation prohibited
+→ Do not re-suggest for the same user request
+```
+
+Intent Detection is not consent.
+
+```text
+Intent Match
+≠ User Consent
+≠ Engine Invocation
+```
+
+Runtime Entry approval does not bypass Runtime-level permissions.
+
+```text
+Work-start Product Approval
+≠ File Permission
+≠ Shell Approval
+≠ Network Approval
+≠ Git Approval
+```
+
 ### Rationale
 
 ```text

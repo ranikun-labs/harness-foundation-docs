@@ -264,6 +264,9 @@ Subscription 종료나 Entitlement 실패는 Local 데이터 삭제 권한이 �
 | Work-start | Implemented / Fixture verified | 필수 | Structured Handoff Candidate 생성 유지 |
 | Handoff Prompt | Implemented | 필수 | Structured Handoff Contract 유지 |
 | Project Context | Partial | 중요 | Durable Context 경계 보강 |
+| Runtime Entry Contract | Documented | 필수 | 사용자용 Entry와 Consent 경계 정렬 |
+| Claude Adapter Runtime Entry | Not implemented | P0 Runtime | Product 구현과 Manual E2E 필요 |
+| Codex Adapter Runtime Entry | Planned / Alpha | 후속 Runtime | P0 동시 지원 아님 |
 | Execution Policy | Implemented | 필수 | 유지 |
 | Local Usage Log | Implemented | 선택 | 유지 |
 | Result Basic | Implemented | 필수 | 수동 반환 Template 유지 |
@@ -1146,6 +1149,9 @@ V1 대표 가치는 Runtime-neutral Contract다.
 | Structured Handoff Candidate | Implemented |
 | Handoff Human Review | Implemented / Manual |
 | Human Review Next Step Clarification | Documented / Product not implemented |
+| Runtime Entry Consent Boundary | Documented / Product not implemented |
+| Claude Adapter Runtime Entry | Not implemented |
+| Runtime Full Manual E2E | Not performed |
 | Runtime 직접 시작 | Manual / Available |
 | Manual Copy/Paste | Implemented / Manual |
 | Result Basic | Implemented / Manual Template |
@@ -1215,6 +1221,9 @@ Minimum Per-feature Fixtures
 Manual End-to-End Flow
 Doctor
 최소 설치·실행 경로
+최소 1개 Runtime의 사용자용 Work-start Entry
+Runtime Entry Consent Fixture
+Runtime-specific Full Manual E2E
 ```
 
 ### P1 — Release Quality
@@ -1355,6 +1364,17 @@ scripts/work-start-skill-match.mjs
 - Worker 자동 실행
 - Runtime 자동 선택
 - Task Database
+
+상태:
+
+```text
+Work-start Engine: Implemented
+Human Review: Implemented
+Runtime Entry Contract: Documented
+Claude Adapter: Not implemented
+Codex Adapter: Planned / Alpha
+Runtime Full Manual E2E: Not performed
+```
 
 ---
 
