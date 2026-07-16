@@ -67,6 +67,9 @@ Local-only 경계
 9. 최소 1개 지원 Runtime으로 Manual E2E를 닫는다.
 10. Runtime Projection Matrix와 공개 지원 Runtime별 Projection Fixture는 V1 Alpha 품질 범위다.
 11. P0 Fixture 실패는 Known Limitation으로 우회하지 않는다.
+12. Work-start Runtime Entry Fixture는 Intent Match와 User Consent를 분리한다.
+13. Suggestion 상태는 Engine Invocation이나 Artifact 생성을 허용하지 않는다.
+14. 공개된 P0 Runtime은 명시적 Entry와 승인 경로를 별도로 검증한다.
 12. Cloud, Auth, Billing 없이 실행 가능해야 한다.
 13. Secret 원문을 Fixture에 넣지 않는다.
 14. 실제 Credential이나 Production Endpoint를 사용하지 않는다.
@@ -523,9 +526,92 @@ Output Artifact 저장 실패
 
 ---
 
+## 12. Runtime Entry Consent Fixtures
+
+### FX-WS-030 Explicit Invocation
+
+```text
+Runtime 사용자 Entry에서 canonical_action_id = work-start를 명시 호출
+→ entry_mode = explicit
+→ approval = not_required
+→ 공통 Work-start Engine 1회 실행 가능
+→ Artifact 생성 가능
+```
+
+### FX-WS-031 Natural Intent Suggestion
+
+```text
+강한 Work-start Intent 자연어 입력
+→ entry_mode = suggested
+→ approval = pending
+→ Suggestion Candidate 표시
+→ Engine 호출 없음
+→ Artifact 생성 없음
+```
+
+### FX-WS-032 Approval
+
+```text
+Suggestion Candidate를 사용자가 승인
+→ entry_mode = suggested
+→ approval = accepted
+→ 공통 Work-start Engine 1회 실행 가능
+→ Artifact 생성 가능
+→ Artifact 경로 표시
+```
+
+### FX-WS-033 Decline
+
+```text
+Suggestion Candidate를 사용자가 거절
+→ approval = declined
+→ Engine 호출 없음
+→ Artifact 생성 없음
+→ 기존 요청 계속
+→ 동일 사용자 요청에 재제안 없음
+```
+
+### FX-WS-034 Generic Code Task No Suggestion
+
+```text
+일반 코드 수정·설명·테스트 요청
+→ Work-start Suggestion 없음
+→ Engine 호출 없음
+→ Artifact 생성 없음
+```
+
+### FX-WS-035 Entry Guard Rejection
+
+```text
+suggested + pending
+suggested + declined
+Intent Match without Consent
+
+→ Engine Invocation 거부
+→ Artifact 생성 거부
+```
+
+### FX-WS-036 Claude Runtime Entry
+
+```text
+Claude Code Runtime에서 Work-start 사용자 Entry 노출
+→ 명시적 사용자 호출 가능
+→ 사용자 호출 전용 Metadata 또는 동등한 보호 존재
+→ 자연어 Suggestion 경로가 Engine을 직접 호출하지 않음
+→ 승인 전 .oh-my-ai/work-start 신규 Artifact 없음
+→ 명시 호출 또는 승인 후 Artifact 생성
+→ 결과에 Artifact 경로 표시
+→ Human Review Next Step 표시
+```
+
+Codex Runtime Entry는 후속 Runtime 범위다.
+모든 Runtime을 동시에 지원하는 것은 V1 P0 요구사항이 아니다.
+
+---
+
 # Part IV. Routing Fixtures
 
-## 12. Positive Routing
+## 13. Positive Routing
 
 ### FX-RT-001 Exact Match
 
@@ -545,7 +631,7 @@ Output Artifact 저장 실패
 
 ---
 
-## 13. Negative and Fail-open Routing
+## 14. Negative and Fail-open Routing
 
 ### FX-RT-010 No Match
 
@@ -603,7 +689,7 @@ Generated Index Version 불일치
 
 # Part V. Handoff Fixtures
 
-## 14. Positive Handoff
+## 15. Positive Handoff
 
 ### FX-HO-001 Valid Approved Handoff
 
@@ -635,7 +721,7 @@ lifecycle_status = approved
 
 ---
 
-## 15. Negative Handoff
+## 16. Negative Handoff
 
 ### FX-HO-010 Missing Required Field
 
@@ -737,7 +823,7 @@ reviewed_by 없음
 
 이 Part의 Runtime Projection Fixture는 V1 Alpha 품질 범위다. V1 P0 Release Gate는 provider-neutral Structured Handoff Candidate와 Manual Copy/Paste E2E를 요구한다.
 
-## 16. Semantic Preservation
+## 17. Semantic Preservation
 
 ### FX-PRJ-001 Generic to Runtime Projection
 
@@ -768,7 +854,7 @@ semantic_equal = true
 
 ---
 
-## 17. Negative Projection
+## 18. Negative Projection
 
 ### FX-PRJ-010 Prohibition Removed
 
@@ -817,7 +903,7 @@ Open Issue 삭제 또는 Confirmed Decision으로 승격
 
 # Part VII. Capability Fixtures
 
-## 18. Positive Capability
+## 19. Positive Capability
 
 ### FX-CAP-001 Supported Capability
 
@@ -838,7 +924,7 @@ Runtime Version Range 충족
 
 ---
 
-## 19. Negative Capability
+## 20. Negative Capability
 
 ### FX-CAP-010 Approval Mixed into Capability
 
@@ -917,7 +1003,7 @@ Optional Capability unsupported
 
 # Part VIII. Execution Policy Fixtures
 
-## 20. Positive Policy
+## 21. Positive Policy
 
 ### FX-POL-001 Read-only Analysis
 
@@ -942,7 +1028,7 @@ Availability available
 
 ---
 
-## 21. Negative Policy
+## 22. Negative Policy
 
 ### FX-POL-010 Prohibited with Approval
 
@@ -1049,7 +1135,7 @@ Action Record approval_requirement에 approved_by·approved_at 저장
 
 # Part IX. Result Basic Fixtures
 
-## 22. Positive Result
+## 23. Positive Result
 
 ### FX-RS-001 Complete Result
 
@@ -1088,7 +1174,7 @@ Blocker 없음
 
 ---
 
-## 23. Negative Result
+## 24. Negative Result
 
 ### FX-RS-010 Missing Result
 
@@ -1210,7 +1296,7 @@ action.repository.apply_patch Approval 없음
 
 # Part X. Truthfulness and Privacy Fixtures
 
-## 24. Truthfulness
+## 25. Truthfulness
 
 ### FX-TR-001 Observed vs Inferred
 
@@ -1248,7 +1334,7 @@ Evidence 없음
 
 ---
 
-## 25. Privacy
+## 26. Privacy
 
 ### FX-PRV-001 Secret Pattern
 
@@ -1304,7 +1390,7 @@ Not Applicable
 
 # Part XI. Installation and Documentation Fixtures
 
-## 26. Fresh Install
+## 27. Fresh Install
 
 ### FX-INS-001 Clean Environment
 
@@ -1328,7 +1414,7 @@ Credential 없음
 
 ---
 
-## 27. Generated Artifact Drift
+## 28. Generated Artifact Drift
 
 Generated Artifact가 V1 실행 경로에 포함되는 경우 P0.
 
@@ -1378,7 +1464,7 @@ Migration 실패 상태 표현
 
 ---
 
-## 28. Documentation Truthfulness
+## 29. Documentation Truthfulness
 
 ### FX-DOC-001 Quick Start
 
@@ -1411,7 +1497,7 @@ Good Example 자체가 Contract Validation을 통과해야 한다.
 
 # Part XII. Manual E2E
 
-## 29. Minimum Single-runtime E2E
+## 30. Minimum Single-runtime E2E
 
 ### FX-E2E-001 V1 Core Flow
 
@@ -1497,7 +1583,7 @@ Gather Context
 
 ---
 
-## 30. Advertised Runtime E2E
+## 31. Advertised Runtime E2E
 
 지원 대상으로 공개한 각 Runtime에 대해 별도 수행한다.
 
@@ -1514,7 +1600,7 @@ Quick Start truthful
 
 # Part XIII. Regression Matrix
 
-## 31. Matrix
+## 32. Matrix
 
 | Domain | Positive | Negative | Fail-open | Drift | E2E |
 |---|---:|---:|---:|---:|---:|
@@ -1534,12 +1620,16 @@ Quick Start truthful
 
 # Part XIV. Release Gate
 
-## 32. P0 Fixture Gate
+## 33. P0 Fixture Gate
 
 다음 중 하나라도 실패하면 V1 Release 불가다.
 
 ```text
 Work-start Positive / Negative
+Runtime Entry Explicit / Suggestion / Approval / Decline
+Suggestion Before Consent No Artifact
+Generic Request No Suggestion
+Declined Request No Re-suggestion
 Routing Positive / No-match / Broken-index
 Handoff Contract Validation
 필수 필드 누락 실패
@@ -1585,7 +1675,7 @@ P0 Routing Suite
 
 ---
 
-## 33. Release Evidence
+## 34. Release Evidence
 
 각 P0 Fixture는 다음을 남긴다.
 
@@ -1611,7 +1701,7 @@ unresolved_risks
 
 # Part XV. File Layout
 
-## 34. 권장 구조
+## 35. 권장 구조
 
 ```text
 fixtures/
@@ -1640,7 +1730,7 @@ README.md
 
 ---
 
-## 35. Generated Result
+## 36. Generated Result
 
 권장 출력:
 
@@ -1660,7 +1750,7 @@ Repository에 Commit할지는 별도 결정이다.
 
 # Part XVI. Open Decisions
 
-## 36. 미결정 사항
+## 37. 미결정 사항
 
 1. Fixture 실행기 언어
 2. YAML / JSON Schema 선택
@@ -1681,7 +1771,7 @@ Repository에 Commit할지는 별도 결정이다.
 
 ---
 
-## 37. 불변조건
+## 38. 불변조건
 
 1. P0 기능은 P0 Fixture를 가진다.
 2. Positive만으로 완료하지 않는다.
@@ -1706,7 +1796,7 @@ Repository에 Commit할지는 별도 결정이다.
 
 ---
 
-## 38. 관련 문서
+## 39. 관련 문서
 
 ```text
 docs/product/v1-completion-criteria.md
@@ -1720,7 +1810,7 @@ docs/poc/v2-local-invocation-poc.md
 
 ---
 
-## 39. 검수 관점
+## 40. 검수 관점
 
 ### Coverage
 

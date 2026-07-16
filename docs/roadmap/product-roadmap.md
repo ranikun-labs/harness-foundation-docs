@@ -368,6 +368,7 @@ Skill Registry
 Basic Skill Routing
 Prompt Routing Hook
 Work-start
+Runtime Entry Consent Guard
 Project Context
 Structured Handoff Candidate
 Manual Copy/Paste
@@ -418,6 +419,9 @@ Organization Governance
 ### 5.5 기술 완료 조건
 
 - Work-start가 명시된 입력으로 재현 가능하게 동작
+- 최소 1개 Runtime에서 사용자용 `work-start` Entry를 제공
+- 명시적 Entry 또는 사용자 승인된 Suggestion만 Work-start Engine을 호출
+- Suggestion 또는 Decline 상태에서는 Engine 호출과 Artifact 생성이 없음
 - Skill 후보 계산은 `skills/*/SKILL.md`의 routing metadata와 generated `skills/skill-index.json`을 단일 Source of Truth로 사용하며, Work-start 문서의 수동 매핑표와 상충하지 않음
 - Handoff에 Scope, Do Not Touch, Facts, Assumptions, Open Issues가 포함됨
 - Result에 Validation Performed / Not Performed가 포함됨
@@ -437,6 +441,7 @@ Organization Governance
 ### 5.6 제품 완료 조건
 
 - 신규 사용자가 문서만으로 설치·사용 가능
+- 최소 1개 Runtime에서 명시적 Work-start Entry와 승인된 Suggestion 경로를 검증 가능
 - 최소 1개 Runtime에 Handoff를 수동 Copy/Paste로 전달할 수 있음
 - Worker가 Result Basic 수동 형식으로 반환할 수 있음
 - 사용자가 Result Basic의 Validation / Risk를 Human Review할 수 있음
