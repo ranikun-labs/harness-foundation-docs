@@ -950,11 +950,51 @@ defer
 
 `split`은 하나의 Handoff가 여러 독립 작업을 포함할 때 사용한다.
 
+## 29. Next Step 이후 Candidate 상태
+
+Work-start Human Review에서 Direct Handoff, Plan First, Gather Context 중
+하나가 선택되더라도 Handoff는 자동으로 Ready, Approved, Final 상태가 되지 않는다.
+
+```text
+Direct Handoff
+= 사용자가 Candidate를 검토한 뒤 수동 전달 가능하다고 판단
+
+Plan First
+= 사용자가 계획을 먼저 검토하고 Candidate를 수동 갱신·재검토할 수 있음
+
+Gather Context
+= 사용자가 외부 자료나 추가 입력을 수동 확인하고
+  Candidate를 수동 갱신·재검토할 수 있음
+```
+
+Planning 또는 External Context가 미확인 상태이면
+Handoff는 승인된 전달물로 오인되면 안 된다.
+
+선택적 수동 참조 후보:
+
+```text
+selected_next_step
+next_step_reason
+reviewed_plan_reference
+external_context_reviewed
+remaining_context_gaps
+```
+
+이는 새 필수 Contract 필드가 아니다.
+
+```text
+not required
+not automatic import
+not planning state management
+not automatic approval
+not automatic update
+```
+
 ---
 
 # Part VII. Runtime Projection
 
-## 29. Projection 원칙
+## 30. Projection 원칙
 
 Runtime Projection은 V1 Alpha 품질 기능이다. V1 P0의 필수 산출물은 provider-neutral Markdown Structured Handoff Candidate이며, 사용자가 Human Review 후 수동 전달한다.
 
@@ -988,7 +1028,7 @@ Return Contract
 
 ---
 
-## 30. Projection Output
+## 31. Projection Output
 
 필수 출력:
 
@@ -1013,7 +1053,7 @@ codex-handoff.md
 
 ---
 
-## 31. Capability와 Projection
+## 32. Capability와 Projection
 
 Runtime이 지원하지 않는 기능을 Handoff가 요구하면 다음 중 하나로 처리한다.
 
@@ -1051,7 +1091,7 @@ Execution Policy
 
 ---
 
-## 32. Semantic Preservation
+## 33. Semantic Preservation
 
 Projection 전후 다음 의미가 동일해야 한다.
 
@@ -1078,7 +1118,7 @@ Semantic Preservation Fixture가 필요하다.
 
 # Part VIII. Validation
 
-## 33. Contract Validation
+## 34. Contract Validation
 
 최소 Validation:
 
@@ -1104,7 +1144,7 @@ Review 승인 상태
 
 ---
 
-## 34. Validation 실패
+## 35. Validation 실패
 
 Contract Validation 상태:
 
@@ -1129,7 +1169,7 @@ Worker가 수행해야 할 Task Validation은 Export 시점에 아직 미수행�
 
 ---
 
-## 35. Expiration and Drift
+## 36. Expiration and Drift
 
 다음 Material Drift가 발생하면 Handoff를 `expired`로 판정한다.
 
@@ -1161,7 +1201,7 @@ Human Review 재수행
 
 # Part IX. Fixture
 
-## 36. Positive Fixture
+## 37. Positive Fixture
 
 ### 정상 Handoff
 
@@ -1183,7 +1223,7 @@ Human Approval
 
 ---
 
-## 37. Negative Fixture
+## 38. Negative Fixture
 
 ### 필수 필드 누락
 
@@ -1293,7 +1333,7 @@ superseded Handoff 재Export
 
 ---
 
-## 38. Semantic Projection Fixture
+## 39. Semantic Projection Fixture
 
 동일 Handoff를 Claude와 Codex로 Projection한 뒤 다음을 비교한다.
 
@@ -1311,7 +1351,7 @@ Return Contract
 
 ---
 
-## 39. 완료 조건
+## 40. 완료 조건
 
 Contract 완료:
 
@@ -1340,7 +1380,7 @@ Scope / Do Not Touch 보존 Fixture
 
 # Part X. Example
 
-## 40. Good Example
+## 41. Good Example
 
 ```yaml
 schema_version: "1.0"
@@ -1444,7 +1484,7 @@ review_notes:
 
 ---
 
-## 41. Bad Example
+## 42. Bad Example
 
 ```yaml
 goal: Improve the project
@@ -1476,7 +1516,7 @@ Return Contract 없음
 
 # Part XI. Non-goals
 
-## 42. V1 비목표
+## 43. V1 비목표
 
 ```text
 Task Database
@@ -1493,7 +1533,7 @@ Billing / Entitlement
 
 ---
 
-## 43. 채택하지 않는 방향
+## 44. 채택하지 않는 방향
 
 ### Handoff를 자유형 Prompt로만 관리
 
@@ -1519,7 +1559,7 @@ Deviation을 보고하고 추가 승인을 받아야 한다.
 
 # Part XII. Open Decisions
 
-## 44. 미결정 사항
+## 45. 미결정 사항
 
 1. Handoff 기본 파일명
 2. Markdown과 YAML 병행 여부
@@ -1540,7 +1580,7 @@ Deviation을 보고하고 추가 승인을 받아야 한다.
 
 ---
 
-## 45. 불변조건
+## 46. 불변조건
 
 1. Handoff는 승인된 Task Contract다.
 2. Handoff는 Runtime-neutral 의미를 가진다.
@@ -1563,7 +1603,7 @@ Deviation을 보고하고 추가 승인을 받아야 한다.
 
 ---
 
-## 46. 관련 문서
+## 47. 관련 문서
 
 ```text
 docs/product/v1-completion-criteria.md
@@ -1576,7 +1616,7 @@ docs/testing/v1-fixture-plan.md
 
 ---
 
-## 47. 검수 관점
+## 48. 검수 관점
 
 ### 제품
 

@@ -368,6 +368,54 @@ Handoff Seed 존재
 Excluded Sensitive Inputs 존재
 ```
 
+### FX-WS-002 Human Review Next Step Display
+
+입력 후보:
+
+```text
+작고 명확한 작업
+다중 범위 작업
+외부 결정 가능성이 있는 작업
+불확실한 작업
+```
+
+공통 기대:
+
+```text
+Direct Handoff 선택지 표시
+Plan First 선택지 표시
+Gather Context 선택지 표시
+사용자가 선택 주체임을 표시
+기본 선택 없음
+시스템 자동 선택 없음
+선택 전 Needs human review 유지
+선택 결과로 자동 Workflow 실행 없음
+```
+
+External Context Checkpoint 기대:
+
+```text
+외부 자료 후보가 수동 확인 항목으로 표시됨
+외부 자료 존재를 Fact로 단정하지 않음
+Connector 호출 없음
+외부 검색 결과처럼 표현하지 않음
+```
+
+금지:
+
+```text
+다중 모듈 작업이면 Plan First가 정답이라고 판정
+외부 문서가 언급되면 Gather Context를 자동 선택
+작업 복잡도 자동 확정
+Planning Skill 자동 실행
+```
+
+현재 Product Repository의 Work-start Fixture는 Positive 문서 작업,
+Ambiguous Deploy Negative 작업, Handoff 필수 필드, Human Review,
+Result Basic 연결, 권한 임의 생성 방지를 검증한다.
+
+Next Step Fixture는 이를 대체하지 않고 추가 검증으로 정의한다.
+
 ---
 
 ## 11. Negative Work-start
@@ -1407,6 +1455,45 @@ notes
 ```
 
 이는 Managed Approval Entity가 아니라 Local Fixture Evidence다.
+
+Manual E2E 상태는 다음을 분리한다.
+
+```text
+Procedure Defined
+Repository-local Steps Verified
+Cross-session Worker Step Performed or Not Performed
+Actual Full Manual E2E Passed or Not Performed
+```
+
+현재 Product Repository 상태:
+
+```text
+Manual E2E Procedure: Defined
+Repository-local Steps: Verified
+Cross-session Worker Step: Not Performed
+Actual Full Manual E2E: Not Performed
+```
+
+Next Step 경로 후보:
+
+```text
+Direct Handoff
+→ Candidate 검토
+→ Worker Session에 수동 Copy/Paste
+
+Plan First
+→ 수동 계획 또는 Planning Skill 수행
+→ Reviewed Plan Reference 기록
+→ Candidate 재검토
+
+Gather Context
+→ 외부 자료 또는 추가 입력 수동 확인
+→ Task / Project Context / Handoff 보완
+→ Work-start 또는 Handoff 재검토
+```
+
+위 경로는 Procedure 후보이며,
+자동 Planning, Connector 호출, Runtime Invocation, Managed Workflow를 의미하지 않는다.
 
 ---
 

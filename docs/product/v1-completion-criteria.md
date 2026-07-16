@@ -124,6 +124,7 @@ Manual Copy/Paste
 Local Candidate Artifact
 Result Basic 수동 Template
 Human Review
+Human Review Next Step 선택지 표시
 최소 Positive / Negative Fixture
 Manual E2E Demo
 Doctor
@@ -1012,6 +1013,29 @@ Worktree 자동화
 Merge / Apply Gate 자동화
 ```
 
+Human Review Next Step은 다음을 의미한다.
+
+```text
+Direct Handoff / Plan First / Gather Context 선택지를 중립적으로 표시
+사용자가 직접 선택
+선택 전 Needs human review 유지
+선택만으로 자동 실행하지 않음
+External Context는 수동 확인 후보로만 표시
+```
+
+다음은 V1 완료 조건이 아니다.
+
+```text
+자동 Planning
+작업 복잡도 자동 판정
+Planning Skill 자동 실행
+External Connector
+외부 Context 자동 검색
+Planning 완료 상태 관리
+자동 Handoff 승인
+Managed Workflow
+```
+
 P2 미구현은 V1 Release를 막지 않는다.
 
 ---
@@ -1031,6 +1055,7 @@ P2 미구현은 V1 Release를 막지 않는다.
 
 - [ ] Work-start 출력 정렬
 - [ ] Structured Handoff Candidate 생성 / Human Review / Manual Copy
+- [ ] Human Review Next Step 선택지 / Needs human review 경계
 - [ ] Result Basic 수동 Template / Human Review
 - [ ] Generated Drift Check
 - [ ] Hook Fail-open
@@ -1078,16 +1103,19 @@ P2 미구현은 V1 Release를 막지 않는다.
 2. Work-start가 Context와 Skill Candidate를 생성한다.
 3. Structured Handoff Candidate를 생성할 수 있다.
 4. 사용자가 Scope와 Do Not Touch를 검수할 수 있다.
-5. Handoff를 Worker Session에 수동 Copy/Paste로 전달할 수 있다.
-6. Worker가 Result Basic 수동 형식으로 반환할 수 있다.
-7. 사용자가 Files / Commands / Validation / Risk를 검수할 수 있다.
-8. 실행하지 않은 검증이 Pass로 표시되지 않는다.
-9. Result Basic이 Human Review 전 canonical Truth나 완료 증명으로 취급되지 않는다.
-10. 최소 Positive / Negative Fixture와 Manual E2E Demo가 존재한다.
-11. Cloud 없이 전체 흐름이 완료된다.
-12. 단일 Runtime으로 전체 흐름이 완료된다.
-13. Negative Fixture와 Manual E2E가 통과한다.
-14. Public Documentation이 실제 동작과 일치한다.
+5. 사용자가 Direct Handoff / Plan First / Gather Context 중 다음 수동 단계를 선택할 수 있다.
+6. 선택 전 Candidate가 Needs human review 상태를 유지한다.
+7. 선택 결과가 자동 Planning, Connector 호출, Runtime 실행, Handoff 승인으로 이어지지 않는다.
+8. Handoff를 Worker Session에 수동 Copy/Paste로 전달할 수 있다.
+9. Worker가 Result Basic 수동 형식으로 반환할 수 있다.
+10. 사용자가 Files / Commands / Validation / Risk를 검수할 수 있다.
+11. 실행하지 않은 검증이 Pass로 표시되지 않는다.
+12. Result Basic이 Human Review 전 canonical Truth나 완료 증명으로 취급되지 않는다.
+13. 최소 Positive / Negative Fixture와 Manual E2E Demo가 존재한다.
+14. Cloud 없이 전체 흐름이 완료된다.
+15. 단일 Runtime으로 전체 흐름이 완료된다.
+16. Negative Fixture와 Manual E2E가 통과한다.
+17. Public Documentation이 실제 동작과 일치한다.
 ```
 
 ---
