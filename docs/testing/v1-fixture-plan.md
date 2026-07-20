@@ -18,6 +18,7 @@ source_inputs:
   - docs/contracts/result-basic-contract.md
   - docs/contracts/runtime-capability-contract.md
   - docs/contracts/execution-policy-contract.md
+  - docs/contracts/product-notice-contract.md
   - docs/product/development-harness-report.md
 ---
 
@@ -163,6 +164,7 @@ FX-HO-001
 FX-RS-001
 FX-CAP-001
 FX-POL-001
+FX-NT-001
 FX-E2E-001
 ```
 
@@ -1495,6 +1497,181 @@ Good Example 자체가 Contract Validation을 통과해야 한다.
 
 ---
 
+# Part XI-A. Product Notice Fixtures
+
+Notice Fixture는 Network Mock 없이 Local Cache와 State 파일 조작만으로 결정적으로 재현한다.
+
+Contract Source는 `docs/contracts/product-notice-contract.md`다.
+
+모든 Notice Fixture는 공통 Assertion을 포함한다.
+
+```text
+Work-start exit code 정상
+Candidate Artifact 생성 정상
+Artifact 내용에 Notice 문자열 없음
+```
+
+## 29A. Notice Cache 상태
+
+### FX-NT-001 No Cache
+
+```text
+Cache 파일 없음
+→ Notice 표시 없음
+→ Work-start 정상 완료
+→ Refresh 시도됨
+```
+
+### FX-NT-002 Valid Cache
+
+```text
+유효 Cache, 활성 Notice 1건, TTL 내
+→ 출력 말미에 Notice 1건 표시
+→ Artifact 불변
+→ Refresh 미수행
+```
+
+### FX-NT-003 Stale Cache
+
+```text
+유효 Cache, TTL 초과
+→ 시작 시점 Cache 기준으로 표시
+→ 비차단 Refresh 실행
+→ Work-start가 Refresh 종료를 대기하지 않음
+```
+
+## 29B. Notice Manifest 유효성
+
+### FX-NT-004 Network Failure
+
+```text
+Refresh 중 Network 실패
+→ 사용자 출력 없음
+→ 기존 정상 Cache 보존
+→ Work-start exit code 무영향
+```
+
+### FX-NT-005 Invalid JSON
+
+```text
+Manifest 응답이 Invalid JSON
+→ Manifest 전체 무시
+→ 기존 Cache 보존
+→ 부분 해석 없음
+```
+
+### FX-NT-006 Unsupported Schema
+
+```text
+알 수 없는 schema_version
+→ Manifest 전체 무시
+→ 일부 필드도 읽지 않음
+→ Unknown을 Supported로 승격하지 않음
+```
+
+## 29C. Notice Audience 및 표시 제한
+
+### FX-NT-007 Version Mismatch
+
+```text
+Local Version이 Audience 조건 밖
+→ 해당 Notice 표시 없음
+
+Local Version 판독 불가
+→ Match 판정하지 않음
+→ 표시 없음
+```
+
+### FX-NT-008 Max Impressions Reached
+
+```text
+Impression Count가 상한 도달
+→ 표시 없음
+→ Impression Count 추가 증가 없음
+```
+
+## 29D. Notice 사용자 선택
+
+### FX-NT-009 Dismiss
+
+```text
+Notice ID dismiss 상태
+→ 해당 Notice 표시 없음
+→ 다른 활성 Notice는 표시됨
+→ Cache 삭제 후에도 dismiss 유지
+```
+
+### FX-NT-010 Opt-out
+
+```text
+전체 Opt-out 상태
+→ Cache 읽기 없음
+→ 표시 없음
+→ Refresh 없음
+→ Network 호출 없음
+```
+
+Network 호출 발생은 Fail이다.
+
+## 29E. Notice 동시성
+
+### FX-NT-011 Concurrent Refresh
+
+```text
+동시에 복수 Work-start 실행, 모두 stale
+→ Refresh는 1회만 수행
+→ Lock 획득 실패 측은 대기 없이 정상 종료
+→ Cache 파일이 부분 기록 상태로 읽히지 않음
+```
+
+## 29F. Notice 경로 격리
+
+### FX-NT-012 Synthetic Event
+
+```text
+Synthetic Event 경로 실행
+→ Notice 표시 없음
+→ Network 호출 없음
+```
+
+동일 Assertion을 다음 경로에 적용한다.
+
+```text
+UserPromptSubmit Hook
+Natural Suggestion
+Worker Session
+Result Basic 생성
+기본 Doctor 실행
+기본 setup.sh 실행
+```
+
+## 29G. Notice Artifact 및 표시 시점
+
+### FX-NT-013 Artifact Content Invariance
+
+```text
+Notice 있음 / 없음 두 실행
+→ Work-start Artifact byte 동일
+   (Timestamp 등 실행 고유 필드 제외)
+```
+
+### FX-NT-014 Remote Result Not Injected
+
+```text
+Refresh가 현재 실행 중 새 Notice 획득
+→ 현재 출력에 삽입되지 않음
+→ 현재 출력은 시작 시점 Cache 기준과 동일
+```
+
+### FX-NT-015 Next-run Visibility
+
+```text
+FX-NT-014 이후 다음 명시적 Work-start
+→ 새 Notice가 표시됨
+```
+
+---
+
 # Part XII. Manual E2E
 
 ## 30. Minimum Single-runtime E2E
@@ -1583,6 +1760,57 @@ Gather Context
 
 ---
 
+### FX-E2E-002 Product Notice Flow
+
+Notice는 실행 간 상태 전이를 검증해야 하므로 Manual E2E를 별도로 둔다.
+
+수행 순서:
+
+```text
+1. 첫 Work-start
+   → Cache 없음
+   → Notice 표시 없음
+   → Refresh 수행됨
+
+2. 다음 Work-start
+   → 이전 실행에서 획득한 Notice 표시
+
+3. Dismiss 후 Work-start
+   → 해당 Notice 표시 없음
+
+4. Opt-out 후 Work-start
+   → 표시 없음
+   → Network 호출 없음
+
+5. Offline 환경 Work-start
+   → 정상 완료
+   → exit code 정상
+
+6. Candidate Artifact diff 확인
+   → Notice 혼입 없음
+```
+
+필수 Assertion:
+
+```text
+모든 단계에서 Work-start exit code 정상
+모든 단계에서 Candidate 생성 정상
+4단계에서 Network 호출 관찰 없음
+5단계에서 Known Limitation 표기 없이 정상 완료
+6단계에서 Artifact diff에 Notice 문자열 없음
+```
+
+Manual Human Checkpoint Evidence는 FX-E2E-001과 동일 필드를 사용한다.
+
+현재 상태:
+
+```text
+Procedure Defined: Yes
+Actual Manual E2E Passed: Not Performed
+```
+
+---
+
 ## 31. Advertised Runtime E2E
 
 지원 대상으로 공개한 각 Runtime에 대해 별도 수행한다.
@@ -1615,6 +1843,7 @@ Quick Start truthful
 | Privacy | ✓ | ✓ |  |  | 조건부 |
 | Installation | ✓ | ✓ |  | ✓ | ✓ |
 | Documentation | ✓ | ✓ |  | ✓ | ✓ |
+| Product Notice | ✓ | ✓ | ✓ |  | ✓ |
 
 ---
 
@@ -1646,6 +1875,11 @@ Assertion Determinism
 Fixture Workspace Isolation
 Cleanup Verification
 Evidence Reference Integrity
+Product Notice Cache / Manifest / Audience / User Choice
+Notice Path Isolation
+Notice Artifact Invariance
+Notice Failure Fail-open
+Notice Offline Work-start
 ```
 
 조건부 P0:
@@ -1671,6 +1905,12 @@ P0 Work-start Suite
 
 P0 Routing Suite
 = FX-RT-001~015
+
+P0 Product Notice Suite
+= FX-NT-001~015
+
+P0 Product Notice Manual E2E
+= FX-E2E-002
 ```
 
 ---
@@ -1716,6 +1956,7 @@ fixtures/
 ├── privacy/
 ├── installation/
 ├── documentation/
+├── notice/
 └── e2e/
 ```
 
@@ -1793,6 +2034,9 @@ Repository에 Commit할지는 별도 결정이다.
 18. Fixture Workspace와 사용자 Repository를 격리한다.
 19. Cleanup 실패를 무시하지 않는다.
 20. Release Gate는 Fixture ID 또는 Suite ID로 추적 가능해야 한다.
+21. Notice Fixture는 실제 Network 없이 Local 상태 조작만으로 재현한다.
+22. Notice 실패를 Work-start 실패로 기록하지 않는다.
+23. Notice가 Artifact에 혼입되면 Fail로 판정한다.
 
 ---
 
@@ -1805,7 +2049,9 @@ docs/contracts/handoff-basic-contract.md
 docs/contracts/result-basic-contract.md
 docs/contracts/runtime-capability-contract.md
 docs/contracts/execution-policy-contract.md
+docs/contracts/product-notice-contract.md
 docs/poc/v2-local-invocation-poc.md
+docs/adr/ADR-0011-local-product-notice-channel.md
 ```
 
 ---

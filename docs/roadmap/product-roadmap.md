@@ -379,7 +379,17 @@ Human Review
 Manual E2E Demo
 Doctor
 재현 가능한 최소 설치·실행 경로 1개
+Local Product Notice Channel
+Runtime-readable Version Source
 ```
+
+Local Product Notice Channel은 향후 V2 출시·보안·호환성 공지를
+기존 Public V1 사용자에게 전달하기 위한 최소 도달 경로다.
+
+Cloud Control Plane, Account, 자동 Update를 도입하지 않으며,
+Network 없이도 제품 핵심 기능이 정상 동작한다.
+
+Public V1은 Cloud-independent 상태를 유지한다.
 
 재현 가능한 최소 설치·실행 경로 1개는 한 가지 공식 경로로 로컬 설치와 기본 Workflow 실행을 재현할 수 있음을 의미한다. npm과 Homebrew 동시 지원, 복수 OS Installer, 자동 업데이트, 완성된 범용 CLI Product Shell을 뜻하지 않는다.
 
@@ -414,6 +424,12 @@ Worker Branch Lifecycle
 Merge / Apply Gate 자동화
 Mandatory Sidecar
 Organization Governance
+Cloud Notice API
+사용자별 서버 Audience
+자동 Update
+자동 V2 설치
+Push Notification
+상주 Notice Daemon
 ```
 
 ### 5.5 기술 완료 조건
@@ -437,6 +453,10 @@ Organization Governance
 - 지원하지 않는 기능을 지원한다고 보고하지 않음
 - 실행하지 않은 검증을 Pass로 기록하지 않음
 - Cloud 없이 전체 Workflow를 완료할 수 있음
+- Product Notice 실패가 Work-start 결과와 Artifact에 영향을 주지 않음
+- Offline 환경에서 Work-start가 정상 완료됨
+- 사용자가 Notice를 dismiss하거나 원격 확인 전체를 opt-out할 수 있음
+- 제품 Runtime이 자신의 Version을 Network 없이 읽을 수 있음
 
 ### 5.6 제품 완료 조건
 
@@ -447,6 +467,8 @@ Organization Governance
 - 사용자가 Result Basic의 Validation / Risk를 Human Review할 수 있음
 - V1 공개 기능과 비범위가 README에 명시됨
 - V1 Release Note가 존재함
+- Public V1 정식 공개 Tag가 `v1.0.0` 형식으로 존재함
+- Notice 목적·전송 범위·Network Metadata 노출·Opt-out 방법이 Public 문서에 명시됨
 - 기존 사용자 설정이나 설치 경로 변경이 있는 경우 Migration 안내가 존재함
 
 ### 5.7 출시 후 관찰 항목
@@ -1460,6 +1482,8 @@ Finance Local Experiment
 16. 미래 기능을 현재 단계의 완료 조건으로 넣지 않는다.
 17. V2 Technical Core와 V2 Commercial Launch를 구분한다.
 18. OCR과 Market Data는 Local Finance Experiment의 필수 Gate가 아니다.
+19. Product Notice는 fail-open이며 Public V1의 Cloud-independent 성질을 바꾸지 않는다.
+20. Public Stable Release Tag는 SemVer-clean 형식을 사용한다.
 
 ---
 

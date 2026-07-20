@@ -80,7 +80,26 @@ Prompt 자동 전달
 Result 자동 수집
 Provider Session 관리
 Remote Execution
+제품 자체의 Network 동작
 ```
+
+Product Notice의 Manifest 조회는 제품 Local Process의 동작이며
+Runtime Capability가 아니다.
+
+```text
+capability.network.*
+= Worker Runtime이 작업 수행 중 수행할 수 있는 행동
+
+Product Notice Fetch
+= 제품이 Work-start 실행에 부수해 수행하는 Local Process 동작
+```
+
+Runtime이 `capability.network.web_read`를 지원하지 않아도
+Product Notice는 동작할 수 있으며, 그 반대도 성립한다.
+
+두 축을 연결하거나 상호 조건으로 사용하지 않는다.
+
+Product Notice의 경계는 `docs/contracts/product-notice-contract.md`가 소유한다.
 
 ## 2.3 관련 개념 구분
 
@@ -1649,6 +1668,7 @@ Billing Feature Gate
 Organization Policy Engine
 Runtime Benchmark Ranking
 Automatic Adapter Download
+Product Notice Capability 판정
 ```
 
 ---
@@ -1732,6 +1752,7 @@ docs/contracts/handoff-basic-contract.md
 docs/contracts/result-basic-contract.md
 docs/contracts/execution-policy-contract.md
 docs/testing/v1-fixture-plan.md
+docs/contracts/product-notice-contract.md
 docs/architecture/local-cloud-human-boundary.md
 ```
 

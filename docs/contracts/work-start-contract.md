@@ -74,7 +74,13 @@ Canonical Truth 승격
 Project Context 자동 수정
 Managed Task ID 발급
 Cloud 저장
+Product Notice 내용·Manifest·Cache 구현
 ```
+
+Work-start는 Product Notice의 통합 인터페이스만 호출한다.
+
+Manifest URL, Schema 세부 구조, Lock, Atomic Write, Cache 파일 구조는
+`docs/contracts/product-notice-contract.md`가 소유한다.
 
 ## 2.3 다른 Contract와의 관계
 
@@ -90,6 +96,18 @@ Result Basic
 
 Project Context
 = Human-confirmed Durable Context
+
+Product Notice
+= Work-start 실행에 부수하는 Local 정보 표시
+```
+
+Work-start와 Product Notice는 Trigger만 공유하며 데이터와 상태를 공유하지 않는다.
+
+```text
+Notice
+∉ Work-start Artifact
+∉ Handoff Seed
+∉ Work-start Summary 필드
 ```
 
 ---
@@ -106,6 +124,7 @@ Project Context
 8. Provider Session ID를 요구하지 않는다.
 9. Managed Task ID를 요구하지 않는다.
 10. Work-start 실패가 사용자 Repository를 수정하면 안 된다.
+11. Product Notice 실패가 Work-start exit code와 Artifact 생성에 영향을 주면 안 된다.
 
 ---
 
@@ -737,6 +756,65 @@ Branch와 Commit이 확인되지 않으면 `unknown`으로 기록한다.
 
 ---
 
+## 23.1 Product Notice Boundary
+
+Work-start는 성공적으로 시작된 명시적 실행에서 Product Notice 통합 인터페이스를 호출한다.
+
+호출 순서:
+
+```text
+notice_snapshot = notice.read_for_display(current_version)
+
+기존 Work-start Core 실행
+
+notice.render(notice_snapshot)
+
+notice.refresh_if_stale_nonblocking(current_version)
+```
+
+경계 규칙:
+
+```text
+Notice는 Work-start 출력 말미에만 표시된다
+Notice는 §19 Artifact 어디에도 기록되지 않는다
+Notice는 §20 Summary 필수 필드에 포함되지 않는다
+Notice는 §21 Handoff Seed에 포함되지 않는다
+Notice는 §22 Truthfulness 분류 대상이 아니다
+Notice는 §23 Provenance 대상이 아니다
+```
+
+Notice 실패 시 Work-start는 Notice 없이 정상 완료한다.
+
+```text
+Notice 실패
+→ Work-start exit code 무영향
+→ Candidate 생성 무영향
+→ Human Review State 무영향
+→ Context Gap 무영향
+→ Starter Prompt 무영향
+```
+
+다음 경로에서는 Notice 표시와 Network 호출이 발생하지 않는다.
+
+```text
+UserPromptSubmit Hook
+Natural Suggestion
+Synthetic Event
+Worker Session
+Result Basic 생성
+기본 Doctor 실행
+기본 setup.sh 실행
+```
+
+Suggestion 상태는 Work-start Engine 실행이 아니므로 Notice 경로도 진입하지 않는다.
+
+Notice의 표시 규칙, Manifest Safety, Privacy, Local State는
+`docs/contracts/product-notice-contract.md`가 소유한다.
+
+이 Contract는 호출 지점과 격리 요구만 정의한다.
+
+---
+
 # Part VI. Human Review
 
 ## 24. Runtime Entry and Consent
@@ -1233,7 +1311,13 @@ Output Symlink Escape
 Tracked File Overwrite Attempt
 Secret-like Value in Candidate Summary
 Execution Policy Candidate가 최종 Policy로 승격되지 않음
+Product Notice 실패 시 Work-start 정상 완료
+Product Notice가 Artifact에 혼입되지 않음
 ```
+
+Product Notice 자체의 Fixture는
+`docs/contracts/product-notice-contract.md`와
+`docs/testing/v1-fixture-plan.md`가 소유한다.
 
 ---
 
@@ -1360,6 +1444,7 @@ docs/product/development-harness-report.md
 docs/contracts/handoff-basic-contract.md
 docs/contracts/result-basic-contract.md
 docs/contracts/runtime-capability-contract.md
+docs/contracts/product-notice-contract.md
 docs/architecture/local-cloud-human-boundary.md
 docs/testing/v1-fixture-plan.md
 ```

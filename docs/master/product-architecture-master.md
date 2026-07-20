@@ -479,6 +479,19 @@ Provenance Sections
 Truthfulness Sections
 Human Review
 재현 가능한 최소 설치·실행 경로 1개
+Local Product Notice Channel
+Runtime-readable Version Source
+```
+
+`Local Product Notice Channel`은 Local Product Services 경계에 속하며
+Workflow Contract 흐름에 포함되지 않는다.
+
+```text
+Notice
+≠ Cloud Control Plane
+≠ 자동 Update
+≠ Telemetry
+≠ Workflow State
 ```
 
 `재현 가능한 최소 설치·실행 경로 1개`는
@@ -509,6 +522,10 @@ Cloud Sync
 Managed Memory
 Learning Loop
 Sidecar / Daemon Requirement
+Cloud Notice API
+사용자별 서버 Audience
+자동 Update / 자동 V2 설치
+Push Notification
 ```
 
 ## 8.4 V1 Shared Core 구현 수준
@@ -1576,6 +1593,7 @@ Self-hosted
 18. Memory와 Skill은 Fixture·Evaluation·Human Review를 거쳐 승격한다.
 19. Master에 정의된 목표 기능과 현재 Repository 구현 상태를 구분한다.
 20. Finance Contract와 Local Experiment는 Development V2 Expansion 완료에 종속되지 않는다.
+21. Local Product Notice는 fail-open이며 Workflow Contract 흐름에 포함되지 않는다.
 
 ---
 
@@ -1590,7 +1608,9 @@ docs/product/development-harness-report.md
 docs/product/finance-harness-report.md
 docs/decisions/decision-log.md
 docs/product/v1-completion-criteria.md
+docs/contracts/product-notice-contract.md
 docs/poc/v2-local-invocation-poc.md
+docs/adr/ADR-0011-local-product-notice-channel.md
 ```
 
 ---
