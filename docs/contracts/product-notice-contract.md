@@ -526,13 +526,46 @@ Notice의 Local State는 두 종류이며 같은 파일에 저장하지 않는�
 권장 개념 위치:
 
 ```text
-~/.cache/oh-my-ai/notice-manifest.json
-~/.config/oh-my-ai/notice-state.json
+${XDG_CACHE_HOME:-$HOME/.cache}/oh-my-ai/notice-manifest.json
+${XDG_CONFIG_HOME:-$HOME/.config}/oh-my-ai/notice-state.json
 ```
 
-실제 경로는 XDG Base Directory 규칙과 Local Artifact Root 결정을 따른다.
+실제 경로는 XDG Base Directory 규칙을 따른다.
 
-경로 확정은 Product Worker 범위다.
+Manifest Cache는 XDG Cache 영역에 두고,
+Dismiss·Opt-out·Impression 같은 User Choice State는 XDG Config 영역에 둔다.
+
+Product Notice의 Manifest Cache와 User Choice State는
+Installation-scoped Runtime Cache와 Installation-scoped User Choice State이며
+Task·Workflow Artifact가 아니다.
+
+따라서 OPEN-006 Local Artifact Root의 범위에 포함되지 않는다.
+
+```text
+OPEN-006 Local Artifact Root
+= Task·Workflow Artifact 저장 위치
+  (Work-start Summary, Handoff, Result, Projection, Evidence 등)
+
+Product Notice Local State
+= Installation-scoped Runtime Cache / User Choice State
+= Repository·Task와 무관하게 설치 단위로 존재
+```
+
+두 축은 서로 다른 질문에 답한다.
+
+```text
+OPEN-006
+→ 이 Repository·Session의 산출물을 어디 둘까
+
+Product Notice Local State
+→ 이 설치의 전역 선호를 어디 둘까
+```
+
+Notice Opt-out은 Notice 확인 전체 단위이며 Repository 단위가 아니다.
+
+Task Artifact Root에 종속시키면 Repository마다 Opt-out을 다시 해야 하는 모순이 생긴다.
+
+정확한 파일명과 Repository-local Fallback 경로는 Product Worker 범위다.
 
 ## 27. Cache 영역 규칙
 

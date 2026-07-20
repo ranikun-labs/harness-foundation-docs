@@ -694,8 +694,17 @@ Artifact에 Notice 혼입
 - Refresher 수명 상한과 Lock stale 기준
 - Notice 심각도 구분 도입 여부
 - Manifest 서명 도입 시점
-- Cache 경로와 Local Artifact Root 결정의 정합 (OPEN-006)
 ```
+
+Cache 경로와 OPEN-006의 관계는 해소됐다.
+
+```text
+Product Notice의 Manifest Cache와 User Choice State는
+Installation-scoped Runtime Cache / User Choice State이며
+OPEN-006 Local Artifact Root(Task·Workflow Artifact 저장 위치) 범위 밖이다.
+```
+
+상세 근거는 `docs/contracts/product-notice-contract.md` §26과 OPEN-006 Scope Note를 참조한다.
 
 위 항목은 확정된 사실로 표현하지 않는다.
 

@@ -4681,6 +4681,40 @@ superseded_by: []
 Repository 오염·권한·Retention·Migration을 함께 고려해야 한다.
 ```
 
+### Scope
+
+```text
+OPEN-006 Local Artifact Root
+= Task·Workflow Artifact 저장 위치
+  (Work-start Summary, Handoff, Result, Projection, Evidence 등)
+```
+
+Scope 제외:
+
+```text
+Product Notice 등 installation-scoped Local Product Service의
+Runtime Cache와 User Choice State는 OPEN-006 범위 밖이다.
+```
+
+이유:
+
+```text
+OPEN-006
+→ 이 Repository·Session의 산출물을 어디 둘까
+
+Product Notice Local State
+→ 이 설치의 전역 선호를 어디 둘까
+```
+
+Product Notice의 Manifest Cache와 Dismiss·Opt-out·Impression State는
+Repository나 Task에 종속되지 않는 Installation-scoped 데이터이며,
+XDG Cache·Config 규칙만으로 경로가 확정된다.
+
+이 Scope 제외는 새 Decision이 아니라 기존 DEC-054·DEC-056·ADR-0011이
+이미 전제한 Data Class 경계를 명시적으로 기록한 것이다.
+
+상세는 `docs/contracts/product-notice-contract.md` §26을 참조한다.
+
 ### Constraints
 
 ```text
@@ -4700,6 +4734,8 @@ Artifact Store 구현 전 결정 필요
 ```text
 docs/contracts/README.md
 docs/poc/v2-local-invocation-poc.md
+docs/contracts/product-notice-contract.md
+docs/adr/ADR-0011-local-product-notice-channel.md
 ```
 
 ### Supersession
