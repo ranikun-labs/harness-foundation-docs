@@ -3,7 +3,7 @@ title: Work-start Contract
 status: draft
 implementation_status: partial
 owner: development
-last_reviewed: 2026-07-14
+last_reviewed: 2026-07-20
 supersedes: []
 superseded_by: []
 related_adrs:
@@ -805,6 +805,36 @@ Intent Match
 ≠ Engine Invocation
 ```
 
+### 24.1 Runtime Event Boundary Clarification
+
+이 경계는 기존 Consent·Suggestion Boundary의 Clarification이며,
+새 Product Decision이나 Runtime 자동화 계약을 만들지 않는다.
+
+```text
+Real User Prompt
+= 사람이 현재 User Turn에서 직접 입력한 요청
+
+Synthetic Event
+= task-notification
+| background agent completion
+| tool result notification
+| runtime-generated status message
+| Provider Runtime이 생성한 비사용자 입력 이벤트
+```
+
+`UserPromptSubmit` intent routing은 Real User Prompt만 대상으로 한다.
+
+```text
+Synthetic Event
+→ UserPromptSubmit intent routing 대상이 아님
+→ Work-start Suggestion을 생성하지 않음
+
+Runtime Event
+≠ User Intent
+```
+
+동일 User Turn 또는 동일 사용자 요청에서는 Work-start Suggestion을 반복 표시하지 않는다.
+
 `make work-start TASK="..."`는 공통 Engine의 내부 Developer Interface다.
 사용자용 Product Entry는 Runtime Adapter가 제공한다.
 
@@ -915,6 +945,59 @@ Planning 자동 실행
 선택 결과에 따른 자동 Workflow 분기
 Handoff 자동 승인
 ```
+
+### 27.1 Main Session Continuation Boundary Clarification
+
+Main Session은 Human Review, 계획 검토, Context 검토, 결과 통합과
+다음 단계를 선택하는 세션이다. V1의 로컬 Main Session을 Control Plane이라고
+부르지 않는다. Control Plane은 기존 Foundation에서 사용하는 V2 Cloud·Managed
+Workflow 경계 용어로 유지한다.
+
+Plan First와 Gather Context의 결과는 Main Session에서 검토·통합한다.
+두 경로가 끝난 뒤 같은 Main Session은 구현, Commit, Push, PR 또는 Merge를
+시작하지 않는다.
+
+검토된 계획 또는 추가 Context는 사용자 확인을 거쳐 Handoff Candidate에 반영할 수 있다.
+Candidate 반영은 Direct Handoff 승인과 동일하지 않으며, Direct Handoff는 사용자가
+별도로 명시적으로 선택해야 한다.
+
+### 27.2 Plan First 및 Gather Context 종료 안내 Clarification
+
+계획 또는 Context가 사용자 확인 후 Handoff Candidate에 반영되면, Main Session은
+반영 결과와 다음 상태를 한 번 안내한다.
+
+```text
+현재 상태: Needs human review
+Candidate 반영 ≠ Direct Handoff 선택 또는 Worker 실행 승인
+Worker Session: 아직 생성되지 않았고 실행되지 않음
+```
+
+안내에는 Plan First 또는 Gather Context의 완료 여부, Candidate 반영 여부,
+Direct Handoff의 별도 명시 선택 필요성, 그리고 선택 후 새 Worker Session을 열어
+승인된 Candidate 또는 Handoff 내용을 수동 전달해야 한다는 다음 절차를 포함한다.
+안내 후 Main Session은 구현을 시작하지 않고 정지한다.
+
+이 안내는 현재 상태와 가능한 수동 절차를 설명할 뿐이며, Direct Handoff를 자동 선택하거나,
+사용자 대신 다음 단계를 승인하거나, Worker Session 생성·Prompt 주입·구현 시작을 자동화하지 않는다.
+
+### 27.3 Role Terminology Clarification
+
+```text
+Native Subagent
+= Claude Code·Codex 등 Provider Runtime이 제공하는 내부 탐색·실행 기능
+≠ oh-my-ai Worker Session
+
+Worker Session
+= 사용자가 승인한 Handoff를 전달받아 구현·검증을 수행하는
+  별도 oh-my-ai Role Contract
+= Direct Handoff를 사용자가 명시적으로 선택한 뒤에만 시작 가능
+```
+
+Native Subagent의 생성 방식, 병렬 수, Token Budget, 세부 오케스트레이션은
+Work-start Product Contract의 설계 대상이 아니다. 이는 harness instruction 레이어 또는
+Provider Adapter 제약의 책임으로 남긴다. Native Subagent도 Human Review 선택,
+계획 최종 승인, Direct Handoff 승인, Product·Architecture Decision 또는 다음 Workflow의
+자동 실행을 대신할 수 없다.
 
 ## 28. External Context Checkpoint
 
