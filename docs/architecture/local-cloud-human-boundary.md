@@ -189,8 +189,21 @@ Human Review는 단순 UI 단계가 아니라 제품 불변조건이다.
 | Candidate | Ranking, 추천, 연결 후보 | Cloud 또는 Local | Truth로 자동 승격 금지 |
 | Canonical Decision | 승인된 결정, 정책, 문서 | Source of Truth | 승인된 경로만 |
 | Telemetry | 기능 사용·성공·실패 메타데이터 | Local buffer / Cloud | 원문 제외 조건 |
+| Product Announcement | 제품 공지 Manifest, 공지 본문 | Remote → Local Cache | 수신 전용. 사용자 데이터 송신 없음 |
 
 분류되지 않은 데이터는 Raw Source로 취급한다.
+
+`Product Announcement`는 방향이 반대인 유일한 분류다.
+
+```text
+다른 분류
+= Local 데이터를 Cloud로 보낼지 판단
+
+Product Announcement
+= Remote 정적 데이터를 Local로 읽어올지 판단
+```
+
+Product Announcement 수신은 사용자 데이터 전송이 아니므로 Telemetry로 분류하지 않는다.
 
 ---
 
@@ -299,6 +312,70 @@ Full Context는 기본값이 아니다.
 
 V1에는 포함하지 않는다.
 
+## 5.5 Inbound Announcement Read
+
+위 5.1~5.4는 Local 데이터의 송신 모드다.
+
+이 모드는 방향이 반대이며 별도로 구분한다.
+
+```text
+정적 Remote Manifest에 대한 읽기 전용 HTTPS 요청
+Request Body에 사용자 데이터 없음
+응답은 Local Cache에만 기록
+```
+
+전송 금지:
+
+```text
+Prompt
+Task
+Repository 이름
+Git Remote
+작업 경로
+Branch / Commit
+Candidate
+Artifact
+사용자 코드
+Machine ID
+Account 식별자
+```
+
+Audience 판정은 Local에서 수행한다.
+
+서버가 사용자별 대상을 계산하지 않는다.
+
+Network Metadata 노출:
+
+```text
+Client IP Address
+요청 시각
+요청 Header
+TLS 협상 Metadata
+요청 대상 경로
+```
+
+이는 HTTPS 요청의 일반 속성이며 제품이 수집·전송하는 데이터가 아니다.
+
+이 사실을 Public 문서에서 축소하지 않는다.
+
+전체 Opt-out이 이 노출을 제거하는 유일한 수단이다.
+
+적용:
+
+```text
+V1 Local Product Notice Channel
+```
+
+이 모드는 Cloud Account, Auth, Entitlement, Control Plane을 도입하지 않는다.
+
+```text
+Inbound Announcement Read
+≠ Metadata-only 전송
+≠ Telemetry
+≠ Cloud Sync
+≠ Managed Workflow
+```
+
 ---
 
 ## 6. V1 책임 경계
@@ -338,6 +415,8 @@ Runtime Instruction Projection
 Result Basic 생성
 Validation 기록
 Local Usage Log
+Product Notice Cache 및 사용자 선택 State 관리
+Notice Audience Match 판정
 ```
 
 ## 6.3 V1 Cloud 책임
@@ -345,6 +424,33 @@ Local Usage Log
 없음.
 
 V1은 Cloud 없이 전체 Workflow를 완료할 수 있어야 한다.
+
+Local Product Notice Channel은 이 진술을 바꾸지 않는다.
+
+```text
+Notice Manifest Host
+= 정적 파일 제공 지점
+
+Cloud 책임
+= 사용자 데이터 보관, 상태 관리, 인증, 실행 조정
+```
+
+Manifest Host는 사용자 데이터를 받지 않고, 상태를 보관하지 않으며,
+사용자별 판정을 수행하지 않는다.
+
+따라서 Cloud 책임 주체가 아니다.
+
+Notice는 다음 조건을 모두 만족하므로 V1의 Cloud-independent 성질을 유지한다.
+
+```text
+실패해도 Workflow가 완료된다
+opt-out해도 Workflow가 완료된다
+Network가 없어도 Workflow가 완료된다
+Account와 Auth를 요구하지 않는다
+```
+
+Notice가 이 조건 중 하나라도 위반하면 Cloud 의존으로 재분류하고
+별도 Product Decision을 요구한다.
 
 ## 6.4 V1 Human 책임
 
@@ -1084,6 +1190,20 @@ Secret
 
 Telemetry는 제품 개선과 Usage / Quota 목적을 분리해 표시한다.
 
+Product Notice는 Telemetry가 아니다.
+
+```text
+Telemetry
+= Local 사용 정보를 외부로 송신
+
+Product Notice
+= 정적 공지를 외부에서 수신
+```
+
+Notice 경로로 사용 정보를 함께 보내는 설계는 채택하지 않는다.
+
+Notice 요청에 사용 통계, 식별자, 실행 횟수를 부착하면 이 경계 위반이다.
+
 ---
 
 ## 22. Retention과 삭제
@@ -1263,6 +1383,9 @@ docs/product/v1-completion-criteria.md
 21. 사용자 소유 Runtime Credential과 Product Service Credential을 분리한다.
 22. Human Actor의 권한은 개인·프로젝트·조직·법적 Retention 범위에 따라 제한된다.
 23. Finance Product-owned Domain Data는 명시적 동의와 정책 아래 Product Domain Service에 저장될 수 있다.
+24. Inbound Announcement Read는 사용자 데이터를 송신하지 않으며 Telemetry가 아니다.
+25. Product Notice 실패와 Opt-out은 V1 Workflow 완료를 막지 않는다.
+26. Notice Manifest Cache와 사용자 선택 State는 분리해 저장한다.
 
 ---
 
@@ -1300,6 +1423,8 @@ docs/product/finance-harness-report.md
 docs/product/v1-completion-criteria.md
 docs/poc/v2-local-invocation-poc.md
 docs/decisions/decision-log.md
+docs/contracts/product-notice-contract.md
+docs/adr/ADR-0011-local-product-notice-channel.md
 ```
 
 ---

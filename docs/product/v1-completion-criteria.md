@@ -131,7 +131,14 @@ Doctor
 재현 가능한 최소 설치·실행 경로 1개
 Truthfulness
 Provenance
+Local Product Notice Channel
+Runtime-readable Version Source
 ```
+
+Local Product Notice Channel과 Runtime-readable Version Source는
+DEC-054, DEC-055, ADR-0011로 채택된 항목이다.
+
+Notice는 자동 Update, 자동 설치, 자동 Login, Cloud 연결을 의미하지 않는다.
 
 재현 가능한 최소 설치·실행 경로 1개는 사용자가 한 가지 공식 경로로 로컬 설치와 기본 Workflow 실행을 재현할 수 있음을 의미한다. npm과 Homebrew 동시 지원, 복수 OS Installer, 자동 업데이트, 완성된 범용 CLI Product Shell은 V1 P0 요구가 아니다.
 
@@ -174,6 +181,13 @@ Worker Branch Lifecycle
 복수 Worker Coordination
 Merge / Apply Gate 자동화
 Organization Governance
+Cloud Notice API
+사용자별 서버 Audience
+자동 Update
+자동 V2 설치
+Push Notification
+상주 Daemon / Scheduler / OS Service
+서명 Manifest 구현
 ```
 
 비범위 항목이 구현되지 않았다는 이유로 V1을 미완료로 판정하지 않는다.
@@ -458,6 +472,54 @@ Unknown Capability의 미확인 사유 표현 가능
 Projection이 Capability를 과장하지 않음
 Capability / Policy 분리 Fixture 통과
 ```
+
+---
+
+## 9.2 Product Notice Contract
+
+Product Notice 완료 조건:
+
+```text
+Product Notice Contract 존재
+명시적 Work-start 외 경로에서 Notice 미발생
+Cache-first Display와 Next-run Visibility 구현
+Notice 실패의 Work-start 무영향 검증
+Artifact에 Notice 혼입 없음 검증
+Offline 환경에서 Work-start 정상 완료 검증
+Opt-out 상태에서 Network 호출 없음 검증
+Manifest 내용 미실행 검증
+Manifest Cache와 사용자 선택 State 분리
+Positive / Negative Fixture 존재
+```
+
+Public Documentation 완료 조건:
+
+```text
+Notice 목적 명시
+전송 금지 데이터 범위 명시
+HTTPS 요청 과정의 Network Metadata 노출 명시
+Dismiss 방법 명시
+전체 Opt-out 방법 명시
+```
+
+Network Metadata 노출 설명을 생략하거나 축소하면 완료로 판정하지 않는다.
+
+---
+
+## 9.3 Runtime Version Source
+
+Version Source 완료 조건:
+
+```text
+제품 Runtime이 Network 없이 읽을 수 있는 canonical Version Source 존재
+Version 값이 SemVer로 해석 가능
+Version 판독 실패 시 Notice Audience Match를 수행하지 않음
+Public Stable Release Tag가 SemVer-clean 형식
+Public V1 정식 공개 Tag가 v1.0.0
+설명 문구가 Tag 접미사가 아니라 Release Title / Notes에 존재
+```
+
+Roadmap 문서를 Runtime Version Source로 사용하지 않는다.
 
 ---
 
@@ -965,6 +1027,10 @@ Minimum Runtime Entry Manual E2E
 Truthfulness Gate
 Fresh Install 검증
 Single-runtime Quick Start
+Product Notice Contract
+Product Notice Fixture 검증
+Runtime-readable Version Source
+Notice Privacy Documentation
 ```
 
 ---
@@ -1199,7 +1265,7 @@ not_ready
 7. Capability Metadata 직렬화 형식
 8. Gemini Projection의 Post-V1 도입 시점
 9. Local Artifact History의 Post-V1 도입 시점
-10. V1 Release Version
+10. ~~V1 Release Version~~ — DEC-055로 확정 (`v1.0.0`)
 11. 기존 `handoff-prompt` 이름 유지 여부
 12. `docs/context` Promotion Workflow 형식
 13. P1 Known Limitation 승인 절차
@@ -1226,6 +1292,9 @@ not_ready
 14. Public 문서와 실제 동작을 일치시킨다.
 15. P0 미완료를 Known Limitation으로 우회하지 않는다.
 16. V2 기능 미구현을 V1 결함으로 판정하지 않는다.
+17. Product Notice 실패는 fail-open이며 Workflow 결과를 바꾸지 않는다.
+18. Product Notice는 Artifact와 Workflow State에 포함되지 않는다.
+19. 사용자는 원격 Notice 확인 전체를 opt-out할 수 있다.
 
 ---
 
@@ -1241,9 +1310,11 @@ docs/contracts/work-start-contract.md
 docs/contracts/handoff-basic-contract.md
 docs/contracts/result-basic-contract.md
 docs/contracts/runtime-capability-contract.md
+docs/contracts/product-notice-contract.md
 docs/testing/v1-fixture-plan.md
 docs/poc/v2-local-invocation-poc.md
 docs/decisions/decision-log.md
+docs/adr/ADR-0011-local-product-notice-channel.md
 ```
 
 ---

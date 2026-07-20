@@ -11,6 +11,7 @@ related_adrs:
   - ADR-0005
   - ADR-0007
   - ADR-0008
+  - ADR-0011
 source_inputs:
   - docs/roadmap/product-roadmap.md
   - docs/architecture/shared-core-and-extensions.md
@@ -1686,6 +1687,233 @@ docs/architecture/shared-core-and-extensions.md
 
 ---
 
+## DEC-054 — Public V1에 Local Product Notice Channel을 포함한다
+
+**Status:** accepted
+**Owner:** product
+**Reviewed at:** 2026-07-20
+
+### Decision
+
+```text
+Public V1은 최소 Local Product Notice Channel을 포함한다.
+
+목적은 향후 V2 출시, 보안, 호환성 공지를
+기존 Public V1 사용자에게 터미널에서 도달시키는 것이다.
+
+Notice는 명시적 Work-start 실행에만 부수하며
+Task Artifact와 완전히 분리된다.
+
+사용자는 개별 Notice를 dismiss할 수 있고
+원격 Notice 확인 전체를 opt-out할 수 있다.
+```
+
+Notice는 다음과 동일하지 않다.
+
+```text
+자동 Update
+자동 설치
+자동 Login
+Cloud 연결
+Telemetry
+Handoff Candidate
+Result Basic
+Task Context
+```
+
+### Rationale
+
+```text
+Public V1은 Cloud-independent 제품이므로
+Control Plane을 통한 사용자 도달 경로가 없다.
+
+Release Page 확인에만 의존하면
+V2 출시와 보안 공지가 기존 사용자에게 도달하지 않는다.
+
+공지 도달 경로 부재는 무료 오픈소스 상품의
+운영상 결함이지 선택 가능한 편의 기능이 아니다.
+
+Work-start는 사용자가 명시적으로 실행하는
+유일한 정기 진입점이므로 최소 비용의 도달 지점이다.
+```
+
+### Constraints
+
+```text
+제품 핵심 기능은 Network 없이 정상 동작한다
+Notice 관련 모든 실패는 fail-open이다
+사용자 작업, Repository, Task, Artifact 데이터를 전송하지 않는다
+자동 Update, 자동 설치, 자동 Login을 수행하지 않는다
+Notice는 새 Workflow State를 만들지 않는다
+Notice는 Human Gate를 추가하거나 완화하지 않는다
+상주 Daemon, Scheduler, OS Service를 요구하지 않는다
+```
+
+### Consequences
+
+```text
+Public V1 P0 Release 요구에 Notice Contract 완료와
+Notice Fixture 통과가 추가된다
+
+Public Documentation에 Notice 목적, 전송 범위,
+Network Metadata 노출, Opt-out 방법을 명시해야 한다
+
+Work-start를 실행하지 않는 사용자에게는 공지가 도달하지 않는다
+이 제한은 Known Limitation으로 문서화한다
+```
+
+### Relation to DEC-001
+
+```text
+DEC-001의 `V1은 Cloud 없이 완결된다`를 대체하지 않는다.
+
+Cloud 없이 완결
+= 제품 핵심 기능이 Network 없이 동작
+
+Notice
+= 선택적, fail-open, opt-out 가능한 읽기 전용 부가 경로
+
+Notice가 실패하거나 opt-out돼도
+V1 Workflow 전체가 완료 가능하므로 DEC-001 조건은 유지된다.
+```
+
+Notice는 Cloud Account, Auth, Entitlement, Control Plane을 도입하지 않는다.
+
+### Affected Documents
+
+```text
+docs/contracts/product-notice-contract.md
+docs/contracts/work-start-contract.md
+docs/product/v1-completion-criteria.md
+docs/roadmap/product-roadmap.md
+docs/master/product-architecture-master.md
+docs/architecture/local-cloud-human-boundary.md
+docs/testing/v1-fixture-plan.md
+```
+
+### Supersession
+
+```text
+supersedes: []
+superseded_by: []
+```
+
+---
+
+## DEC-055 — Runtime-readable Version Source와 SemVer-clean Public Release Tag를 채택한다
+
+**Status:** accepted
+**Owner:** product
+**Reviewed at:** 2026-07-20
+
+### Decision
+
+```text
+제품 Runtime이 읽을 수 있는 canonical Version Source를 둔다.
+
+Public Stable Release Tag는 SemVer-clean 형식을 사용한다.
+
+Public V1 정식 공개 Tag는 v1.0.0이다.
+
+설명 문구는 Tag 접미사가 아니라
+Release Title과 Release Notes에 기록한다.
+```
+
+Version Source의 위치와 파일 형식은 Product Worker 범위다.
+
+이 Decision은 요구사항과 형식 제약만 확정한다.
+
+### Rationale
+
+```text
+Notice Audience Match는 Local SemVer 비교로 판정한다.
+
+Runtime이 자신의 Version을 읽지 못하면
+Audience Match를 수행할 수 없고,
+Unknown을 Match로 추정하는 것은 금지되므로
+Notice가 영구히 표시되지 않는다.
+
+제품 Repository 최상위의 version.md는 Roadmap 성격 문서이며
+Runtime이 읽는 Version Source가 아니다.
+
+현재 제품 Repository의 Release Tag는 모두 설명 접미사를 가진다.
+
+v0.6.0-search-backend-pilot 형태의 Tag는
+SemVer에서 `-search-backend-pilot`이 prerelease 식별자로 해석되므로
+Stable Release 비교에서 v0.6.0보다 낮게 정렬된다.
+
+설명을 Tag에 넣는 관행은
+Version 비교 의미를 손상시킨다.
+```
+
+### Evidence
+
+```text
+관찰 대상: oh-my-ai 제품 Repository
+관찰 시점: 2026-07-20
+관찰 방법: git tag 목록 및 최상위 파일 확인
+
+관찰 결과:
+- 최상위 version.md 존재
+- docs/ 하위에 Runtime Version Source 없음
+- Tag 7건 모두 설명 접미사 포함
+  (v0.1.0-control-plane ~ v0.6.0-search-backend-pilot)
+- 설명 접미사 없는 Stable Tag 없음
+```
+
+이 관찰은 Foundation Worker가 Product Repository를 읽어 확인한 사실이다.
+
+Version Source 신설 위치와 형식은 Product Worker가 확정한다.
+
+### Constraints
+
+```text
+Version Source는 Runtime이 Network 없이 읽을 수 있어야 한다
+Version Source와 Roadmap 문서를 혼용하지 않는다
+Public Stable Tag에 설명 접미사를 붙이지 않는다
+Prerelease 표기는 실제 prerelease에만 사용한다
+Version 판독 실패를 Match로 추정하지 않는다
+```
+
+### Consequences
+
+```text
+V1 Completion Criteria §31의 미결정 항목
+`V1 Release Version`이 v1.0.0으로 확정된다
+
+Notice Audience Match 구현의 선결 조건이 해소된다
+
+기존 설명형 Tag는 유지하되
+Public Stable Release Tag 규칙에서 제외한다
+```
+
+### Open
+
+```text
+Version Source 파일 경로와 형식
+Version Source와 Package Metadata의 동기화 방식
+Prerelease Tag 운영 규칙
+```
+
+위 항목은 Product Worker가 별도로 확정한다.
+
+### Affected Documents
+
+```text
+docs/contracts/product-notice-contract.md
+docs/product/v1-completion-criteria.md
+docs/roadmap/product-roadmap.md
+```
+
+### Supersession
+
+```text
+supersedes: []
+superseded_by: []
+```
+
+---
+
 # Part II. Architecture Decisions
 
 ## DEC-005 — Shared Platform과 Domain Extension 책임을 분리한다
@@ -1874,6 +2102,132 @@ V2·V3 Cloud 기능도 이 경계를 완화하려면 별도 Decision이 필요�
 docs/architecture/local-cloud-human-boundary.md
 docs/roadmap/product-roadmap.md
 docs/poc/v2-local-invocation-poc.md
+```
+
+### Supersession
+
+```text
+supersedes: []
+superseded_by: []
+```
+
+---
+
+## DEC-056 — Notice는 Cache-first Display와 비차단 One-shot Refresh로 분리한다
+
+**Status:** accepted
+**Owner:** architecture
+**Reviewed at:** 2026-07-20
+
+### Decision
+
+```text
+1. Work-start 명시 실행 시 Local Cache Snapshot을 읽는다
+2. 시작 시 Cache에 존재한 활성 Notice만 현재 출력 말미에 표시한다
+3. Cache가 stale이면 비차단 one-shot Refresher를 실행한다
+4. Remote 결과를 현재 실행 출력에 삽입하지 않는다
+5. 새로 받은 Notice는 다음 Work-start부터 표시한다
+6. Refresher는 Cache만 갱신하고 별도 사용자 출력을 생성하지 않는다
+7. 모든 Notice 실패는 Work-start exit code와 Artifact 생성에 영향이 없다
+```
+
+모듈 경계:
+
+```text
+Local Product Services
+└─ Notice Module
+   ├─ read_for_display
+   ├─ select_active_notice
+   ├─ render_notice
+   └─ refresh_if_stale
+```
+
+Work-start는 통합 인터페이스만 알며 다음을 소유하지 않는다.
+
+```text
+GitHub Manifest URL
+Manifest Schema 세부 구조
+Lock 구현
+Atomic Write 구현
+Cache 파일 내부 구조
+향후 Cloud API
+```
+
+Network, Refresh, Notice 표시가 발생하지 않는 경로:
+
+```text
+UserPromptSubmit Hook
+Natural Suggestion
+Synthetic Event
+Worker Session
+Result Basic 생성
+기본 Doctor 실행
+기본 setup.sh 실행
+```
+
+### Rationale
+
+```text
+동기 조회 후 즉시 표시하면
+Work-start 소요 시간과 출력이 Network 응답에 종속돼
+실패 격리와 출력 결정성이 동시에 깨진다.
+
+상주 Daemon은 공지 최신성은 높지만
+Public V1을 상주 Process 요구 제품으로 만들고
+OS별 등록·해제·잔존물 비용을 발생시킨다.
+
+Cache-first 분리는 새 Notice 도달을
+최소 1회 실행만큼 지연시키는 대신
+실패 격리, 출력 결정성, 상주 Process 부재를 모두 확보한다.
+
+제품 공지는 초 단위 최신성이 필요한 데이터가 아니므로
+지연은 지불 가능한 비용이다.
+```
+
+상세 대안 비교는 ADR-0011이 소유한다.
+
+### Constraints
+
+```text
+Refresh는 Work-start Core 실행 이후에 시작한다
+Work-start는 Refresher 종료를 기다리지 않는다
+Refresh 실패는 기존 정상 Cache를 보존한다
+Refresher는 Scheduler, Cron, OS Service를 등록하지 않는다
+Manifest Cache와 User Choice State는 다른 저장 영역에 둔다
+Cache와 State 갱신은 atomic write로 수행한다
+Concurrent Refresh는 Local Lock으로 중복을 방지하며 대기하지 않는다
+```
+
+### Consequences
+
+```text
+Notice Fixture가 Network Mock 없이
+Cache 파일 상태 조작만으로 결정적으로 재현된다
+
+Notice Source가 향후 변경돼도
+Work-start Contract를 변경하지 않는다
+
+Stale Lock과 Cache 경로 반복 삭제가 새 운영 위험으로 추가된다
+```
+
+### Affected Documents
+
+```text
+docs/adr/ADR-0011-local-product-notice-channel.md
+docs/contracts/product-notice-contract.md
+docs/contracts/work-start-contract.md
+docs/architecture/local-cloud-human-boundary.md
+docs/testing/v1-fixture-plan.md
+```
+
+### References
+
+```text
+ADR-0011
+DEC-054
+DEC-055
+DEC-001
+DEC-051
 ```
 
 ### Supersession
@@ -4714,8 +5068,10 @@ docs/contracts/handoff-basic-contract.md
 docs/contracts/result-basic-contract.md
 docs/contracts/runtime-capability-contract.md
 docs/contracts/execution-policy-contract.md
+docs/contracts/product-notice-contract.md
 docs/testing/v1-fixture-plan.md
 docs/poc/v2-local-invocation-poc.md
+docs/adr/ADR-0011-local-product-notice-channel.md
 ```
 
 ---

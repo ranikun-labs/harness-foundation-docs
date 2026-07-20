@@ -52,8 +52,14 @@ docs/contracts/
 ├── handoff-basic-contract.md
 ├── result-basic-contract.md
 ├── runtime-capability-contract.md
-└── execution-policy-contract.md
+├── execution-policy-contract.md
+└── product-notice-contract.md
 ```
+
+`product-notice-contract.md`는 Workflow Contract가 아니다.
+
+Work-start 실행에 부수하는 Local 정보 표시 경계만 정의하며
+Candidate, Handoff, Result의 의미와 상태에 관여하지 않는다.
 
 Canonical 파일명에는 다음 suffix를 사용하지 않는다.
 
@@ -311,6 +317,55 @@ Goal과 Approved Scope의 canonical owner는 Handoff Basic Contract다.
 ```text
 Execution Policy
 = 현재 작업에서 허용·승인 필요·금지되는 행동
+```
+
+---
+
+## 7.1 Product Notice Contract
+
+**Path**
+
+```text
+docs/contracts/product-notice-contract.md
+```
+
+**책임**
+
+```text
+Notice 표시 Trigger
+Cache-first Display
+Next-run Visibility
+Notice Failure Boundary
+전송 금지 데이터 범위
+Manifest Safety
+Local State 분류
+Dismiss / Opt-out 의미
+Runtime Policy 축
+```
+
+**소유하지 않는 책임**
+
+```text
+Work-start 입력·출력 Contract
+Candidate 의미
+Human Review 의미
+Handoff Scope
+Result Truthfulness
+Runtime Capability
+Execution Policy 승인
+Release 일정
+```
+
+Product Notice는 Workflow Contract 흐름에 포함되지 않는다.
+
+Candidate, Handoff, Result의 상태 축을 읽거나 변경하지 않는다.
+
+**핵심 원칙**
+
+```text
+Product Notice
+= Work-start 실행에 부수하는
+  fail-open, opt-out 가능한 Local 정보 표시
 ```
 
 ---
@@ -978,6 +1033,7 @@ Release Note
 | Result Basic | `docs/contracts/result-basic-contract.md` | canonical candidate | Not Verifiable in this index |
 | Runtime Capability | `docs/contracts/runtime-capability-contract.md` | canonical candidate | Not Verifiable in this index |
 | Execution Policy | `docs/contracts/execution-policy-contract.md` | canonical candidate | Not Verifiable in this index |
+| Product Notice | `docs/contracts/product-notice-contract.md` | canonical candidate | Not Verifiable in this index |
 
 실제 구현 상태는 별도 Current-state Report와 Repository 검증 결과를 source of truth로 사용한다.
 
