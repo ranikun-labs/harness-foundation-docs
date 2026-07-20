@@ -376,7 +376,7 @@ superseded_by: []
 **Owner:** product
 **Decision scope:** product
 **Implementation status:** not_verified
-**Reviewed at:** 2026-07-15
+**Reviewed at:** 2026-07-20
 
 ### Decision Scope
 
@@ -762,6 +762,81 @@ Work-start Product Approval
 ≠ Network Approval
 ≠ Git Approval
 ```
+
+### Clarification — V1 Continuation Boundary
+
+```text
+This is a DEC-051 clarification.
+It does not create a new Product Decision,
+does not create a new Architecture Decision,
+does not supersede DEC-051,
+and does not change the Lean V1 Product Boundary.
+```
+
+Runtime Event와 User Intent는 같은 입력이 아니다.
+
+```text
+Real User Prompt
+= 사람이 현재 User Turn에서 직접 입력한 요청
+
+Synthetic Event
+= task-notification
+| background agent completion
+| tool result notification
+| runtime-generated status message
+| Provider Runtime이 생성한 비사용자 입력 이벤트
+
+Synthetic Event
+→ Work-start Suggestion 대상이 아님
+→ UserPromptSubmit intent routing 대상이 아님
+→ 동일 User Request에서 Work-start를 다시 제안하지 않음
+```
+
+Plan First와 Gather Context의 결과는 Main Session에서 검토·통합한다.
+Main Session은 Human Review와 다음 단계 선택의 세션이며, V1 로컬 Main Session을
+Control Plane이라고 부르지 않는다. Control Plane은 V2 Cloud·Managed Workflow 경계 용어로
+유지한다.
+
+사용자 확인을 거친 검토된 계획 또는 Context를 Handoff Candidate에 반영하는 절차는 있다.
+그러나 Candidate 반영 후에도 상태는 다음과 같이 유지된다.
+
+```text
+Needs human review
+```
+
+Candidate 반영은 Direct Handoff 승인이나 Worker 실행 승인이 아니다. Direct Handoff는
+사용자가 별도로 명시적으로 선택해야 하며, 그 전후에도 Main Session은 Candidate 반영 뒤
+구현을 시작하지 않는다. 반영 뒤 Main Session은 현재 상태, Worker Session이 아직 생성·실행되지
+않았음, Direct Handoff의 별도 선택 필요성, 그리고 선택 후 새 Worker Session으로 승인된
+Candidate 또는 Handoff를 수동 전달해야 한다는 다음 절차를 한 번 안내하고 정지한다.
+
+```text
+Native Subagent
+= Provider Runtime Feature
+≠ Worker Session
+
+Worker Session
+= 사용자 승인 Handoff를 전달받아 구현·검증을 수행하는
+  oh-my-ai Role Contract
+```
+
+Native Subagent와 Worker Session은 서로 다른 개념이며, Native Subagent는 Human Review,
+계획 최종 승인, Direct Handoff, Product·Architecture Decision 또는 다음 Workflow 실행을
+대신 결정할 수 없다.
+
+자동 Handoff 생성 수준은 Plan 완료 후에도 여전히 미결정이다. 다음 상태는 변경하지 않는다.
+
+```text
+automatic_planning: not_supported
+automatic_workflow_branching: not_supported
+worker_auto_creation: not_supported
+session_linking: not_supported
+result_auto_return: not_supported
+```
+
+이 Clarification의 Accepted는 Runtime 구현 완료나 Fixture Passed를 의미하지 않으며,
+Foundation 문서 반영은 oh-my-ai 제품 코드 반영을 의미하지 않는다. Ready for Handoff 상태를
+새로 도입하지 않는다.
 
 ### Rationale
 
