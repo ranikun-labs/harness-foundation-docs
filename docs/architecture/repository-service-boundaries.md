@@ -2,13 +2,14 @@
 title: Repository and Service Boundaries
 status: draft
 owner: product
-last_reviewed: 2026-07-14
+last_reviewed: 2026-07-23
 supersedes: []
 superseded_by: []
 related_adrs:
   - ADR-0004
   - ADR-0009
   - ADR-0010
+  - ADR-0012
 source_inputs: []
 ---
 
@@ -75,13 +76,15 @@ source_inputs: []
 - Development와 Finance의 형제 관계
 - Local Runtime과 Cloud Control Plane의 분리 원칙
 - Identity의 독립 논리 경계
+- Commerce의 독립 논리 경계
+- Identity와 Commerce의 동급 관계
 - 제품별 데이터 소유 원칙
 - 각 서버 내부 Modular Monolith 우선 원칙
 ```
 
 ### 3.2 목표 아키텍처
 
-목표 물리 경계는 다음과 같다.
+제품과 논리적 책임 경계는 다음과 같다.
 
 ```text
 Product Ecosystem
@@ -94,8 +97,11 @@ Product Ecosystem
 ├── finance-harness
 │   └── Finance Product Backend / Runtime
 │
-├── identity-platform
-│   └── 여러 제품이 공유하는 인증·인가 경계
+├── Shared Identity
+│   └── Account / Credential / Authentication / Token / Session
+│
+├── Shared Commerce
+│   └── Product Membership / Subscription / Billing / Payment / Entitlement / Quota
 │
 ├── finance-harness-docs
 │   └── Finance Lens / PolicyGuard / Fixture
@@ -104,9 +110,11 @@ Product Ecosystem
     └── Product Planning / Architecture / ADR / Roadmap
 ```
 
-Repository 이름은 향후 브랜드 결정에 따라 변경할 수 있다.
+Shared Identity와 Shared Commerce는 동급의 독립 논리 경계다.
+어느 한쪽도 다른 쪽의 하위 Module이 아니다.
 
-이름 변경은 책임 경계 변경을 의미하지 않는다.
+Identity·Commerce의 물리 Server, Repository, Database, Deployment는
+현재 승인하지 않는다.
 
 ### 3.3 핵심 물리화 원칙
 
@@ -441,7 +449,15 @@ oh-my-ai-control-plane
 
 #### 주요 책임
 
+다음 목록은 Dev Harness Cloud의 장기 논리 소유권을 나타내며,
+기존 V2/V3 제품 배치를 변경하지 않는다.
+
 - Development Task Identity
+- Workspace와 Project
+- Execution
+- Approval
+- Harness Policy
+- Cloud History
 - Parent–Child Task 관계
 - SessionBinding Metadata
 - ExecutionRun Metadata
@@ -597,72 +613,59 @@ Finance 장애와 배포가 다음에 직접 영향을 주지 않아야 한다.
 - Development Local Runtime
 - Development Managed Workflow
 
-### 7.4 `identity-platform`
+### 7.4 Shared Identity
 
 #### 역할
 
-여러 제품이 공유하는 인증·인가 기반을 소유하는 독립 논리 경계다.
+여러 제품이 공유할 수 있는 Account와 Authentication 기반을 소유하는
+미래의 독립 논리 경계다.
 
 ```text
-identity-platform
-├── identity
+Shared Identity
+├── account
 ├── credential
 ├── authentication
 ├── token
-├── device
-├── membership
-└── common-authorization
+└── session
 ```
 
 #### 주요 책임
 
-- 공통 User Identity
+- Account
 - Credential 관리
-- Login과 Authentication
-- Token 발급·갱신·폐기
-- Device 등록
-- 공통 Membership
-- 공통 Role 또는 Scope 기반
+- Login / Logout과 Authentication
+- Access / Refresh Token
+- Session
+- 안정적인 사용자 식별자
 - 인증 관련 보안 정책
 
-#### 제품 권한과의 경계
+#### Shared Commerce와의 경계
 
-Identity Platform이 모든 제품별 권한을 소유하지 않는다.
+Shared Identity는 Product Membership, Payment, Entitlement를 소유하지 않는다.
 
 ```text
-Identity Platform
+Shared Identity
 = 사용자가 누구인가
 = 인증됐는가
-= 공통 Membership이 무엇인가
 
-Development Control Plane
-= 어떤 Development Pro 기능을 사용할 수 있는가
-= 어떤 Runtime Policy가 적용되는가
-
-Finance
-= 어떤 Premium Lens를 사용할 수 있는가
-= Analysis / Journal 한도가 무엇인가
+Shared Commerce
+= Product Membership
++ Subscription
++ Billing
++ Payment
++ Entitlement
++ Quota
 ```
 
 #### 논리 경계와 물리화 시점
 
-Identity Platform의 독립 논리 경계는 채택한다.
+Shared Identity의 독립 논리 경계는 채택한다.
 
-별도 Repository와 독립 Deployment는 목표 아키텍처다.
+별도 Server, Repository, Database와 Deployment는 승인하지 않는다.
 
-다만 Identity Platform 완성은 V2 Local Invocation PoC의 선결 조건이 아니다.
+실제 복수 소비자와 독립 운영 필요가 확인된 뒤 물리 분리를 검토한다.
 
-기술 검증 순서:
-
-```text
-Local Invocation
-→ Local Correlation
-→ Result Collection
-→ Task / Result 귀속
-→ Human Review
-→ Identity / Device 연동
-→ Entitlement
-```
+Shared Identity 구현은 V1 또는 V2 Local Invocation PoC의 선결 조건이 아니다.
 
 이미 재사용 가능한 Auth Server가 존재한다면 별도 경계를 그대로 사용한다.
 
@@ -670,26 +673,31 @@ Local Invocation
 
 PoC를 이유로 Product Domain과 Identity 책임을 영구적으로 합치지는 않는다.
 
-#### Entitlement 경계
+#### Shared Commerce
 
-초기에는 제품별 Entitlement가 각 Product Service에 존재할 수 있다.
+Shared Commerce는 여러 제품이 공유할 수 있는 상업 기능의
+미래 독립 논리 경계다.
 
 ```text
-development entitlement
-→ oh-my-ai-control-plane
-
-finance entitlement
-→ finance-harness
+Shared Commerce
+├── product-membership
+├── subscription
+├── billing
+├── payment
+├── entitlement
+└── quota
 ```
 
-다음 조건이 확인되면 Commercial Platform 추출을 검토한다.
+Shared Commerce는 Shared Identity의 하위 Module이 아니다.
 
-- 제품 간 동일한 Plan과 Subscription 모델
-- 공통 Billing Provider와 Webhook 처리
-- 공통 Entitlement 계산
-- 공통 Usage·Quota 집계
-- 독립 운영 필요
-- 복수 제품 Bundle 판매
+별도 Server, Repository, Database와 Deployment는 승인하지 않는다.
+
+다음 조건이 실제로 확인된 뒤에만 물리 분리를 검토한다.
+
+- 둘 이상의 제품이 동일한 Commerce 책임을 실제 사용
+- 공통 Subscription·Billing·Entitlement·Quota 운영 필요
+- 독립 보안·장애 격리·Scaling 필요
+- 독립 Release 또는 소유 팀 필요
 
 ### 7.5 `finance-harness-docs`
 
@@ -805,9 +813,9 @@ local_execution_reference
 
 ---
 
-## 9. 목표 배포 구조
+## 9. 논리 연동 구조
 
-목표 배포 구조는 다음과 같다.
+다음은 책임 관계를 나타내며 물리 배포 구조를 승인하지 않는다.
 
 ```text
 Developer Device
@@ -817,12 +825,13 @@ Developer Device
         ▼
 oh-my-ai-control-plane
         │
-        ├── identity-platform
-        └── development entitlement
+        ├── Shared Identity (future logical boundary)
+        └── Shared Commerce (future logical boundary)
 
 Finance Web / App
         │
-        ├── identity-platform
+        ├── Shared Identity (future logical boundary)
+        ├── Shared Commerce (future logical boundary)
         └── finance-harness
                 └── optional domain-neutral platform capability
 ```
@@ -831,8 +840,8 @@ Finance Web / App
 
 1. Local Runtime과 Cloud Control Plane은 별도 배포물이다.
 2. Finance는 별도 제품 서비스 경계다.
-3. Identity는 공통 독립 논리 경계다.
-4. Identity 구현은 Local Invocation PoC의 선결 조건이 아니다.
+3. Identity와 Commerce는 동급의 독립 논리 경계다.
+4. Identity·Commerce 구현은 V1 또는 Local Invocation PoC의 선결 조건이 아니다.
 5. 서비스 간 데이터베이스 직접 조회를 금지한다.
 6. 각 서비스는 자기 Domain 데이터를 소유한다.
 7. API 또는 명시된 Contract를 통해서만 통신한다.
@@ -842,18 +851,16 @@ Finance Web / App
 
 ## 10. 데이터 소유권
 
-### 10.1 Identity 데이터
+### 10.1 Identity 논리 데이터
 
-소유자: `identity-platform`
+논리 소유자: Shared Identity
 
 ```text
-user identity
+account
 credential
 authentication session
+access token
 refresh token
-device
-common membership
-common role / scope
 ```
 
 ### 10.2 Development Control 데이터
@@ -861,14 +868,18 @@ common role / scope
 소유자: `oh-my-ai-control-plane`
 
 ```text
+workspace
+project
 development task
 parent-child task
 session binding metadata
 execution run metadata
 result artifact metadata
 human review
-development entitlement
 approval state
+approval
+harness policy
+cloud history
 managed recommendation
 ```
 
@@ -894,7 +905,6 @@ policy guard run
 checklist result
 journal
 review record
-finance entitlement
 finance usage
 ```
 
@@ -911,25 +921,16 @@ Development Repository의 Local-first 원칙을 Finance 기록에 기계적으�
 
 ### 10.4 데이터베이스 원칙
 
-목표 Database 경계:
+위 데이터 소유권은 논리 경계다.
 
 ```text
-identity_db
-development_control_db
-finance_db
+논리 데이터 소유권
+≠ 물리 Database 승인
+≠ Database Schema 승인
 ```
 
-초기에는 하나의 PostgreSQL Cluster를 공유할 수 있다.
-
-단, 다음 조건을 지켜야 한다.
-
-- 논리 Database 또는 Schema 분리
-- 소유 서비스 외 직접 접근 금지
-- Cross-service Foreign Key 금지
-- Cross-service Table Read 금지
-- Migration 소유권 분리
-- Backup과 Retention 정책 구분 가능
-- 향후 물리 분리가 가능한 Identifier 사용
+Identity·Commerce 전용 Database, Cluster, Schema와 배포 방식은
+실제 복수 소비자와 운영상 필요가 확인된 뒤 별도 결정한다.
 
 ---
 
@@ -1197,9 +1198,10 @@ Finance는 별도 제품, 데이터, 사용자 흐름, 법률 정책과 Release 
 
 현재 채택하지 않는다.
 
-Identity의 논리 경계는 분리하지만, Local PoC에 모든 상업 서비스를 선행 구현하지 않는다.
+Identity와 Commerce의 논리 경계는 분리하지만,
+V1 또는 Local PoC에 외부 플랫폼 구현을 선행하지 않는다.
 
-실제 공통성과 운영 요구가 확인된 후 Commercial Platform 추출을 검토한다.
+실제 복수 소비자와 운영 요구가 확인된 후 물리 추출을 검토한다.
 
 ---
 
@@ -1245,7 +1247,7 @@ local correlation metadata
 ```text
 oh-my-ai
 oh-my-ai-control-plane
-identity-platform integration
+optional Shared Identity / Shared Commerce integration
 ```
 
 목표:
@@ -1273,7 +1275,7 @@ Finance Product에 필요한 Identity 또는 Domain-neutral Contract만 준비�
 
 ```text
 finance-harness
-identity-platform
+optional Shared Identity / Shared Commerce integration
 optional domain-neutral platform capability
 ```
 
@@ -1292,7 +1294,8 @@ optional domain-neutral platform capability
 실제 중복과 운영 요구가 확인된 경우에만 검토한다.
 
 ```text
-commercial-platform
+shared-identity
+shared-commerce
 shared-platform-control-plane
 shared-contracts
 ```
@@ -1310,8 +1313,8 @@ shared-contracts
 5. Shared Core는 공통 Vocabulary와 Contract다.
 6. V1 Shared Core는 Markdown Artifact에 투영되며 관리형 Entity를 요구하지 않는다.
 7. Task, Run, Result의 관리형 Entity 승격은 V2부터다.
-8. Identity는 독립 논리 경계다.
-9. Identity 완성은 V2 Local Invocation PoC의 선결 조건이 아니다.
+8. Identity와 Commerce는 동급의 독립 논리 경계다.
+9. Identity·Commerce 완성은 V1 또는 V2 Local Invocation PoC의 선결 조건이 아니다.
 10. PoC의 `ohmy_session_id`는 Local Correlation Identifier다.
 11. 각 서비스는 자기 Domain 데이터를 소유한다.
 12. 서비스 간 Database 직접 접근을 금지한다.
@@ -1326,6 +1329,8 @@ shared-contracts
 21. 제품 전체 canonical 결정은 `harness-private-docs`에서 관리한다.
 22. Cloud가 생성한 판단은 Candidate이며 자동 Truth가 아니다.
 23. Repository 이름 변경은 가능하지만 책임 경계 변경은 별도 결정이 필요하다.
+24. Identity·Commerce의 물리 Server·Repository·Database·Deployment는 승인되지 않았다.
+25. 물리 분리는 실제 복수 소비자와 운영상 필요가 확인된 뒤 검토한다.
 
 ---
 
@@ -1336,9 +1341,9 @@ shared-contracts
 1. 각 Repository의 최종 상품명과 Organization 이름
 2. `oh-my-ai-control-plane`의 최종 기술 스택
 3. 기존 Auth Server의 정확한 재사용 범위
-4. Identity Platform의 최초 배포 시점
+4. Shared Identity의 물리 Server·Repository·Database·Deployment
 5. Billing Provider
-6. Entitlement의 장기 물리 소유 위치
+6. Shared Commerce의 물리 Server·Repository·Database·Deployment
 7. Finance Service의 초기 Cloud Infrastructure
 8. Shared Contract의 직렬화 형식
 9. PostgreSQL Cluster의 물리 분리 시점
