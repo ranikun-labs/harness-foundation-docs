@@ -3,10 +3,11 @@ title: Architecture Index
 status: draft
 implementation_status: not_verifiable
 owner: architecture
-last_reviewed: 2026-07-15
+last_reviewed: 2026-07-23
 supersedes: []
 superseded_by: []
 source_inputs:
+  - docs/architecture/repository-service-boundaries.md
   - docs/architecture/shared-core-and-extensions.md
   - docs/architecture/local-cloud-human-boundary.md
   - docs/product/README.md
@@ -27,6 +28,7 @@ source_inputs:
 ```text
 docs/architecture/
 ├── README.md
+├── repository-service-boundaries.md
 ├── shared-core-and-extensions.md
 └── local-cloud-human-boundary.md
 ```
