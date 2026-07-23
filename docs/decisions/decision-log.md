@@ -3,7 +3,7 @@ title: Decision Log
 status: draft
 implementation_status: partial
 owner: core
-last_reviewed: 2026-07-15
+last_reviewed: 2026-07-23
 supersedes: []
 superseded_by: []
 related_adrs:
@@ -12,6 +12,7 @@ related_adrs:
   - ADR-0007
   - ADR-0008
   - ADR-0011
+  - ADR-0012
 source_inputs:
   - docs/roadmap/product-roadmap.md
   - docs/architecture/shared-core-and-extensions.md
@@ -2102,6 +2103,82 @@ V2·V3 Cloud 기능도 이 경계를 완화하려면 별도 Decision이 필요�
 docs/architecture/local-cloud-human-boundary.md
 docs/roadmap/product-roadmap.md
 docs/poc/v2-local-invocation-poc.md
+```
+
+### Supersession
+
+```text
+supersedes: []
+superseded_by: []
+```
+
+---
+
+## DEC-057 — Shared Identity와 Shared Commerce의 논리적 책임 경계를 분리한다
+
+**Status:** accepted_with_constraints
+**Owner:** architecture
+**Decision type:** architecture
+**Decision scope:** architecture
+**Decision date:** 2026-07-23
+**Implementation status:** not_started
+**Reviewed at:** 2026-07-23
+
+### Decision
+
+```text
+V1 Local OSS는 로그인·결제·외부 Cloud 서비스 없이 완결한다.
+
+Shared Identity
+= Account·Credential·Authentication·Token·Session
+
+Shared Commerce
+= Product Membership·Subscription·Billing·Payment·Entitlement·Quota
+
+Shared Identity와 Shared Commerce는 동급의 독립 논리 경계다.
+
+Dev Harness Cloud
+= Workspace·Project·Execution·Approval·Harness Policy·Cloud History
+```
+
+Accepted 범위는 논리적 책임과 의존 방향이다.
+
+### Constraints
+
+```text
+Identity·Commerce의 물리 Server·Repository·Database·Deployment는 승인하지 않는다.
+실제 복수 소비자와 운영상 필요가 생긴 뒤 물리 분리를 검토한다.
+V1에 Identity·Commerce 의존을 도입하지 않는다.
+기존 V2 Personal Managed Workflow 정의를 변경하지 않는다.
+Workspace·Organization의 V3 배치를 변경하지 않는다.
+```
+
+### Deferred
+
+```text
+Identity·Commerce 물리 구현과 배포 시점
+Repository와 Database 분리
+JWT·JWKS 상세
+결제 Database Schema와 PG Provider
+서비스 간 이벤트
+Kubernetes 구성
+```
+
+### Consequences
+
+```text
+Payment와 Entitlement를 Identity 책임으로 해석하지 않는다.
+Development Harness는 제품 도메인 책임을 외부 공통 플랫폼에 넘기지 않는다.
+논리 경계 기록만으로 새 Service나 Repository를 생성하지 않는다.
+기존 V1/V2/V3 Roadmap과 Accepted Decision은 유지한다.
+```
+
+### Affected Documents
+
+```text
+docs/adr/ADR-0012-shared-identity-commerce-boundary.md
+docs/architecture/repository-service-boundaries.md
+docs/decisions/decision-log.md
 ```
 
 ### Supersession
