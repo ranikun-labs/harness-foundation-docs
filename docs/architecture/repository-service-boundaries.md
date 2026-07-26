@@ -1491,7 +1491,7 @@ optional domain-neutral platform capability
 - Review
 - Finance Entitlement
 
-### Phase 5 — 목표 Shared Platform 활성화 검토
+### Phase 5 — 목표 Shared Services Deployment Unit 활성화 검토
 
 목표 Deployment Unit은 정의하지만 실제 구현은
 복수 소비자와 운영 요구가 확인된 경우에만 검토한다.

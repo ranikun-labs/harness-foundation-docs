@@ -1565,7 +1565,7 @@ Self-hosted
 6. Entitlement의 장기 물리 소유 위치
 7. Shared Contract 직렬화 형식
 8. Finance Backend 초기 Infrastructure
-9. Shared Services Deployment Unit 활성화 시점
+9. Shared Platform Service 추출 시점
 10. Sidecar 도입 시점
 11. 정식 SessionBinding Identifier Schema
 12. Managed Memory 저장 모델

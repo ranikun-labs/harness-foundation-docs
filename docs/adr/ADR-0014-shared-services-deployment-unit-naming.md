@@ -23,8 +23,11 @@ constraints:
 affected_docs:
   - docs/decisions/decision-log.md
   - docs/adr/ADR-0013-target-deployment-and-data-boundaries.md
+  - docs/adr/README.md
   - docs/architecture/repository-service-boundaries.md
+  - docs/architecture/backend-service-foundation/README.md
   - docs/master/product-architecture-master.md
+  - docs/product/finance-harness-report.md
   - docs/roadmap/product-roadmap.md
 evidence_refs:
   - "DEC-005"
