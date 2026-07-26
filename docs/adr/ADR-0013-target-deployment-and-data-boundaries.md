@@ -16,7 +16,7 @@ effective_from: null
 implementation_status: not_started
 constraints:
   - "목표 배포 구조는 즉시 구현 승인이 아니다"
-  - "V1 Local Core는 Shared Platform과 Cloud AI Runtime 없이 완결한다"
+  - "V1 Local Core는 Shared Services Deployment Unit과 Cloud AI Runtime 없이 완결한다"
   - "Deployment Unit별 데이터 Source of Truth와 Migration 소유권을 분리한다"
   - "Cross-service Foreign Key와 OLTP Cross-service JOIN을 금지한다"
   - "기존 V2 Personal Managed Workflow와 V3 배치를 변경하지 않는다"
@@ -26,15 +26,28 @@ affected_docs:
   - docs/architecture/README.md
 evidence_refs: []
 supersedes: []
-superseded_by: []
-superseded_scope: []
-remaining_valid_scope: []
-replacement_decision_refs: []
+superseded_by:
+  - ADR-0014
+superseded_scope:
+  - "Shared Platform Server 명칭 범위"
+  - "Shared Platform Server에서 파생된 물리 그룹과 Database 예시 표현"
+remaining_valid_scope:
+  - "Target Deployment Unit 구성"
+  - "Identity·Commerce·Audit의 Module·Data·Schema·Migration Ownership 분리"
+  - "PostgreSQL 목표 배치 원칙과 Cross-service FK / OLTP Cross-service JOIN 금지"
+  - "V1 Local Core 독립성과 실제 물리 구현 미승인 상태"
+replacement_decision_refs:
+  - ADR-0014
+  - DEC-060
 ---
 
 # ADR-0013: 목표 Deployment Unit과 PostgreSQL 데이터 소유권 경계를 정의한다
 
 ## 1. Decision Summary
+
+> **Partial supersession:** `Shared Platform Server` 명칭과 그 물리 그룹 파생 표현은
+> [ADR-0014](./ADR-0014-shared-services-deployment-unit-naming.md)로 부분 대체됐다.
+> 이 ADR의 Target Topology와 Data Ownership 결정은 계속 유효하다.
 
 ADR-0012가 확정한 Shared Identity와 Shared Commerce의 논리 경계를 유지하면서,
 장기 목표 Deployment Unit과 PostgreSQL 데이터 소유권 경계를 정의한다.
@@ -45,7 +58,7 @@ Target Deployment Units
 ├── Finance Harness Server
 ├── Dev Harness Cloud Server
 ├── AI Runtime Server
-└── Shared Platform Server
+└── Shared Services Deployment Unit
     ├── Identity Module
     ├── Commerce Module
     └── Audit Module
@@ -137,12 +150,12 @@ AI Runtime Server가 소유하지 않는 책임:
 
 제품별 Prompt·Policy·Context Schema·Evaluation은 각 Product Server가 소유한다.
 
-### 4.3 Shared Platform Server
+### 4.3 Shared Services Deployment Unit
 
-Shared Platform Server는 장기 목표의 단일 Deployment Unit이다.
+Shared Services Deployment Unit은 장기 목표의 단일 Deployment Unit이다.
 
 ```text
-Shared Platform Server
+Shared Services Deployment Unit
 ├── Identity Module
 ├── Commerce Module
 └── Audit Module
@@ -159,7 +172,7 @@ Shared Platform Server
 Commerce는 실제 유료화 전까지 구현을 유예할 수 있다.
 
 Audit는 별도 Server로 추가하지 않는다.
-중앙 Audit 기능이 필요해질 경우 Shared Platform 내부 Module로 활성화한다.
+중앙 Audit 기능이 필요해질 경우 Shared Services Deployment Unit 내부 Module로 활성화한다.
 
 ## 5. V1 Local Core Independence
 
@@ -186,7 +199,7 @@ PostgreSQL Physical Cluster
 ├── finance_db
 ├── dev_cloud_db
 ├── ai_runtime_db
-└── shared_platform_db
+└── shared_services_db
     ├── identity schema
     ├── commerce schema
     └── audit schema
@@ -201,9 +214,9 @@ PostgreSQL Physical Cluster
 | `finance_db` | Finance Harness Server | Finance Harness |
 | `dev_cloud_db` | Dev Harness Cloud Server | Dev Harness Cloud |
 | `ai_runtime_db` | AI Runtime Server | AI Runtime |
-| `shared_platform_db.identity` | Identity Module | Identity Module |
-| `shared_platform_db.commerce` | Commerce Module | Commerce Module |
-| `shared_platform_db.audit` | Audit Module | Audit Module |
+| `shared_services_db.identity` | Identity Module | Identity Module |
+| `shared_services_db.commerce` | Commerce Module | Commerce Module |
+| `shared_services_db.audit` | Audit Module | Audit Module |
 
 같은 물리 Cluster 또는 Database를 사용해도 소유권은 합쳐지지 않는다.
 
@@ -215,7 +228,7 @@ PostgreSQL Physical Cluster
 - Cross-service Foreign Key
 - OLTP Cross-service JOIN
 - 같은 Database에 있다는 이유로 다른 Module의 Table 직접 조회
-- Shared Platform Schema 사이의 소유권 우회
+- Shared Services Deployment Unit 내부 Schema 사이의 소유권 우회
 
 다른 서비스 데이터는 다음 경로로 소비한다.
 
@@ -239,7 +252,7 @@ Audit Event는 제품 Domain Entity에 물리 Foreign Key를 걸지 않는다.
 - 필요한 Domain Identifier
 - 업무 Transaction과 Event 생성의 일관성
 
-Shared Platform Audit Module이 담당할 수 있는 책임:
+Shared Services Audit Module이 담당할 수 있는 책임:
 
 - 중앙 보관
 - 통합 조회
@@ -270,7 +283,7 @@ Database 수나 미래 가능성만으로 Cluster를 선제 분리하지 않는�
 ## 10. Consequences
 
 - Target Deployment Unit과 구현 시점을 분리한다.
-- Shared Platform은 하나의 Deployment Unit으로 시작할 수 있다.
+- Shared Services Deployment Unit은 하나의 Deployment Unit으로 시작할 수 있다.
 - Identity·Commerce·Audit는 같은 배포물 안에서도 코드와 데이터를 분리한다.
 - Deployment Unit별 Source of Truth와 Migration 책임이 명확해진다.
 - OLTP 서비스 간 결합은 API·Event·Projection 경계 밖으로 확산되지 않는다.
@@ -306,4 +319,6 @@ DEC-043
 DEC-044
 DEC-057
 DEC-058
+DEC-060
+ADR-0014
 ```
