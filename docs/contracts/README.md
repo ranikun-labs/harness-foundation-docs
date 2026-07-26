@@ -1113,3 +1113,26 @@ docs/poc/v2-local-invocation-poc.md
 
 - 각 P0 Contract가 Fixture와 연결되는가
 - Manual E2E가 전체 Contract 흐름을 닫는가
+
+---
+
+# Part XI. Sibling Foundation — Backend Service Foundation Contracts
+
+## 40. Backend Service Foundation Contracts
+
+`docs/contracts/backend-service-foundation/`는 이 Contract Index(§1-39)와 다른 대상을 다루는 sibling Contract 문서군이다 (`DEC-057`).
+
+```text
+이 Contract Index (§1-39)
+= oh-my-ai Human-AI Workflow Contract
+  (Work-start / Handoff / Result Basic / Runtime Capability / Execution Policy / Product Notice)
+
+docs/contracts/backend-service-foundation/
+= Carelog, Finance Harness Backend, Shared Identity 등
+  실제 MSA Backend Service 간 통신 계약
+  (Shared Identity Token Contract, Shared Event Envelope Contract)
+```
+
+두 Contract 군은 대상 시스템이 다르므로 중복이 아니다(Option C: 병존). 이 Index의 상태 축, Human Review Gate 정의, Fixture 요건은 `docs/contracts/backend-service-foundation/`에 그대로 적용되지 않으며, 해당 문서군은 자체 색인을 가진다.
+
+관련: `docs/contracts/backend-service-foundation/README.md`, `docs/decisions/decision-log.md` DEC-057
