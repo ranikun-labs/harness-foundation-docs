@@ -14,6 +14,7 @@ related_adrs:
   - ADR-0011
   - ADR-0012
   - ADR-0013
+  - ADR-0014
 source_inputs:
   - docs/roadmap/product-roadmap.md
   - docs/architecture/shared-core-and-extensions.md
@@ -2579,6 +2580,15 @@ Shared Services Deployment Unit
 ≠ Identity와 Commerce의 논리 경계 통합
 ```
 
+### Rationale
+
+```text
+DEC-005의 Shared Platform은 Domain-neutral Contract / Shared Core 논리 경계다.
+DEC-058의 Shared Platform Server는 Identity·Commerce·Audit의 물리 공동 배포 후보를 의미한다.
+같은 용어가 서로 다른 축에서 재사용되면 검색·참조·후속 설계에서 논리 경계와 물리 배포 단위가 계속 혼동될 수 있다.
+따라서 DEC-058의 Architecture 의미는 유지하면서 물리 배포 후보의 명칭 범위만 Shared Services Deployment Unit으로 부분 대체한다.
+```
+
 ### Partial Supersession
 
 ```text
@@ -2642,16 +2652,29 @@ DEC-059 Backend Service Foundation 명칭과 Carelog 상태 의미를 변경하�
 실제 Runtime·Repository·Database·Deployment·Release를 생성하거나 승인하지 않는다.
 ```
 
+### Consequences
+
+```text
+Shared Platform은 DEC-005의 논리 Contract 의미로 유지한다.
+Shared Services Deployment Unit은 Shared Identity·Shared Commerce·Audit의 공동 물리 배포 후보를 의미한다.
+Identity와 Commerce의 독립 논리 경계, Module·Data·Schema·Migration Ownership 분리, PostgreSQL 배치 원칙은 유지한다.
+실제 Server·Repository·Database·Deployment는 승인하지 않는다.
+ADR-0013·Repository Map·Master·Roadmap 등 파생 문서의 물리 배포 명칭을 정렬한다.
+DEC-059의 Carelog 데이터 Locator는 §10.5에서 §10.7로 정정하되 의미는 변경하지 않는다.
+```
+
 ### Affected Documents
 
 ```text
 docs/adr/ADR-0014-shared-services-deployment-unit-naming.md
 docs/adr/ADR-0013-target-deployment-and-data-boundaries.md
+docs/adr/README.md
 docs/architecture/repository-service-boundaries.md
 docs/architecture/backend-service-foundation/README.md
 docs/master/product-architecture-master.md
+docs/product/finance-harness-report.md
 docs/roadmap/product-roadmap.md
-README.md
+docs/decisions/decision-log.md
 ```
 
 ### References
