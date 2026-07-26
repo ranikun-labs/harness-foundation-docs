@@ -275,6 +275,8 @@ Routing Contract
 Fixture
 Regression
 Product / Legal / Operations Policy
+Finance Product Service Policy (`service-policy/finance-product-policy.md`)
+Launch Experiment Values (`service-policy/finance-launch-experiment-values.md`)
 Professional Standards
 Human Review Protocol
 Artifact Metadata
@@ -301,6 +303,10 @@ Audit Evidence Runtime 저장
 목표 Runtime 책임:
 
 ```text
+Backend Architecture
+API Contract implementation
+Domain implementation
+Persistence / Migration
 Contract Loading
 Activation Gate
 Lens Selection
@@ -316,9 +322,15 @@ Access History
 Audit Evidence
 Finance Entitlement
 Finance Usage
+Operational Evidence
 ```
 
 현재 `finance-harness` Runtime의 구현 완료 상태는 이 Snapshot에서 확인되지 않는다.
+
+`finance-harness`는 canonical Finance Product Policy 또는 canonical Launch
+Experiment Values를 소유하지 않는다. Backend Architecture와 구현은
+`finance-harness-docs`의 canonical Product Policy를 source input으로 참조하며,
+그 상태·원칙·값을 재정의하지 않는다.
 
 따라서 다음은 목표 상태다.
 

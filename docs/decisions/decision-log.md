@@ -2696,6 +2696,112 @@ superseded_by: []
 
 ---
 
+## DEC-061 — Finance Product Service Policy는 finance-harness-docs가 canonical하게 소유한다
+
+**Status:** accepted
+**Owner:** product
+**Decision type:** product
+**Decision scope:** documentation-ownership / repository-boundary
+**Decision date:** 2026-07-27
+**Architecture status:** not_started
+**Implementation status:** not_started
+**Runtime support status:** not_supported
+**Product release status:** not_released
+**Reviewed at:** 2026-07-27
+
+### Context
+
+Finance Product Policy 기반 문서가 `finance-harness-docs`에 생성·병합됐다.
+향후 Finance Backend Repository가 생성될 수 있으나 Product Policy와 Backend
+Architecture는 서로 다른 책임을 가진다.
+
+Product Policy를 미래 Backend로 이동한다고 가정하면 제품 원칙, 실험값,
+법무·운영 기준이 구현 Repository에 종속되고 정책 변경과 구현 상태가
+혼동될 위험이 있다.
+
+### Decision
+
+```text
+finance-harness-docs
+= Finance Product Service Policy의 canonical owner
+
+service-policy/finance-product-policy.md
+= 불변 Product 원칙의 canonical source
+
+service-policy/finance-launch-experiment-values.md
+= 가변 Launch Experiment Values의 canonical source
+
+future Finance Backend
+= Architecture / Implementation / Migration / API / Runtime Evidence /
+  Operational Evidence owner
+≠ canonical Product Policy 또는 Launch Experiment Values owner
+```
+
+미래 Finance Backend는 canonical Finance Product Policy를 참조하며, 이를
+복제하거나 재정의하지 않는다.
+
+### Rationale
+
+- Product Policy와 구현 상태를 분리한다.
+- 불변 정책과 가변 실험값을 Backend Release Cycle에서 분리한다.
+- 법무·안전·제품 기준이 특정 구현 Repository에 종속되는 것을 방지한다.
+- Backend Repository가 아직 물리화되지 않은 상태에서도 Product Policy를 독립적으로 확정할 수 있다.
+- 여러 Backend 또는 Client가 동일한 정책을 참조할 수 있다.
+
+### Constraints
+
+```text
+Finance Product Policy 본문과 Launch Experiment Values를 변경하지 않는다.
+Finance Backend Repository 생성, Architecture, Runtime 구현, Database 또는 API 설계를 승인하지 않는다.
+Product Policy Accepted를 Architecture·Implementation·Runtime·Release 완료로 해석하지 않는다.
+```
+
+### Consequences
+
+- Foundation Repository Map은 `finance-harness-docs`의 Product Policy 소유권을 명시한다.
+- 미래 Finance Backend 항목은 Product Policy 비소유를 명시한다.
+- Backend Architecture 문서는 Product Policy를 source input으로 참조한다.
+- Product Policy 변경은 `finance-harness-docs`에서 수행한다.
+- Backend 구현 상태와 Product Policy 상태는 별도로 관리한다.
+- Product Policy Accepted는 Architecture·Implementation·Runtime·Release 완료를 의미하지 않는다.
+
+### Non-goals
+
+```text
+Finance Backend Repository 생성 승인
+Backend Architecture 승인
+Runtime 구현 승인
+Database 또는 API 설계
+회원가입 / Promotion / Trial 정책 재설계
+후속 세부 정책 문서 작성
+```
+
+### Canonical References
+
+```text
+finance-harness-docs/README.md
+finance-harness-docs/service-policy/README.md
+finance-harness-docs/service-policy/finance-product-policy.md
+finance-harness-docs/service-policy/finance-launch-experiment-values.md
+```
+
+### Affected Documents
+
+```text
+docs/architecture/repository-service-boundaries.md
+docs/product/finance-harness-report.md
+docs/decisions/decision-log.md
+```
+
+### Supersession
+
+```text
+supersedes: []
+superseded_by: []
+```
+
+---
+
 # Part III. Workflow Decisions
 
 ## DEC-008 — V1 Workflow는 Human-controlled Manual Loop다
