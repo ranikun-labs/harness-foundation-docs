@@ -550,7 +550,10 @@ Public API
 
 #### 역할
 
-Finance Product의 Backend와 Finance Runtime을 소유한다.
+`finance-harness`는 아직 물리화되지 않은 Finance Product Backend / Runtime의
+목표 Repository다. 향후 이 Backend는 Finance Product의 Architecture,
+API Contract 구현, Domain 구현, Persistence / Migration, Runtime Evidence와
+Operational Evidence를 소유한다.
 
 ```text
 finance-harness
@@ -574,10 +577,24 @@ finance-harness
 - JournalCandidate
 - Journal 저장
 - ReviewRecord
-- Finance 데이터 정책
-- Finance 사용자 흐름
-- Finance 상품별 사용 한도
+- Finance Domain 데이터와 Migration
 - Finance Domain Audit
+- Runtime과 Operational Evidence
+
+#### 소유하지 않는 책임
+
+`finance-harness`는 canonical Finance Product Policy 또는 canonical Launch
+Experiment Values를 소유하지 않는다.
+
+```text
+Finance Product Policy 원문
+Launch Experiment Values 원문
+Product / Legal / Operations 정책 원문
+```
+
+이 항목의 canonical owner는 `finance-harness-docs`다. Backend Architecture와
+구현은 해당 Product Policy를 source input으로 참조하며, 상태·원칙·값을
+복제하거나 재정의하지 않는다.
 
 #### Development와의 경계
 
@@ -713,7 +730,8 @@ Shared Commerce는 Shared Identity의 하위 Module이 아니다.
 
 #### 역할
 
-Finance Domain의 지식·정책·검증 Artifact를 관리한다.
+Finance Domain의 지식·정책·검증 Artifact와 Finance Product Service Policy의
+canonical 문서를 관리한다.
 
 ```text
 finance-harness-docs
@@ -727,6 +745,8 @@ finance-harness-docs
 ├── Routing
 ├── Fixtures
 ├── Regression
+├── Finance Product Policy
+├── Launch Experiment Values
 ├── Product / Legal / Operations
 └── Professional Standards / Human Review Protocol
 ```
@@ -734,6 +754,12 @@ finance-harness-docs
 Finance Lens, PolicyGuard, Catalog, Routing, Fixture, Regression,
 Professional Standards와 Human Review 계약의 문서 Source of Truth는
 이 Repository다.
+
+`service-policy/finance-product-policy.md`는 불변 Finance Product 원칙의
+canonical source이며,
+`service-policy/finance-launch-experiment-values.md`는 가변 Launch
+Experiment Values의 canonical source다. `service-policy/README.md`는
+Finance Product Policy의 canonical entry point다.
 
 다만 Repository 배치 또는 문서 존재만으로 Runtime 활성화를 의미하지 않는다.
 각 Artifact의 `lifecycle_status`, `implementation_status`,
@@ -747,6 +773,15 @@ Professional Standards와 Human Review 계약의 문서 Source of Truth는
 - 공통 Identity 구현
 - 전체 Cloud Control Plane 구조
 - 전체 상품화 전략
+- Backend Runtime, API Implementation, Database Migration
+- Runtime Evidence, Deployment, Operational Runtime Configuration
+
+#### 미래 Finance Backend와의 참조 관계
+
+향후 `finance-harness` Backend의 Architecture와 구현은
+`finance-harness-docs`의 canonical Finance Product Policy를 source input으로
+참조한다. Backend 구현 문서는 Product Policy의 상태·원칙·값을 재정의하지
+않는다.
 
 Private Planning Repository는 Finance와 Shared Platform 사이의 제품 경계와 의존 관계를 관리한다.
 
