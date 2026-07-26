@@ -1321,6 +1321,8 @@ Identity Platform 독립 배포는 목표 경계다.
 
 Local Invocation PoC의 선결 조건은 아니다.
 
+Canonical 논리 서비스명은 `Shared Identity`다 (`DEC-059`). `identity-platform`은 §23 목표 Repository 지도상의 후보 명칭이며, 실제 Repository 이름은 물리 분리 결정 시 별도로 확정한다.
+
 ---
 
 ## 23. Repository와 Service 경계 요약
@@ -1345,6 +1347,10 @@ finance-harness-docs
 
 harness-private-docs
 = Product Planning / Architecture / ADR / Roadmap
+
+carelog
+= 기존 Product Service (Auth Phase A 논리 분리 단계)
+  세부는 docs/architecture/repository-service-boundaries.md §7.7 참고
 ```
 
 원칙:
@@ -1611,7 +1617,47 @@ docs/product/v1-completion-criteria.md
 docs/contracts/product-notice-contract.md
 docs/poc/v2-local-invocation-poc.md
 docs/adr/ADR-0011-local-product-notice-channel.md
+docs/architecture/backend-service-foundation/README.md
+docs/contracts/backend-service-foundation/README.md
 ```
+
+---
+
+## 30.1 Sibling Foundation — Backend Service Foundation
+
+`docs/architecture/backend-service-foundation/`와 `docs/contracts/backend-service-foundation/`는 이 Master Document가 기술하는 `oh-my-ai` 제품군 Architecture와는 별도 대상, 즉 Carelog·Finance Harness Backend·Shared Identity 등 실제 MSA Backend Service의 Architecture·Contract를 관리한다.
+
+**용어 관계 (`DEC-059`, accepted, 2026-07-26):**
+
+```text
+Shared Platform
+= oh-my-ai의 Domain-neutral Contract / Shared Core 경계
+= DEC-005 의미 그대로 유지 (이번 결정으로 변경되지 않음)
+
+Backend Service Foundation
+= Carelog·Finance Harness Backend·Shared Identity 등
+  MSA Backend Service의 공통 Architecture/Contract
+= "Shared Platform"이라는 이름을 쓰지 않음
+
+Shared Identity
+= 인증 논리 서비스의 canonical 명칭
+
+identity-platform (§23 기존 목표 Repository)
+= 확정 명칭이 아니라 후보 Repository 명칭
+= 실제 Repository 이름은 물리 분리 결정 시 별도 확정
+
+Finance Harness (Backend Service Foundation)
+↔ finance-harness (§23 기존 목표 Repository)
+= 책임 범위 일치. Backend Service Foundation 문서는
+  그 물리 구현(DB·통신·정합성) 정책을 보강
+
+Carelog
+= 기존 Product Service. §7.7(repository-service-boundaries.md)에 등록됨.
+  현재 Auth Phase A 논리 분리 단계, Shared Identity 물리 분리 미착수.
+  oh-my-ai V1/V2/V3 Phase 1-6 타임라인(§26)과는 무관한 별도 현재 상태.
+```
+
+이 절은 §22-23의 기존 Accepted 내용을 변경하지 않으며, `DEC-059`로 확정된 용어·Repository 지도 관계만 기록한다. `DEC-059`은 명칭 확정과 Carelog 등록만 accepted 상태이며, Carelog의 Shared Identity 물리 분리·구현 완료·Runtime 지원을 의미하지 않는다.
 
 ---
 

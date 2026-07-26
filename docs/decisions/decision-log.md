@@ -3,7 +3,7 @@ title: Decision Log
 status: draft
 implementation_status: partial
 owner: core
-last_reviewed: 2026-07-23
+last_reviewed: 2026-07-26
 supersedes: []
 superseded_by: []
 related_adrs:
@@ -2414,6 +2414,133 @@ DEC-054
 DEC-055
 DEC-001
 DEC-051
+```
+
+### Supersession
+
+```text
+supersedes: []
+superseded_by: []
+```
+
+---
+
+## DEC-059 — Backend Service Foundation 명칭을 확정하고 Carelog를 Repository 지도에 등록한다
+
+**Status:** accepted
+**Owner:** architecture
+**Reviewed at:** 2026-07-26
+
+### Decision
+
+```text
+1. DEC-005의 "Shared Platform" 용어는 그대로 유지한다.
+   Shared Platform = oh-my-ai의 Domain-neutral Contract / Shared Core 경계.
+
+2. MSA Backend 공통 Architecture/Contract 문서군의 canonical 명칭은
+   "Backend Service Foundation"이다. 이 문서군은 "Shared Platform"이라는
+   이름을 사용하지 않는다.
+   대상: 서비스 경계, DB 소유권, 서비스 통신, 분산 정합성,
+   JWT Claim 계약, Event Envelope.
+   Canonical 위치:
+     docs/architecture/backend-service-foundation/
+     docs/contracts/backend-service-foundation/
+
+3. 인증을 담당하는 논리 서비스의 canonical 명칭은 "Shared Identity"다.
+   `identity-platform`(docs/architecture/repository-service-boundaries.md
+   §7.4)은 확정된 Repository 명칭이 아니라 기존 목표 Repository 지도상의
+   후보 명칭으로 취급한다. 실제 Repository 이름은 물리 분리 결정 시
+   별도로 확정한다.
+
+4. Carelog를 docs/architecture/repository-service-boundaries.md의
+   목표 Repository/Service 지도(§3.2, §7.7, §9, §10.5)에 등록한다.
+   Carelog는 이미 존재하는 Product Service이며, 현재 Auth Phase A
+   (Carelog 내부 논리 분리) 단계다. Shared Identity로의 물리 분리는
+   아직 착수하지 않았다. Carelog의 현재 상태는 oh-my-ai V1/V2/V3
+   Phase 1-5 물리화 타임라인(§16)과 섞지 않고 별도 현재 상태 항목으로
+   기록한다.
+```
+
+### Rationale
+
+```text
+Shared Platform Foundation 문서 통합 과정에서 "Shared Platform"이라는
+동일 이름이 두 문서군 — oh-my-ai 제품군의 Domain-neutral Contract 경계
+(DEC-005)와 MSA Backend Architecture/Contract — 에서 서로 다른 의미로
+쓰이는 용어 충돌이 발견됐다. 이름 자체를 분리하면 disambiguation 산문
+없이 충돌이 원천 해소된다.
+
+Carelog는 Auth Phase A로 이미 존재·운영 중인 Product Service이므로,
+목표 Repository 지도에 없는 상태로 방치하면 문서 지도가 실제 상태를
+반영하지 못한다. 다만 Carelog는 이미 존재하는 제품이라 oh-my-ai의
+미래 지향적 Phase 1-5 타임라인과 성격이 달라, 같은 축에 섞으면
+"아직 만들지 않은 것"과 "이미 있는데 상태만 다른 것"이 혼동된다.
+
+identity-platform을 Shared Identity의 확정 명칭으로 조용히 굳히지
+않고 후보로 유지하는 이유는, 실제 Repository 이름은 물리 분리라는
+별도 사건 시점에 확정하는 것이 이 문서군 전체의 기존 원칙
+("Repository 이름 변경은 가능하지만 책임 경계 변경은 별도 결정이
+필요하다")과 일치하기 때문이다.
+```
+
+### Constraints
+
+```text
+Backend Service Foundation 문서(서비스 경계, DB 소유권, 통신,
+분산 정합성, JWT, Event Envelope 5+2개 문서)는 Draft 상태를 유지한다.
+Implementation completed / Runtime supported / Product released를
+구현 Evidence 없이 올리지 않는다.
+Carelog 등록은 신규 Repository 생성이나 Shared Identity로의
+물리 분리 착수를 의미하지 않는다.
+identity-platform은 후보 명칭이며 최종 Repository 이름 확정에는
+별도 Decision이 필요하다.
+DEC-005의 기존 내용과 Status는 이 Decision으로 변경하지 않는다.
+```
+
+### Consequences
+
+```text
+Backend Service Foundation 문서의 canonical 위치를
+docs/architecture/backend-service-foundation/와
+docs/contracts/backend-service-foundation/로 확정했다.
+
+7개 Backend Service Foundation 문서의 제목·Term-scope 메타 문구를
+새 명칭에 맞게 정리했다.
+
+docs/architecture/repository-service-boundaries.md에 Carelog 항목
+(§3.2, §7.7, §9, §10.5, §16 현재 상태 콜아웃, §18, §17 불변조건)을
+추가했다.
+
+docs/master/product-architecture-master.md의 §22-23 관련 서술과
+§30.1에 위 관계를 반영했다.
+
+이후 Carelog의 Shared Identity 물리 분리가 시작되면 별도 Decision과
+Repository 생성 절차가 필요하다.
+```
+
+### Affected Documents
+
+```text
+docs/architecture/backend-service-foundation/README.md
+docs/architecture/backend-service-foundation/service-boundaries.md
+docs/architecture/backend-service-foundation/database-ownership-and-reference-policy.md
+docs/architecture/backend-service-foundation/service-communication-policy.md
+docs/architecture/backend-service-foundation/distributed-consistency-policy.md
+docs/architecture/backend-service-foundation/documentation-ownership-and-placement.md
+docs/contracts/backend-service-foundation/README.md
+docs/contracts/backend-service-foundation/identity-token-contract.md
+docs/contracts/backend-service-foundation/event-envelope-contract.md
+docs/architecture/repository-service-boundaries.md
+docs/architecture/README.md
+docs/contracts/README.md
+docs/master/product-architecture-master.md
+README.md
+```
+
+### References
+
+```text
+DEC-005
 ```
 
 ### Supersession

@@ -107,12 +107,19 @@ Product Ecosystem
 ├── finance-harness-docs
 │   └── Finance Lens / PolicyGuard / Fixture
 │
-└── harness-private-docs
-    └── Product Planning / Architecture / ADR / Roadmap
+├── harness-private-docs
+│   └── Product Planning / Architecture / ADR / Roadmap
+│
+└── carelog
+    └── Carelog Product Service (기존 존재, Auth Phase A 논리 분리 단계)
 ```
 
 Shared Identity와 Shared Commerce는 동급의 독립 논리 경계다.
 어느 한쪽도 다른 쪽의 하위 Module이 아니다.
+
+`carelog`는 다른 항목과 달리 목표 상태가 아니라 이미 존재하는 Product Service다 (`DEC-059`). 세부는 §7.7을 따른다.
+
+Repository 이름은 향후 브랜드 결정에 따라 변경할 수 있다.
 
 Identity·Commerce의 물리 Server, Repository, Database, Deployment는
 현재 승인하지 않는다.
@@ -616,6 +623,8 @@ Finance 장애와 배포가 다음에 직접 영향을 주지 않아야 한다.
 
 ### 7.4 Shared Identity
 
+**명칭 주의 (`DEC-059`):** 이 서비스의 canonical 논리 서비스명은 `Shared Identity`다. `identity-platform`은 이 목표 Repository 지도상의 후보 명칭이며, 실제 Repository 이름은 물리 분리 결정 시 별도로 확정한다. 아래 본문은 물리 분리 이전 후보 명칭인 `identity-platform`을 그대로 사용한다.
+
 #### 역할
 
 여러 제품이 공유할 수 있는 Account와 Authentication 기반을 소유하는
@@ -777,6 +786,67 @@ Finance Lens 원문이나 실제 서비스 코드를 이 Repository에 복사하
 
 ---
 
+### 7.7 `carelog`
+
+**등록 근거:** `DEC-059` (accepted, 2026-07-26)
+
+#### 역할
+
+Carelog Manager가 사용하는 CRM 성격의 Product Service다. 다른 목표 Repository와 달리 이미 존재하고 운영 중인 제품이며, 목표 아키텍처가 아니라 현재 상태로 이 지도에 등록됐다.
+
+```text
+carelog
+├── manager-profile
+├── organization / workspace
+├── crm-customer
+├── customer-timeline
+└── follow-up / handoff
+```
+
+#### 주요 책임
+
+- Manager Profile
+- Organization / Workspace
+- CRM Customer, Customer Timeline
+- Follow-up / Handoff Workflow
+- Carelog 전용 Role / Permission / Consent
+
+#### 현재 상태 — Auth Phase A
+
+```text
+Auth Phase A
+= Carelog 내부에서 Manager 계정·인증 관련 모듈을
+  논리적으로 분리하는 단계
+
+Shared Identity로의 물리 분리
+= 아직 착수하지 않음
+```
+
+Auth Phase A 동안 Carelog는 계정·자격증명 모듈을 일시적으로 자체 보유할 수 있다. 이는 `docs/architecture/backend-service-foundation/service-boundaries.md` §9 "Transitional state"가 정의하는 전환기 상태와 같은 성격이며, 목표 경계(Shared Identity가 PlatformAccount/Credential/Session을 소유)는 그대로 유지한다.
+
+#### Identity와의 경계
+
+```text
+CRM Customer != Identity User
+```
+
+Carelog Manager는 Shared Identity 계정과 연결될 수 있으나, Carelog CRM Customer는 기본적으로 Platform Login Principal이 아니다. 기존 CUSTOMER 전체를 Platform Account로 Backfill하는 설계는 채택하지 않는다.
+
+#### 소유하지 않는 책임
+
+- Shared Identity 계정 원장 (물리 분리 이후에는 Shared Identity가 소유)
+- Finance Domain 데이터
+
+#### Phase 타임라인과의 관계
+
+Carelog Auth Phase A는 §16 "단계별 물리화 전략"의 oh-my-ai V1/V2/V3 Phase 1-5 타임라인에 포함되지 않는다. Carelog는 그 타임라인이 다루는 미래 지향적 물리화 대상이 아니라 이미 존재하는 별도 Product이므로, 현재 상태는 §16 뒤에 별도 항목으로 기록한다.
+
+#### 배포 형태
+
+기존 독립 Repository로 존재한다. 이번 등록은 신규 Repository 생성을 의미하지 않는다.
+
+---
+
 ## 8. Local Invocation PoC Identifier
 
 V2 Local Invocation PoC에서 사용할 수 있는 `ohmy_session_id`는 로컬 Correlation Identifier다.
@@ -832,6 +902,9 @@ Target Deployment Units
 
 목표 Deployment Unit은 즉시 구현, Repository 생성,
 Database Provisioning 또는 배포 승인을 의미하지 않는다.
+
+Carelog CRM Server는 기존 Product Service이며, 현재 Auth Phase A의
+Carelog 내부 논리 분리 상태다. Shared Identity 물리 분리는 아직 착수하지 않았다.
 
 ### 핵심 규칙
 
@@ -1019,6 +1092,22 @@ Analytics와 운영 리포팅의 Cross-product 결합은
 
 별도 PostgreSQL Cluster는 트래픽, 장애 격리, 규제, 보존정책,
 Backup·Restore 또는 운영 조직 분리가 실제로 필요할 때만 검토한다.
+
+### 10.5 Carelog 데이터
+
+소유자: `carelog`
+
+```text
+manager profile
+organization / workspace
+crm customer
+customer timeline
+follow-up / handoff
+```
+
+Carelog는 Auth Phase A 기간 동안 계정·자격증명 관련 모듈을 내부에 일시 보유할 수 있으나, 목표 소유권은 §7.7과 동일하게 Shared Identity(§10.1, 후보 명칭 `identity-platform`)가 계정 원장을 소유한다.
+
+`CRM Customer != Identity User` — CRM Customer 데이터는 기본적으로 Shared Identity 데이터가 아니다.
 
 ---
 
@@ -1420,6 +1509,26 @@ Carelog CRM Server, AI Runtime Server와 각 Module의 활성화 순서는
 
 ---
 
+### Carelog — 현재 상태 (Phase 아님)
+
+Carelog는 위 Phase 1-5 물리화 타임라인의 대상이 아니다. Phase 1-5는 아직 존재하지 않는 것을 미래에 만드는 순서인 반면, Carelog는 이미 존재하고 운영 중인 Product Service이기 때문이다.
+
+```text
+Carelog
+= 기존 Product Service (§7.7)
+
+현재 상태
+= Auth Phase A (Carelog 내부 논리 분리)
+
+Shared Identity 물리 분리
+= 미착수
+
+이번 등록(DEC-059)
+= 신규 Carelog Repository 또는 Identity Repository 생성을 의미하지 않음
+```
+
+---
+
 ## 17. 불변조건
 
 다음은 향후 구현에서 유지한다.
@@ -1455,6 +1564,8 @@ Carelog CRM Server, AI Runtime Server와 각 Module의 활성화 순서는
 29. Cross-service Foreign Key와 OLTP Cross-service JOIN을 금지한다.
 30. Shared Platform의 Identity·Commerce·Audit는 같은 배포물에서도 Module과 Schema 경계를 유지한다.
 31. Audit는 별도 Server로 분리하지 않는다.
+32. 인증 논리 서비스의 canonical 명칭은 `Shared Identity`다. `identity-platform`은 물리 분리 전까지 후보 Repository 명칭이다 (`DEC-059`).
+33. Carelog는 기존 Product Service로 이 지도에 등록되며(§7.7), 그 Auth Phase A 현재 상태는 oh-my-ai V1/V2/V3 Phase 1-5 물리화 타임라인과 분리해 기록한다 (`DEC-059`).
 
 ---
 
@@ -1476,6 +1587,8 @@ Carelog CRM Server, AI Runtime Server와 각 Module의 활성화 순서는
 12. 정식 SessionBinding Identifier Schema
 13. AI Runtime Server의 실제 구현과 Provider 배치
 14. Carelog CRM Server의 실제 구현 시점
+15. `identity-platform`의 최종 확정 Repository 이름 (canonical 논리 서비스명은 `Shared Identity`로 확정, `DEC-059`)
+16. Carelog의 Shared Identity 물리 분리 시점과 순서 (Auth Phase A 이후 단계)
 
 이 항목들은 별도 검토와 ADR 없이 추정해 확정하지 않는다.
 

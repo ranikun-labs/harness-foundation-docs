@@ -1234,3 +1234,28 @@ docs/roadmap/product-roadmap.md
 
 - Runtime-neutral과 Runtime 동일성이 혼동되지 않는가
 - Adapter 책임이 Core로 누출되지 않는가
+
+---
+
+# Part XVI. Sibling Foundation — Backend Service Foundation
+
+## 48. Backend Service Foundation Architecture
+
+`docs/architecture/backend-service-foundation/`는 이 Architecture Index와는 별도의 대상을 다루는 sibling Foundation 문서군이다 (`DEC-059`).
+
+```text
+이 Architecture Index (§1-47)
+= oh-my-ai AI Harness 제품군의 Architecture
+  (Shared Core, Development/Finance Extension, Local/Cloud/Human Boundary)
+
+docs/architecture/backend-service-foundation/
+= Carelog, Finance Harness Backend, Shared Identity 등
+  실제 MSA Backend Service의 Architecture
+  (Service Boundary, DB Ownership, Communication, Distributed Consistency)
+```
+
+`DEC-059`에 따라 해당 문서군은 "Shared Platform"이라는 이름을 쓰지 않는다. 이 문서 §2·§10의 "Shared Core and Extensions"가 정의하는 `oh-my-ai`의 "Shared Platform"(`DEC-005` 근거)은 이번 결정으로 변경되지 않는다.
+
+이 Index(§1-47)의 Non-goals, 불변조건, 미결정 사항은 `docs/architecture/backend-service-foundation/`에 적용되지 않는다. 해당 문서군은 자체 색인과 상태표를 가진다.
+
+관련: `docs/architecture/backend-service-foundation/README.md`, `docs/decisions/decision-log.md` DEC-059
