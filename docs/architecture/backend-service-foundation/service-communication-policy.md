@@ -6,7 +6,7 @@
 - Implementation completed: No
 - Runtime supported: No
 - Product released: No
-- Term scope: This document belongs to the Backend Service Foundation (`DEC-057`), covering MSA backend services (e.g. Carelog, Finance Harness backend, Shared Identity). It is separate from the `oh-my-ai` AI harness product family's Runtime Adapters and "Shared Platform" (`DEC-005`).
+- Term scope: This document belongs to the Backend Service Foundation (`DEC-059`), covering MSA backend services (e.g. Carelog, Finance Harness backend, Shared Identity). It is separate from the `oh-my-ai` AI harness product family's Runtime Adapters and "Shared Platform" (`DEC-005`).
 
 ## 1. Purpose
 

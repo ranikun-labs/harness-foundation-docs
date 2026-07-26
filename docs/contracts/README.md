@@ -1120,7 +1120,7 @@ docs/poc/v2-local-invocation-poc.md
 
 ## 40. Backend Service Foundation Contracts
 
-`docs/contracts/backend-service-foundation/`는 이 Contract Index(§1-39)와 다른 대상을 다루는 sibling Contract 문서군이다 (`DEC-057`).
+`docs/contracts/backend-service-foundation/`는 이 Contract Index(§1-39)와 다른 대상을 다루는 sibling Contract 문서군이다 (`DEC-059`).
 
 ```text
 이 Contract Index (§1-39)
@@ -1135,4 +1135,4 @@ docs/contracts/backend-service-foundation/
 
 두 Contract 군은 대상 시스템이 다르므로 중복이 아니다(Option C: 병존). 이 Index의 상태 축, Human Review Gate 정의, Fixture 요건은 `docs/contracts/backend-service-foundation/`에 그대로 적용되지 않으며, 해당 문서군은 자체 색인을 가진다.
 
-관련: `docs/contracts/backend-service-foundation/README.md`, `docs/decisions/decision-log.md` DEC-057
+관련: `docs/contracts/backend-service-foundation/README.md`, `docs/decisions/decision-log.md` DEC-059

@@ -13,7 +13,7 @@ source_inputs:
   - docs/architecture/backend-service-foundation/distributed-consistency-policy.md
   - docs/architecture/backend-service-foundation/documentation-ownership-and-placement.md
 related_decisions:
-  - DEC-057
+  - DEC-059
 ---
 
 # Backend Service Foundation — Architecture
@@ -22,7 +22,7 @@ related_decisions:
 
 이 디렉터리는 Carelog, Finance Harness Backend, Shared Identity 등 실제 MSA Backend Service가 공통으로 따라야 하는 서비스 경계, 데이터베이스 소유권, 통신 방식, 분산 정합성 원칙을 관리한다.
 
-이 디렉터리의 문서는 아직 어느 것도 Accepted Decision이 아니며(용어·Repository 지도 등록 자체는 `DEC-057`로 accepted), 실제 구현·배포가 존재함을 의미하지 않는다.
+이 디렉터리의 문서는 아직 어느 것도 Accepted Decision이 아니며(용어·Repository 지도 등록 자체는 `DEC-059`로 accepted), 실제 구현·배포가 존재함을 의미하지 않는다.
 
 ```text
 docs/architecture/backend-service-foundation/
@@ -38,26 +38,26 @@ docs/architecture/backend-service-foundation/
 
 ## 2. 용어 경계 — "Shared Platform"과의 관계
 
-`DEC-057`(2026-07-26, accepted)에 따라 이 디렉터리는 "Shared Platform"이라는 이름을 사용하지 않는다.
+`DEC-059`(2026-07-26, accepted)에 따라 이 디렉터리는 "Shared Platform"이라는 이름을 사용하지 않는다.
 
 | | 이 디렉터리 | 기존 `oh-my-ai`의 Shared Platform |
 |---|---|---|
 | Canonical 명칭 | **Backend Service Foundation** | Shared Platform |
 | Canonical 문서 | `docs/architecture/backend-service-foundation/*` (본 디렉터리) | `docs/architecture/shared-core-and-extensions.md` |
-| 근거 | `DEC-057` (accepted) | `DEC-005` (accepted), 루트 `README.md` Invariant #5 |
+| 근거 | `DEC-059` (accepted) | `DEC-005` (accepted), 루트 `README.md` Invariant #5 |
 | 의미 | Carelog·Finance Harness Backend·Shared Identity 등 **실제 MSA Backend Service**가 공유하는 Identity·DB Ownership·Communication·Consistency 원칙 | `oh-my-ai` **AI Harness 제품군**(Development Extension·Finance Extension)이 공유하는 Domain-neutral Contract·Vocabulary 경계 (WorkItem/Run/Result/Policy/Provenance 등) |
 | 성격 | Infra / Physical Architecture 원칙 (DB, JWT, Event, 통신) | Product / Logical Contract 경계 (Task 상태, Human Review, Candidate) |
 | Repository 대상 | Carelog, Finance Harness Backend, Shared Identity | `oh-my-ai`, `oh-my-ai-control-plane`, `finance-harness`, `identity-platform` |
 
 이름이 분리됐으므로 두 개념은 더 이상 혼동될 위험이 없다. `DEC-005`와 루트 `README.md`의 "Shared Platform" 정의는 이번 명칭 확정으로 변경되지 않는다.
 
-관련 참고: `docs/architecture/shared-core-and-extensions.md`, `docs/decisions/decision-log.md` DEC-005, DEC-057.
+관련 참고: `docs/architecture/shared-core-and-extensions.md`, `docs/decisions/decision-log.md` DEC-005, DEC-059.
 
 ---
 
 ## 3. Repository 지도와의 관계
 
-`DEC-057`에 따라 다음 관계가 확정됐다.
+`DEC-059`에 따라 다음 관계가 확정됐다.
 
 | 본 디렉터리 용어 | `repository-service-boundaries.md` 대상 | 상태 |
 |---|---|---|
@@ -90,7 +90,7 @@ Runtime supported: No
 Product released: No
 ```
 
-`DEC-057`은 명칭·Repository 지도 등록만 accepted 상태이며, 위 5개 문서의 기술적 내용 자체를 accepted로 전환하지 않는다. Decision Record 또는 실제 구현 Evidence 없이 이 상태를 올리지 않는다.
+`DEC-059`은 명칭·Repository 지도 등록만 accepted 상태이며, 위 5개 문서의 기술적 내용 자체를 accepted로 전환하지 않는다. Decision Record 또는 실제 구현 Evidence 없이 이 상태를 올리지 않는다.
 
 ---
 
@@ -102,5 +102,5 @@ docs/architecture/repository-service-boundaries.md
 docs/architecture/shared-core-and-extensions.md
 docs/contracts/backend-service-foundation/README.md
 docs/master/product-architecture-master.md
-docs/decisions/decision-log.md (DEC-005, DEC-057)
+docs/decisions/decision-log.md (DEC-005, DEC-059)
 ```

@@ -10,7 +10,7 @@ source_inputs:
   - docs/contracts/backend-service-foundation/identity-token-contract.md
   - docs/contracts/backend-service-foundation/event-envelope-contract.md
 related_decisions:
-  - DEC-057
+  - DEC-059
 ---
 
 # Backend Service Foundation — Contracts
@@ -36,7 +36,7 @@ docs/contracts/backend-service-foundation/
 
 두 Contract 군은 대상 시스템이 다르므로 중복이 아니며(Option C: 병존), 서로의 상태 축·필드·의미를 참조하거나 재정의하지 않는다.
 
-용어 참고: `DEC-057`에 따라 본 디렉터리는 "Shared Platform"이라는 이름을 쓰지 않는다. Canonical 명칭은 "Backend Service Foundation"이며, `DEC-005`의 `oh-my-ai` "Shared Platform"과는 이름부터 분리되어 있다.
+용어 참고: `DEC-059`에 따라 본 디렉터리는 "Shared Platform"이라는 이름을 쓰지 않는다. Canonical 명칭은 "Backend Service Foundation"이며, `DEC-005`의 `oh-my-ai` "Shared Platform"과는 이름부터 분리되어 있다.
 
 ---
 
@@ -58,7 +58,7 @@ Runtime supported: No
 Product released: No
 ```
 
-`DEC-057`은 명칭 확정만 accepted 상태이며, 위 2개 문서의 기술적 내용 자체를 accepted로 전환하지 않는다.
+`DEC-059`은 명칭 확정만 accepted 상태이며, 위 2개 문서의 기술적 내용 자체를 accepted로 전환하지 않는다.
 
 ---
 
@@ -69,5 +69,5 @@ docs/contracts/README.md
 docs/architecture/backend-service-foundation/README.md
 docs/architecture/backend-service-foundation/service-communication-policy.md
 docs/architecture/backend-service-foundation/distributed-consistency-policy.md
-docs/decisions/decision-log.md (DEC-005, DEC-057)
+docs/decisions/decision-log.md (DEC-005, DEC-059)
 ```

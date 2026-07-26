@@ -3,10 +3,11 @@ title: Architecture Index
 status: draft
 implementation_status: not_verifiable
 owner: architecture
-last_reviewed: 2026-07-15
+last_reviewed: 2026-07-23
 supersedes: []
 superseded_by: []
 source_inputs:
+  - docs/architecture/repository-service-boundaries.md
   - docs/architecture/shared-core-and-extensions.md
   - docs/architecture/local-cloud-human-boundary.md
   - docs/product/README.md
@@ -27,6 +28,7 @@ source_inputs:
 ```text
 docs/architecture/
 ├── README.md
+├── repository-service-boundaries.md
 ├── shared-core-and-extensions.md
 └── local-cloud-human-boundary.md
 ```
@@ -1239,7 +1241,7 @@ docs/roadmap/product-roadmap.md
 
 ## 48. Backend Service Foundation Architecture
 
-`docs/architecture/backend-service-foundation/`는 이 Architecture Index와는 별도의 대상을 다루는 sibling Foundation 문서군이다 (`DEC-057`).
+`docs/architecture/backend-service-foundation/`는 이 Architecture Index와는 별도의 대상을 다루는 sibling Foundation 문서군이다 (`DEC-059`).
 
 ```text
 이 Architecture Index (§1-47)
@@ -1252,8 +1254,8 @@ docs/architecture/backend-service-foundation/
   (Service Boundary, DB Ownership, Communication, Distributed Consistency)
 ```
 
-`DEC-057`에 따라 해당 문서군은 "Shared Platform"이라는 이름을 쓰지 않는다. 이 문서 §2·§10의 "Shared Core and Extensions"가 정의하는 `oh-my-ai`의 "Shared Platform"(`DEC-005` 근거)은 이번 결정으로 변경되지 않는다.
+`DEC-059`에 따라 해당 문서군은 "Shared Platform"이라는 이름을 쓰지 않는다. 이 문서 §2·§10의 "Shared Core and Extensions"가 정의하는 `oh-my-ai`의 "Shared Platform"(`DEC-005` 근거)은 이번 결정으로 변경되지 않는다.
 
 이 Index(§1-47)의 Non-goals, 불변조건, 미결정 사항은 `docs/architecture/backend-service-foundation/`에 적용되지 않는다. 해당 문서군은 자체 색인과 상태표를 가진다.
 
-관련: `docs/architecture/backend-service-foundation/README.md`, `docs/decisions/decision-log.md` DEC-057
+관련: `docs/architecture/backend-service-foundation/README.md`, `docs/decisions/decision-log.md` DEC-059

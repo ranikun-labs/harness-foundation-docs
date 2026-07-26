@@ -12,6 +12,8 @@ related_adrs:
   - ADR-0007
   - ADR-0008
   - ADR-0011
+  - ADR-0012
+  - ADR-0013
 source_inputs:
   - docs/roadmap/product-roadmap.md
   - docs/architecture/shared-core-and-extensions.md
@@ -2113,6 +2115,190 @@ superseded_by: []
 
 ---
 
+## DEC-057 — Shared Identity와 Shared Commerce의 논리적 책임 경계를 분리한다
+
+**Status:** accepted_with_constraints
+**Owner:** architecture
+**Decision type:** architecture
+**Decision scope:** architecture
+**Decision date:** 2026-07-23
+**Implementation status:** not_started
+**Reviewed at:** 2026-07-23
+
+### Decision
+
+```text
+V1 Local OSS는 로그인·결제·외부 Cloud 서비스 없이 완결한다.
+
+Shared Identity
+= Account·Credential·Authentication·Token·Session
+
+Shared Commerce
+= Product Membership·Subscription·Billing·Payment·Entitlement·Quota
+
+Shared Identity와 Shared Commerce는 동급의 독립 논리 경계다.
+
+Dev Harness Cloud
+= Workspace·Project·Execution·Approval·Harness Policy·Cloud History
+```
+
+Accepted 범위는 논리적 책임과 의존 방향이다.
+
+### Constraints
+
+```text
+Identity·Commerce의 물리 Server·Repository·Database·Deployment는 승인하지 않는다.
+실제 복수 소비자와 운영상 필요가 생긴 뒤 물리 분리를 검토한다.
+V1에 Identity·Commerce 의존을 도입하지 않는다.
+기존 V2 Personal Managed Workflow 정의를 변경하지 않는다.
+Workspace·Organization의 V3 배치를 변경하지 않는다.
+```
+
+### Deferred
+
+```text
+Identity·Commerce 물리 구현과 배포 시점
+Repository와 Database 분리
+JWT·JWKS 상세
+결제 Database Schema와 PG Provider
+서비스 간 이벤트
+Kubernetes 구성
+```
+
+### Consequences
+
+```text
+Payment와 Entitlement를 Identity 책임으로 해석하지 않는다.
+Development Harness는 제품 도메인 책임을 외부 공통 플랫폼에 넘기지 않는다.
+논리 경계 기록만으로 새 Service나 Repository를 생성하지 않는다.
+기존 V1/V2/V3 Roadmap과 Accepted Decision은 유지한다.
+```
+
+### Affected Documents
+
+```text
+docs/adr/ADR-0012-shared-identity-commerce-boundary.md
+docs/architecture/repository-service-boundaries.md
+docs/decisions/decision-log.md
+```
+
+### Supersession
+
+```text
+supersedes: []
+superseded_by: []
+```
+
+---
+
+## DEC-058 — 목표 Deployment Unit과 PostgreSQL 데이터 소유권 경계를 정의한다
+
+**Status:** accepted_with_constraints
+**Owner:** architecture
+**Decision type:** architecture
+**Decision scope:** architecture
+**Decision date:** 2026-07-23
+**Implementation status:** not_started
+**Reviewed at:** 2026-07-23
+
+### Decision
+
+```text
+Target Deployment Units
+= Carelog CRM Server
++ Finance Harness Server
++ Dev Harness Cloud Server
++ AI Runtime Server
++ Shared Platform Server
+   - Identity Module
+   - Commerce Module
+   - Audit Module
+```
+
+초기 PostgreSQL은 하나의 물리 Cluster를 공유할 수 있다.
+
+```text
+carelog_db
+finance_db
+dev_cloud_db
+ai_runtime_db
+shared_platform_db
+  - identity schema
+  - commerce schema
+  - audit schema
+```
+
+Deployment Unit과 Shared Platform Module별로
+데이터 Source of Truth와 Migration 소유권을 분리한다.
+
+### Constraints
+
+```text
+목표 Deployment Unit은 즉시 구현 승인이 아니다.
+V1 Local Core는 Shared Platform과 Cloud AI Runtime 없이 완결한다.
+Dev Harness Cloud는 실제 Cloud 기능 개발 시점까지 구현을 유예한다.
+Commerce는 실제 유료화 전까지 구현을 유예할 수 있다.
+Audit는 Shared Platform 내부 Module이며 별도 Server로 분리하지 않는다.
+Cross-service Foreign Key와 OLTP Cross-service JOIN을 금지한다.
+다른 서비스 Database 직접 접속을 금지한다.
+기존 V2/V3 Roadmap을 변경하지 않는다.
+```
+
+### Audit Boundary
+
+```text
+Product / Service
+= Domain Audit Event 의미와 생성 시점
+
+Shared Platform Audit Module
+= 선택적 중앙 보관·조회·보존정책
+```
+
+서비스별 Local Outbox를 사용할 수 있으며,
+Shared Audit API의 업무 Transaction 내 동기 호출을 강제하지 않는다.
+
+### Deferred
+
+```text
+실제 Server·Repository·Database·Deployment 생성
+Dev Harness Cloud 구현 시점
+Commerce 구현 시점
+중앙 Audit 활성화 시점
+별도 PostgreSQL Cluster 분리 시점
+JWT·결제·Prompt·Event Broker·분산 Transaction 상세
+```
+
+### Consequences
+
+```text
+Shared Platform은 하나의 Deployment Unit이면서
+Identity·Commerce·Audit의 코드·데이터·Migration 경계를 유지한다.
+
+다른 서비스 데이터는 API·Token Claim·Event·Projection으로 소비한다.
+Cross-product 분석은 별도 Read Model 또는 ETL 경로를 사용한다.
+Audit Event는 Domain Entity의 물리 FK 대신 opaque identifier를 저장한다.
+```
+
+### Affected Documents
+
+```text
+docs/adr/ADR-0013-target-deployment-and-data-boundaries.md
+docs/architecture/repository-service-boundaries.md
+docs/architecture/README.md
+docs/decisions/decision-log.md
+```
+
+### Supersession
+
+```text
+supersedes: []
+superseded_by: []
+```
+
+ADR-0012와 DEC-057의 논리 경계를 유지하며 이를 supersede하지 않는다.
+
+---
+
 ## DEC-056 — Notice는 Cache-first Display와 비차단 One-shot Refresh로 분리한다
 
 **Status:** accepted
@@ -2239,7 +2425,7 @@ superseded_by: []
 
 ---
 
-## DEC-057 — Backend Service Foundation 명칭을 확정하고 Carelog를 Repository 지도에 등록한다
+## DEC-059 — Backend Service Foundation 명칭을 확정하고 Carelog를 Repository 지도에 등록한다
 
 **Status:** accepted
 **Owner:** architecture
@@ -2314,9 +2500,9 @@ DEC-005의 기존 내용과 Status는 이 Decision으로 변경하지 않는다.
 ### Consequences
 
 ```text
-docs/architecture/shared-platform/, docs/contracts/shared-platform/를
-docs/architecture/backend-service-foundation/,
-docs/contracts/backend-service-foundation/로 이동했다.
+Backend Service Foundation 문서의 canonical 위치를
+docs/architecture/backend-service-foundation/와
+docs/contracts/backend-service-foundation/로 확정했다.
 
 7개 Backend Service Foundation 문서의 제목·Term-scope 메타 문구를
 새 명칭에 맞게 정리했다.

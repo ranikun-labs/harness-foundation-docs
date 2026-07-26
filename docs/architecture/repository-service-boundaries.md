@@ -2,13 +2,15 @@
 title: Repository and Service Boundaries
 status: draft
 owner: product
-last_reviewed: 2026-07-14
+last_reviewed: 2026-07-23
 supersedes: []
 superseded_by: []
 related_adrs:
   - ADR-0004
   - ADR-0009
   - ADR-0010
+  - ADR-0012
+  - ADR-0013
 source_inputs: []
 ---
 
@@ -75,13 +77,15 @@ source_inputs: []
 - Development와 Finance의 형제 관계
 - Local Runtime과 Cloud Control Plane의 분리 원칙
 - Identity의 독립 논리 경계
+- Commerce의 독립 논리 경계
+- Identity와 Commerce의 동급 관계
 - 제품별 데이터 소유 원칙
 - 각 서버 내부 Modular Monolith 우선 원칙
 ```
 
 ### 3.2 목표 아키텍처
 
-목표 물리 경계는 다음과 같다.
+제품과 논리적 책임 경계는 다음과 같다.
 
 ```text
 Product Ecosystem
@@ -94,8 +98,11 @@ Product Ecosystem
 ├── finance-harness
 │   └── Finance Product Backend / Runtime
 │
-├── identity-platform
-│   └── 여러 제품이 공유하는 인증·인가 경계
+├── Shared Identity
+│   └── Account / Credential / Authentication / Token / Session
+│
+├── Shared Commerce
+│   └── Product Membership / Subscription / Billing / Payment / Entitlement / Quota
 │
 ├── finance-harness-docs
 │   └── Finance Lens / PolicyGuard / Fixture
@@ -107,11 +114,15 @@ Product Ecosystem
     └── Carelog Product Service (기존 존재, Auth Phase A 논리 분리 단계)
 ```
 
-`carelog`는 다른 항목과 달리 목표 상태가 아니라 이미 존재하는 Product Service다 (`DEC-057`). 세부는 §7.7을 따른다.
+Shared Identity와 Shared Commerce는 동급의 독립 논리 경계다.
+어느 한쪽도 다른 쪽의 하위 Module이 아니다.
+
+`carelog`는 다른 항목과 달리 목표 상태가 아니라 이미 존재하는 Product Service다 (`DEC-059`). 세부는 §7.7을 따른다.
 
 Repository 이름은 향후 브랜드 결정에 따라 변경할 수 있다.
 
-이름 변경은 책임 경계 변경을 의미하지 않는다.
+Identity·Commerce의 물리 Server, Repository, Database, Deployment는
+현재 승인하지 않는다.
 
 ### 3.3 핵심 물리화 원칙
 
@@ -446,7 +457,15 @@ oh-my-ai-control-plane
 
 #### 주요 책임
 
+다음 목록은 Dev Harness Cloud의 장기 논리 소유권을 나타내며,
+기존 V2/V3 제품 배치를 변경하지 않는다.
+
 - Development Task Identity
+- Workspace와 Project
+- Execution
+- Approval
+- Harness Policy
+- Cloud History
 - Parent–Child Task 관계
 - SessionBinding Metadata
 - ExecutionRun Metadata
@@ -602,74 +621,61 @@ Finance 장애와 배포가 다음에 직접 영향을 주지 않아야 한다.
 - Development Local Runtime
 - Development Managed Workflow
 
-### 7.4 `identity-platform`
+### 7.4 Shared Identity
 
-**명칭 주의 (`DEC-057`):** 이 서비스의 canonical 논리 서비스명은 `Shared Identity`다. `identity-platform`은 이 목표 Repository 지도상의 후보 명칭이며, 실제 Repository 이름은 물리 분리 결정 시 별도로 확정한다. 아래 본문은 물리 분리 이전 후보 명칭인 `identity-platform`을 그대로 사용한다.
+**명칭 주의 (`DEC-059`):** 이 서비스의 canonical 논리 서비스명은 `Shared Identity`다. `identity-platform`은 이 목표 Repository 지도상의 후보 명칭이며, 실제 Repository 이름은 물리 분리 결정 시 별도로 확정한다. 아래 본문은 물리 분리 이전 후보 명칭인 `identity-platform`을 그대로 사용한다.
 
 #### 역할
 
-여러 제품이 공유하는 인증·인가 기반을 소유하는 독립 논리 경계다.
+여러 제품이 공유할 수 있는 Account와 Authentication 기반을 소유하는
+미래의 독립 논리 경계다.
 
 ```text
-identity-platform
-├── identity
+Shared Identity
+├── account
 ├── credential
 ├── authentication
 ├── token
-├── device
-├── membership
-└── common-authorization
+└── session
 ```
 
 #### 주요 책임
 
-- 공통 User Identity
+- Account
 - Credential 관리
-- Login과 Authentication
-- Token 발급·갱신·폐기
-- Device 등록
-- 공통 Membership
-- 공통 Role 또는 Scope 기반
+- Login / Logout과 Authentication
+- Access / Refresh Token
+- Session
+- 안정적인 사용자 식별자
 - 인증 관련 보안 정책
 
-#### 제품 권한과의 경계
+#### Shared Commerce와의 경계
 
-Identity Platform이 모든 제품별 권한을 소유하지 않는다.
+Shared Identity는 Product Membership, Payment, Entitlement를 소유하지 않는다.
 
 ```text
-Identity Platform
+Shared Identity
 = 사용자가 누구인가
 = 인증됐는가
-= 공통 Membership이 무엇인가
 
-Development Control Plane
-= 어떤 Development Pro 기능을 사용할 수 있는가
-= 어떤 Runtime Policy가 적용되는가
-
-Finance
-= 어떤 Premium Lens를 사용할 수 있는가
-= Analysis / Journal 한도가 무엇인가
+Shared Commerce
+= Product Membership
++ Subscription
++ Billing
++ Payment
++ Entitlement
++ Quota
 ```
 
 #### 논리 경계와 물리화 시점
 
-Identity Platform의 독립 논리 경계는 채택한다.
+Shared Identity의 독립 논리 경계는 채택한다.
 
-별도 Repository와 독립 Deployment는 목표 아키텍처다.
+별도 Server, Repository, Database와 Deployment는 승인하지 않는다.
 
-다만 Identity Platform 완성은 V2 Local Invocation PoC의 선결 조건이 아니다.
+실제 복수 소비자와 독립 운영 필요가 확인된 뒤 물리 분리를 검토한다.
 
-기술 검증 순서:
-
-```text
-Local Invocation
-→ Local Correlation
-→ Result Collection
-→ Task / Result 귀속
-→ Human Review
-→ Identity / Device 연동
-→ Entitlement
-```
+Shared Identity 구현은 V1 또는 V2 Local Invocation PoC의 선결 조건이 아니다.
 
 이미 재사용 가능한 Auth Server가 존재한다면 별도 경계를 그대로 사용한다.
 
@@ -677,26 +683,31 @@ Local Invocation
 
 PoC를 이유로 Product Domain과 Identity 책임을 영구적으로 합치지는 않는다.
 
-#### Entitlement 경계
+#### Shared Commerce
 
-초기에는 제품별 Entitlement가 각 Product Service에 존재할 수 있다.
+Shared Commerce는 여러 제품이 공유할 수 있는 상업 기능의
+미래 독립 논리 경계다.
 
 ```text
-development entitlement
-→ oh-my-ai-control-plane
-
-finance entitlement
-→ finance-harness
+Shared Commerce
+├── product-membership
+├── subscription
+├── billing
+├── payment
+├── entitlement
+└── quota
 ```
 
-다음 조건이 확인되면 Commercial Platform 추출을 검토한다.
+Shared Commerce는 Shared Identity의 하위 Module이 아니다.
 
-- 제품 간 동일한 Plan과 Subscription 모델
-- 공통 Billing Provider와 Webhook 처리
-- 공통 Entitlement 계산
-- 공통 Usage·Quota 집계
-- 독립 운영 필요
-- 복수 제품 Bundle 판매
+별도 Server, Repository, Database와 Deployment는 승인하지 않는다.
+
+다음 조건이 실제로 확인된 뒤에만 물리 분리를 검토한다.
+
+- 둘 이상의 제품이 동일한 Commerce 책임을 실제 사용
+- 공통 Subscription·Billing·Entitlement·Quota 운영 필요
+- 독립 보안·장애 격리·Scaling 필요
+- 독립 Release 또는 소유 팀 필요
 
 ### 7.5 `finance-harness-docs`
 
@@ -777,7 +788,7 @@ Finance Lens 원문이나 실제 서비스 코드를 이 Repository에 복사하
 
 ### 7.7 `carelog`
 
-**등록 근거:** `DEC-057` (accepted, 2026-07-26)
+**등록 근거:** `DEC-059` (accepted, 2026-07-26)
 
 #### 역할
 
@@ -875,72 +886,147 @@ local_execution_reference
 
 ## 9. 목표 배포 구조
 
-목표 배포 구조는 다음과 같다.
+다음은 장기 목표 Deployment Unit이다.
 
 ```text
-Developer Device
-└── oh-my-ai Local CLI / Runtime
-        │
-        │ Approved Metadata / Artifact
-        ▼
-oh-my-ai-control-plane
-        │
-        ├── identity-platform
-        └── development entitlement
-
-Finance Web / App
-        │
-        ├── identity-platform
-        └── finance-harness
-                └── optional domain-neutral platform capability
-
-Carelog (기존 존재, Auth Phase A)
-        │
-        └── identity-platform (물리 분리 미착수 — 현재는 Carelog 내부 논리 분리 단계)
+Target Deployment Units
+├── Carelog CRM Server
+├── Finance Harness Server
+├── Dev Harness Cloud Server
+├── AI Runtime Server
+└── Shared Platform Server
+    ├── Identity Module
+    ├── Commerce Module
+    └── Audit Module
 ```
+
+목표 Deployment Unit은 즉시 구현, Repository 생성,
+Database Provisioning 또는 배포 승인을 의미하지 않는다.
+
+Carelog CRM Server는 기존 Product Service이며, 현재 Auth Phase A의
+Carelog 내부 논리 분리 상태다. Shared Identity 물리 분리는 아직 착수하지 않았다.
 
 ### 핵심 규칙
 
-1. Local Runtime과 Cloud Control Plane은 별도 배포물이다.
-2. Finance는 별도 제품 서비스 경계다.
-3. Identity는 공통 독립 논리 경계다.
-4. Identity 구현은 Local Invocation PoC의 선결 조건이 아니다.
-5. 서비스 간 데이터베이스 직접 조회를 금지한다.
-6. 각 서비스는 자기 Domain 데이터를 소유한다.
-7. API 또는 명시된 Contract를 통해서만 통신한다.
-8. Shared Core를 이유로 하나의 공용 Database를 만들지 않는다.
+1. Dev Harness V1 Local Core는 Shared Identity·Commerce·Audit·Cloud AI Runtime에 의존하지 않는다.
+2. Dev Harness Cloud는 실제 Cloud 기능 개발 시점까지 구현을 유예한다.
+3. Commerce는 실제 유료화 전까지 구현을 유예할 수 있다.
+4. Audit는 별도 Server가 아니라 Shared Platform 내부 Module이다.
+5. Identity·Commerce·Audit는 같은 Deployment Unit에서도 코드·데이터·Migration 소유권을 분리한다.
+6. AI Runtime은 Provider 실행·Routing·Retry·Fallback·Token/Cost Metering·Trace를 담당한다.
+7. 제품별 Prompt·Policy·Context Schema·Evaluation은 각 Product Server가 소유한다.
+8. 기존 V2 Personal Managed Workflow와 Workspace·Organization의 V3 배치를 변경하지 않는다.
+
+### 9.1 AI Runtime 책임
+
+AI Runtime Server가 소유:
+
+```text
+Provider Execution
+Runtime Routing
+Retry
+Fallback
+Token / Cost Metering
+Runtime Trace
+```
+
+Product Server가 소유:
+
+```text
+Product Prompt
+Product Policy
+Product Context Schema
+Product Evaluation
+Domain Decision
+```
+
+### 9.2 Shared Platform 내부 경계
+
+```text
+Shared Platform Server
+├── Identity Module
+├── Commerce Module
+└── Audit Module
+```
+
+한 Deployment Unit이라는 이유로 Module 간 Table 직접 접근이나
+Migration 소유권 공유를 허용하지 않는다.
 
 ---
 
 ## 10. 데이터 소유권
 
-### 10.1 Identity 데이터
+### 10.1 PostgreSQL 목표 배치
 
-소유자: `identity-platform`
+초기에는 하나의 PostgreSQL 물리 Cluster를 공유할 수 있다.
 
 ```text
-user identity
-credential
-authentication session
-refresh token
-device
-common membership
-common role / scope
+PostgreSQL Physical Cluster
+├── carelog_db
+├── finance_db
+├── dev_cloud_db
+├── ai_runtime_db
+└── shared_platform_db
+    ├── identity schema
+    ├── commerce schema
+    └── audit schema
 ```
 
-### 10.2 Development Control 데이터
+이 구조는 목표 논리 배치다.
+실제 Cluster, Database, Schema 생성은 구현 시점의 별도 승인 대상이다.
+
+| Logical Database / Schema | Data Source of Truth | Migration Owner |
+|---|---|---|
+| `carelog_db` | Carelog CRM Server | Carelog CRM |
+| `finance_db` | Finance Harness Server | Finance Harness |
+| `dev_cloud_db` | Dev Harness Cloud Server | Dev Harness Cloud |
+| `ai_runtime_db` | AI Runtime Server | AI Runtime |
+| `shared_platform_db.identity` | Identity Module | Identity Module |
+| `shared_platform_db.commerce` | Commerce Module | Commerce Module |
+| `shared_platform_db.audit` | Audit Module | Audit Module |
+
+### 10.2 Shared Identity 논리 데이터
+
+논리 소유자: Shared Identity
+
+```text
+account
+credential
+authentication session
+access token
+refresh token
+```
+
+### 10.3 Shared Commerce 논리 데이터
+
+논리 소유자: Shared Commerce
+
+```text
+product membership
+subscription
+billing
+payment
+entitlement
+quota
+```
+
+### 10.4 Development Control 데이터
 
 소유자: `oh-my-ai-control-plane`
 
 ```text
+workspace
+project
 development task
 parent-child task
 session binding metadata
 execution run metadata
 result artifact metadata
 human review
-development entitlement
 approval state
+approval
+harness policy
+cloud history
 managed recommendation
 ```
 
@@ -954,7 +1040,7 @@ Redaction 전 Terminal Output
 전체 Prompt
 ```
 
-### 10.3 Finance 데이터
+### 10.5 Finance 데이터
 
 소유자: `finance-harness`
 
@@ -966,7 +1052,6 @@ policy guard run
 checklist result
 journal
 review record
-finance entitlement
 finance usage
 ```
 
@@ -981,27 +1066,32 @@ Finance 데이터는 이러한 정책과 집행을 전제로 Cloud에 저장될 
 
 Development Repository의 Local-first 원칙을 Finance 기록에 기계적으로 적용하지 않는다.
 
-### 10.4 데이터베이스 원칙
+### 10.6 데이터베이스 원칙
 
-목표 Database 경계:
+Deployment Unit별 Source of Truth와 Migration 소유권을 분리한다.
 
 ```text
-identity_db
-development_control_db
-finance_db
+같은 Physical Cluster
+≠ 같은 Data Owner
+≠ Cross-service Table Access 허용
+≠ Cross-service Transaction 허용
 ```
 
-초기에는 하나의 PostgreSQL Cluster를 공유할 수 있다.
+금지:
 
-단, 다음 조건을 지켜야 한다.
+- 다른 서비스 Database 직접 접속
+- Cross-service Foreign Key
+- OLTP Cross-service JOIN
+- 같은 Database에 있다는 이유로 Module 경계 우회
+- 소유 Module 외 Migration 실행
 
-- 논리 Database 또는 Schema 분리
-- 소유 서비스 외 직접 접근 금지
-- Cross-service Foreign Key 금지
-- Cross-service Table Read 금지
-- Migration 소유권 분리
-- Backup과 Retention 정책 구분 가능
-- 향후 물리 분리가 가능한 Identifier 사용
+다른 서비스 데이터는 API, Token Claim, Event, Projection으로 소비한다.
+
+Analytics와 운영 리포팅의 Cross-product 결합은
+별도 Read Model 또는 ETL 경로에서 수행한다.
+
+별도 PostgreSQL Cluster는 트래픽, 장애 격리, 규제, 보존정책,
+Backup·Restore 또는 운영 조직 분리가 실제로 필요할 때만 검토한다.
 
 ### 10.5 Carelog 데이터
 
@@ -1042,6 +1132,8 @@ Product Service는 다음 중 하나를 사용할 수 있다.
 - Service-to-Service Credential
 
 제품 요청마다 Identity Database를 직접 조회하지 않는다.
+
+위 항목은 연동 방식 후보이며 JWT Claim의 구체 형식은 이 문서에서 정의하지 않는다.
 
 ### 11.2 Local Runtime과 Control Plane
 
@@ -1107,6 +1199,30 @@ Development Writer Lease
 Development Session Resume API
 Development Agent Process API
 ```
+
+### 11.4 Audit 책임
+
+각 Product와 Service는 자기 Domain Audit Event의 의미와 생성 시점을 소유한다.
+
+Shared Platform Audit Module은 필요할 경우 다음을 담당할 수 있다.
+
+```text
+Central Storage
+Integrated Query
+Retention Policy
+Audit Access Control
+```
+
+중요 업무 데이터와 Audit Event의 유실 방지는
+서비스별 Local Outbox로 처리할 수 있다.
+
+Shared Audit API를 업무 Transaction 안에서 동기 호출하도록 강제하지 않는다.
+
+Audit Event는 Product Domain Entity에 물리 Foreign Key를 걸지 않고
+opaque identifier를 저장한다.
+
+중앙 Audit Module은 즉시 구현 대상이 아니며
+실제 통합 검색·보존·감사 요구가 생겼을 때 활성화한다.
 
 ---
 
@@ -1285,9 +1401,10 @@ Finance는 별도 제품, 데이터, 사용자 흐름, 법률 정책과 Release 
 
 현재 채택하지 않는다.
 
-Identity의 논리 경계는 분리하지만, Local PoC에 모든 상업 서비스를 선행 구현하지 않는다.
+Identity와 Commerce의 논리 경계는 분리하지만,
+V1 또는 Local PoC에 외부 플랫폼 구현을 선행하지 않는다.
 
-실제 공통성과 운영 요구가 확인된 후 Commercial Platform 추출을 검토한다.
+실제 복수 소비자와 운영 요구가 확인된 후 물리 추출을 검토한다.
 
 ---
 
@@ -1333,7 +1450,7 @@ local correlation metadata
 ```text
 oh-my-ai
 oh-my-ai-control-plane
-identity-platform integration
+optional Shared Identity / Shared Commerce integration
 ```
 
 목표:
@@ -1361,7 +1478,7 @@ Finance Product에 필요한 Identity 또는 Domain-neutral Contract만 준비�
 
 ```text
 finance-harness
-identity-platform
+optional Shared Identity / Shared Commerce integration
 optional domain-neutral platform capability
 ```
 
@@ -1375,15 +1492,20 @@ optional domain-neutral platform capability
 - Review
 - Finance Entitlement
 
-### Phase 5 — 공통 플랫폼 추출 검토
+### Phase 5 — 목표 Shared Platform 활성화 검토
 
-실제 중복과 운영 요구가 확인된 경우에만 검토한다.
+목표 Deployment Unit은 정의하지만 실제 구현은
+복수 소비자와 운영 요구가 확인된 경우에만 검토한다.
 
 ```text
-commercial-platform
-shared-platform-control-plane
-shared-contracts
+Shared Platform Server
+├── Identity Module
+├── Commerce Module
+└── Audit Module
 ```
+
+Carelog CRM Server, AI Runtime Server와 각 Module의 활성화 순서는
+실제 Product Requirement에 따라 별도 결정한다.
 
 ---
 
@@ -1401,7 +1523,7 @@ Carelog
 Shared Identity 물리 분리
 = 미착수
 
-이번 등록(DEC-057)
+이번 등록(DEC-059)
 = 신규 Carelog Repository 또는 Identity Repository 생성을 의미하지 않음
 ```
 
@@ -1418,8 +1540,8 @@ Shared Identity 물리 분리
 5. Shared Core는 공통 Vocabulary와 Contract다.
 6. V1 Shared Core는 Markdown Artifact에 투영되며 관리형 Entity를 요구하지 않는다.
 7. Task, Run, Result의 관리형 Entity 승격은 V2부터다.
-8. Identity는 독립 논리 경계다.
-9. Identity 완성은 V2 Local Invocation PoC의 선결 조건이 아니다.
+8. Identity와 Commerce는 동급의 독립 논리 경계다.
+9. Identity·Commerce 완성은 V1 또는 V2 Local Invocation PoC의 선결 조건이 아니다.
 10. PoC의 `ohmy_session_id`는 Local Correlation Identifier다.
 11. 각 서비스는 자기 Domain 데이터를 소유한다.
 12. 서비스 간 Database 직접 접근을 금지한다.
@@ -1434,8 +1556,16 @@ Shared Identity 물리 분리
 21. 제품 전체 canonical 결정은 `harness-private-docs`에서 관리한다.
 22. Cloud가 생성한 판단은 Candidate이며 자동 Truth가 아니다.
 23. Repository 이름 변경은 가능하지만 책임 경계 변경은 별도 결정이 필요하다.
-24. 인증 논리 서비스의 canonical 명칭은 `Shared Identity`다. `identity-platform`은 물리 분리 전까지 후보 Repository 명칭이다 (`DEC-057`).
-25. Carelog는 기존 Product Service로 이 지도에 등록되며(§7.7), 그 Auth Phase A 현재 상태는 oh-my-ai V1/V2/V3 Phase 1-5 물리화 타임라인과 분리해 기록한다 (`DEC-057`).
+24. Identity·Commerce의 물리 Server·Repository·Database·Deployment는 승인되지 않았다.
+25. 물리 분리는 실제 복수 소비자와 운영상 필요가 확인된 뒤 검토한다.
+26. 목표 Deployment Unit은 즉시 구현 승인이 아니다.
+27. V1 Local Core는 Shared Platform과 Cloud AI Runtime 없이 완결한다.
+28. Deployment Unit별 Data Source of Truth와 Migration 소유권을 분리한다.
+29. Cross-service Foreign Key와 OLTP Cross-service JOIN을 금지한다.
+30. Shared Platform의 Identity·Commerce·Audit는 같은 배포물에서도 Module과 Schema 경계를 유지한다.
+31. Audit는 별도 Server로 분리하지 않는다.
+32. 인증 논리 서비스의 canonical 명칭은 `Shared Identity`다. `identity-platform`은 물리 분리 전까지 후보 Repository 명칭이다 (`DEC-059`).
+33. Carelog는 기존 Product Service로 이 지도에 등록되며(§7.7), 그 Auth Phase A 현재 상태는 oh-my-ai V1/V2/V3 Phase 1-5 물리화 타임라인과 분리해 기록한다 (`DEC-059`).
 
 ---
 
@@ -1446,17 +1576,19 @@ Shared Identity 물리 분리
 1. 각 Repository의 최종 상품명과 Organization 이름
 2. `oh-my-ai-control-plane`의 최종 기술 스택
 3. 기존 Auth Server의 정확한 재사용 범위
-4. Identity Platform의 최초 배포 시점
+4. Shared Platform Server의 실제 구현·Repository·Deployment 시점
 5. Billing Provider
-6. Entitlement의 장기 물리 소유 위치
+6. Commerce Module의 활성화 시점
 7. Finance Service의 초기 Cloud Infrastructure
 8. Shared Contract의 직렬화 형식
 9. PostgreSQL Cluster의 물리 분리 시점
-10. Shared Platform 기능의 별도 Service 추출 시점
+10. 중앙 Audit Module 활성화 시점
 11. 각 Repository의 공개·비공개 전환 시점
 12. 정식 SessionBinding Identifier Schema
-13. `identity-platform`의 최종 확정 Repository 이름 (canonical 논리 서비스명은 `Shared Identity`로 확정, `DEC-057`)
-14. Carelog의 Shared Identity 물리 분리 시점과 순서 (Auth Phase A 이후 단계)
+13. AI Runtime Server의 실제 구현과 Provider 배치
+14. Carelog CRM Server의 실제 구현 시점
+15. `identity-platform`의 최종 확정 Repository 이름 (canonical 논리 서비스명은 `Shared Identity`로 확정, `DEC-059`)
+16. Carelog의 Shared Identity 물리 분리 시점과 순서 (Auth Phase A 이후 단계)
 
 이 항목들은 별도 검토와 ADR 없이 추정해 확정하지 않는다.
 

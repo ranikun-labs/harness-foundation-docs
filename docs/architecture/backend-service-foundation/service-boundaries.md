@@ -7,9 +7,9 @@
 - Implementation completed: No
 - Runtime supported: No
 - Product released: No
-- Decision record: `DEC-057` (terminology and Carelog registration); separate ADR required for physical service extraction
+- Decision record: `DEC-059` (terminology and Carelog registration); separate ADR required for physical service extraction
 - Term scope: "Backend Service Foundation" (this directory) is distinct from `oh-my-ai`'s "Shared Platform" (`DEC-005`, `docs/architecture/shared-core-and-extensions.md`), which remains the AI harness product family's domain-neutral Contract boundary. See `docs/architecture/backend-service-foundation/README.md` §2.
-- Repository-map note: `Shared Identity` is the canonical logical service name (per `DEC-057`); `identity-platform` is a candidate repository name in `docs/architecture/repository-service-boundaries.md` §7.4, to be finalized at physical separation. `Finance Harness` corresponds to the existing `finance-harness` target repository (§7.3). `Carelog` is registered in that document's target repository map (§7.7) as an existing Product Service currently in Auth Phase A logical separation.
+- Repository-map note: `Shared Identity` is the canonical logical service name (per `DEC-059`); `identity-platform` is a candidate repository name in `docs/architecture/repository-service-boundaries.md` §7.4, to be finalized at physical separation. `Finance Harness` corresponds to the existing `finance-harness` target repository (§7.3). `Carelog` is registered in that document's target repository map (§7.7) as an existing Product Service currently in Auth Phase A logical separation.
 
 ## 1. Purpose
 

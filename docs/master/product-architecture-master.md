@@ -1321,7 +1321,7 @@ Identity Platform 독립 배포는 목표 경계다.
 
 Local Invocation PoC의 선결 조건은 아니다.
 
-Canonical 논리 서비스명은 `Shared Identity`다 (`DEC-057`). `identity-platform`은 §23 목표 Repository 지도상의 후보 명칭이며, 실제 Repository 이름은 물리 분리 결정 시 별도로 확정한다.
+Canonical 논리 서비스명은 `Shared Identity`다 (`DEC-059`). `identity-platform`은 §23 목표 Repository 지도상의 후보 명칭이며, 실제 Repository 이름은 물리 분리 결정 시 별도로 확정한다.
 
 ---
 
@@ -1627,7 +1627,7 @@ docs/contracts/backend-service-foundation/README.md
 
 `docs/architecture/backend-service-foundation/`와 `docs/contracts/backend-service-foundation/`는 이 Master Document가 기술하는 `oh-my-ai` 제품군 Architecture와는 별도 대상, 즉 Carelog·Finance Harness Backend·Shared Identity 등 실제 MSA Backend Service의 Architecture·Contract를 관리한다.
 
-**용어 관계 (`DEC-057`, accepted, 2026-07-26):**
+**용어 관계 (`DEC-059`, accepted, 2026-07-26):**
 
 ```text
 Shared Platform
@@ -1657,7 +1657,7 @@ Carelog
   oh-my-ai V1/V2/V3 Phase 1-6 타임라인(§26)과는 무관한 별도 현재 상태.
 ```
 
-이 절은 §22-23의 기존 Accepted 내용을 변경하지 않으며, `DEC-057`로 확정된 용어·Repository 지도 관계만 기록한다. `DEC-057`은 명칭 확정과 Carelog 등록만 accepted 상태이며, Carelog의 Shared Identity 물리 분리·구현 완료·Runtime 지원을 의미하지 않는다.
+이 절은 §22-23의 기존 Accepted 내용을 변경하지 않으며, `DEC-059`로 확정된 용어·Repository 지도 관계만 기록한다. `DEC-059`은 명칭 확정과 Carelog 등록만 accepted 상태이며, Carelog의 Shared Identity 물리 분리·구현 완료·Runtime 지원을 의미하지 않는다.
 
 ---
 

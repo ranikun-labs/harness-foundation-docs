@@ -6,7 +6,7 @@
 - Implementation completed: No
 - Runtime supported: No
 - Product released: No
-- Term scope: This document belongs to the Backend Service Foundation (`DEC-057`). "Shared Identity" is the canonical logical service name; `identity-platform` (`docs/architecture/repository-service-boundaries.md` §7.4) is a candidate repository name pending physical separation. "Harness product services" refers to backend MSA services (e.g. Carelog, Finance Harness backend), not `oh-my-ai` Runtime Adapters or its "Shared Platform" (`DEC-005`).
+- Term scope: This document belongs to the Backend Service Foundation (`DEC-059`). "Shared Identity" is the canonical logical service name; `identity-platform` (`docs/architecture/repository-service-boundaries.md` §7.4) is a candidate repository name pending physical separation. "Harness product services" refers to backend MSA services (e.g. Carelog, Finance Harness backend), not `oh-my-ai` Runtime Adapters or its "Shared Platform" (`DEC-005`).
 
 ## 1. Purpose
 

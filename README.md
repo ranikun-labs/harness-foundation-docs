@@ -357,7 +357,7 @@ V3 기능을 V1·V2의 선행 요구사항으로 사용하지 않는다.
 | `docs/architecture/repository-service-boundaries.md` | Repository·Service·Deployment 책임 |
 | `docs/architecture/shared-core-and-extensions.md` | Shared Core·Development·Finance 경계 |
 | `docs/architecture/local-cloud-human-boundary.md` | Local·Cloud·Human 데이터와 권한 경계 |
-| `docs/architecture/backend-service-foundation/README.md` | Carelog·Finance Harness Backend·Shared Identity 등 MSA Backend Service의 Backend Service Foundation 색인 (`DEC-057`). 위 `shared-core-and-extensions.md`의 `oh-my-ai` Shared Platform과는 이름부터 분리된 별도 개념 |
+| `docs/architecture/backend-service-foundation/README.md` | Carelog·Finance Harness Backend·Shared Identity 등 MSA Backend Service의 Backend Service Foundation 색인 (`DEC-059`). 위 `shared-core-and-extensions.md`의 `oh-my-ai` Shared Platform과는 이름부터 분리된 별도 개념 |
 
 ---
 
