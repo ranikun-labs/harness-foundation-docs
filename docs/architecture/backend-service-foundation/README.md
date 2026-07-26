@@ -40,18 +40,18 @@ docs/architecture/backend-service-foundation/
 
 `DEC-059`(2026-07-26, accepted)에 따라 이 디렉터리는 "Shared Platform"이라는 이름을 사용하지 않는다.
 
-| | 이 디렉터리 | 기존 `oh-my-ai`의 Shared Platform |
-|---|---|---|
-| Canonical 명칭 | **Backend Service Foundation** | Shared Platform |
-| Canonical 문서 | `docs/architecture/backend-service-foundation/*` (본 디렉터리) | `docs/architecture/shared-core-and-extensions.md` |
-| 근거 | `DEC-059` (accepted) | `DEC-005` (accepted), 루트 `README.md` Invariant #5 |
-| 의미 | Carelog·Finance Harness Backend·Shared Identity 등 **실제 MSA Backend Service**가 공유하는 Identity·DB Ownership·Communication·Consistency 원칙 | `oh-my-ai` **AI Harness 제품군**(Development Extension·Finance Extension)이 공유하는 Domain-neutral Contract·Vocabulary 경계 (WorkItem/Run/Result/Policy/Provenance 등) |
-| 성격 | Infra / Physical Architecture 원칙 (DB, JWT, Event, 통신) | Product / Logical Contract 경계 (Task 상태, Human Review, Candidate) |
-| Repository 대상 | Carelog, Finance Harness Backend, Shared Identity | `oh-my-ai`, `oh-my-ai-control-plane`, `finance-harness`, `identity-platform` |
+| | Backend Service Foundation | `oh-my-ai`의 Shared Platform | Shared Services Deployment Unit |
+|---|---|---|---|
+| Canonical 명칭 | **Backend Service Foundation** | Shared Platform | Shared Services Deployment Unit |
+| Canonical 문서 | `docs/architecture/backend-service-foundation/*` (본 디렉터리) | `docs/architecture/shared-core-and-extensions.md` | ADR-0014 / DEC-060 및 Target Deployment 문서 |
+| 근거 | `DEC-059` (accepted) | `DEC-005` (accepted), 루트 `README.md` Invariant #5 | ADR-0014 / DEC-060 (accepted) |
+| 의미 | Carelog·Finance Harness Backend·Shared Identity 등 MSA Backend의 공통 Architecture·Contract 문서 패키지 | `oh-my-ai` AI Harness 제품군의 Domain-neutral Contract·Vocabulary 경계 | Shared Identity·Shared Commerce·Audit의 공동 물리 배포 후보 |
+| 성격 | 문서 패키지 | Product / Logical Contract 경계 | Target Deployment Unit (구현 미승인) |
+| 적용 대상 또는 책임 대상 | Carelog, Finance Harness Backend, Shared Identity | `oh-my-ai`, `oh-my-ai-control-plane`, `finance-harness` | Shared Identity, Shared Commerce, Audit Module |
 
-이름이 분리됐으므로 두 개념은 더 이상 혼동될 위험이 없다. `DEC-005`와 루트 `README.md`의 "Shared Platform" 정의는 이번 명칭 확정으로 변경되지 않는다.
+세 용어는 서로 다른 경계를 나타낸다. `DEC-005`와 루트 `README.md`의 "Shared Platform" 정의는 변경하지 않으며, Shared Services Deployment Unit은 실제 Server·Repository·Database 이름 또는 구현 승인이 아니다.
 
-관련 참고: `docs/architecture/shared-core-and-extensions.md`, `docs/decisions/decision-log.md` DEC-005, DEC-059.
+관련 참고: `docs/architecture/shared-core-and-extensions.md`, `docs/decisions/decision-log.md` DEC-005, DEC-059, DEC-060.
 
 ---
 

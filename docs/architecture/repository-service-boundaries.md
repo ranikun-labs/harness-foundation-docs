@@ -623,7 +623,7 @@ Finance 장애와 배포가 다음에 직접 영향을 주지 않아야 한다.
 
 ### 7.4 Shared Identity
 
-**명칭 주의 (`DEC-059`):** 이 서비스의 canonical 논리 서비스명은 `Shared Identity`다. `identity-platform`은 이 목표 Repository 지도상의 후보 명칭이며, 실제 Repository 이름은 물리 분리 결정 시 별도로 확정한다. 아래 본문은 물리 분리 이전 후보 명칭인 `identity-platform`을 그대로 사용한다.
+**명칭 주의 (`DEC-059`):** 이 서비스의 canonical 논리 서비스명은 `Shared Identity`다. `identity-platform`은 이 목표 Repository 지도상의 후보 명칭이며, 실제 Repository 이름은 물리 분리 결정 시 별도로 확정한다.
 
 #### 역할
 
@@ -894,10 +894,10 @@ Target Deployment Units
 ├── Finance Harness Server
 ├── Dev Harness Cloud Server
 ├── AI Runtime Server
-└── Shared Platform Server
-    ├── Identity Module
-    ├── Commerce Module
-    └── Audit Module
+└── Shared Services Deployment Unit
+    ├── Shared Identity Module
+    ├── Shared Commerce Module
+    └── Shared Services Audit Module
 ```
 
 목표 Deployment Unit은 즉시 구현, Repository 생성,
@@ -911,7 +911,7 @@ Carelog 내부 논리 분리 상태다. Shared Identity 물리 분리는 아직 
 1. Dev Harness V1 Local Core는 Shared Identity·Commerce·Audit·Cloud AI Runtime에 의존하지 않는다.
 2. Dev Harness Cloud는 실제 Cloud 기능 개발 시점까지 구현을 유예한다.
 3. Commerce는 실제 유료화 전까지 구현을 유예할 수 있다.
-4. Audit는 별도 Server가 아니라 Shared Platform 내부 Module이다.
+4. Audit는 별도 Server가 아니라 Shared Services Deployment Unit 내부 Module이다.
 5. Identity·Commerce·Audit는 같은 Deployment Unit에서도 코드·데이터·Migration 소유권을 분리한다.
 6. AI Runtime은 Provider 실행·Routing·Retry·Fallback·Token/Cost Metering·Trace를 담당한다.
 7. 제품별 Prompt·Policy·Context Schema·Evaluation은 각 Product Server가 소유한다.
@@ -940,13 +940,13 @@ Product Evaluation
 Domain Decision
 ```
 
-### 9.2 Shared Platform 내부 경계
+### 9.2 Shared Services Deployment Unit 내부 경계
 
 ```text
-Shared Platform Server
-├── Identity Module
-├── Commerce Module
-└── Audit Module
+Shared Services Deployment Unit
+├── Shared Identity Module
+├── Shared Commerce Module
+└── Shared Services Audit Module
 ```
 
 한 Deployment Unit이라는 이유로 Module 간 Table 직접 접근이나
@@ -966,13 +966,13 @@ PostgreSQL Physical Cluster
 ├── finance_db
 ├── dev_cloud_db
 ├── ai_runtime_db
-└── shared_platform_db
+└── shared_services_db
     ├── identity schema
     ├── commerce schema
     └── audit schema
 ```
 
-이 구조는 목표 논리 배치다.
+이 구조는 목표 논리 배치이며 `shared_services_db`는 실제 Database 이름이 아닌 예시명이다.
 실제 Cluster, Database, Schema 생성은 구현 시점의 별도 승인 대상이다.
 
 | Logical Database / Schema | Data Source of Truth | Migration Owner |
@@ -981,9 +981,9 @@ PostgreSQL Physical Cluster
 | `finance_db` | Finance Harness Server | Finance Harness |
 | `dev_cloud_db` | Dev Harness Cloud Server | Dev Harness Cloud |
 | `ai_runtime_db` | AI Runtime Server | AI Runtime |
-| `shared_platform_db.identity` | Identity Module | Identity Module |
-| `shared_platform_db.commerce` | Commerce Module | Commerce Module |
-| `shared_platform_db.audit` | Audit Module | Audit Module |
+| `shared_services_db.identity` | Shared Identity Module | Shared Identity Module |
+| `shared_services_db.commerce` | Shared Commerce Module | Shared Commerce Module |
+| `shared_services_db.audit` | Shared Services Audit Module | Shared Services Audit Module |
 
 ### 10.2 Shared Identity 논리 데이터
 
@@ -1093,7 +1093,7 @@ Analytics와 운영 리포팅의 Cross-product 결합은
 별도 PostgreSQL Cluster는 트래픽, 장애 격리, 규제, 보존정책,
 Backup·Restore 또는 운영 조직 분리가 실제로 필요할 때만 검토한다.
 
-### 10.5 Carelog 데이터
+### 10.7 Carelog 데이터
 
 소유자: `carelog`
 
@@ -1105,7 +1105,7 @@ customer timeline
 follow-up / handoff
 ```
 
-Carelog는 Auth Phase A 기간 동안 계정·자격증명 관련 모듈을 내부에 일시 보유할 수 있으나, 목표 소유권은 §7.7과 동일하게 Shared Identity(§10.1, 후보 명칭 `identity-platform`)가 계정 원장을 소유한다.
+Carelog는 Auth Phase A 기간 동안 계정·자격증명 관련 모듈을 내부에 일시 보유할 수 있으나, 목표 소유권은 §7.7과 동일하게 Shared Identity(§7.4, §10.2)가 계정 원장을 소유한다.
 
 `CRM Customer != Identity User` — CRM Customer 데이터는 기본적으로 Shared Identity 데이터가 아니다.
 
@@ -1119,7 +1119,7 @@ Carelog는 Auth Phase A 기간 동안 계정·자격증명 관련 모듈을 내�
 
 ```text
 Client
-→ identity-platform에서 인증
+→ Shared Identity에서 인증
 → Access Token 발급
 → Product Service가 Token 검증
 ```
@@ -1204,7 +1204,7 @@ Development Agent Process API
 
 각 Product와 Service는 자기 Domain Audit Event의 의미와 생성 시점을 소유한다.
 
-Shared Platform Audit Module은 필요할 경우 다음을 담당할 수 있다.
+Shared Services Audit Module은 필요할 경우 다음을 담당할 수 있다.
 
 ```text
 Central Storage
@@ -1313,7 +1313,7 @@ modules/
 └── finance-commercial
 ```
 
-### 13.3 `identity-platform`
+### 13.3 Shared Identity 후보 Repository (`identity-platform`)
 
 ```text
 modules/
@@ -1321,7 +1321,6 @@ modules/
 ├── authentication
 ├── token
 ├── device
-├── membership
 └── authorization
 ```
 
@@ -1443,7 +1442,7 @@ local correlation metadata
 - Task와 Result 귀속
 - Human Review
 
-이 단계에서 Identity Platform 완성은 필수가 아니다.
+이 단계에서 Shared Identity 물리 구현은 필수가 아니다.
 
 ### Phase 3 — V2 Managed Workflow
 
@@ -1498,10 +1497,10 @@ optional domain-neutral platform capability
 복수 소비자와 운영 요구가 확인된 경우에만 검토한다.
 
 ```text
-Shared Platform Server
-├── Identity Module
-├── Commerce Module
-└── Audit Module
+Shared Services Deployment Unit
+├── Shared Identity Module
+├── Shared Commerce Module
+└── Shared Services Audit Module
 ```
 
 Carelog CRM Server, AI Runtime Server와 각 Module의 활성화 순서는
@@ -1559,10 +1558,10 @@ Shared Identity 물리 분리
 24. Identity·Commerce의 물리 Server·Repository·Database·Deployment는 승인되지 않았다.
 25. 물리 분리는 실제 복수 소비자와 운영상 필요가 확인된 뒤 검토한다.
 26. 목표 Deployment Unit은 즉시 구현 승인이 아니다.
-27. V1 Local Core는 Shared Platform과 Cloud AI Runtime 없이 완결한다.
+27. V1 Local Core는 Shared Services Deployment Unit과 Cloud AI Runtime 없이 완결한다.
 28. Deployment Unit별 Data Source of Truth와 Migration 소유권을 분리한다.
 29. Cross-service Foreign Key와 OLTP Cross-service JOIN을 금지한다.
-30. Shared Platform의 Identity·Commerce·Audit는 같은 배포물에서도 Module과 Schema 경계를 유지한다.
+30. Shared Services Deployment Unit의 Identity·Commerce·Audit는 같은 배포물에서도 Module과 Schema 경계를 유지한다.
 31. Audit는 별도 Server로 분리하지 않는다.
 32. 인증 논리 서비스의 canonical 명칭은 `Shared Identity`다. `identity-platform`은 물리 분리 전까지 후보 Repository 명칭이다 (`DEC-059`).
 33. Carelog는 기존 Product Service로 이 지도에 등록되며(§7.7), 그 Auth Phase A 현재 상태는 oh-my-ai V1/V2/V3 Phase 1-5 물리화 타임라인과 분리해 기록한다 (`DEC-059`).
@@ -1576,7 +1575,7 @@ Shared Identity 물리 분리
 1. 각 Repository의 최종 상품명과 Organization 이름
 2. `oh-my-ai-control-plane`의 최종 기술 스택
 3. 기존 Auth Server의 정확한 재사용 범위
-4. Shared Platform Server의 실제 구현·Repository·Deployment 시점
+4. Shared Services Deployment Unit의 실제 구현·Repository·Deployment 시점
 5. Billing Provider
 6. Commerce Module의 활성화 시점
 7. Finance Service의 초기 Cloud Infrastructure

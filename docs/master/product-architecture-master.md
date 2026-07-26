@@ -758,7 +758,7 @@ local_execution_reference
 19. Offline Grace 후보
 ```
 
-Identity Platform 완성은 Local Invocation PoC의 선결 조건이 아니다.
+Shared Identity 물리 구현은 Local Invocation PoC의 선결 조건이 아니다.
 구체 Trial 기간, 무료 사용량, Grace 기간, 가격은 이 문서에 고정하지 않는다.
 
 Subscription 종료는 Local 데이터 삭제 권한이 아니다.
@@ -1317,7 +1317,7 @@ Commercial Platform
 └── Offline Grace
 ```
 
-Identity Platform 독립 배포는 목표 경계다.
+Shared Identity 물리 분리는 목표 경계다.
 
 Local Invocation PoC의 선결 조건은 아니다.
 
@@ -1559,13 +1559,13 @@ Self-hosted
 
 1. 최종 Product 및 Organization 이름
 2. V2 Control Plane 최종 기술 스택
-3. Identity Platform 최초 물리 배포 시점
+3. Shared Identity 최초 물리 분리 시점
 4. Billing Provider
 5. Product별 가격
 6. Entitlement의 장기 물리 소유 위치
 7. Shared Contract 직렬화 형식
 8. Finance Backend 초기 Infrastructure
-9. Shared Platform Service 추출 시점
+9. Shared Services Deployment Unit 활성화 시점
 10. Sidecar 도입 시점
 11. 정식 SessionBinding Identifier Schema
 12. Managed Memory 저장 모델

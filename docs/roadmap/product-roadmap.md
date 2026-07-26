@@ -1209,14 +1209,14 @@ Storage / Retention Design
 | 작업 | 선행 조건 | 선행 조건이 아닌 것 |
 |---|---|---|
 | V1 Release | V1 Contract, Fixtures, Public Docs | Auth, Billing, Sidecar |
-| Local Invocation PoC | V1 범위 안정화, Runtime Adapter 이해 | Identity Platform 완성 |
+| Local Invocation PoC | V1 범위 안정화, Runtime Adapter 이해 | Shared Identity 물리 구현 |
 | V2 Technical Core | PoC 결과, Task/Run/Result 설계 | 정식 Auth, Billing, Managed Memory |
 | V2 Pro Commercial Launch | V2 Technical Core, Auth, User-bound Device, Entitlement | V3 Governance |
 | Finance Contract MVP | Finance Docs, Safety 기준 | Development V2 전체 |
 | Local Finance Experiment | Finance Contract MVP | OCR, Market Data, Finance Cloud Backend |
 | Finance Product | Finance Contract, Product UI, 필요한 Identity | Development Managed Intelligence 전체 |
 | V3 | 안정된 V2, 실제 조직 수요 | Finance Product 완료 |
-| Shared Platform 추출 | 실제 반복과 운영 필요 | 단순 공통 이름 |
+| Shared Services Deployment Unit 활성화 | 실제 반복과 운영 필요 | 단순 공통 이름 |
 
 ---
 
@@ -1385,7 +1385,7 @@ superseded
 7. Commercialization
 8. Managed Intelligence
 9. Organization Governance
-10. Shared Platform 추출
+10. Shared Services Deployment Unit 활성화
 
 다음 이유만으로 우선순위를 올리지 않는다.
 
@@ -1454,7 +1454,7 @@ Finance Local Experiment
 12. Finance Cloud Infrastructure
 13. Enterprise Self-hosted 방식
 14. KPI 목표 수치
-15. Shared Platform 추출 시점
+15. Shared Services Deployment Unit 활성화 시점
 16. Package Channel의 최초 Launch 포함 여부
 17. Offline Grace의 구체 기간과 적용 방식
 

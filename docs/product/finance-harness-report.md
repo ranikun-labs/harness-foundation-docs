@@ -1289,7 +1289,7 @@ finance-harness
 공통 인증 증적:
 
 ```text
-identity-platform
+Shared Identity
 ```
 
 Runtime이 보관해야 할 증적 후보:
