@@ -2292,7 +2292,7 @@ docs/decisions/decision-log.md
 
 ```text
 supersedes: []
-superseded_by: []
+superseded_by: [DEC-060 (Shared Platform Server 명칭 및 물리 그룹 파생 명칭 범위만)]
 ```
 
 ADR-0012와 DEC-057의 논리 경계를 유지하며 이를 supersede하지 않는다.
@@ -2541,6 +2541,127 @@ README.md
 
 ```text
 DEC-005
+```
+
+### Supersession
+
+```text
+supersedes: []
+superseded_by: []
+```
+
+---
+
+## DEC-060 — Identity·Commerce·Audit 공동 배포 후보를 Shared Services Deployment Unit으로 구분한다
+
+**Status:** accepted
+**Owner:** architecture
+**Decision type:** architecture
+**Decision scope:** architecture / terminology / target-deployment-naming
+**Decision date:** 2026-07-26
+**Implementation status:** not_started
+**Runtime support status:** not_supported
+**Product release status:** not_released
+**Reviewed at:** 2026-07-26
+
+### Decision
+
+```text
+Shared Services Deployment Unit
+= Shared Identity + Shared Commerce + Audit Module의
+  향후 공동 물리 배포 후보
+
+Shared Services Deployment Unit
+≠ 실제 Server 이름 확정
+≠ 실제 Repository 이름 확정
+≠ 실제 Database 이름 확정
+≠ 즉시 구현 또는 Deployment 승인
+≠ Identity와 Commerce의 논리 경계 통합
+```
+
+### Partial Supersession
+
+```text
+partial_supersedes:
+- DEC-058의 Shared Platform Server 명칭 범위
+- DEC-058의 Shared Platform 물리 그룹 파생 명칭 범위
+
+replacement_rule:
+Shared Platform Server
+→ Shared Services Deployment Unit
+
+Shared Platform Module (물리 그룹 의미)
+→ Shared Services Deployment Unit 내부 Module
+
+Shared Platform Audit Module (물리 그룹 의미)
+→ Shared Services Audit Module
+  또는 Shared Services Deployment Unit의 Audit Module
+
+shared_platform_db
+→ shared_services_db 예시명
+```
+
+`shared_services_db`는 Target Architecture 예시명이며, 실제 Database 이름이나
+Provisioning을 확정하지 않는다.
+
+```text
+Shared Platform의 canonical 의미
+→ DEC-005의 Domain-neutral Contract / Shared Core 경계로만 유지
+
+Backend Service Foundation
+→ DEC-059의 MSA 공통 Architecture / Contract 문서 패키지 명칭으로 유지
+```
+
+### Remaining Valid Scope
+
+DEC-058의 다음 범위는 계속 유효하다.
+
+- Target Deployment Unit 구성
+- Identity·Commerce·Audit의 Module 분리
+- Data / Schema / Migration Ownership 분리
+- PostgreSQL 목표 배치 원칙
+- Cross-service FK / OLTP JOIN 금지
+- V1 Local Core 독립성
+- 실제 물리 구현 미승인 상태
+
+### DEC-059 Locator Corrigendum
+
+DEC-059에서 Carelog 데이터 위치로 기록한
+`repository-service-boundaries.md §10.5`는 병합 후 발생한 Locator 오류다.
+정정 위치는 `repository-service-boundaries.md §10.7`이다.
+
+이 Corrigendum은 Carelog의 의미나 DEC-059의 Architecture 결정을 변경하지 않으며,
+DEC-059의 다른 본문도 대체하지 않는다.
+
+### Constraints
+
+```text
+DEC-005 Shared Platform의 의미를 변경하지 않는다.
+DEC-057 Shared Identity / Shared Commerce 독립 논리 경계를 변경하지 않는다.
+DEC-059 Backend Service Foundation 명칭과 Carelog 상태 의미를 변경하지 않는다.
+실제 Runtime·Repository·Database·Deployment·Release를 생성하거나 승인하지 않는다.
+```
+
+### Affected Documents
+
+```text
+docs/adr/ADR-0014-shared-services-deployment-unit-naming.md
+docs/adr/ADR-0013-target-deployment-and-data-boundaries.md
+docs/architecture/repository-service-boundaries.md
+docs/architecture/backend-service-foundation/README.md
+docs/master/product-architecture-master.md
+docs/roadmap/product-roadmap.md
+README.md
+```
+
+### References
+
+```text
+ADR-0014
+DEC-005
+DEC-057
+DEC-058
+DEC-059
 ```
 
 ### Supersession
