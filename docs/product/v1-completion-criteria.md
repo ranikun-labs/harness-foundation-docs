@@ -1,9 +1,9 @@
 ---
-title: V1 Completion Criteria
+title: V1 Completion Criteria — v1.0.0 Baseline and v1.1.0 Delta Gate
 status: draft
 implementation_status: partial
 owner: development
-last_reviewed: 2026-07-14
+last_reviewed: 2026-07-28
 supersedes: []
 superseded_by: []
 related_adrs:
@@ -18,11 +18,15 @@ source_inputs:
   - docs/architecture/local-cloud-human-boundary.md
 ---
 
-# V1 Completion Criteria
+# V1 Completion Criteria — v1.0.0 Baseline and v1.1.0 Delta Gate
 
 ## 1. 문서 목적
 
-이 문서는 `oh-my-ai` V1 Community의 완료 조건을 정의한다.
+이 문서는 `oh-my-ai` Public `v1.0.0` Baseline과
+Public `v1.1.0` Delta Gate의 완료 조건을 함께 관리한다.
+
+별도로 `Public v1.1.0 Delta Gate`라고 표시한 절을 제외한 기존 V1 완료 조건은
+Public `v1.0.0` Baseline을 의미한다.
 
 목적은 다음과 같다.
 
@@ -40,7 +44,7 @@ source_inputs:
 
 ---
 
-## 2. V1 제품 정의
+## 2. Public v1.0.0 Baseline 제품 정의
 
 V1 Community는 다음 제품이다.
 
@@ -67,6 +71,10 @@ Cloud-independent
 → Human Review
 ```
 
+이 제품 정의와 기본 흐름은 이미 완료·출시된 Public `v1.0.0` Baseline이다.
+당시 기본 전달 방식은 Manual Copy/Paste였다. DEC-062는 이 완료 상태나
+`v1.0.0` Tag·Release를 소급 변경하지 않는다.
+
 V1의 핵심 가치는 다음과 같다.
 
 ```text
@@ -82,7 +90,7 @@ Human-controlled Delegation
 
 ---
 
-## 3. V1 완료의 의미
+## 3. Public v1.0.0 Baseline 완료의 의미
 
 V1 완료는 다음을 모두 의미한다.
 
@@ -109,7 +117,7 @@ V1은 Contract와 Workflow 전체가 함께 닫혀야 한다.
 
 ---
 
-## 4. V1 포함 범위
+## 4. Public v1.0.0 Baseline 포함 범위
 
 ```text
 Local Installation
@@ -144,7 +152,7 @@ Notice는 자동 Update, 자동 설치, 자동 Login, Cloud 연결을 의미하�
 
 ---
 
-## 5. V1 비범위
+## 5. Public v1.0.0 Baseline 비범위
 
 ```text
 User / Auth
@@ -525,7 +533,7 @@ Roadmap 문서를 Runtime Version Source로 사용하지 않는다.
 
 # Part II. Workflow Completion
 
-## 10. Manual Handoff Flow
+## 10. Public v1.0.0 Baseline — Manual Handoff Flow
 
 필수 흐름:
 
@@ -560,6 +568,123 @@ Validation Required
 - Structured Handoff Candidate가 새 Handoff Engine, Packet Lifecycle, Task Engine으로 표현되지 않음
 - Runtime Invocation, Session Linking, Result 자동 반환과 분리됨
 - 사용자 승인 전 자동 실행하지 않음
+
+---
+
+## 10.1 Public v1.1.0 Delta Gate — Automatic Next-session Handoff Rehydration
+
+DEC-062에 따라 Automatic Next-session Handoff Rehydration은 Public `v1.1.0` P0이며,
+권장 공개 버전은 `v1.1.0`이다. 이는 `v1.0.0`의 완료 상태, Tag, Release를 소급 변경하지 않는
+별도 Gate다.
+
+기본 흐름:
+
+```text
+명확한 Handoff 실행 의도
+→ 정제된 Pending Candidate
+→ 안전한 자동 연결 조건 확인
+→ 새 세션에서 Candidate 사용 가능 근거 확인
+→ Candidate 경계 재검증
+```
+
+Manual Copy/Paste는 기본 전달 방식이 아니라 Automatic Rehydration을 안전하게 수행할 수 없을 때의
+Manual Resume fallback이다.
+
+자동 연결 Gate:
+
+```text
+- 같은 Repository와 같은 Worktree
+- source_session_id와 다른 current_session_id
+- 두 Session ID 모두 확인 가능
+- Pending Candidate가 정확히 1개이고 미만료
+- Runtime·Hook 지원 확인
+- Unknown을 Supported로 추정하지 않음
+```
+
+Multiple Pending은 자동 선택하지 않는다. 최신 Candidate, 유사 Goal, 생성 시각을 기준으로도
+임의 선택하지 않고 Manual Resume를 제공한다.
+
+Candidate는 Durable Fact가 아니다. 새 세션은 Branch, HEAD, Working Tree, 실제 파일 상태,
+완료 주장, 검증 결과를 다시 확인해야 한다.
+
+다음은 성공 증명이 아니다.
+
+```text
+Artifact 생성
+Claim
+Hook 호출
+Context 출력 시도
+Manual Resume 안내
+```
+
+대상 세션에서 Candidate를 사용할 수 있다는 근거가 없으면 성공으로 표현하지 않는다.
+
+V1.1.0 P0 완료 조건:
+
+- 명확한 실행 의도만 Pending Handoff 생성 동의로 처리
+- Raw Transcript, Raw Tool Output, Secret, Token, Credential, 환경변수 원문을 저장하지 않음
+- Candidate에 Source Session, Repository, Worktree, Goal, Completed, Open Issues, Verification, Do Not Touch, Next Action, `candidate` Status를 포함
+- Hook 비활성, Runtime 미지원, Session ID 확인 불가, Repository·Worktree 불일치, Multiple Pending, State 손상, Artifact 만료, Claim·전달 실패, 전달 성공 확인 불가 시 Manual Resume 제공
+- Handoff만으로 파일·Shell·Git·Worker·Commit·Push·PR·새 세션·Runtime Invocation·Result 자동 회수·Project Context 자동 Promotion을 실행하지 않음
+
+### Positive Cross-session E2E Gate
+
+다음 조건을 모두 만족하는 Cross-session E2E가 실제 완료 조건이다.
+
+```text
+- 같은 Repository
+- 같은 Worktree
+- source_session_id와 다른 current_session_id
+- 미만료 Single Pending이 정확히 1개
+- 대상 새 세션에 Candidate가 정확히 한 번 연결됨
+- 같은 세션에서 Candidate가 반복 주입되지 않음
+- 새 세션에서 Branch·HEAD·Working Tree를 재검증함
+- 대상 세션이 Candidate를 사용할 수 있다는 전달 근거를 확인함
+```
+
+### Negative Fixture Gate
+
+다음 입력별 Negative Fixture가 실제 완료 조건이다.
+
+```text
+- source와 같은 session_id
+- Repository 불일치
+- Worktree 불일치
+- Pending 0개
+- Pending 2개 이상
+- 만료 Candidate
+- 손상된 State
+- Runtime 미지원
+- Hook 비활성
+- Session ID 확인 불가
+```
+
+각 경우 최신 Candidate나 유사 Goal을 근거로 자동 선택·자동 연결하지 않는다.
+Manual Resume를 제공하거나, Resume 안내도 안전하게 만들 수 없으면 no-op으로 종료한다.
+
+### Failure / Truthfulness Gate
+
+다음 Fail-open과 Truthfulness 조건이 실제 완료 조건이다.
+
+```text
+- Hook 실패·timeout·non-zero가 새 세션 시작을 막지 않음
+- 전달 실패로 Pending Artifact가 유실되지 않음
+- Artifact 생성·Claim·Hook 호출만으로 delivered 또는 성공으로 표현하지 않음
+- Raw Transcript·Raw Tool Output·Secret 저장 0건
+- Handoff만으로 파일·Shell·Git·Worker·Runtime 실행 0건
+```
+
+현재 검증 상태:
+
+```text
+implementation: not_verified
+fixture: not_verified
+cross_session_e2e: not_verified
+runtime_supported: not_verified
+```
+
+완료 조건만 확정한 것이며 어떤 항목도 Pass로 전환하지 않았다.
+Runtime Adapter별 성공 확인 방식은 기술 설계로 미룬다.
 
 ---
 
@@ -1118,7 +1243,7 @@ P2 미구현은 V1 Release를 막지 않는다.
 
 ---
 
-## 27. Release Gate Checklist
+## 27. Public v1.0.0 Baseline Release Gate Checklist
 
 ### Contract
 
@@ -1180,9 +1305,10 @@ P2 미구현은 V1 Release를 막지 않는다.
 
 # Part VII. Exit Criteria
 
-## 28. V1 완료 판정
+## 28. Public v1.0.0 Baseline 완료 판정
 
-다음 조건을 모두 만족하면 V1을 완료로 판정한다.
+다음 조건은 이미 출시된 Public `v1.0.0` Baseline의 완료 판정이다.
+DEC-062와 Public `v1.1.0` Delta Gate는 이 판정을 소급 변경하지 않는다.
 
 ```text
 1. 사용자가 작업을 입력할 수 있다.

@@ -3,7 +3,7 @@ title: Decision Log
 status: draft
 implementation_status: partial
 owner: core
-last_reviewed: 2026-07-26
+last_reviewed: 2026-07-28
 supersedes: []
 superseded_by: []
 related_adrs:
@@ -935,6 +935,8 @@ partial_supersedes:
   - DEC-010
   - DEC-011
   - DEC-031
+partial_superseded_by:
+  - DEC-062
 full_supersession: none
 ```
 
@@ -973,6 +975,21 @@ DEC-031:
   superseded_scope:
     - Result Validation과 Manual Import 관리 Gate 전체를
       V1 E2E에서 반드시 검증해야 한다는 범위
+
+DEC-051 after DEC-062:
+  remaining_valid_scope:
+    - Local-only Artifact Workflow
+    - Human-controlled Delegation
+    - 사용자가 새 세션 생성
+    - Runtime 자동 Invocation 금지
+    - Worker 자동 실행 금지
+    - Result 자동 반환·승격 금지
+    - Candidate와 Human Review
+    - Manual Resume fallback
+  superseded_scope:
+    - Manual Copy/Paste만 Public V1 P0 전달 방식이라는 범위
+    - Automatic Prompt Delivery 전체를 V2로 분류한 범위
+    - 지원 Runtime에서도 Product가 Candidate 연결을 하지 않는다는 범위
 ```
 
 ### Implementation and Verification
@@ -1913,6 +1930,272 @@ docs/roadmap/product-roadmap.md
 ```text
 supersedes: []
 superseded_by: []
+```
+
+---
+
+## DEC-062 — Automatic Next-session Handoff Rehydration을 Public V1.x P0로 채택한다
+
+**Status:** accepted_with_constraints
+**Owner:** product
+**Decision scope:** product
+**Implementation status:** not_verified
+**Reviewed at:** 2026-07-27
+
+`accepted_with_constraints`는 Product Decision 상태이며, 이 변경이 `main`에 Merge된 후
+canonical 효력을 갖는다. Merge 전 Branch 기록은 canonical main 반영을 의미하지 않으며,
+Merge 이후에도 이 Status만으로 구현 완료나 Runtime 지원을 증명하지 않는다.
+
+### Decision Scope
+
+```text
+Scope in:
+- Public V1.x P0의 Automatic Next-session Handoff Rehydration
+- 안전한 Pending Candidate 연결 조건과 Manual Resume fallback
+- Candidate 경계와 전달 성공 표현의 제품 기준
+
+Scope out:
+- State 파일 경로·Schema
+- Worktree Identity 알고리즘
+- Lock·Atomic Claim·Claim Timeout·Crash Recovery·TTL
+- Runtime Adapter 구조·Hook Source·Generated Cascade·Contract Schema
+- Runtime Invocation과 새 세션 생성
+- README 지원 주장과 oh-my-ai 구현
+```
+
+### Decision
+
+```text
+Automatic Next-session Handoff Rehydration
+= Public V1.x P0
+= 권장 공개 버전 v1.1.0
+
+이 기능은 Context Checkpoint Guard보다 우선한다.
+Harness는 사용자가 생성·전환한 새 세션에 안전한 Candidate를 연결할 수만 있다.
+새 세션 생성과 UI 전환은 사용자 책임이다.
+```
+
+### User Consent
+
+명확한 실행 의도만 Pending Handoff 생성 동의다.
+
+```text
+허용 예:
+- $handoff ...
+- 다른 세션으로 넘겨줘
+- 이 작업을 새 세션으로 Handoff 해줘
+
+실행 동의가 아님:
+- 애매한 언급
+- 기능 질문
+- 문서 문자열
+- Synthetic Event
+```
+
+### Candidate Artifact
+
+Raw Transcript가 아닌 정제된 Candidate만 저장한다.
+
+```text
+최소 내용:
+- Source Session
+- Repository
+- Worktree
+- Goal
+- Completed
+- Open Issues
+- Verification
+- Do Not Touch
+- Next Action
+- Status: candidate
+
+저장 금지:
+- Raw Transcript
+- Raw Tool Output
+- Secret
+- Token
+- Credential
+- 환경변수 원문
+```
+
+### Automatic Linking Conditions
+
+다음을 모두 확인할 수 있을 때만 자동 연결한다.
+
+```text
+- 같은 Repository
+- 같은 Worktree
+- source_session_id와 다른 current_session_id
+- 두 Session ID 모두 확인 가능
+- Pending이 정확히 1개
+- Candidate 미만료
+- Runtime·Hook 지원 확인
+```
+
+Unknown은 Supported로 추정하지 않는다.
+
+Pending이 2개 이상이면 최신 Candidate, 유사 Goal, 생성 시각을 기준으로도 임의 선택하지 않는다.
+
+### Candidate Boundary and Delivery Truthfulness
+
+자동 연결된 내용은 Durable Fact가 아니다. 새 세션은 다음을 다시 확인해야 한다.
+
+```text
+Branch
+HEAD
+Working Tree
+실제 파일 상태
+완료 주장
+검증 결과
+```
+
+다음만으로 전달 성공으로 표현하지 않는다.
+
+```text
+Artifact 생성
+Claim
+Hook 호출
+Context 출력 시도
+Manual Resume 안내
+```
+
+대상 세션에서 Candidate를 사용할 수 있다는 근거가 있어야 성공으로 표현할 수 있다.
+Runtime Adapter별 성공 확인 방식은 기술 설계로 미룬다.
+
+### Manual Resume Fallback
+
+다음 경우 Manual Resume를 제공한다.
+
+```text
+Hook 비활성
+Runtime 미지원
+Session ID 확인 불가
+Repository·Worktree 불일치
+Multiple Pending
+State 손상
+Artifact 만료
+Claim·전달 실패
+전달 성공 확인 불가
+```
+
+### Constraints
+
+Handoff만으로 다음을 수행하지 않는다.
+
+```text
+작업 파일 수정
+Shell
+Git 변경
+Worker 실행
+Commit·Push·PR 변경
+새 세션 생성
+codex resume
+codex fork
+Runtime Invocation
+Result 자동 회수
+Project Context 자동 Promotion
+```
+
+```text
+Decision Accepted
+≠ Implementation Completed
+≠ Fixture Passed
+≠ Cross-session E2E Passed
+≠ Runtime Supported
+```
+
+### Rationale
+
+```text
+수동 전달만으로는 세션 전환 때 Candidate가 유실되거나 재사용되지 않는 문제가 남는다.
+그러나 Managed Session Linking이나 Runtime 실행을 도입하지 않고도,
+명시적 동의와 검증 가능한 조건 아래 Candidate 연결을 제공할 수 있다.
+조건을 확인할 수 없으면 자동화를 추정하지 않고 Manual Resume로 돌아간다.
+```
+
+### Consequences
+
+```text
+Public v1.0.0 Baseline의 기본 전달 방식은 Manual Copy/Paste였다.
+Public v1.1.0 Delta Gate에서는 Automatic Rehydration이 기본 목표이고,
+Manual Resume는 자동 연결 불가 시 fallback이다.
+Managed SessionBinding, Session Graph, Runtime Invocation은 후속 범위로 유지한다.
+구현·Fixture·Cross-session E2E는 not_verified 상태를 유지한다.
+v1.0.0의 완료 상태와 Tag·Release는 이 Decision으로 소급 변경하지 않는다.
+```
+
+### Affected Documents
+
+이 PR에서 직접 정렬하는 문서:
+
+```text
+docs/product/v1-completion-criteria.md
+docs/roadmap/product-roadmap.md
+```
+
+후속 정렬이 필요한 문서:
+
+```text
+docs/contracts/handoff-basic-contract.md
+docs/contracts/runtime-capability-contract.md
+docs/testing/v1-fixture-plan.md
+docs/handoffs/README.md
+oh-my-ai product repository README
+oh-my-ai Runtime Capability documentation
+```
+
+후속 문서는 이 PR에서 수정하지 않는다. PR 1·PR 2 또는 별도 Contract PR에서
+DEC-062의 Product Boundary와 정렬한다.
+
+### Supersession
+
+```text
+supersedes: []
+superseded_by: []
+partial_supersedes:
+  - DEC-051
+full_supersession: none
+```
+
+### Partial Supersession
+
+```text
+DEC-051 remaining_valid_scope:
+- Local-only Artifact Workflow
+- Human-controlled Delegation
+- 사용자가 새 세션 생성
+- Runtime 자동 Invocation 금지
+- Worker 자동 실행 금지
+- Result 자동 반환·승격 금지
+- Candidate와 Human Review
+- Manual Resume fallback
+
+DEC-051 superseded_scope:
+- Manual Copy/Paste만 Public V1 P0 전달 방식이라는 범위
+- Automatic Prompt Delivery 전체를 V2로 분류한 범위
+- 지원 Runtime에서도 Product가 Candidate 연결을 하지 않는다는 범위
+```
+
+### Related Decisions
+
+```text
+DEC-010: Structured Handoff와 Human Review 유지
+DEC-012: Durable Context Promotion 분리
+DEC-013: Session ID는 Managed Entity가 아님
+DEC-021: Unknown이면 자동 연결 금지
+DEC-029: Secret 원문 미저장
+DEC-030: Positive·Negative Fixture 요구
+DEC-040: Managed SessionBinding deferred 유지
+DEC-051: Partial Supersession
+```
+
+### Implementation and Verification
+
+```text
+implementation_completed: not_verified
+fixture_passed: not_verified
+cross_session_e2e: not_verified
+runtime_supported: not_verified
 ```
 
 ---

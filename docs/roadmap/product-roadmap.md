@@ -2,7 +2,7 @@
 title: Product Roadmap
 status: draft
 owner: product
-last_reviewed: 2026-07-14
+last_reviewed: 2026-07-28
 supersedes: []
 superseded_by: []
 related_adrs:
@@ -320,7 +320,7 @@ V2 Local Invocation PoC 진입 전 필요한 수준까지만 확정한다.
 
 # Part II. Development Harness
 
-## 5. Phase 1 — V1 Community: Local Manual Artifact Workflow
+## 5. Phase 1 — Public v1.0.0 Baseline: Local Manual Artifact Workflow
 
 ### 5.1 상품 정의
 
@@ -404,7 +404,7 @@ SessionBinding
 ExecutionRun Entity
 ExecutionWorkspace Entity
 ResultArtifact ID
-Automatic Prompt Delivery
+Managed Automatic Prompt Delivery
 Automatic Result Collection
 Result 자동 저장
 Main Result 자동 감지
@@ -481,6 +481,57 @@ Push Notification
 - 사용자 Override 유형
 - Result 재사용률
 - Local Usage Log의 유용성
+
+### 5.8 Public v1.1.0 Delta Gate — Automatic Next-session Handoff Rehydration
+
+DEC-062에 따라 Automatic Next-session Handoff Rehydration은 Public `v1.1.0` P0이며,
+Context Checkpoint Guard보다 먼저 제공한다. 이는 Public `v1.0.0` Baseline의 완료 상태,
+Tag, Release를 소급 변경하지 않는 별도 Delta Gate다.
+
+구현·Fixture·Cross-session E2E·Runtime 지원은 모두 `not_verified`다.
+
+#### 5.8.1 Automatic Rehydration 범위
+
+사용자가 새 세션을 생성·전환한 뒤, Harness는 명확한 실행 동의로 생성된 정제 Candidate를
+안전한 조건에서만 연결한다.
+
+```text
+Automatic Rehydration
+= Candidate 연결
+≠ Managed Session Linking
+≠ SessionBinding
+≠ Session Graph
+≠ Runtime Invocation
+≠ 새 세션 생성
+```
+
+같은 Repository·Worktree, 서로 다른 확인 가능한 Session ID, 정확히 하나의 미만료 Pending,
+확인된 Runtime·Hook 지원이 모두 충족되지 않으면 Manual Resume를 제공한다. Unknown은
+Supported로 추정하지 않으며 Multiple Pending을 임의 선택하지 않는다.
+
+자동 연결은 Candidate를 Durable Fact로 승격하지 않는다. 새 세션은 Branch, HEAD, Working Tree,
+실제 파일 상태, 완료 주장, 검증 결과를 재확인한다. 대상 세션에서 Candidate 사용 가능 근거가
+없으면 전달 성공으로 표현하지 않는다.
+
+Context Checkpoint Guard는 Automatic Rehydration 이후의 P1 또는 C-lite Dogfooding 후보일 뿐이다.
+이 변경으로 Public `v1.0.0` 또는 `v1.1.0` 포함 범위에 채택하지 않으며,
+별도 Product Decision과 구현 범위에 따른다.
+
+#### 5.8.2 Managed Session Linking 후속 범위
+
+다음은 Public `v1.1.0` Automatic Rehydration과 분리된 후속 Managed Workflow 범위다.
+
+```text
+Managed SessionBinding
+Session Graph
+Runtime Invocation
+Worker 자동 실행
+Result 자동 회수·반환
+Project Context 자동 Promotion
+```
+
+Automatic Rehydration은 이 후속 범위를 선행 구현하거나 대체하지 않는다.
+Runtime Adapter별 전달 성공 확인 방식은 후속 기술 설계다.
 
 ---
 
