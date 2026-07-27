@@ -3,7 +3,7 @@ title: Decision Log
 status: draft
 implementation_status: partial
 owner: core
-last_reviewed: 2026-07-26
+last_reviewed: 2026-07-28
 supersedes: []
 superseded_by: []
 related_adrs:
@@ -1942,6 +1942,10 @@ superseded_by: []
 **Implementation status:** not_verified
 **Reviewed at:** 2026-07-27
 
+`accepted_with_constraints`는 Product Decision 상태이며, 이 변경이 `main`에 Merge된 후
+canonical 효력을 갖는다. Merge 전 Branch 기록은 canonical main 반영을 의미하지 않으며,
+Merge 이후에도 이 Status만으로 구현 완료나 Runtime 지원을 증명하지 않는다.
+
 ### Decision Scope
 
 ```text
@@ -2112,7 +2116,9 @@ Decision Accepted
 ### Consequences
 
 ```text
-Manual Copy/Paste는 Public V1.x의 기본 전달 방식이 아니라 fallback이다.
+Public v1.0.0 Baseline의 기본 전달 방식은 Manual Copy/Paste였다.
+Public v1.1.0 Delta Gate에서는 Automatic Rehydration이 기본 목표이고,
+Manual Resume는 자동 연결 불가 시 fallback이다.
 Managed SessionBinding, Session Graph, Runtime Invocation은 후속 범위로 유지한다.
 구현·Fixture·Cross-session E2E는 not_verified 상태를 유지한다.
 v1.0.0의 완료 상태와 Tag·Release는 이 Decision으로 소급 변경하지 않는다.
@@ -2120,10 +2126,26 @@ v1.0.0의 완료 상태와 Tag·Release는 이 Decision으로 소급 변경하�
 
 ### Affected Documents
 
+이 PR에서 직접 정렬하는 문서:
+
 ```text
 docs/product/v1-completion-criteria.md
 docs/roadmap/product-roadmap.md
 ```
+
+후속 정렬이 필요한 문서:
+
+```text
+docs/contracts/handoff-basic-contract.md
+docs/contracts/runtime-capability-contract.md
+docs/testing/v1-fixture-plan.md
+docs/handoffs/README.md
+oh-my-ai product repository README
+oh-my-ai Runtime Capability documentation
+```
+
+후속 문서는 이 PR에서 수정하지 않는다. PR 1·PR 2 또는 별도 Contract PR에서
+DEC-062의 Product Boundary와 정렬한다.
 
 ### Supersession
 
