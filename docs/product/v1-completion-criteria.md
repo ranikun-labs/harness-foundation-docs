@@ -120,7 +120,7 @@ Prompt Routing Hook
 Work-start
 Project Context
 Structured Handoff Candidate
-Manual Copy/Paste
+Manual Copy/Paste (v1.1.0 Automatic Rehydration 불가 시 fallback)
 Local Candidate Artifact
 Result Basic 수동 Template
 Human Review
@@ -560,6 +560,67 @@ Validation Required
 - Structured Handoff Candidate가 새 Handoff Engine, Packet Lifecycle, Task Engine으로 표현되지 않음
 - Runtime Invocation, Session Linking, Result 자동 반환과 분리됨
 - 사용자 승인 전 자동 실행하지 않음
+
+---
+
+## 10.1 V1.1.0 P0 Gate — Automatic Next-session Handoff Rehydration
+
+DEC-062에 따라 Automatic Next-session Handoff Rehydration은 Public V1.x P0이며,
+권장 공개 버전은 `v1.1.0`이다. 이는 `v1.0.0`의 완료 상태, Tag, Release를 소급 변경하지 않는
+별도 Gate다.
+
+기본 흐름:
+
+```text
+명확한 Handoff 실행 의도
+→ 정제된 Pending Candidate
+→ 안전한 자동 연결 조건 확인
+→ 새 세션에서 Candidate 사용 가능 근거 확인
+→ Candidate 경계 재검증
+```
+
+Manual Copy/Paste는 기본 전달 방식이 아니라 Automatic Rehydration을 안전하게 수행할 수 없을 때의
+Manual Resume fallback이다.
+
+자동 연결 Gate:
+
+```text
+- 같은 Repository와 같은 Worktree
+- source_session_id와 다른 current_session_id
+- 두 Session ID 모두 확인 가능
+- Pending Candidate가 정확히 1개이고 미만료
+- Runtime·Hook 지원 확인
+- Unknown을 Supported로 추정하지 않음
+```
+
+Multiple Pending은 자동 선택하지 않는다. 최신 Candidate, 유사 Goal, 생성 시각을 기준으로도
+임의 선택하지 않고 Manual Resume를 제공한다.
+
+Candidate는 Durable Fact가 아니다. 새 세션은 Branch, HEAD, Working Tree, 실제 파일 상태,
+완료 주장, 검증 결과를 다시 확인해야 한다.
+
+다음은 성공 증명이 아니다.
+
+```text
+Artifact 생성
+Claim
+Hook 호출
+Context 출력 시도
+Manual Resume 안내
+```
+
+대상 세션에서 Candidate를 사용할 수 있다는 근거가 없으면 성공으로 표현하지 않는다.
+
+V1.1.0 P0 완료 조건:
+
+- 명확한 실행 의도만 Pending Handoff 생성 동의로 처리
+- Raw Transcript, Raw Tool Output, Secret, Token, Credential, 환경변수 원문을 저장하지 않음
+- Candidate에 Source Session, Repository, Worktree, Goal, Completed, Open Issues, Verification, Do Not Touch, Next Action, `candidate` Status를 포함
+- Hook 비활성, Runtime 미지원, Session ID 확인 불가, Repository·Worktree 불일치, Multiple Pending, State 손상, Artifact 만료, Claim·전달 실패, 전달 성공 확인 불가 시 Manual Resume 제공
+- Handoff만으로 파일·Shell·Git·Worker·Commit·Push·PR·새 세션·Runtime Invocation·Result 자동 회수·Project Context 자동 Promotion을 실행하지 않음
+
+구현, Fixture, Cross-session E2E는 모두 `not_verified`다. Runtime Adapter별 성공 확인 방식은
+기술 설계로 미룬다.
 
 ---
 

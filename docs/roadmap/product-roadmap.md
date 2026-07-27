@@ -371,7 +371,9 @@ Work-start
 Runtime Entry Consent Guard
 Project Context
 Structured Handoff Candidate
-Manual Copy/Paste
+Automatic Next-session Handoff Rehydration (Public V1.x P0, 권장 v1.1.0)
+Context Checkpoint Guard
+Manual Copy/Paste (Automatic Rehydration 불가 시 Manual Resume fallback)
 Local Candidate Artifact
 Result Basic 수동 Template
 Human Review
@@ -404,7 +406,7 @@ SessionBinding
 ExecutionRun Entity
 ExecutionWorkspace Entity
 ResultArtifact ID
-Automatic Prompt Delivery
+Managed Automatic Prompt Delivery
 Automatic Result Collection
 Result 자동 저장
 Main Result 자동 감지
@@ -431,6 +433,48 @@ Cloud Notice API
 Push Notification
 상주 Notice Daemon
 ```
+
+### 5.3.1 V1.x P0 — Automatic Next-session Handoff Rehydration
+
+Automatic Next-session Handoff Rehydration은 Context Checkpoint Guard보다 먼저 제공하는
+Public V1.x P0 기능이다. 사용자가 새 세션을 생성·전환한 뒤, Harness는 명확한 실행 동의로
+생성된 정제 Candidate를 안전한 조건에서만 연결한다.
+
+```text
+Automatic Rehydration
+= Candidate 연결
+≠ Managed Session Linking
+≠ SessionBinding
+≠ Session Graph
+≠ Runtime Invocation
+≠ 새 세션 생성
+```
+
+같은 Repository·Worktree, 서로 다른 확인 가능한 Session ID, 정확히 하나의 미만료 Pending,
+확인된 Runtime·Hook 지원이 모두 충족되지 않으면 Manual Resume를 제공한다. Unknown은
+Supported로 추정하지 않으며 Multiple Pending을 임의 선택하지 않는다.
+
+자동 연결은 Candidate를 Durable Fact로 승격하지 않는다. 새 세션은 Branch, HEAD, Working Tree,
+실제 파일 상태, 완료 주장, 검증 결과를 재확인한다. 대상 세션에서 Candidate 사용 가능 근거가
+없으면 전달 성공으로 표현하지 않는다.
+
+`v1.0.0`의 완료 상태·Tag·Release는 변경하지 않는다. 구현·Fixture·Cross-session E2E는
+`not_verified`이며, Runtime Adapter별 성공 확인 방식은 후속 기술 설계다.
+
+### 5.3.2 후속 범위 — Managed Session Linking
+
+다음은 V1.x Automatic Rehydration과 분리된 후속 Managed Workflow 범위다.
+
+```text
+Managed SessionBinding
+Session Graph
+Runtime Invocation
+Worker 자동 실행
+Result 자동 회수·반환
+Project Context 자동 Promotion
+```
+
+Automatic Rehydration은 이 후속 범위를 선행 구현하거나 대체하지 않는다.
 
 ### 5.5 기술 완료 조건
 
