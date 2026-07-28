@@ -20,6 +20,7 @@ source_inputs:
   - docs/architecture/shared-core-and-extensions.md
   - docs/architecture/local-cloud-human-boundary.md
   - docs/product/v1-completion-criteria.md
+  - docs/contracts/context-checkpoint-guard-contract.md
   - docs/contracts/work-start-contract.md
   - docs/contracts/handoff-basic-contract.md
   - docs/contracts/result-basic-contract.md
@@ -2195,6 +2196,297 @@ DEC-051: Partial Supersession
 implementation_completed: not_verified
 fixture_passed: not_verified
 cross_session_e2e: not_verified
+runtime_supported: not_verified
+```
+
+---
+
+## DEC-063 — Context Checkpoint Guard C-lite를 post-v1.0 Public V1.x Gate로 채택한다
+
+**Status:** accepted_with_constraints
+**Owner:** product
+**Decision scope:** product / contract
+**Implementation status:** not_verified
+**Reviewed at:** 2026-07-28
+
+`accepted_with_constraints`는 Foundation Product Decision 상태다. 이 변경이 `main`에 Merge된 후
+canonical 효력을 갖지만, Merge만으로 Product 구현·Runtime Hook 지원·Fixture Pass를 증명하지 않는다.
+
+### Decision Scope
+
+```text
+Scope in:
+- Work-start 비의존 Context Checkpoint 검토 기회
+- Activity Signal과 Context Significance 분리
+- C-lite 상태·Human Review 결과·Checkpoint Epoch
+- 초기 Trigger, Scope 격리, 중복 알림 억제
+- 최소 Metadata, Privacy, Fail-open
+- project-context와 handoff-prompt 책임 경계
+- DEC-062보다 선행하는 Runtime data-flow Capture Gate
+- Product 구현 PR이 따라야 할 FX-CCG Fixture 계약
+
+Scope out:
+- Product Runtime·Hook·State 구현
+- Transcript Capture·모델 호출·자동 요약
+- 자동 Durable Context Promotion
+- DEC-062 Product 구현과 Managed Session Linking
+- Cloud Sync·Telemetry·Daemon·Scheduler
+```
+
+### Context
+
+```text
+현재 Work-start와 Structured Handoff 흐름은
+명시적으로 해당 Entry를 사용한 작업의 Candidate를 보존할 수 있다.
+
+그러나 사용자가 Work-start나 Handoff 없이
+설계·수정·Decision·Risk 발견·검증·PR 작업을 수행하면
+Durable Project Context 갱신 필요 여부를 검토할 경계가 없다.
+
+DEC-062는 이미 존재하는 Pending Handoff Candidate를
+다음 Session에 안전하게 연결하는 문제를 다룬다.
+Pending Candidate가 만들어지기 전의 Context 누락은 DEC-062 범위가 아니다.
+```
+
+### Decision
+
+```text
+Context Checkpoint Guard C-lite
+= post-v1.0 Public V1.x Gate
+= Work-start 실행 여부와 무관하게
+  인식 가능한 작업 활동이 있으면
+  안전한 경계에서 Context 갱신 필요 여부를 사용자가 검토할 기회
+
+Guard
+≠ Context 자동 저장
+≠ Context Significance 자동 판정
+≠ Handoff Artifact 생성
+```
+
+Public `v1.0.0` Baseline의 완료 상태, Tag와 Release Criteria는 변경하지 않는다.
+Product 구현 버전은 DEC-062의 Public `v1.1.0` 우선순위를 침해하지 않는
+post-v1.0 V1.x Release Planning에서 확정한다.
+
+### Activity and Significance
+
+```text
+Activity Signal
+= 작업 활동이 있었다는 Adapter 관찰
+
+Context Significance
+= Durable Context에 남길 내용이 있는지에 대한 사용자 판정
+```
+
+Activity Signal 후보:
+
+```text
+파일 변경
+검증 실행
+oh-my-ai가 인식한 Commit·PR 관련 작업
+명시적 Design·Decision marker
+Handoff 요청
+oh-my-ai가 관리하는 Session 종료
+```
+
+모든 Shell·Git·IDE·OS 활동을 전역 감시하지 않는다. 실제 Claude Code·Codex Adapter가
+제공하는 Hook Surface만 사용하며 Runtime별 비대칭을 허용한다.
+
+### C-lite State and Human Outcomes
+
+Workflow 상태:
+
+```text
+clean
+= 현재 Epoch에 검토를 요구하는 인식된 Signal 없음
+
+review_needed
+= Signal이 있어 Context 반영 여부를 사용자가 검토해야 함
+```
+
+Human Review 결과:
+
+```text
+checkpointed
+= 사용자가 Context 갱신을 승인·완료하고 확인
+
+no_update
+= 사용자가 검토 후 Context 갱신 불필요를 선택
+```
+
+`checkpointed`와 `no_update`는 자동 판정 상태가 아니다. 결과가 기록되면 현재 Epoch를
+해결하고 다음 Epoch를 `clean`으로 시작한다.
+
+State 읽기 실패나 Hook 미지원은 `clean`으로 거짓 판정하지 않는다. `availability: unavailable`은
+Workflow 상태를 늘리지 않는 별도 진단 축이며 fail-open과 Manual fallback을 선택하는 데만 사용한다.
+
+### Trigger and Handoff Decision Gate
+
+초기 Trigger 우선순위:
+
+```text
+1. Structured Handoff Candidate 생성 전
+2. oh-my-ai가 관리하는 Session 종료 경계
+3. oh-my-ai가 인식할 수 있는 PR·Merge 전 경계
+```
+
+SessionEnd는 종료를 차단하거나 Human Review를 기다리는 Gate가 아니다. 동일 Repository·Worktree의
+prior unresolved Epoch는 다음 지원 Session 또는 review surface에서 one-time diagnostic으로만
+안내하며 자동 해결·Context 저장·Handoff 생성·DEC-062 Pending 전환을 하지 않는다. 상세 불변조건은
+`docs/contracts/context-checkpoint-guard-contract.md`가 소유한다.
+
+`review_needed`인 Handoff는 기본적으로 Hard Block하지 않는다.
+
+```text
+경고
+→ Human Decision Gate
+→ Context Checkpoint | no_update | Manual Handoff 계속
+```
+
+기본 선택과 자동 선택은 없다. 독립적인 Secret·Execution Policy 위반이 Hard Block을
+요구할 수 있으나, 그 차단은 Guard 상태 때문이 아니다.
+
+### Scope, Epoch, and Duplicate Suppression
+
+상태는 최소 다음 Scope를 분리한다.
+
+```text
+Repository Identity
+Worktree Identity
+Runtime
+Session Identity
+Checkpoint Epoch
+```
+
+Checkpoint Epoch:
+
+```text
+마지막 checkpointed 또는 no_update 이후
+다음 Human Review 결과 전까지의 작업 구간
+```
+
+다른 Repository나 Worktree 상태를 재사용하지 않는다. 이전 Session의 미해결 상태를
+새 Session의 현재 상태로 자동 복사하지 않는다. 동일 Scope의 one-time diagnostic을 위한
+최소 unresolved 참조만 별도로 보존할 수 있다. 동일 Repository Hash, Worktree Hash,
+Runtime, Session Hash, Epoch ID, Boundary Kind에서 마지막 알림 이후 새 Activity Signal이
+없으면 반복하지 않는다. 새 Signal 뒤의 다음 지원 Boundary에서는 한 번만 다시 검토한다.
+`checkpointed` 또는 `no_update` 이후 실제 새 Signal은 새 Epoch에서 다시 `review_needed`가 될 수 있다.
+
+### Privacy
+
+허용 Metadata:
+
+```text
+Repository·Worktree 식별용 Local Hash
+Runtime
+Session Hash
+Epoch ID
+Activity Signal 종류
+최초·최근 Activity 시각
+Checkpoint 상태
+마지막 알림 Boundary·시각
+Human Review 결과·해결 시각
+Promotion Source Reference
+Availability
+```
+
+기본 저장 금지:
+
+```text
+Prompt 원문
+AI 응답 원문
+파일 내용
+Code Diff
+Raw Tool Output
+Git Remote 원문
+절대 경로 원문
+Secret·Token·Credential·환경변수 원문
+```
+
+### Fail-open
+
+```text
+State 읽기 실패
+Hook 미지원
+손상된 State
+Repository·Worktree 식별 실패
+Context Candidate 생성 실패
+```
+
+State write·Atomic rename·Schema, Session Identity, Hook 실행과 중복·동시 Event 처리 실패도
+canonical Contract의 fail-open 범위에 포함한다. 위 실패는 코드 작업·Session 종료·Handoff·PR·Merge를
+차단하지 않는다. 자동 저장·자동 Promotion은 수행하지 않고, 가능하면 Manual Context Checkpoint를
+안내한다. 실패를 `clean`, `checkpointed`, `no_update` 또는 성공으로 표현하지 않는다.
+
+### Responsibility Boundary
+
+```text
+project-context
+= Human-confirmed Durable Project Context
+= CREATE / UPDATE / CONTEXT CHECKPOINT
+
+handoff-prompt
+= Task-scoped Structured Handoff Candidate
+
+Context Checkpoint Guard
+= 검토 필요 상태 감지
+= project-context Checkpoint 흐름 연결
+≠ 새 Handoff Artifact
+```
+
+### DEC-062 Relationship
+
+두 기능은 별도다.
+
+```text
+작업 활동
+→ review_needed
+→ SessionEnd advisory 최소 상태 보존
+→ 다음 Session one-time diagnostic
+→ Human Review
+→ checkpointed / no_update
+→ 필요 시 Handoff Candidate 생성
+→ Pending 등록
+→ DEC-062 Next-session Rehydration
+```
+
+One-time diagnostic은 미해결 Context 검토의 다음 기회이며 Pending Handoff Candidate 연결이 아니다.
+DEC-062의 Product delivery priority, Public `v1.1.0` Gate, Pending Candidate 연결 조건과
+Manual Resume fallback은 변경하지 않는다. DEC-063의 선행 관계는 Runtime data-flow의
+Capture Gate 순서이며 DEC-062를 supersede하지 않는다.
+
+### Consequences
+
+```text
+Work-start 없이 발생한 활동도 Context 검토 대상이 될 수 있다.
+Human Review 없이는 Durable Context가 바뀌지 않는다.
+Adapter는 관찰 가능한 Signal만 정직하게 지원한다.
+Product 구현 PR은 FX-CCG Fixture와 Runtime별 Evidence를 제공해야 한다.
+Foundation Merge 후 Product 구현 착수가 가능하지만 구현 완료로 표기하지 않는다.
+```
+
+### Affected Documents
+
+```text
+docs/contracts/context-checkpoint-guard-contract.md
+docs/contracts/README.md
+docs/product/v1-completion-criteria.md
+docs/testing/v1-fixture-plan.md
+docs/decisions/decision-log.md
+```
+
+### Supersession
+
+```text
+supersedes: []
+superseded_by: []
+```
+
+### Implementation and Verification
+
+```text
+implementation_completed: not_verified
+fixture_passed: not_verified
+manual_e2e: not_verified
 runtime_supported: not_verified
 ```
 
@@ -5945,6 +6237,7 @@ docs/architecture/shared-core-and-extensions.md
 docs/architecture/local-cloud-human-boundary.md
 docs/product/v1-completion-criteria.md
 docs/contracts/README.md
+docs/contracts/context-checkpoint-guard-contract.md
 docs/contracts/work-start-contract.md
 docs/contracts/handoff-basic-contract.md
 docs/contracts/result-basic-contract.md

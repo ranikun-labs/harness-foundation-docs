@@ -3,7 +3,7 @@ title: V1 Fixture Plan
 status: draft
 implementation_status: missing
 owner: development
-last_reviewed: 2026-07-14
+last_reviewed: 2026-07-28
 supersedes: []
 superseded_by: []
 related_adrs:
@@ -13,6 +13,7 @@ related_adrs:
   - ADR-0008
 source_inputs:
   - docs/product/v1-completion-criteria.md
+  - docs/contracts/context-checkpoint-guard-contract.md
   - docs/contracts/work-start-contract.md
   - docs/contracts/handoff-basic-contract.md
   - docs/contracts/result-basic-contract.md
@@ -1672,6 +1673,258 @@ FX-NT-014 이후 다음 명시적 Work-start
 
 ---
 
+# Part XI-B. Context Checkpoint Guard C-lite Fixtures
+
+이 Part는 DEC-063의 post-v1.0 Public V1.x Gate다. Public `v1.0.0` Baseline Fixture Gate를
+소급 변경하지 않으며, 아래 Fixture는 정의 상태다.
+
+```text
+implementation: not_verified
+fixture_result: not_run
+runtime_evidence: not_verified
+```
+
+## 29H. Positive and No-activity
+
+### FX-CCG-001 Work-start-independent File Activity
+
+```text
+Given:
+- Work-start를 실행하지 않은 Session
+- Adapter가 지원하는 file_change Signal 1개
+- 현재 Epoch 상태 clean
+
+When:
+- 다음 지원 Checkpoint Boundary 도달
+
+Expected:
+- 상태 review_needed
+- Context Significance는 미판정
+- Durable Context 변경 없음
+```
+
+### FX-CCG-002 No Activity
+
+```text
+Given:
+- 현재 Epoch에 인식된 Activity Signal 없음
+
+When:
+- 지원 Checkpoint Boundary 도달
+
+Expected:
+- 상태 clean
+- Checkpoint 알림 없음
+- Durable Context 변경 없음
+```
+
+### FX-CCG-003 Human-approved Checkpoint
+
+```text
+Given:
+- 상태 review_needed
+
+When:
+- 사용자가 project-context Context Checkpoint를 승인·완료하고 확인
+
+Expected:
+- resolution checkpointed
+- 현재 Epoch 해결
+- 다음 Epoch clean
+- 같은 Epoch·Boundary에서 재알림 없음
+```
+
+### FX-CCG-004 Human-selected No Update
+
+```text
+Given:
+- 상태 review_needed
+
+When:
+- 사용자가 no_update 선택
+
+Expected:
+- resolution no_update
+- 현재 Epoch 해결
+- 다음 Epoch clean
+- 같은 Epoch·Boundary에서 재알림 없음
+```
+
+`checkpointed`와 `no_update`는 Synthetic Event나 모델 판정으로 만들지 않는다.
+
+### FX-CCG-005 Resolution Reactivation and Event Idempotency
+
+두 Human Review 결과를 같은 Assertion 구조로 검증한다.
+
+```text
+Given:
+- Case A: 이전 Epoch resolution checkpointed
+- Case B: 이전 Epoch resolution no_update
+
+When:
+- 해결 이후 실제 새 Activity Signal 발생
+- 같은 Activity Event가 중복 또는 동시에 전달됨
+
+Expected:
+- 두 Case 모두 새 Epoch에서 review_needed 재진입 가능
+- 이전 resolution이 이후 Activity를 영구 억제하지 않음
+- 동일 Activity Event는 멱등 처리
+- 동일 Epoch의 중복 알림 없음
+- 실제 새 Activity Signal은 억제하지 않음
+```
+
+### FX-CCG-006 Advisory Session Boundary One-time Review E2E
+
+최소 1개 실제 지원 Runtime에서 수행한다. 다른 Runtime Adapter를 동시에 P0로 강제하지 않는다.
+
+```text
+Given:
+- Work-start를 실행하지 않은 Session
+- Adapter가 관찰 가능한 Activity Signal
+- 같은 Repository·Worktree
+
+When:
+- 상태 review_needed
+- SessionEnd 또는 동등 advisory boundary 도달
+- 다음 지원 Session 또는 첫 적절한 Prompt review surface 도달
+
+Expected:
+- SessionEnd가 Human Review를 기다리거나 종료를 차단하지 않음
+- prior unresolved Epoch의 최소 상태 보존
+- 다음 review surface에서 one-time diagnostic
+- Context Checkpoint | no_update | 현재 작업 계속 선택 가능
+- 안내 또는 현재 작업 계속 선택만으로 자동 해결 없음
+- 같은 Session·unresolved Epoch에서 diagnostic 무한 반복 없음
+- Durable Context 자동 저장·Promotion 없음
+- Structured Handoff Candidate와 DEC-062 Pending 자동 생성 없음
+- 이전 Prompt·응답·파일·Diff 원문 전달 없음
+- 다른 Repository·Worktree에 diagnostic 노출 없음
+```
+
+Evidence는 지원 Runtime과 실제 Session boundary를 식별해야 한다. Foundation 정의 상태에서는
+`fixture_result: not_run`, `runtime_evidence: not_verified`를 유지한다.
+
+### FX-CCG-007 State and Runtime Failure Matrix
+
+```text
+Given:
+- State write 실패 또는 Atomic write / rename 실패
+- State Schema 불일치
+- Session Identity 식별 실패
+- Hook 실행 실패
+- 중복·동시 Event를 안전하게 처리할 수 없음
+
+Expected:
+- 코드 작업·Session 종료·Handoff·PR·Merge 차단 없음
+- availability unavailable
+- 자동 Context 저장·Promotion 없음
+- clean 허위 판정 없음
+- checkpointed / no_update 성공 기록 없음
+- 가능한 경우 Manual Context Checkpoint fallback
+- 다른 Session·Repository·Worktree 상태 오연결 없음
+```
+
+## 29I. Isolation
+
+### FX-CCG-010 Repository Isolation
+
+```text
+Given:
+- Repository A의 상태 review_needed
+- Repository B에서 같은 Runtime·Session 이름으로 Boundary 도달
+
+Expected:
+- Repository A 상태를 B에서 사용하지 않음
+- B는 자신의 Activity Signal만으로 판정
+- Repository 원문 대신 분리된 Local Hash 사용
+```
+
+### FX-CCG-011 Worktree Isolation
+
+```text
+Given:
+- 같은 Repository의 Worktree A 상태 review_needed
+- Worktree B에서 Boundary 도달
+
+Expected:
+- Worktree A 상태를 B에 혼합하지 않음
+- Worktree별 Local Hash와 Epoch 분리
+```
+
+## 29J. Fail-open
+
+### FX-CCG-012 Corrupted State
+
+```text
+Given:
+- State가 손상되어 읽기 불가
+
+Expected:
+- 코드 작업·Session 종료·Handoff 차단 없음
+- 자동 Context 저장·Promotion 없음
+- clean으로 기록하지 않음
+- availability unavailable
+- 가능한 경우 Manual Context Checkpoint 안내
+```
+
+### FX-CCG-013 Unsupported Hook Runtime
+
+```text
+Given:
+- Runtime이 대상 Hook 또는 Boundary를 지원하지 않음
+
+Expected:
+- Runtime의 기존 작업 유지
+- 지원한다고 추정하지 않음
+- 자동 Context 저장·Promotion 없음
+- availability unavailable
+- Manual Context Checkpoint fallback
+```
+
+## 29K. Handoff Decision Gate
+
+### FX-CCG-014 Unresolved Context before Handoff
+
+```text
+Given:
+- 상태 review_needed
+- Structured Handoff 생성 요청
+
+Expected:
+- Context 미해결 경고
+- Human Decision Gate 표시
+- Context Checkpoint | no_update | Manual Handoff 계속 선택 가능
+- 기본 선택·자동 선택 없음
+- Guard 상태만으로 Hard Block 없음
+- Guard가 별도 Handoff Artifact를 만들지 않음
+- Manual Handoff 계속 시 Candidate에 review_needed / unresolved 사실 명시
+- Context가 최신이거나 Context Review가 완료됐다고 단정하지 않음
+- unresolved 상태 누락 없음
+- checkpointed / no_update 자동 전환 없음
+```
+
+## 29L. Privacy
+
+### FX-CCG-015 Raw Content Not Stored
+
+Fixture 입력에는 식별 가능한 Synthetic Marker를 사용한다.
+
+```text
+Given:
+- Prompt, AI 응답, 파일 내용, Code Diff에 서로 다른 Synthetic Marker
+- file_change와 validation_run Signal
+- promotion_source_ref에 절대 경로·Git Remote·Prompt·Secret Marker 후보
+
+Expected:
+- 저장 Metadata에 Signal 종류와 최소 Scope·시각·상태만 존재
+- Prompt·응답·파일·Code Diff Marker 0건
+- Git Remote·절대 경로·Secret 원문 0건
+- promotion_source_ref는 입력을 거부하거나 opaque Local Identifier / Sanitized Reference로 저장
+- Promotion Source Reference가 Context·Evidence·사용자 입력 원문을 복제하지 않음
+```
+
+---
+
 # Part XII. Manual E2E
 
 ## 30. Minimum Single-runtime E2E
@@ -1844,6 +2097,7 @@ Quick Start truthful
 | Installation | ✓ | ✓ |  | ✓ | ✓ |
 | Documentation | ✓ | ✓ |  | ✓ | ✓ |
 | Product Notice | ✓ | ✓ | ✓ |  | ✓ |
+| Context Checkpoint Guard (post-v1.0 V1.x) | ✓ | ✓ | ✓ |  | 조건부 |
 
 ---
 
@@ -1912,6 +2166,33 @@ P0 Product Notice Suite
 P0 Product Notice Manual E2E
 = FX-E2E-002
 ```
+
+### 33.1 Post-v1.0 Public V1.x Context Checkpoint Guard Gate
+
+DEC-063 Product 구현 완료를 주장하려면 다음 Suite가 모두 `passed` Evidence를 가져야 한다.
+
+```text
+P0 Context Checkpoint Guard Positive / Resolution
+= FX-CCG-001~007
+
+P0 Context Checkpoint Guard Isolation / Fail-open / Handoff / Privacy
+= FX-CCG-010~015
+
+Minimum one supported Runtime Session Boundary E2E
+= FX-CCG-006
+```
+
+다음은 Gate 통과가 아니다.
+
+```text
+Fixture 정의만 존재
+Hook 호출 로그만 존재
+State 파일 생성
+Manual fallback 표시만 성공
+Foundation Contract Merge
+```
+
+이 Gate는 Public `v1.0.0` 완료 판정을 소급 변경하지 않는다.
 
 ---
 
@@ -2050,6 +2331,7 @@ docs/contracts/result-basic-contract.md
 docs/contracts/runtime-capability-contract.md
 docs/contracts/execution-policy-contract.md
 docs/contracts/product-notice-contract.md
+docs/contracts/context-checkpoint-guard-contract.md
 docs/poc/v2-local-invocation-poc.md
 docs/adr/ADR-0011-local-product-notice-channel.md
 ```
