@@ -3,7 +3,7 @@ title: Contracts Index
 status: draft
 implementation_status: partial
 owner: core
-last_reviewed: 2026-07-15
+last_reviewed: 2026-07-28
 supersedes: []
 superseded_by: []
 related_adrs:
@@ -13,6 +13,7 @@ related_adrs:
   - ADR-0008
 source_inputs:
   - docs/product/v1-completion-criteria.md
+  - docs/contracts/context-checkpoint-guard-contract.md
   - docs/contracts/work-start-contract.md
   - docs/contracts/handoff-basic-contract.md
   - docs/contracts/result-basic-contract.md
@@ -48,6 +49,7 @@ Fixture Requirement 제공
 ```text
 docs/contracts/
 ├── README.md
+├── context-checkpoint-guard-contract.md
 ├── work-start-contract.md
 ├── handoff-basic-contract.md
 ├── result-basic-contract.md
@@ -128,6 +130,48 @@ Work-start Output
 ≠ Approved Handoff
 ≠ Execution Plan
 ≠ Project Context
+```
+
+---
+
+## 3.1 Context Checkpoint Guard C-lite Contract
+
+**Path**
+
+```text
+docs/contracts/context-checkpoint-guard-contract.md
+```
+
+**책임**
+
+```text
+Work-start 비의존 Activity Signal 관찰
+Context 검토 필요 상태
+Safe Boundary 알림
+Repository·Worktree·Runtime·Session·Epoch 격리
+중복 알림 억제
+project-context Checkpoint 흐름 연결
+```
+
+**소유하지 않는 책임**
+
+```text
+Context Significance 자동 판정
+Durable Context 자동 저장·Promotion
+Handoff Artifact 생성
+Transcript·Prompt·Diff 저장
+Runtime Hook 구현
+```
+
+**핵심 원칙**
+
+```text
+Activity Signal
+≠ Context Significance
+
+review_needed
+→ Human Review
+→ checkpointed | no_update
 ```
 
 ---
@@ -455,6 +499,7 @@ Result Accept가 Repository Apply 승인
 | 정보 | Canonical Owner |
 |---|---|
 | Task discovery candidate | Work-start Contract |
+| Context Checkpoint 검토 필요 상태 | Context Checkpoint Guard C-lite Contract |
 | Goal·Scope·금지사항 | Handoff Basic Contract |
 | Runtime 기술 지원 | Runtime Capability Contract |
 | Current Local Availability | Runtime Adapter 또는 Local Environment Check 결과 |
@@ -1029,6 +1074,7 @@ Release Note
 | Contract | Canonical Path | Document Status | Implementation Verification |
 |---|---|---|---|
 | Work-start | `docs/contracts/work-start-contract.md` | canonical candidate | Not Verifiable in this index |
+| Context Checkpoint Guard C-lite | `docs/contracts/context-checkpoint-guard-contract.md` | canonical candidate | not_verified |
 | Handoff Basic | `docs/contracts/handoff-basic-contract.md` | canonical candidate | Not Verifiable in this index |
 | Result Basic | `docs/contracts/result-basic-contract.md` | canonical candidate | Not Verifiable in this index |
 | Runtime Capability | `docs/contracts/runtime-capability-contract.md` | canonical candidate | Not Verifiable in this index |
@@ -1077,6 +1123,7 @@ Release Note
 15. P0 Contract는 Negative Fixture를 가진다.
 16. Canonical 파일명에 Review suffix를 사용하지 않는다.
 17. 변경은 Decision·Version·Fixture 영향과 함께 검토한다.
+18. Activity Signal을 Context Significance로 자동 승격하지 않는다.
 
 ---
 
@@ -1086,6 +1133,7 @@ Release Note
 docs/product/v1-completion-criteria.md
 docs/testing/v1-fixture-plan.md
 docs/decisions/decision-log.md
+docs/contracts/context-checkpoint-guard-contract.md
 docs/architecture/local-cloud-human-boundary.md
 docs/poc/v2-local-invocation-poc.md
 ```
