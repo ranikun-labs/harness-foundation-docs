@@ -743,6 +743,9 @@ no_update
 모든 Shell·Git 명령, IDE 작업 또는 OS Event를 전역 감시하지 않는다. Runtime Adapter는
 실제 Hook Surface에서 관찰 가능한 Signal만 지원하며 Claude Code와 Codex의 비대칭을 허용한다.
 
+상세 SessionEnd·one-time diagnostic·Privacy·fail-open 불변조건은
+`docs/contracts/context-checkpoint-guard-contract.md`를 canonical source로 사용한다.
+
 Public V1.x P0 완료 조건:
 
 - Work-start 없이 발생한 인식 가능한 작업 활동을 `review_needed` 검토 대상으로 만들 수 있음
@@ -755,18 +758,22 @@ Public V1.x P0 완료 조건:
 - 다른 Repository 또는 같은 Repository의 다른 Worktree 상태를 혼합하지 않음
 - 마지막 알림 이후 새 Signal이 없는 같은 Epoch·Boundary의 중복 알림을 억제하고
   이전 Session 상태를 무기한 재알림하지 않음
+- `checkpointed`와 `no_update` 이후 실제 새 Activity가 새 Epoch에서 다시 `review_needed`가 될 수 있음
+- 최소 1개 지원 Runtime에서 일반 Activity부터 advisory SessionEnd와 다음 one-time review opportunity까지 검증함
 - Repository·Worktree Local Hash, Runtime, Session Hash, Signal 종류, 시각, 상태·결과,
   Promotion Source Reference와 Availability만 최소 Metadata로 저장함
 - Prompt·응답·파일·Code Diff·Git Remote·절대 경로·Secret 원문을 기본 저장하지 않음
-- Hook 미지원·State 손상·Scope 식별 실패·Candidate 생성 실패 시 기존 작업을 유지하는 fail-open
+- `promotion_source_ref`가 opaque Local Identifier 또는 민감 원문 없는 Sanitized Reference임
+- State read/write·Atomic rename·Schema·Scope·Session·Hook·동시 Event 실패 시 기존 작업을 유지하는 fail-open
 - 실패를 `clean`이나 성공으로 표현하지 않고 가능한 경우 Manual Context Checkpoint를 안내함
 - `project-context`가 CREATE / UPDATE / CONTEXT CHECKPOINT와 Human-confirmed Durable Context를 소유함
 - `handoff-prompt`가 Task-scoped Structured Handoff Candidate 생성을 계속 소유함
 - Guard가 새 Handoff Artifact를 만들거나 Handoff 책임을 흡수하지 않음
 - `review_needed` Handoff에서 경고와 Human Decision Gate를 제공하되 Guard 상태만으로 Hard Block하지 않음
 - Context Checkpoint, `no_update`, Manual Handoff 계속 중 기본값이나 자동 선택이 없음
+- Manual Handoff 계속 시 unresolved 사실을 보존하고 Context 최신·Review 완료로 오표현하지 않음
 - DEC-062의 Pending Handoff 연결보다 Runtime data-flow상 선행하는 Context Capture Gate를 유지함
-- `FX-CCG-001~004`, `FX-CCG-010~015`의 Positive·Negative·Isolation·Privacy·Fail-open Fixture가 통과함
+- `FX-CCG-001~007`, `FX-CCG-010~015`의 Positive·Negative·Isolation·Privacy·Fail-open Fixture가 통과함
 
 Context와 Handoff의 순서:
 
@@ -774,9 +781,11 @@ Context와 Handoff의 순서:
 일반 작업
 → Activity Signal
 → review_needed
+→ SessionEnd advisory 최소 상태 보존
+→ 다음 Session one-time diagnostic
 → Human Review
 → checkpointed / no_update
-→ Handoff Candidate
+→ 필요 시 Handoff Candidate
 → Pending
 → DEC-062 Next-session Rehydration
 ```

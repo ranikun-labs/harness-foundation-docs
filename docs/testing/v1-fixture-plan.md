@@ -1752,6 +1752,78 @@ Expected:
 
 `checkpointed`와 `no_update`는 Synthetic Event나 모델 판정으로 만들지 않는다.
 
+### FX-CCG-005 Resolution Reactivation and Event Idempotency
+
+두 Human Review 결과를 같은 Assertion 구조로 검증한다.
+
+```text
+Given:
+- Case A: 이전 Epoch resolution checkpointed
+- Case B: 이전 Epoch resolution no_update
+
+When:
+- 해결 이후 실제 새 Activity Signal 발생
+- 같은 Activity Event가 중복 또는 동시에 전달됨
+
+Expected:
+- 두 Case 모두 새 Epoch에서 review_needed 재진입 가능
+- 이전 resolution이 이후 Activity를 영구 억제하지 않음
+- 동일 Activity Event는 멱등 처리
+- 동일 Epoch의 중복 알림 없음
+- 실제 새 Activity Signal은 억제하지 않음
+```
+
+### FX-CCG-006 Advisory Session Boundary One-time Review E2E
+
+최소 1개 실제 지원 Runtime에서 수행한다. 다른 Runtime Adapter를 동시에 P0로 강제하지 않는다.
+
+```text
+Given:
+- Work-start를 실행하지 않은 Session
+- Adapter가 관찰 가능한 Activity Signal
+- 같은 Repository·Worktree
+
+When:
+- 상태 review_needed
+- SessionEnd 또는 동등 advisory boundary 도달
+- 다음 지원 Session 또는 첫 적절한 Prompt review surface 도달
+
+Expected:
+- SessionEnd가 Human Review를 기다리거나 종료를 차단하지 않음
+- prior unresolved Epoch의 최소 상태 보존
+- 다음 review surface에서 one-time diagnostic
+- Context Checkpoint | no_update | 현재 작업 계속 선택 가능
+- 안내 또는 현재 작업 계속 선택만으로 자동 해결 없음
+- 같은 Session·unresolved Epoch에서 diagnostic 무한 반복 없음
+- Durable Context 자동 저장·Promotion 없음
+- Structured Handoff Candidate와 DEC-062 Pending 자동 생성 없음
+- 이전 Prompt·응답·파일·Diff 원문 전달 없음
+- 다른 Repository·Worktree에 diagnostic 노출 없음
+```
+
+Evidence는 지원 Runtime과 실제 Session boundary를 식별해야 한다. Foundation 정의 상태에서는
+`fixture_result: not_run`, `runtime_evidence: not_verified`를 유지한다.
+
+### FX-CCG-007 State and Runtime Failure Matrix
+
+```text
+Given:
+- State write 실패 또는 Atomic write / rename 실패
+- State Schema 불일치
+- Session Identity 식별 실패
+- Hook 실행 실패
+- 중복·동시 Event를 안전하게 처리할 수 없음
+
+Expected:
+- 코드 작업·Session 종료·Handoff·PR·Merge 차단 없음
+- availability unavailable
+- 자동 Context 저장·Promotion 없음
+- clean 허위 판정 없음
+- checkpointed / no_update 성공 기록 없음
+- 가능한 경우 Manual Context Checkpoint fallback
+- 다른 Session·Repository·Worktree 상태 오연결 없음
+```
+
 ## 29I. Isolation
 
 ### FX-CCG-010 Repository Isolation
@@ -1805,6 +1877,7 @@ Expected:
 - Runtime의 기존 작업 유지
 - 지원한다고 추정하지 않음
 - 자동 Context 저장·Promotion 없음
+- availability unavailable
 - Manual Context Checkpoint fallback
 ```
 
@@ -1824,6 +1897,10 @@ Expected:
 - 기본 선택·자동 선택 없음
 - Guard 상태만으로 Hard Block 없음
 - Guard가 별도 Handoff Artifact를 만들지 않음
+- Manual Handoff 계속 시 Candidate에 review_needed / unresolved 사실 명시
+- Context가 최신이거나 Context Review가 완료됐다고 단정하지 않음
+- unresolved 상태 누락 없음
+- checkpointed / no_update 자동 전환 없음
 ```
 
 ## 29L. Privacy
@@ -1836,12 +1913,14 @@ Fixture 입력에는 식별 가능한 Synthetic Marker를 사용한다.
 Given:
 - Prompt, AI 응답, 파일 내용, Code Diff에 서로 다른 Synthetic Marker
 - file_change와 validation_run Signal
+- promotion_source_ref에 절대 경로·Git Remote·Prompt·Secret Marker 후보
 
 Expected:
 - 저장 Metadata에 Signal 종류와 최소 Scope·시각·상태만 존재
 - Prompt·응답·파일·Code Diff Marker 0건
 - Git Remote·절대 경로·Secret 원문 0건
-- Promotion Source Reference가 Context 본문을 복제하지 않음
+- promotion_source_ref는 입력을 거부하거나 opaque Local Identifier / Sanitized Reference로 저장
+- Promotion Source Reference가 Context·Evidence·사용자 입력 원문을 복제하지 않음
 ```
 
 ---
@@ -2094,10 +2173,13 @@ DEC-063 Product 구현 완료를 주장하려면 다음 Suite가 모두 `passed`
 
 ```text
 P0 Context Checkpoint Guard Positive / Resolution
-= FX-CCG-001~004
+= FX-CCG-001~007
 
 P0 Context Checkpoint Guard Isolation / Fail-open / Handoff / Privacy
 = FX-CCG-010~015
+
+Minimum one supported Runtime Session Boundary E2E
+= FX-CCG-006
 ```
 
 다음은 Gate 통과가 아니다.

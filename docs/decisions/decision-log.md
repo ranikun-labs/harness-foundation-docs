@@ -2329,6 +2329,11 @@ Workflow 상태를 늘리지 않는 별도 진단 축이며 fail-open과 Manual 
 3. oh-my-ai가 인식할 수 있는 PR·Merge 전 경계
 ```
 
+SessionEnd는 종료를 차단하거나 Human Review를 기다리는 Gate가 아니다. 동일 Repository·Worktree의
+prior unresolved Epoch는 다음 지원 Session 또는 review surface에서 one-time diagnostic으로만
+안내하며 자동 해결·Context 저장·Handoff 생성·DEC-062 Pending 전환을 하지 않는다. 상세 불변조건은
+`docs/contracts/context-checkpoint-guard-contract.md`가 소유한다.
+
 `review_needed`인 Handoff는 기본적으로 Hard Block하지 않는다.
 
 ```text
@@ -2360,9 +2365,11 @@ Checkpoint Epoch:
 ```
 
 다른 Repository나 Worktree 상태를 재사용하지 않는다. 이전 Session의 미해결 상태를
-새 Session의 현재 상태로 자동 복사하지 않는다. 동일 Repository Hash, Worktree Hash,
+새 Session의 현재 상태로 자동 복사하지 않는다. 동일 Scope의 one-time diagnostic을 위한
+최소 unresolved 참조만 별도로 보존할 수 있다. 동일 Repository Hash, Worktree Hash,
 Runtime, Session Hash, Epoch ID, Boundary Kind에서 마지막 알림 이후 새 Activity Signal이
 없으면 반복하지 않는다. 새 Signal 뒤의 다음 지원 Boundary에서는 한 번만 다시 검토한다.
+`checkpointed` 또는 `no_update` 이후 실제 새 Signal은 새 Epoch에서 다시 `review_needed`가 될 수 있다.
 
 ### Privacy
 
@@ -2405,9 +2412,10 @@ Repository·Worktree 식별 실패
 Context Candidate 생성 실패
 ```
 
-위 실패는 코드 작업·Session 종료·Handoff를 차단하지 않는다. 자동 저장·자동 Promotion은
-수행하지 않고, 가능하면 Manual Context Checkpoint를 안내한다. 실패를 `clean` 또는
-성공으로 표현하지 않는다.
+State write·Atomic rename·Schema, Session Identity, Hook 실행과 중복·동시 Event 처리 실패도
+canonical Contract의 fail-open 범위에 포함한다. 위 실패는 코드 작업·Session 종료·Handoff·PR·Merge를
+차단하지 않는다. 자동 저장·자동 Promotion은 수행하지 않고, 가능하면 Manual Context Checkpoint를
+안내한다. 실패를 `clean`, `checkpointed`, `no_update` 또는 성공으로 표현하지 않는다.
 
 ### Responsibility Boundary
 
@@ -2431,13 +2439,17 @@ Context Checkpoint Guard
 
 ```text
 작업 활동
-→ Context Checkpoint 검토
-→ 필요한 Context Update 승인
-→ Handoff Candidate 생성
+→ review_needed
+→ SessionEnd advisory 최소 상태 보존
+→ 다음 Session one-time diagnostic
+→ Human Review
+→ checkpointed / no_update
+→ 필요 시 Handoff Candidate 생성
 → Pending 등록
 → DEC-062 Next-session Rehydration
 ```
 
+One-time diagnostic은 미해결 Context 검토의 다음 기회이며 Pending Handoff Candidate 연결이 아니다.
 DEC-062의 Product delivery priority, Public `v1.1.0` Gate, Pending Candidate 연결 조건과
 Manual Resume fallback은 변경하지 않는다. DEC-063의 선행 관계는 Runtime data-flow의
 Capture Gate 순서이며 DEC-062를 supersede하지 않는다.
