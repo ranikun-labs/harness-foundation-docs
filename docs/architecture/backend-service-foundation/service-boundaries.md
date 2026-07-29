@@ -64,10 +64,15 @@ Finance Harness
 ├── Review
 └── PolicyGuard / Lens Execution Context
 
-Dev Harness Backend / Control Plane
-├── Workspace / Project
-├── Execution / Approval
-└── Harness Policy / Cloud History
+Dev Harness Backend / Control Plane — Long-term logical ownership
+├── V2 Personal Managed Workflow
+│   ├── Personal Project Profile / Context
+│   ├── Task / Execution / Approval
+│   └── Personal Cloud History
+└── V3 Team / Workspace / Organization Governance
+    ├── Shared Workspace / Team-scoped Project
+    ├── RBAC / Organization Policy
+    └── Team Audit / Shared Approval
 
 Shared AI
 ├── Provider Adapter
@@ -78,6 +83,10 @@ Shared AI
 
 The Gateway is not a Portfolio Product Service. This target map does not assert that
 each logical service currently exists as an independent runtime.
+
+The Dev Harness boundary preserves `DEC-003`, `DEC-004`, and `DEC-043`: V2 is a
+personal managed workflow, while team Workspace and Organization governance remain
+V3. This map does not approve Workspace implementation in V2.
 
 ## 4. Shared Identity boundary
 

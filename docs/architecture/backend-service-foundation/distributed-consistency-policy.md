@@ -153,6 +153,38 @@ Requirements:
 
 Directly publishing to a broker before or after an unrelated database commit is not sufficient for critical state propagation.
 
+### 5.1 Event criticality governance
+
+The publishing service's Domain Owner must classify event criticality before
+production adoption.
+
+Each published-event contract must record at least:
+
+```text
+affected_business_invariant
+criticality
+acceptable_loss_window
+duplicate_tolerance
+retry_policy
+replay_policy
+reconciliation_policy
+classification_owner
+approval_reference
+```
+
+An unclassified event is treated as critical by default. An event that affects a
+security, account-lifecycle, authorization, monetary, or regulatory-retention
+invariant requires Architecture or Security Review.
+
+For a non-critical event, the contract must document the acceptable loss boundary and
+why recovery is not required. The service repository owns the concrete event
+classification and approval evidence. Foundation owns only the classification fields
+and the default gate.
+
+Event payloads continue to use the common
+[event envelope contract](../../contracts/backend-service-foundation/event-envelope-contract.md);
+this policy does not redefine its envelope semantics.
+
 Transactional outbox is not mandatory for every event. A non-critical telemetry or
 best-effort notification event may use a simpler publisher when the owning service
 documents the acceptable loss, duplicate, and recovery behavior.

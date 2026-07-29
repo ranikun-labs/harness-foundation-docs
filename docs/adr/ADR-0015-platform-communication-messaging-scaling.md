@@ -124,21 +124,40 @@ product_release_status: not_released
   승인하는 별도 ADR은 없었다.
 - Carelog는 첫 적용 Evidence이며 Foundation이 소유하는 Runtime이 아니다.
 
+### Current Repository Fact
+
+- Carelog Repository에는 `carelog-gateway`와 `carelog-be` Module이 존재한다.
+- Gateway Header 인증, Redis, PostgreSQL 연결 코드와 개발 구성이 존재한다.
+- 실제 운영 배포 여부와 운영 상태 Evidence는 Carelog Service Repository와
+  Private Ops가 별도로 소유한다.
+
+Repository Fact는 실제 운영 배포나 Runtime 지원을 증명하지 않는다.
+
+### Approved Carelog Deployment Baseline
+
 ```text
-Current Carelog evidence
 Cloudflare Tunnel
 → Spring Cloud Gateway
 → carelog-be
    ├── Auth/OAuth Module
    └── Carelog Core
-→ Redis
-→ PostgreSQL
+→ Redis / PostgreSQL
 ```
 
-현재 Carelog Runtime은 독립 Shared Identity, Shared AI, Finance Harness Backend,
-Dev Harness Backend, NATS, gRPC, Kafka, Kubernetes를 운영하지 않는다.
+이 구조는 Carelog ADR-001에서 Pilot과 Low-SLA Initial Operation을 위해 승인된
+Deployment Baseline이다. Foundation ADR은 이 구성이 실제 운영 중임을 독립적으로
+증명하지 않는다.
 
-### Target logical structure
+### Near-term Target
+
+- Carelog Auth와 Core의 내부 의존성 분리
+- Auth 독립 Runtime 추출 준비
+- Shared AI 계획 검토
+
+Near-term Target은 독립 Shared Identity 또는 Shared AI가 현재 배포됐음을
+의미하지 않는다.
+
+### Long-term Logical Target
 
 ```text
 Spring Cloud Gateway
@@ -152,6 +171,24 @@ Spring Cloud Gateway
 
 Gateway는 Portfolio Product Service가 아니라 외부 Ingress와 Security
 Boundary다. 이 논리 구조는 각 Service의 즉시 구현·배포를 승인하지 않는다.
+Dev Harness Backend의 장기 논리 소유권은 `DEC-003`, `DEC-004`, `DEC-043`의
+버전 경계를 유지한다. V2는 Personal Managed Workflow이고 V3는 Team,
+Workspace와 Organization Governance이며, 이 ADR은 Workspace의 V2 구현을
+승인하지 않는다.
+
+### Deferred Technology
+
+- NATS JetStream
+- gRPC
+- Kafka
+- Kubernetes
+
+```text
+Repository Fact
+≠ Approved Deployment Baseline
+≠ Runtime Deployed
+≠ Runtime Supported
+```
 
 ## 5. Drivers
 
@@ -322,11 +359,17 @@ Audit Consumer, 계정 상태 전파, Notification, Entitlement Projection 중
 - `event_id` Unique 또는 동등한 중복 방지
 - Consumer의 DB Commit 후 ACK
 - MQ는 Business Source of Truth가 아님
-- 유실되면 안 되는 중요한 Event에만 Transactional Outbox 적용
+- Publishing Service의 Domain Owner가 Production 도입 전에 Event Criticality를
+  분류하고, 필수 Business Invariant를 위반할 수 있는 Critical Event에
+  Transactional Outbox 적용
 - 모든 Event에 Transactional Outbox를 강제하지 않음
 
 공통 Event Envelope 의미는
 `../contracts/backend-service-foundation/event-envelope-contract.md`를 따른다.
+미분류 Event는 기본적으로 Critical로 취급하며, Event별 분류와 승인 Evidence는
+Service Repository가 소유한다. 상세 Gate는
+`../architecture/backend-service-foundation/distributed-consistency-policy.md`를
+따른다.
 Event Envelope 상세, Subject Naming 상세, Retention, Dead Letter 처리,
 Reconciliation, Publisher Failure, 첫 Producer·Consumer, Backup·Restore는
 첫 Use Case ADR에서 확정한다.

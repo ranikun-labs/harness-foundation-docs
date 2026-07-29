@@ -242,6 +242,32 @@ An event producer must:
 Do not require an outbox for every event. The producer must document why loss is
 acceptable when a non-critical event is published without one.
 
+Before production adoption, the publishing service's Domain Owner must classify the
+event. Each published-event contract must record:
+
+```text
+affected_business_invariant
+criticality
+acceptable_loss_window
+duplicate_tolerance
+retry_policy
+replay_policy
+reconciliation_policy
+classification_owner
+approval_reference
+```
+
+An unclassified event is critical by default. Security, account-lifecycle,
+authorization, monetary, or regulatory-retention invariants require Architecture or
+Security Review. A non-critical event must record its acceptable loss boundary and why
+recovery is not required.
+
+The service repository owns each event's classification and approval evidence.
+Foundation owns the required fields and default gate. Detailed rules are in
+[distributed-consistency-policy.md](./distributed-consistency-policy.md), and the
+payload continues to follow the common
+[event envelope contract](../../contracts/backend-service-foundation/event-envelope-contract.md).
+
 An event consumer must:
 
 - assume at-least-once delivery;
