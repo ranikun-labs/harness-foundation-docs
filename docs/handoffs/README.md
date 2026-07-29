@@ -3,13 +3,14 @@ title: Handoffs Index
 status: draft
 implementation_status: not_verifiable
 owner: documentation
-last_reviewed: 2026-07-15
+last_reviewed: 2026-07-29
 supersedes: []
 superseded_by: []
 source_inputs:
   - README.md
   - docs/master/product-architecture-master.md
   - docs/contracts/handoff-basic-contract.md
+  - docs/contracts/pending-handoff-rehydration-contract.md
   - docs/contracts/result-basic-contract.md
   - docs/decisions/README.md
   - docs/decisions/decision-log.md
@@ -136,6 +137,36 @@ Session Handoff
 Structured Handoff
 = 승인된 작업 계약
 ```
+
+### 3.1 Pending Handoff Rehydration
+
+Public `v1.0.0`의 Manual Copy/Paste Baseline 이후, DEC-062의 Public `v1.1.0` Delta Gate는
+사용자가 명시적으로 Handoff를 요청해 만든 정제 Candidate를 사용자가 직접 연 다음 지원
+Session에 안전하게 연결하는 흐름을 정의한다.
+
+Canonical owner:
+
+```text
+docs/contracts/pending-handoff-rehydration-contract.md
+```
+
+```text
+Structured Handoff
+= Task Contract 의미와 Human Review
+
+Pending Handoff Rehydration
+= Candidate 등록·Claim·Delivery·Consumption
+
+Context Checkpoint Guard
+= Context 검토 필요 상태와 one-time diagnostic
+≠ Pending Handoff Candidate
+```
+
+Artifact 생성, Claim, Hook 호출, 출력 시도 또는 Manual Resume 안내는 Delivery Success가 아니다.
+대상 Session에서 Candidate를 사용할 수 있다는 Runtime Evidence가 확인돼야 한다.
+
+자동 연결 조건을 확인할 수 없거나 Pending이 여러 개면 Candidate를 임의 선택하지 않고
+Manual Resume를 제공한다. Manual Resume는 Candidate를 자동 실행하거나 소비하지 않는다.
 
 ---
 
@@ -303,6 +334,9 @@ superseded_by
 
 `source_session`은 보조 Provenance Metadata이며,
 canonical Source of Truth나 Provider Session Identity로 사용하지 않는다.
+이 필드를 Pending Rehydration의 `source_session_identity`로 재사용하지 않는다.
+Pending State에는 Raw Provider Session ID를 저장하지 않고
+`docs/contracts/pending-handoff-rehydration-contract.md`의 Opaque Local Identity를 사용한다.
 
 권장 상태:
 
@@ -313,6 +347,10 @@ consumed
 superseded
 archived
 ```
+
+위 상태는 수동 Session Handoff Continuity Artifact의 Lifecycle이다.
+Pending Rehydration의 `candidate | pending | claimed | delivered | consumed | expired | invalid`
+Lifecycle과 별도이며 자동 상호 변환하지 않는다.
 
 ---
 
@@ -611,6 +649,10 @@ consumed
 ```
 
 Target Session은 Handoff의 Reference와 현재 canonical 문서가 일치하는지 확인해야 한다.
+
+여기서 `consumed`는 사람이 관리하는 Session Handoff 상태다. Pending Rehydration의
+`consumed`는 Runtime Delivery Evidence가 확인된 뒤 수행하는 Atomic 단일 Consumption이며,
+이 절의 “읽고 작업 시작”만으로 Pending Candidate를 소비 처리하지 않는다.
 
 ---
 
