@@ -34,10 +34,14 @@ This document does not define concrete table DDL, Java packages, API paths, mess
 6. A CRM customer, journal owner, manager profile, or organization member is not automatically a Shared Identity aggregate.
 7. Physical service extraction and logical module separation are different states and must be recorded separately.
 8. Decision accepted, implementation completed, runtime supported, fixture passed, and product released are separate statuses.
+9. Shared AI owns product-neutral execution mechanisms, while each Product Service owns its prompts, workflow, domain policy, tools, validation, and business effects.
 
 ## 3. Target service map
 
 ```text
+Spring Cloud Gateway
+└── External Ingress / Security Boundary
+
 Shared Identity
 ├── Platform Account
 ├── Password Credential
@@ -59,7 +63,21 @@ Finance Harness
 ├── Journal
 ├── Review
 └── PolicyGuard / Lens Execution Context
+
+Dev Harness Backend / Control Plane
+├── Workspace / Project
+├── Execution / Approval
+└── Harness Policy / Cloud History
+
+Shared AI
+├── Provider Adapter
+├── Model Alias
+├── Rate Limit / Usage / Cost
+└── Product-neutral Execution Mechanism
 ```
+
+The Gateway is not a Portfolio Product Service. This target map does not assert that
+each logical service currently exists as an independent runtime.
 
 ## 4. Shared Identity boundary
 
@@ -186,7 +204,34 @@ Finance Harness must not create a duplicate generic authentication user model.
 
 A product-specific `FinanceProfile` is permitted and should reference the stable identity identifier.
 
-## 7. Service-to-service ownership rules
+## 7. Shared AI and Product AI boundary
+
+Shared AI owns product-neutral technical execution concerns:
+
+- provider adapters and provider credential ownership;
+- model aliases;
+- timeout and bounded retry mechanisms;
+- rate limit and concurrency controls;
+- usage and cost metering;
+- shared observability;
+- provider failure handling;
+- technical safety and streaming mechanisms.
+
+Each Product Service owns:
+
+- product-specific system prompts and domain context;
+- input and corpus selection;
+- product workflow and domain policy;
+- retrieval policy;
+- product-tool meaning and permission;
+- domain validation;
+- result persistence and business application.
+
+Provider-neutral RAG adapters, embedding runtime, vector infrastructure, shared AI
+orchestration, and a common AI job runtime remain candidates. Their concrete
+ownership and adoption require a follow-up decision after a real use case.
+
+## 8. Service-to-service ownership rules
 
 | Concern | Canonical owner |
 |---|---|
@@ -200,12 +245,14 @@ A product-specific `FinanceProfile` is permitted and should reference the stable
 | Finance journal and review | Finance Harness |
 | Product-specific role | Relevant product service |
 | Product-specific consent | Relevant product service |
+| Product-neutral AI execution mechanism | Shared AI |
+| Product prompt, workflow, policy, tool, validation, and result | Relevant product service |
 | Shared event envelope | Foundation |
 | Concrete event payload | Publishing service repository |
 | Concrete DDL and indexes | Owning service repository |
 | Incident and recovery procedure | Owning service repository |
 
-## 8. Communication boundary
+## 9. Communication boundary
 
 A service may interact with another service only through an approved contract:
 
@@ -226,7 +273,7 @@ Shared mutable database schema
 Unversioned event payload
 ```
 
-## 9. Transitional state
+## 10. Transitional state
 
 Logical separation inside Carelog may precede physical Shared Identity extraction.
 
@@ -240,7 +287,7 @@ During transition:
 
 The physical extraction plan belongs in a dedicated ADR and service migration documents.
 
-## 10. Documents required in each MSA repository
+## 11. Documents required in each MSA repository
 
 Each service repository should create these documents when the corresponding implementation exists:
 
@@ -263,7 +310,7 @@ Bounded-context documents should additionally define:
 - commands and queries;
 - published and consumed events.
 
-## 11. Change control
+## 12. Change control
 
 A change requires Foundation review when it:
 

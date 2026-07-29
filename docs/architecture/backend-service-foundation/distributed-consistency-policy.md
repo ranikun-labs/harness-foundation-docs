@@ -128,7 +128,9 @@ Deduplication storage and domain mutation should commit atomically where possibl
 
 ## 5. Transactional outbox
 
-When a local state change requires an integration event, the domain change and outbox record must be written in the same local transaction.
+When loss of an integration event after a local state change would violate a required
+business invariant, the domain change and outbox record must be written in the same
+local transaction.
 
 ```text
 BEGIN
@@ -150,6 +152,10 @@ Requirements:
 - replay procedure.
 
 Directly publishing to a broker before or after an unrelated database commit is not sufficient for critical state propagation.
+
+Transactional outbox is not mandatory for every event. A non-critical telemetry or
+best-effort notification event may use a simpler publisher when the owning service
+documents the acceptable loss, duplicate, and recovery behavior.
 
 ## 6. Consumer inbox or processed-event record
 
