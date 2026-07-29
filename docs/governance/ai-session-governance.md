@@ -126,26 +126,42 @@ Independent Review는 Read-only다.
 
 - 고정된 Base, Branch, Head와 Changed Files를 확인한다.
 - 여러 관련 Jira와 Canonical 문서를 읽을 수 있다.
-- 코드·문서·Jira·Confluence를 수정하지 않는다.
-- Commit, Push, Draft 해제, Merge를 하지 않는다.
-- Finding에는 파일, Section, 근거, 권장 보정과 Blocking 여부를 기록한다.
+- 코드·문서·Jira·Confluence와 PR을 수정하지 않는다.
+- PR Title·Body·Label·Reviewer·Metadata를 수정하지 않는다.
+- PR Comment 작성, GitHub Review 제출, Reaction을 포함해 Jira, Git, GitHub,
+  Confluence에 어떠한 원격 쓰기도 수행하지 않는다.
+- Commit, Push, Ready 전환, Merge를 하지 않는다.
+- Finding에는 파일, Section, 근거, 권장 보정과 Blocking 여부를 기록하고
+  Verdict와 함께 Session 최종 보고로만 반환한다.
 
 ### 4.4 Finding Delta Fix
 
+- 기존 Writer Session을 재개하거나 기존 Writer Context를 정확한 Handoff로
+  인계받아 수행한다.
+- 동일 Primary Jira, Branch와 PR을 유지하고 Reviewed Head를 확인한다.
 - Review가 지정한 Finding만 수정한다.
 - 통과한 설계 영역을 불필요하게 재작성하지 않는다.
 - 기존 Writer의 Primary Issue만 갱신한다.
+- 작은 후속 Commit을 만들고 Ready·Merge 없이 독립 재검수를 요청한다.
 - 새 Head를 독립 재검수 없이 Merge-ready로 선언하지 않는다.
 
 ### 4.5 Merge Gate
 
-- 검수된 Head와 PR Head의 동일성을 확인한다.
-- Base 최신성, Conflict, Check, 승인 Metadata를 확인한다.
-- 일반 Merge Commit을 기본으로 한다.
-- Merge 성공 뒤 Final main 포함 여부를 확인한다.
+- PR Base = Reviewed Base, PR Head = Reviewed Head를 확인한다.
+- Local / Remote / PR Head = Reviewed Head를 확인한다.
+- Reviewed Head 이후 미검수 Commit = 0, Blocker = 0, Major = 0을 확인한다.
+- 필수 Verification PASS, Not Performed 기록, Mergeable / CLEAN과 Human
+  Approval Metadata를 확인한다.
+- Branch Push, Commit 생성, 코드·문서·Finding 수정, Base 변경과 검수되지
+  않은 Metadata Commit 추가를 금지한다.
+- 모든 Gate가 충족된 경우에만 Ready 전환과 일반 Merge Commit을 수행한다.
+- Merge Commit Parent와 Base Branch의 Reviewed Head 포함 여부를 확인한 뒤
+  Jira 최종 댓글과 완료 전환을 수행한다.
 - Merge 실패 시 Jira를 완료하지 않는다.
 
-Merge Gate는 기존 승인 Scope를 넓히지 않는다.
+Human Approval Metadata에 Commit이 필요하면 Writer가 별도 Commit하고 그
+Commit을 포함한 Head를 독립 검수한다. Merge Gate는 승인 Metadata Commit을
+즉석 생성하거나 기존 승인 Scope를 넓히지 않는다.
 
 ### 4.6 Architecture Research
 

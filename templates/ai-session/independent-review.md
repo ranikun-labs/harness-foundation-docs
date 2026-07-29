@@ -28,8 +28,10 @@
 
 ## 금지 작업
 
-- 코드·문서·Jira·Confluence 수정
-- Commit, Push, Draft 해제, Merge, Branch·Worktree 생성
+- 코드·문서·Jira·Confluence·PR 수정
+- PR Title·Body·Label·Reviewer·Metadata 수정
+- PR Comment 작성, GitHub Review 제출, Reaction 등 모든 원격 쓰기
+- Commit, Push, Ready 전환, Merge, Branch·Worktree 생성
 
 ## Verification
 
@@ -39,6 +41,7 @@
 ## 최종 보고
 
 - 판정, Finding별 파일·Section·근거·대체 문구·Blocking, Regression
+- Finding과 Verdict는 현재 Session 최종 보고로만 반환
 
 ## Next Single Action
 

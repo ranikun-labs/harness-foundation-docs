@@ -16,24 +16,33 @@
 ## Repository / Base / Head
 
 - Repository / PR: `<owner/repository>` / `<number>`
-- Base: `<branch@sha>`
+- Reviewed Base / PR Base: `<branch@sha>` / `<branch@sha>`
 - Reviewed Head: `<exact sha>`
+- Local / Remote / PR Head: `<sha>` / `<sha>` / `<sha>`
 
 ## 허용 작업
 
-- 승인 Metadata, 동일 Branch Push, Ready 전환, 일반 Merge Commit
-- Merge 성공 후 Primary Issue Evidence와 Status 갱신
+- 모든 Gate 충족 후 Ready 전환과 일반 Merge Commit
+- Merge Commit Parent와 Base Branch의 Reviewed Head 포함 여부 확인
+- Merge 성공 후 Primary Issue 최종 댓글, Evidence와 Status 갱신
 
 ## 금지 작업
 
+- Branch Push, Commit 생성, 코드·문서·Finding 수정
+- Base 변경, 검수되지 않은 Metadata Commit 추가
 - 검수되지 않은 Head Merge
 - Conflict 자동 해결, Rebase·Force Push·History Rewrite
 - Merge 실패 시 Jira 완료
 
 ## Verification
 
-- PR Head = Reviewed Head, Base 최신, Mergeable, Checks와 Human Approval
-- Merge Commit, Final main SHA와 Head 포함 여부
+- PR Base = Reviewed Base, PR Head = Reviewed Head
+- Local / Remote / PR Head = Reviewed Head
+- Reviewed Head 이후 미검수 Commit = 0, Blocker = 0, Major = 0
+- 필수 Verification PASS와 Not Performed 기록
+- Mergeable / CLEAN과 Human Approval Metadata
+- 승인 Metadata Commit이 필요하면 Writer가 생성하고 해당 Head를 독립 검수
+- Merge Commit Parent, Final Base SHA와 Reviewed Head 포함 여부
 
 ## 최종 보고
 

@@ -233,27 +233,43 @@ Portfolio 탐색에는 여러 Issue 읽기가 필요하며, 쓰기 권한만 분
 
 - Writer와 분리된 Session에서 검수된 Head를 고정한다.
 - Repository, PR, Jira와 Evidence를 읽을 수 있다.
-- 문서·코드·Jira를 수정하지 않는다.
-- A, B, C와 재현 가능한 Finding을 보고한다.
+- 코드·문서·Jira·Confluence와 PR을 수정하지 않는다.
+- PR Comment·GitHub Review·Reaction을 포함해 Jira, Git, GitHub,
+  Confluence에 어떠한 원격 쓰기도 수행하지 않는다.
+- A, B, C와 재현 가능한 Finding·Verdict는 Session 최종 보고로만 반환한다.
 
 ### Finding Delta Fix
 
+- 기존 Writer Session을 재개하거나 기존 Writer Context를 정확한 Handoff로
+  인계받는다.
 - B Finding의 정확한 범위만 보정한다.
+- 동일 Primary Jira, Branch와 PR을 유지하고 Reviewed Head를 확인한다.
 - 기존 통과 영역을 불필요하게 다시 작성하지 않는다.
-- 새 Head를 만든 뒤 독립 재검수를 요청한다.
+- 작은 후속 Commit을 만든 뒤 Ready·Merge 없이 독립 재검수를 요청한다.
 
 ### Merge Gate
 
-- 승인된 Review Head와 현재 PR Head가 같은지 확인한다.
-- Mergeable, Check, 승인 Metadata와 Base 최신성을 확인한다.
-- 검수되지 않은 새 Commit이 있으면 Merge하지 않는다.
-- 일반 Merge Commit을 기본으로 사용한다.
+- PR Base와 Reviewed Base, PR Head와 Reviewed Head가 각각 같은지 확인한다.
+- Local·Remote·PR Head가 Reviewed Head와 같은지 확인한다.
+- Reviewed Head 이후 미검수 Commit, Blocker와 Major가 모두 0인지 확인한다.
+- 필수 Verification PASS, Not Performed 기록, Mergeable / CLEAN과 Human
+  Approval Metadata를 확인한다.
+- Branch Push, Commit 생성, 코드·문서·Finding 수정, Base 변경과 검수되지
+  않은 Metadata Commit 추가를 금지한다.
+- 모든 Gate가 충족된 경우에만 PR Ready 전환과 일반 Merge Commit을 수행한다.
+- Merge Commit Parent와 Base Branch의 Reviewed Head 포함 여부를 확인한 뒤
+  Jira 최종 댓글과 완료 전환을 수행한다.
+
+Human Approval Metadata 반영에 Commit이 필요하면 Writer가 별도 Commit하고
+그 Commit을 포함한 새 Head를 독립 검수한다. Merge Gate가 승인 Metadata
+Commit을 즉석 생성해서는 안 된다.
 
 ```text
 Writer 완료
 → Independent Review
 → 필요 시 Finding Delta Fix
-→ 검수된 Head 확인
+→ 필요한 승인 Metadata를 Writer가 별도 Commit
+→ 승인 Metadata 포함 Head 재확인 또는 재검수
 → Human Approval / Merge Gate
 → Merge
 ```
