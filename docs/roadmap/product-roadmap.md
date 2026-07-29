@@ -2,7 +2,7 @@
 title: Product Roadmap
 status: draft
 owner: product
-last_reviewed: 2026-07-28
+last_reviewed: 2026-07-29
 supersedes: []
 superseded_by: []
 related_adrs:
@@ -531,7 +531,9 @@ Project Context 자동 Promotion
 ```
 
 Automatic Rehydration은 이 후속 범위를 선행 구현하거나 대체하지 않는다.
-Runtime Adapter별 전달 성공 확인 방식은 후속 기술 설계다.
+Runtime Adapter별 전달 성공의 최소 Evidence와 State·Claim·TTL 결과 계약은
+`docs/contracts/pending-handoff-rehydration-contract.md`가 소유한다. 실제 Adapter와
+Runtime별 Evidence는 여전히 `not_verified`다.
 
 ---
 

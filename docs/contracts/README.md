@@ -3,7 +3,7 @@ title: Contracts Index
 status: draft
 implementation_status: partial
 owner: core
-last_reviewed: 2026-07-28
+last_reviewed: 2026-07-29
 supersedes: []
 superseded_by: []
 related_adrs:
@@ -16,6 +16,7 @@ source_inputs:
   - docs/contracts/context-checkpoint-guard-contract.md
   - docs/contracts/work-start-contract.md
   - docs/contracts/handoff-basic-contract.md
+  - docs/contracts/pending-handoff-rehydration-contract.md
   - docs/contracts/result-basic-contract.md
   - docs/contracts/runtime-capability-contract.md
   - docs/contracts/execution-policy-contract.md
@@ -52,6 +53,7 @@ docs/contracts/
 ├── context-checkpoint-guard-contract.md
 ├── work-start-contract.md
 ├── handoff-basic-contract.md
+├── pending-handoff-rehydration-contract.md
 ├── result-basic-contract.md
 ├── runtime-capability-contract.md
 ├── execution-policy-contract.md
@@ -219,6 +221,50 @@ Project Context Promotion
 ```text
 Structured Handoff
 = Human-approved Task Contract
+```
+
+---
+
+## 4.1 Pending Handoff Rehydration Contract
+
+**Path**
+
+```text
+docs/contracts/pending-handoff-rehydration-contract.md
+```
+
+**책임**
+
+```text
+명시적 Handoff Consent
+정제 Candidate Schema와 Privacy
+Pending·Claim·Delivery·Consumption Lifecycle
+Atomic Claim·Lease·Crash Recovery
+TTL·만료
+Automatic Linking Gate
+Delivery Confirmation Evidence
+Manual Resume와 Fail-open
+```
+
+**소유하지 않는 책임**
+
+```text
+Structured Handoff Task 의미
+새 Session 생성·UI 전환
+Runtime Invocation
+Runtime별 Hook 구현
+Project Context Promotion
+```
+
+**핵심 원칙**
+
+```text
+Pending Candidate 연결
+≠ Context Checkpoint one-time diagnostic
+≠ Runtime Invocation
+
+Delivery Success
+= 대상 Session에서 Candidate 사용 가능 Evidence 확인
 ```
 
 ---

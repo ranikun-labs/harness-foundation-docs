@@ -3,7 +3,7 @@ title: V1 Completion Criteria — v1.0.0 Baseline and Public V1.x Delta Gates
 status: draft
 implementation_status: partial
 owner: development
-last_reviewed: 2026-07-28
+last_reviewed: 2026-07-29
 supersedes: []
 superseded_by: []
 related_adrs:
@@ -17,6 +17,7 @@ source_inputs:
   - docs/roadmap/product-roadmap.md
   - docs/architecture/local-cloud-human-boundary.md
   - docs/contracts/context-checkpoint-guard-contract.md
+  - docs/contracts/pending-handoff-rehydration-contract.md
 ---
 
 # V1 Completion Criteria — v1.0.0 Baseline and Public V1.x Delta Gates
@@ -685,7 +686,9 @@ runtime_supported: not_verified
 ```
 
 완료 조건만 확정한 것이며 어떤 항목도 Pass로 전환하지 않았다.
-Runtime Adapter별 성공 확인 방식은 기술 설계로 미룬다.
+Runtime Adapter별 성공 확인의 최소 Evidence와 State·Claim·TTL·Consumption 결과 계약은
+`docs/contracts/pending-handoff-rehydration-contract.md`가 소유한다. 실제 Adapter 구현과
+Runtime별 Evidence는 여전히 `not_verified`다.
 
 ---
 

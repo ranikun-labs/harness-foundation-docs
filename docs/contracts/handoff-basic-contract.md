@@ -3,7 +3,7 @@ title: Handoff Basic Contract
 status: draft
 implementation_status: partial
 owner: development
-last_reviewed: 2026-07-14
+last_reviewed: 2026-07-29
 supersedes: []
 superseded_by: []
 related_adrs:
@@ -11,9 +11,12 @@ related_adrs:
   - ADR-0005
   - ADR-0007
   - ADR-0008
+related_decisions:
+  - DEC-062
 source_inputs:
   - docs/product/v1-completion-criteria.md
   - docs/contracts/work-start-contract.md
+  - docs/contracts/pending-handoff-rehydration-contract.md
   - docs/product/development-harness-report.md
   - docs/architecture/local-cloud-human-boundary.md
 ---
@@ -51,6 +54,11 @@ Human Review 후 사용자가 Worker Session에 수동 Copy/Paste한다.
 사용자 또는 Main Session
 → Worker Runtime
 ```
+
+위 문장은 Public `v1.0.0` Manual Copy/Paste Baseline을 정의한다. DEC-062의 Public `v1.1.0`
+Delta Gate에서는 Human Review된 정제 Candidate를 Pending으로 등록하고, 사용자가 직접 연
+지원 Session에 안전 조건 아래 연결할 수 있다. Pending·Claim·Delivery·Consumption 책임은
+`docs/contracts/pending-handoff-rehydration-contract.md`가 소유한다.
 
 이 문서는 Handoff를 Runtime Invocation, Worker 자동 생성, Result Return, Action Approval, Managed Task Entity, 자동 Prompt Delivery, SessionBinding, Cloud Workflow로 확장하지 않는다.
 
@@ -107,7 +115,14 @@ Result Basic
 
 Project Context
 = Human-confirmed Durable Context
+
+Pending Handoff Rehydration
+= Human Review와 명시적 Handoff Consent 이후의 전달 Lifecycle
+= 별도 Pending·Claim·Delivery·Consumption 상태
 ```
+
+Handoff Basic의 `lifecycle_status`는 Task Contract Artifact의 검수·Export Lifecycle이다.
+Pending Rehydration의 `status`와 합치거나 한쪽 상태를 다른 쪽 성공으로 추정하지 않는다.
 
 ---
 
@@ -1521,7 +1536,8 @@ Return Contract 없음
 ```text
 Task Database
 Managed Handoff Entity
-Automatic Prompt Delivery
+Public v1.0.0의 Automatic Prompt Delivery
+DEC-062 Contract 밖의 추정 기반 Automatic Prompt Delivery
 Provider Session Binding
 Automatic Result Collection
 Writer Lease
@@ -1610,6 +1626,7 @@ docs/product/v1-completion-criteria.md
 docs/contracts/work-start-contract.md
 docs/contracts/result-basic-contract.md
 docs/contracts/runtime-capability-contract.md
+docs/contracts/pending-handoff-rehydration-contract.md
 docs/architecture/local-cloud-human-boundary.md
 docs/testing/v1-fixture-plan.md
 ```
