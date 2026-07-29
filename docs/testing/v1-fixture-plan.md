@@ -3,7 +3,7 @@ title: V1 Fixture Plan
 status: draft
 implementation_status: missing
 owner: development
-last_reviewed: 2026-07-28
+last_reviewed: 2026-07-29
 supersedes: []
 superseded_by: []
 related_adrs:
@@ -16,6 +16,7 @@ source_inputs:
   - docs/contracts/context-checkpoint-guard-contract.md
   - docs/contracts/work-start-contract.md
   - docs/contracts/handoff-basic-contract.md
+  - docs/contracts/pending-handoff-rehydration-contract.md
   - docs/contracts/result-basic-contract.md
   - docs/contracts/runtime-capability-contract.md
   - docs/contracts/execution-policy-contract.md
@@ -1925,6 +1926,320 @@ Expected:
 
 ---
 
+# Part XI-C. Pending Handoff Rehydration Fixtures
+
+이 Part는 DEC-062의 Public `v1.1.0` Delta Gate다. Foundation은 Contract와 Fixture Assertion만
+확정하며 Product Runtime, Hook, Runtime 지원 또는 Cross-session E2E 완료를 주장하지 않는다.
+
+```text
+implementation: not_verified
+fixture_result: not_run
+cross_session_e2e: not_verified
+runtime_evidence: not_verified
+```
+
+모든 Fixture의 canonical requirement는
+`docs/contracts/pending-handoff-rehydration-contract.md`의 `PHR-REQ-*`다.
+
+## 29M. Consent and Candidate Privacy
+
+### FX-PHR-001 Explicit Consent Creates Pending Candidate
+
+Requirement: `PHR-REQ-001`, `PHR-REQ-002`
+
+```text
+Given:
+- 지원 Runtime의 명시적 `$handoff` 또는 동등한 자연어 실행 의도
+- Human Review와 Privacy Redaction 통과
+
+Expected:
+- 필수 Schema를 가진 정제 Candidate 생성
+- candidate → pending 원자적 등록
+- pending_registered 전 Delivery·Consumption 없음
+```
+
+### FX-PHR-002 Ambiguous Mention Creates Nothing
+
+Requirement: `PHR-REQ-001`
+
+```text
+Given:
+- 기능 질문, 문서·코드 블록 속 `$handoff`, Synthetic Event 또는 애매한 언급
+
+Expected:
+- Candidate와 Pending State 0건
+- Intent Detection을 Consent로 승격하지 않음
+```
+
+### FX-PHR-003 Raw Transcript and Secret Exclusion
+
+Requirement: `PHR-REQ-003`
+
+```text
+Given:
+- Raw Prompt·응답·Tool Output·파일·Diff별 Synthetic Marker
+- Synthetic Secret·Token·Credential·환경변수 Marker
+
+Expected:
+- Candidate와 State·Log·Evidence의 Marker 0건
+- privacy_redaction_status가 passed가 아니면 Pending 등록 0건
+```
+
+## 29N. Automatic Linking Gate
+
+### FX-PHR-004 Single Safe Pending Can Link
+
+Requirement: `PHR-REQ-004`, `PHR-REQ-006`
+
+```text
+Given:
+- 같은 Repository·Worktree
+- 서로 다른 확인 가능한 source/current Session Identity
+- 정확히 1개의 미만료 pending
+- Schema·Digest·Privacy 검증 통과
+- 필요한 Runtime·Hook·Injection·Confirmation Capability supported
+
+Expected:
+- Atomic Claim 가능
+- Delivery Attempt은 가능하되 Evidence 전 delivered·consumed 아님
+```
+
+### FX-PHR-005 Same Session Cannot Link
+
+Requirement: `PHR-REQ-007`
+
+```text
+Given:
+- source_session_identity = current_session_identity
+
+Expected:
+- Claim·Delivery·Consumption 0건
+- manual_resume_required
+```
+
+### FX-PHR-006 Repository Mismatch Uses Manual Resume
+
+Requirement: `PHR-REQ-007`, `PHR-REQ-017`, `PHR-REQ-018`
+
+```text
+Given:
+- Repository Identity 불일치
+
+Expected:
+- 자동 연결·소비 0건
+- 안전한 Candidate ID, Goal, Scope 검증 상태, 실패 이유와 다음 단계 표시
+```
+
+### FX-PHR-007 Worktree Mismatch Uses Manual Resume
+
+Requirement: `PHR-REQ-007`, `PHR-REQ-017`, `PHR-REQ-018`
+
+```text
+Given:
+- 같은 Repository, 다른 Worktree Identity
+
+Expected:
+- 자동 연결·소비 0건
+- worktree_mismatch Manual Resume
+```
+
+### FX-PHR-008 Unknown Session Identity Uses Manual Resume
+
+Requirement: `PHR-REQ-007`, `PHR-REQ-017`, `PHR-REQ-018`
+
+```text
+Given:
+- source 또는 current Session Identity unknown
+
+Expected:
+- 서로 다른 Session이라고 추정하지 않음
+- 자동 연결·소비 0건
+- session_identity_unknown Manual Resume
+```
+
+### FX-PHR-009 Multiple Pending Never Auto-selects
+
+Requirement: `PHR-REQ-008`
+
+```text
+Given:
+- 같은 Scope의 미만료 pending 2개 이상
+
+Expected:
+- 최신·Goal 유사도·Branch·생성 시각 기반 선택 0건
+- 안전한 최소 Metadata 목록과 명시적 Manual 선택 절차
+- 선택 전 Claim·Delivery·Consumption 0건
+```
+
+### FX-PHR-010 Expired Candidate Cannot Link
+
+Requirement: `PHR-REQ-004`, `PHR-REQ-013`, `PHR-REQ-014`
+
+```text
+Given:
+- now >= expires_at 또는 TTL·Timestamp가 unknown/비정상
+
+Expected:
+- 유효 Timestamp면 expired 원자적 전이
+- 자동 Claim·Delivery·Consumption 0건
+- Manual Resume에 expired와 새 Candidate 생성 절차 표시
+- Cleanup 실패가 일반 Session을 막지 않음
+```
+
+## 29O. State, Concurrency, and Crash Recovery
+
+### FX-PHR-011 Corrupted State Fails Open without Consumption
+
+Requirement: `PHR-REQ-004`, `PHR-REQ-012`, `PHR-REQ-014`, `PHR-REQ-017`, `PHR-REQ-019`
+
+```text
+Given:
+- 부분 Record, Digest 불일치, 알 수 없는 Schema 또는 불가능한 State 전이
+
+Expected:
+- 정상 State 자동 추정·복구 없음
+- Candidate 소비 0건
+- 격리 가능한 Record는 invalid, Store 판별 불가는 unavailable
+- Manual Resume 또는 안전한 no-op 후 일반 Session 계속
+```
+
+### FX-PHR-012 Concurrent Claim Has One Winner
+
+Requirement: `PHR-REQ-009`
+
+```text
+Given:
+- 같은 pending Revision에 서로 다른 Session Owner의 동시 Claim
+
+Expected:
+- 정확히 1개 Claim만 성공
+- Loser의 Injection·Consumption 0건
+- Loser는 claim_conflict Manual Resume
+```
+
+### FX-PHR-013 Claim Crash Recovers after Lease
+
+Requirement: `PHR-REQ-010`
+
+```text
+Given:
+- Claim 성공 후 Delivery 전 Process Crash
+
+When:
+- 유한 Lease 만료, Candidate TTL은 유효
+
+Expected:
+- 만료 전 Claim 탈취 0건
+- 만료 후 pending 원자적 복귀와 재Claim 가능
+- Candidate 영구 유실·중복 Delivery 0건
+```
+
+### FX-PHR-014 Unconfirmed Delivery Is Never Consumed
+
+Requirement: `PHR-REQ-005`, `PHR-REQ-015`, `PHR-REQ-017`, `PHR-REQ-019`
+
+```text
+Given:
+- Hook success·stdout·Queue accept 또는 Injection Attempt
+- 대상 Session 사용 가능 Evidence 없음
+
+Expected:
+- delivery_attempted까지만 기록
+- delivered·consumed 0건
+- Manual Resume 후 일반 Session 계속
+```
+
+### FX-PHR-015 Duplicate SessionStart Is Idempotent
+
+Requirement: `PHR-REQ-011`, `PHR-REQ-016`
+
+```text
+Given:
+- 같은 Candidate·Session·Boundary의 중복 SessionStart와 Hook Event
+
+Expected:
+- Claim·Injection·Delivery Confirmation·Consumption 각각 최대 1회
+- 이미 delivered면 재주입 없이 Consumption만 복구
+- 이미 consumed면 no-op
+```
+
+### FX-PHR-016 Confirmed Delivery Has Single Consumption
+
+Requirement: `PHR-REQ-005`, `PHR-REQ-016`
+
+```text
+Given:
+- Candidate ID·Digest·current Session이 일치하는 Runtime Delivery Evidence
+- delivered_at이 Candidate expires_at보다 이른 값
+
+Expected:
+- claimed → delivered → consumed
+- consumed_at과 Evidence Reference를 같은 Revision에 기록
+- 동시·재시도 Consumption 중 정확히 1개만 State 변경
+```
+
+## 29P. Capability, Privacy, and Boundary
+
+### FX-PHR-017 Unsupported Hook Uses Manual Resume
+
+Requirement: `PHR-REQ-006`, `PHR-REQ-017`, `PHR-REQ-018`, `PHR-REQ-019`
+
+```text
+Given:
+- 필수 Runtime·SessionStart·Injection·Confirmation Capability가
+  unsupported, unknown 또는 조건 미충족
+
+Expected:
+- Supported로 추정하지 않음
+- 자동 Claim·Delivery·Consumption 0건
+- Manual Resume Surface가 있으면 안내, 없으면 안전한 no-op
+- 일반 Session 계속
+```
+
+### FX-PHR-018 Privacy and Identity Markers Are Not Stored
+
+Requirement: `PHR-REQ-003`
+
+```text
+Given:
+- Raw Session ID, Git Remote Credential, 절대 Worktree Path별 Synthetic Marker
+
+Expected:
+- State·Log·Evidence·Manual Resume의 Marker 0건
+- Session·Repository·Worktree는 안정적인 비가역 Opaque Local Identity
+- Raw Session ID는 Process Memory 밖에 저장되지 않음
+```
+
+### FX-PHR-019 Context Review Does Not Become Pending
+
+Requirement: `PHR-REQ-020`
+
+```text
+Given:
+- Context Checkpoint Guard status review_needed
+- 명시적 Handoff Consent 없음
+
+Expected:
+- Candidate·Pending·Claim·Delivery·Consumption 0건
+- one-time diagnostic과 Pending Rehydration을 별도 결과로 유지
+```
+
+### FX-PHR-020 Handoff Does Not Invoke Runtime or Mutate Work
+
+Requirement: `PHR-REQ-020`
+
+```text
+Given:
+- 명시적 Handoff 요청과 Pending 또는 Manual Resume 흐름
+
+Expected:
+- 파일·Shell·Git·Worker·Commit·Push·PR 변경 0건
+- 새 Session 생성, codex resume/fork, Runtime Invocation 0건
+- Result 자동 회수와 Project Context 자동 Promotion 0건
+```
+
+---
+
 # Part XII. Manual E2E
 
 ## 30. Minimum Single-runtime E2E
@@ -2098,6 +2413,7 @@ Quick Start truthful
 | Documentation | ✓ | ✓ |  | ✓ | ✓ |
 | Product Notice | ✓ | ✓ | ✓ |  | ✓ |
 | Context Checkpoint Guard (post-v1.0 V1.x) | ✓ | ✓ | ✓ |  | 조건부 |
+| Pending Handoff Rehydration (v1.1.0) | ✓ | ✓ | ✓ |  | 조건부 |
 
 ---
 
@@ -2167,7 +2483,51 @@ P0 Product Notice Manual E2E
 = FX-E2E-002
 ```
 
-### 33.1 Post-v1.0 Public V1.x Context Checkpoint Guard Gate
+### 33.1 Public v1.1.0 Pending Handoff Rehydration Gate
+
+DEC-062 Product 구현 완료를 주장하려면 다음 Suite와 별도 Cross-session E2E가 모두
+`passed` Evidence를 가져야 한다.
+
+```text
+Consent·Candidate·Privacy
+= FX-PHR-001~003, FX-PHR-018
+
+Linking·Scope·TTL·Manual Resume
+= FX-PHR-004~010, FX-PHR-017
+
+State·Concurrency·Crash Recovery·Delivery·Consumption
+= FX-PHR-011~016
+
+Context Guard 분리·No Runtime Invocation
+= FX-PHR-019~020
+```
+
+최소 1개 지원 Runtime Cross-session E2E는 다음을 추가로 증명한다.
+
+```text
+사용자가 새 Session을 직접 생성·전환
+정확히 1개의 미만료 Pending
+대상 Session에서 Candidate 사용 가능 Evidence
+정확히 1회 Consumption
+같은 Session 중복 주입 없음
+Branch·HEAD·Working Tree 재검증
+```
+
+다음은 Gate 통과가 아니다.
+
+```text
+Fixture 정의만 존재
+Candidate 파일 생성
+Claim 성공
+Hook exit code 0
+출력 시도
+Manual Resume 표시
+Foundation Contract Merge
+```
+
+이 Gate는 Public `v1.0.0` 완료 판정을 소급 변경하지 않는다.
+
+### 33.2 Post-v1.0 Public V1.x Context Checkpoint Guard Gate
 
 DEC-063 Product 구현 완료를 주장하려면 다음 Suite가 모두 `passed` Evidence를 가져야 한다.
 
@@ -2238,6 +2598,7 @@ fixtures/
 ├── installation/
 ├── documentation/
 ├── notice/
+├── pending-handoff-rehydration/
 └── e2e/
 ```
 
@@ -2318,6 +2679,9 @@ Repository에 Commit할지는 별도 결정이다.
 21. Notice Fixture는 실제 Network 없이 Local 상태 조작만으로 재현한다.
 22. Notice 실패를 Work-start 실패로 기록하지 않는다.
 23. Notice가 Artifact에 혼입되면 Fail로 판정한다.
+24. Pending Handoff는 대상 Session 사용 가능 Evidence 없이 Delivered 또는 Consumed로 판정하지 않는다.
+25. 동일 Pending Candidate의 Claim과 Consumption은 각각 최대 한 번만 State를 변경한다.
+26. `review_needed`를 Pending Candidate로 자동 변환하지 않는다.
 
 ---
 
@@ -2327,6 +2691,7 @@ Repository에 Commit할지는 별도 결정이다.
 docs/product/v1-completion-criteria.md
 docs/contracts/work-start-contract.md
 docs/contracts/handoff-basic-contract.md
+docs/contracts/pending-handoff-rehydration-contract.md
 docs/contracts/result-basic-contract.md
 docs/contracts/runtime-capability-contract.md
 docs/contracts/execution-policy-contract.md
