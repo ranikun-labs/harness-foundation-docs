@@ -14,6 +14,7 @@ source_inputs:
   - docs/architecture/backend-service-foundation/documentation-ownership-and-placement.md
 related_decisions:
   - DEC-059
+  - DEC-064
 ---
 
 # Backend Service Foundation — Architecture
@@ -22,7 +23,10 @@ related_decisions:
 
 이 디렉터리는 Carelog, Finance Harness Backend, Shared Identity 등 실제 MSA Backend Service가 공통으로 따라야 하는 서비스 경계, 데이터베이스 소유권, 통신 방식, 분산 정합성 원칙을 관리한다.
 
-이 디렉터리의 문서는 아직 어느 것도 Accepted Decision이 아니며(용어·Repository 지도 등록 자체는 `DEC-059`로 accepted), 실제 구현·배포가 존재함을 의미하지 않는다.
+이 디렉터리의 기술 규칙은 `ADR-0015` / `DEC-064`에서 공통 통신·메시징·확장
+Decision 후보로 검토한다. 현재 ADR과 Decision은 open이며, 용어·Repository 지도
+등록 자체만 `DEC-059`로 accepted다. 어떤 상태도 실제 구현·배포가 존재함을
+의미하지 않는다.
 
 ```text
 docs/architecture/backend-service-foundation/
@@ -77,7 +81,10 @@ docs/architecture/backend-service-foundation/
 | [distributed-consistency-policy.md](./distributed-consistency-policy.md) | Outbox, Idempotency, Reconciliation, Saga 등 분산 정합성 원칙 | Draft | Cross-service workflows | `harness-foundation-docs` | Not implemented / Not runtime-supported / Not released |
 | [documentation-ownership-and-placement.md](./documentation-ownership-and-placement.md) | Foundation vs 각 MSA 레포 vs Domain 문서 배치 원칙 | Draft | Foundation + all MSA repositories | `harness-foundation-docs` | Not implemented / Not runtime-supported / Not released |
 
-각 문서의 내용(서비스 경계·DB·통신·정합성 원칙)은 아직 Draft이며 별도 accepted Decision이 등록되기 전까지 canonical candidate로만 취급한다.
+공통 통신·메시징·확장 선택의 Decision Record는
+[`ADR-0015`](../../adr/ADR-0015-platform-communication-messaging-scaling.md)다.
+각 문서의 내용은 아직 Draft이며 `ADR-0015` / `DEC-064`가 accepted로 전환되기
+전까지 canonical candidate로만 취급한다.
 
 ---
 
@@ -90,7 +97,10 @@ Runtime supported: No
 Product released: No
 ```
 
-`DEC-059`은 명칭·Repository 지도 등록만 accepted 상태이며, 위 5개 문서의 기술적 내용 자체를 accepted로 전환하지 않는다. Decision Record 또는 실제 구현 Evidence 없이 이 상태를 올리지 않는다.
+`DEC-059`은 명칭·Repository 지도 등록만 accepted 상태이며, 위 5개 문서의
+기술적 내용 자체를 accepted로 전환하지 않는다. Proposed ADR의 존재나 Merge는
+Runtime 지원 Evidence가 아니다. Decision 승인과 구현 Evidence 없이 각 상태를
+올리지 않는다.
 
 ---
 
@@ -102,5 +112,6 @@ docs/architecture/repository-service-boundaries.md
 docs/architecture/shared-core-and-extensions.md
 docs/contracts/backend-service-foundation/README.md
 docs/master/product-architecture-master.md
-docs/decisions/decision-log.md (DEC-005, DEC-059)
+docs/adr/ADR-0015-platform-communication-messaging-scaling.md
+docs/decisions/decision-log.md (DEC-005, DEC-059, DEC-064)
 ```
