@@ -3386,13 +3386,13 @@ RPL-20
 
 ## DEC-065 — Jira·Git·Confluence·AI Session 통합 운영 Governance를 정의한다
 
-**Status:** open
+**Status:** accepted_with_constraints
 **Owner:** governance
 **Decision type:** governance
 **Decision scope:** platform-foundation / work-management / ai-session
 **Decision date:** 2026-07-29
 **Implementation status:** not_started
-**Reviewed at:** not_reviewed
+**Reviewed at:** 2026-07-29
 
 ### Decision
 

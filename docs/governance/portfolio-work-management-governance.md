@@ -1,18 +1,20 @@
 ---
 title: Ranikun Labs Portfolio Work Management Governance
 version: "1.1"
-document_status: draft
-decision_status: open
+document_status: accepted
+decision_status: accepted_with_constraints
 implementation_status: not_started
 owner: governance
 authors:
   - codex
-reviewers: []
-approvers: []
+reviewers:
+  - 박성환
+approvers:
+  - 박성환
 created_at: "2026-07-29"
-reviewed_at: null
-approved_at: null
-effective_from: null
+reviewed_at: "2026-07-29"
+approved_at: "2026-07-29"
+effective_from: "2026-07-29"
 related_decisions:
   - DEC-010
   - DEC-025
@@ -44,7 +46,8 @@ supporting_architecture_inputs:
 ≠ Runtime 또는 Product 변경
 ```
 
-현재 문서와 `DEC-065`는 독립 검수와 인간 승인 전까지 `draft / open`이다.
+현재 문서는 인간 승인에 따라 `accepted`, `DEC-065`는
+`accepted_with_constraints`다.
 
 Architecture 정책은 이 문서가 재정의하지 않는다. 적용 우선순위는 다음과
 같다.

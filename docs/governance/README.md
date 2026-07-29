@@ -1,7 +1,7 @@
 ---
 title: Platform Governance Index
-status: draft
-decision_status: open
+status: accepted
+decision_status: accepted_with_constraints
 owner: governance
 last_reviewed: 2026-07-29
 source_inputs:
@@ -27,8 +27,8 @@ docs/governance/
 | [Portfolio Work Management Governance](portfolio-work-management-governance.md) | Jira·Git·GitHub·Confluence의 Concern별 소유권, 작업 분류, Lifecycle, WIP, Rollout |
 | [AI Session Governance](ai-session-governance.md) | Session Role, 읽기·쓰기 권한, Primary Issue, 진실성, Git 안전, 종료 보고 |
 
-두 문서는 `DEC-065`의 Governance Decision Candidate다. Draft PR에 존재한다는
-사실만으로 운영 승인이나 Jira·Confluence 설정 적용을 의미하지 않는다.
+두 문서는 `DEC-065`에 의해 승인된 Platform Governance다. 이 승인 사실만으로
+Jira·Confluence 설정 적용이나 Rollout 완료를 의미하지 않는다.
 
 원본 설계 문서는 [`source-inputs/`](../../source-inputs/README.md)에 보존한다.
 원본은 역사적 입력이며 Canonical 정책이 아니다.

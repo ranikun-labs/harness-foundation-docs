@@ -1,18 +1,20 @@
 ---
 title: Ranikun Labs AI Session Governance
 version: "1.1"
-document_status: draft
-decision_status: open
+document_status: accepted
+decision_status: accepted_with_constraints
 implementation_status: not_started
 owner: governance
 authors:
   - codex
-reviewers: []
-approvers: []
+reviewers:
+  - 박성환
+approvers:
+  - 박성환
 created_at: "2026-07-29"
-reviewed_at: null
-approved_at: null
-effective_from: null
+reviewed_at: "2026-07-29"
+approved_at: "2026-07-29"
+effective_from: "2026-07-29"
 related_decisions:
   - DEC-010
   - DEC-021
