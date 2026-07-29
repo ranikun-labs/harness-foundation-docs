@@ -3,7 +3,7 @@ title: Runtime Capability Contract
 status: draft
 implementation_status: missing
 owner: development
-last_reviewed: 2026-07-14
+last_reviewed: 2026-07-29
 supersedes: []
 superseded_by: []
 related_adrs:
@@ -14,6 +14,7 @@ related_adrs:
 source_inputs:
   - docs/product/v1-completion-criteria.md
   - docs/contracts/handoff-basic-contract.md
+  - docs/contracts/pending-handoff-rehydration-contract.md
   - docs/contracts/result-basic-contract.md
   - docs/architecture/local-cloud-human-boundary.md
 ---
@@ -457,6 +458,7 @@ Repository Inspection
 Network
 Connector
 Handoff Projection
+Pending Handoff Rehydration
 Result Production
 Human Approval Integration
 ```
@@ -625,6 +627,42 @@ Runtime Projection 생성
 Protected Field 의미 보존
 Unsupported Requirement 표시
 ```
+
+DEC-062 Automatic Rehydration은 Projection과 별도 Capability 집합을 사용한다.
+
+```text
+capability.handoff.explicit_command_intent
+capability.handoff.natural_language_intent
+capability.handoff.source_session_identity
+capability.handoff.current_session_identity
+capability.handoff.session_start_surface
+capability.handoff.candidate_injection_surface
+capability.handoff.delivery_confirmation
+capability.handoff.manual_resume_surface
+```
+
+각 Capability는 Runtime별로 독립 선언한다. Claude와 Codex가 같은 Hook Surface를 제공한다고
+가정하지 않는다.
+
+자동 연결에 필요한 Capability는 `supported`이거나, `conditional`의 모든 기술 조건을 현재
+Attempt에서 확인한 경우여야 한다. `unknown`, `unsupported`, 조건 미충족은 자동 연결 불가다.
+
+특히:
+
+```text
+Hook 호출 가능
+≠ Candidate Injection 지원
+
+Candidate Injection 시도
+≠ Delivery Confirmation 지원
+
+Manual Resume Surface 지원
+≠ Automatic Rehydration 지원
+```
+
+`capability.handoff.delivery_confirmation`은 대상 Session에서 Candidate ID와 Digest가 일치하는
+내용을 실제로 사용할 수 있다는 Adapter Evidence를 제공할 수 있을 때만 `supported`다.
+단순 Hook exit code, stdout 출력 또는 Queue 수락은 Evidence가 아니다.
 
 ---
 
@@ -1749,6 +1787,7 @@ Manual Step 또는 새 Handoff Review를 요구한다.
 ```text
 docs/product/v1-completion-criteria.md
 docs/contracts/handoff-basic-contract.md
+docs/contracts/pending-handoff-rehydration-contract.md
 docs/contracts/result-basic-contract.md
 docs/contracts/execution-policy-contract.md
 docs/testing/v1-fixture-plan.md
