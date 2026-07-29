@@ -23,6 +23,9 @@ The goal is to minimize temporal coupling while preserving clear ownership and o
 5. Network calls are assumed to fail, timeout, duplicate, or return partial information.
 6. Every cross-service contract must define timeout, retry, idempotency, observability, and compatibility behavior.
 7. A caller must not retry a non-idempotent operation unless the operation supports an idempotency key.
+8. An internal service call uses direct service-to-service communication and does not route through the external Gateway.
+9. A user request should have at most one required synchronous downstream dependency where practical.
+10. Long required synchronous call chains are prohibited.
 
 ## 3. Communication modes
 
@@ -111,6 +114,42 @@ DisableFinanceUserNow
 
 A command may be asynchronous, but it requires a separate command contract and ownership model.
 
+## 3.4 Protocol defaults
+
+| Purpose | Default | Adoption state |
+|---|---|---|
+| External API | HTTP/JSON | Service repository records actual support |
+| Internal synchronous API | HTTP/JSON | Target default |
+| AI token streaming | SSE | Target default, not current runtime evidence |
+| Asynchronous event or job | NATS JetStream after a concrete use case | Not currently adopted |
+
+The Gateway is the external ingress and security boundary.
+
+```text
+Product service
+→ direct HTTP
+→ Shared service
+```
+
+Do not route internal calls back through the external Gateway.
+
+SSE uses the target flow `Shared AI → Product → Gateway → Client`.
+Reconnect, `Last-Event-ID`, cancellation, stream timeout, backpressure, intermediate
+failure, and persistence/stream-completion consistency require a follow-up decision.
+
+gRPC is not the default. Evaluate it only for measured sustained high-frequency calls,
+JSON serialization CPU bottlenecks, large binary payloads, bidirectional streaming,
+multi-language Proto SDK needs, or an internal p99 requirement of a few milliseconds.
+
+Kafka is deferred until CDC, a long-lived event log, large replay, many analytical
+consumers, or Kafka Connect/Streams is required and physical nodes and operators exist.
+
+Kubernetes is deferred until multiple physical nodes, replicas, horizontal scaling,
+zero-downtime deployment, multiple operators, or a measured single-host/Compose
+operational bottleneck exists.
+
+Service count alone is not a trigger for gRPC, Kafka, or Kubernetes.
+
 ## 4. Synchronous API requirements
 
 Every cross-service API must define:
@@ -125,6 +164,9 @@ Every cross-service API must define:
 - rate limit;
 - observability fields;
 - compatibility and deprecation policy.
+
+The consuming adapter owns timeout, retry eligibility, circuit breaker, error mapping,
+and propagation of correlation context.
 
 ### 4.1 Timeout
 
@@ -189,13 +231,42 @@ A user token and a service identity are separate concerns.
 
 An event producer must:
 
-- write through a transactional outbox when the event corresponds to a database state change;
+- use a transactional outbox when loss of the event after a database commit would violate a required business invariant;
 - use the common event envelope;
 - assign an immutable event ID;
 - version the schema;
 - avoid unnecessary sensitive data;
 - define partitioning or ordering key;
 - document retention and replay semantics.
+
+Do not require an outbox for every event. The producer must document why loss is
+acceptable when a non-critical event is published without one.
+
+Before production adoption, the publishing service's Domain Owner must classify the
+event. Each published-event contract must record:
+
+```text
+affected_business_invariant
+criticality
+acceptable_loss_window
+duplicate_tolerance
+retry_policy
+replay_policy
+reconciliation_policy
+classification_owner
+approval_reference
+```
+
+An unclassified event is critical by default. Security, account-lifecycle,
+authorization, monetary, or regulatory-retention invariants require Architecture or
+Security Review. A non-critical event must record its acceptable loss boundary and why
+recovery is not required.
+
+The service repository owns each event's classification and approval evidence.
+Foundation owns the required fields and default gate. Detailed rules are in
+[distributed-consistency-policy.md](./distributed-consistency-policy.md), and the
+payload continues to follow the common
+[event envelope contract](../../contracts/backend-service-foundation/event-envelope-contract.md).
 
 An event consumer must:
 
@@ -289,6 +360,9 @@ Sensitive current account check
 Finance and Carelog must not communicate by reading each other's databases.
 
 A direct service relationship should be introduced only after ownership and contract review.
+
+No section in this document proves that an independent Shared Identity, Shared AI,
+NATS JetStream, gRPC, Kafka, or Kubernetes runtime currently exists.
 
 ## 10. Required service documents
 

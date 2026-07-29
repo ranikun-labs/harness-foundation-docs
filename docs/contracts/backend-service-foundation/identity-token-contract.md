@@ -18,17 +18,27 @@ It defines token semantics that product services may rely on. It does not define
 
 Shared Identity issues a signed access token.
 
-Product services validate the token locally using trusted signing-key material.
+The product-serving security boundary validates the token without a per-request call
+to Shared Identity. Depending on the accepted deployment contract, that validator may
+be the Product Service itself or the external Gateway followed by a trusted
+authentication context.
 
 ```text
 Client
 → Shared Identity
 → Signed access token
-→ Product API
+→ Gateway or Product security boundary
 → Local signature and claim validation
+→ Product-owned authorization
 ```
 
 A product service should not call Shared Identity on every authenticated request solely to identify the principal.
+
+When a Gateway supplies authentication context, it must remove spoofed external
+context headers and re-inject only verified context. The Product Service must verify
+the context source and integrity. Header fields, versioning, and Gateway-to-Product
+authentication require a separate accepted contract; this Draft does not claim that
+such a contract is currently implemented.
 
 ## 3. Canonical principal
 
@@ -116,7 +126,7 @@ A small authorization claim may be introduced only through a reviewed contract w
 
 ## 8. Validation requirements
 
-A consuming service must verify:
+The accepted token-validation boundary must verify:
 
 1. supported signature algorithm;
 2. trusted issuer;

@@ -15,6 +15,7 @@ related_adrs:
   - ADR-0012
   - ADR-0013
   - ADR-0014
+  - ADR-0015
 source_inputs:
   - docs/roadmap/product-roadmap.md
   - docs/architecture/shared-core-and-extensions.md
@@ -3267,6 +3268,118 @@ DEC-059
 ```text
 supersedes: []
 superseded_by: []
+```
+
+---
+
+## DEC-064 — 공통 플랫폼 통신·메시징·확장 기준을 정의한다
+
+**Status:** accepted_with_constraints
+**Owner:** architecture
+**Decision type:** architecture
+**Decision scope:** backend-service-foundation / communication / messaging / scaling
+**Decision date:** 2026-07-29
+**Implementation status:** not_started
+**Runtime support status:** not_supported
+**Product release status:** not_released
+**Reviewed at:** 2026-07-29
+
+### Decision
+
+```text
+External API                = HTTP/JSON
+Internal synchronous API    = Direct HTTP/JSON
+AI token streaming          = SSE
+Asynchronous event and job  = NATS JetStream after a concrete use case
+Business Source of Truth    = PostgreSQL
+Session, cache, short state = Redis
+```
+
+Gateway는 외부 Ingress와 Security Boundary이며 내부 Service 호출의
+Proxy Hop으로 사용하지 않는다.
+
+일반 Product 요청은 Shared Identity를 매번 호출하지 않고 검증된 인증
+Context와 Product-owned authorization을 사용한다. Shared AI는 Provider와
+제품 중립 실행 기술을 소유하고 Product는 Prompt, Workflow, Domain Policy,
+Tool, Validation과 결과 반영을 소유한다.
+
+gRPC, Kafka, Kubernetes는 서비스 수가 아니라 ADR-0015에 기록된 측정 가능한
+병목과 운영 Trigger가 충족된 뒤 별도 Decision으로 검토한다.
+
+### Rationale
+
+```text
+초기 단일 Host와 작은 운영 규모에서는 HTTP/JSON과 PostgreSQL·Redis가
+운영 복잡도를 최소화한다.
+
+비동기 Broker와 분산 운영 Platform은 실제 Use Case와 병목이 생긴 뒤
+도입해야 도입 근거, 첫 Owner와 복구 절차를 함께 확정할 수 있다.
+
+공통 선택을 Foundation에 두고 Service Repository에는 적용 상태만 두면
+제품별 문서 Drift를 줄일 수 있다.
+```
+
+### Constraints
+
+```text
+현재 Runtime과 Target Architecture를 혼합하지 않는다.
+NATS JetStream, gRPC, Kafka, Kubernetes의 구현·Provisioning을 승인하지 않는다.
+Shared Identity와 Shared AI의 물리 추출을 승인하지 않는다.
+Service별 API, Event Payload, Timeout 값과 Broker 설정을 Foundation에 복제하지 않는다.
+실제 Secret, Credential, Host, IP와 Backup 위치를 Git에 저장하지 않는다.
+```
+
+### Consequences
+
+- Backend Service Foundation이 공통 통신·메시징·확장 선택을 소유한다.
+- 각 Service Repository는 실제 적용, 편차, DB·Migration과 운영 Evidence를 소유한다.
+- 중요한 Event에만 Transactional Outbox를 요구하며 모든 Event에 강제하지 않는다.
+- 첫 JetStream Use Case와 SSE 운영 계약은 후속 Decision이 필요하다.
+- Foundation Decision 승인 후 Carelog의 중복 공통 ADR을 적용 문서로 축소해야 한다.
+
+### Relationship
+
+```text
+clarifies:
+- DEC-057 Shared Identity / Shared Commerce 논리 경계
+- DEC-058 Target Deployment Unit과 PostgreSQL 데이터 소유권
+- DEC-059 Backend Service Foundation canonical 위치
+- DEC-060 Shared Services Deployment Unit 명칭
+
+supersedes: []
+superseded_by: []
+```
+
+### Affected Documents
+
+```text
+docs/adr/ADR-0015-platform-communication-messaging-scaling.md
+docs/adr/README.md
+docs/architecture/backend-service-foundation/README.md
+docs/architecture/backend-service-foundation/service-boundaries.md
+docs/architecture/backend-service-foundation/service-communication-policy.md
+docs/architecture/backend-service-foundation/distributed-consistency-policy.md
+docs/contracts/backend-service-foundation/identity-token-contract.md
+docs/decisions/decision-log.md
+```
+
+### Open Questions
+
+- 내부 Service Authentication과 Discovery
+- SSE reconnect, cancellation, backpressure와 저장 정합성
+- 첫 JetStream Producer·Consumer와 Subject·Retention·DLQ·Backup·Restore
+- Provider-neutral RAG·Embedding·Vector·AI Job Runtime의 상세 소유권
+- Trigger 충족 시 gRPC, Kafka 또는 Kubernetes 도입 여부
+
+### References
+
+```text
+ADR-0015
+DEC-057
+DEC-058
+DEC-059
+DEC-060
+RPL-20
 ```
 
 ---
