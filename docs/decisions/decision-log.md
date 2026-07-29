@@ -3,7 +3,7 @@ title: Decision Log
 status: draft
 implementation_status: partial
 owner: core
-last_reviewed: 2026-07-28
+last_reviewed: 2026-07-29
 supersedes: []
 superseded_by: []
 related_adrs:
@@ -3380,6 +3380,131 @@ DEC-058
 DEC-059
 DEC-060
 RPL-20
+```
+
+---
+
+## DEC-065 — Jira·Git·Confluence·AI Session 통합 운영 Governance를 정의한다
+
+**Status:** accepted_with_constraints
+**Owner:** governance
+**Decision type:** governance
+**Decision scope:** platform-foundation / work-management / ai-session
+**Decision date:** 2026-07-29
+**Implementation status:** not_started
+**Reviewed at:** 2026-07-29
+
+### Decision
+
+```text
+Jira
+= Work Scope, State, Assignee, Priority, Dependency, Next Action
+
+Git Canonical Docs
+= Accepted Architecture, Contract, Data Ownership, Verification Criteria
+
+GitHub
+= Commit, Diff, PR, Test Evidence, Merge Commit
+
+Confluence
+= Human-readable Portfolio and System Landscape Projection
+
+AI Session
+= Temporary Working Context
+```
+
+도구 간 하나의 전역 우선순위를 두지 않고 Concern별 Canonical Owner를
+사용한다. 쓰기 Session은 `One Writer Session, One Primary Jira Issue`를
+따르며 Independent Review는 Read-only다.
+
+현재 Platform Foundation Canonical Repository는
+`harness-foundation-docs`다. 새 `ranikun-platform-docs` Repository는
+즉시 만들지 않으며 실제 분리 Trigger가 확인되면 Rename 또는 Migration
+ADR로 재검토한다.
+
+### Rationale
+
+```text
+Tool별 책임을 분리하면 작업 상태, 승인된 Decision, Merge Evidence와
+Portfolio Projection이 서로의 Source of Truth를 덮어쓰지 않는다.
+
+Writer와 Reviewer의 권한을 분리하면 동일 Session의 자체 승인을 막고
+검수된 Head만 Merge할 수 있다.
+
+이미 ADR-0015와 DEC-064를 승인한 Repository를 유지하면
+Platform Foundation Canonical의 즉시 이원화를 피할 수 있다.
+```
+
+### Constraints
+
+```text
+Jira 전역 Custom Field, Workflow, Component를 이 Decision으로 생성하지 않는다.
+Confluence Page를 이 Decision으로 생성하거나 수정하지 않는다.
+AI Model을 Jira Assignee 또는 Architecture Approver로 사용하지 않는다.
+Merge 전 Primary Jira Issue를 완료하지 않는다.
+수행하지 않은 Verification을 PASS로 기록하지 않는다.
+완료된 과거 Issue 전체를 일괄 Backfill하지 않는다.
+Proposed·Draft Supporting Architecture Input으로 ADR-0015·DEC-064를 변경하지 않는다.
+```
+
+### Consequences
+
+- Workstream, Component, Primary Repository와 Area를 Jira 분류 모델로 제안한다.
+- `진행 중 + 검토 중` Portfolio WIP를 최대 3개로 제한한다.
+- Implementation, Independent Review, Delta Fix와 Merge Gate Template을 분리한다.
+- Jira Admin과 Confluence 적용은 후속 작업과 별도 승인을 요구한다.
+- 활성화되거나 다시 참조되는 Issue만 점진 보정한다.
+
+### Relationship
+
+```text
+clarifies:
+- DEC-010 Structured Handoff의 Task-scoped 권한
+- DEC-025 Git Action별 독립 승인
+- DEC-027 Dirty Worktree 보존
+- DEC-035·DEC-038 Canonical 문서 배치와 파일명
+- DEC-059 Platform Foundation canonical 위치
+- DEC-064 Foundation과 Service Repository의 문서 소유권
+
+supersedes: []
+superseded_by: []
+```
+
+### Affected Documents
+
+```text
+docs/governance/README.md
+docs/governance/portfolio-work-management-governance.md
+docs/governance/ai-session-governance.md
+templates/ai-session/README.md
+templates/ai-session/*.md
+source-inputs/README.md
+source-inputs/ranikun-platform-enterprise-work-management-governance.md
+source-inputs/ranikun-platform-ai-session-prompt-pack.md
+source-inputs/ADR-PROPOSED-공통-MSA-통신-메시징-프로토콜-선택.md
+source-inputs/Carelog-Finance-Dev-Harness-공통-MSA-플랫폼-설계-v2.md
+docs/decisions/decision-log.md
+```
+
+### Open Questions
+
+- Jira 완료 Status의 실제 Done Category
+- Custom Field Type, Context, Option ID와 Component 관리자 적용
+- Phase 1 Epic의 실제 Scope와 Dependency
+- Confluence Page Properties Schema
+- Platform 문서 Repository 분리 Trigger 충족 여부
+
+### References
+
+```text
+RPL-23
+DEC-010
+DEC-025
+DEC-027
+DEC-035
+DEC-038
+DEC-059
+DEC-064
 ```
 
 ---

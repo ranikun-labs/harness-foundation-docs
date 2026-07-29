@@ -3,7 +3,7 @@ title: Source Inputs Index
 status: draft
 implementation_status: not_verifiable
 owner: documentation
-last_reviewed: 2026-07-15
+last_reviewed: 2026-07-29
 supersedes: []
 superseded_by: []
 source_inputs:
@@ -1279,3 +1279,181 @@ Release Status
 20. Runtime Evidence 하나만으로 Product Support를 확정하지 않는다.
 21. Normative Decision과 Current-state Evidence의 충돌 규칙을 분리한다.
 22. Secret 원문 저장 금지는 Immutable Original 요구보다 우선한다.
+
+---
+
+# Part XV. Registered Governance Inputs
+
+## 55. SRC-001 — Enterprise Work Management Governance
+
+```yaml
+source_id: SRC-001
+title: Ranikun Platform Enterprise Work Management Governance
+source_type: research_source
+source_role: primary_governance_input
+canonical: false
+source_status: used
+verification_state: not_verifiable
+origin: user_upload
+created_at: not_verifiable
+collected_at: "2026-07-29"
+owner: governance
+scope: portfolio-work-management-governance-v1.1
+content_location: source-inputs/ranikun-platform-enterprise-work-management-governance.md
+source_revision: normalized-markdown-copy-of-user-provided-file
+original_sha256: f3d4e3b9d3043fa72a8950ded6a3b2e291de99af3bade7bd9bc3ffd07492cc8b
+used_by:
+  - docs/governance/portfolio-work-management-governance.md
+  - docs/governance/ai-session-governance.md
+  - docs/decisions/decision-log.md
+sensitivity: internal_governance
+screened_at: "2026-07-29"
+screened_by: codex
+reviewed_at: "2026-07-29"
+reviewed_by: codex
+use_approved_at: "2026-07-29"
+use_approved_by: 박성환
+approved_use_scope: governance-documentation-input
+supersedes: []
+superseded_by: []
+```
+
+원문은 역사적 설계 입력으로 보존한다. 도구 간 전역 우선순위,
+`One Session, One Jira Issue`, 새 Platform Repository의 즉시 생성과
+현재 Runtime에 관한 주장은 v1.1 Canonical 정책으로 직접 채택하지 않았다.
+
+## 56. SRC-002 — AI Session Prompt Pack
+
+```yaml
+source_id: SRC-002
+title: Ranikun Platform AI Session Prompt Pack
+source_type: session_artifact
+source_role: primary_governance_input
+canonical: false
+source_status: used
+verification_state: not_verifiable
+origin: user_upload
+created_at: not_verifiable
+collected_at: "2026-07-29"
+owner: governance
+scope: ai-session-governance-v1.1
+content_location: source-inputs/ranikun-platform-ai-session-prompt-pack.md
+source_revision: normalized-markdown-copy-of-user-provided-file
+original_sha256: 98e6bd75fe6882c78e77ad4d3b71ea52d85f850abaa7362d08c75ee4a4ba8fc9
+used_by:
+  - docs/governance/ai-session-governance.md
+  - templates/ai-session/README.md
+  - templates/ai-session/
+  - docs/decisions/decision-log.md
+sensitivity: internal_governance
+screened_at: "2026-07-29"
+screened_by: codex
+reviewed_at: "2026-07-29"
+reviewed_by: codex
+use_approved_at: "2026-07-29"
+use_approved_by: 박성환
+approved_use_scope: governance-documentation-and-template-input
+supersedes: []
+superseded_by: []
+```
+
+원문의 긴 Runtime Prompt는 그대로 Canonical Template으로 사용하지 않는다.
+공통 권한은 AI Session Governance가 소유하고 작업 유형별 Template은
+Role-specific Delta만 가진다. Model 이름은 권고값이며 권한 모델이 아니다.
+
+두 Source의 원문 보존:
+
+```text
+Source Input
+≠ Canonical Governance
+≠ Accepted Decision
+≠ Current Runtime Fact
+```
+
+## 57. SRC-003 — Proposed 공통 MSA 통신 ADR
+
+```yaml
+source_id: SRC-003
+title: Proposed 공통 MSA 통신·메시징·프로토콜 선택
+source_type: architecture_proposal
+source_role: supporting_architecture_input
+canonical: false
+source_status: used
+verification_state: not_verifiable
+origin: user_upload
+created_at: "2026-07-29"
+collected_at: "2026-07-29"
+owner: architecture
+scope: governance-architecture-linkage
+content_location: source-inputs/ADR-PROPOSED-공통-MSA-통신-메시징-프로토콜-선택.md
+source_revision: normalized-markdown-copy-of-user-provided-file
+original_sha256: 777e12a929871b47e202bc64a8034a7dc352c84f9dcfde8ef1c0b61721395103
+used_by:
+  - docs/governance/portfolio-work-management-governance.md
+sensitivity: internal_architecture
+screened_at: "2026-07-29"
+screened_by: codex
+reviewed_at: "2026-07-29"
+reviewed_by: codex
+use_approved_at: "2026-07-29"
+use_approved_by: 박성환
+approved_use_scope: governance-examples-and-architecture-linkage
+superseded_for_decision_by:
+  - ADR-0015
+  - DEC-064
+supersedes: []
+superseded_by: []
+```
+
+이 Source는 `Proposed` 상태다. 통신 정책을 다시 결정하는 데 사용하지 않고
+Logical Boundary, Target과 Deferred 상태를 Governance Metadata에 연결하는
+보조 입력으로만 사용한다.
+
+## 58. SRC-004 — 공통 MSA 플랫폼 상세 설계 v2
+
+```yaml
+source_id: SRC-004
+title: Carelog·Finance Harness·Dev Harness 공통 MSA 플랫폼 설계 v2
+source_type: architecture_design
+source_role: supporting_architecture_input
+canonical: false
+source_status: used
+verification_state: not_verifiable
+origin: user_upload
+created_at: "2026-07-29"
+collected_at: "2026-07-29"
+owner: architecture
+scope: governance-architecture-linkage
+content_location: source-inputs/Carelog-Finance-Dev-Harness-공통-MSA-플랫폼-설계-v2.md
+source_revision: normalized-markdown-copy-of-user-provided-file
+original_sha256: 39f51da07987de0758dd33b1c1d9764cf84e6711c24f5dfaa1a84a6c7e97a620
+used_by:
+  - docs/governance/portfolio-work-management-governance.md
+sensitivity: internal_architecture
+screened_at: "2026-07-29"
+screened_by: codex
+reviewed_at: "2026-07-29"
+reviewed_by: codex
+use_approved_at: "2026-07-29"
+use_approved_by: 박성환
+approved_use_scope: governance-examples-and-catalog-metadata-candidates
+superseded_for_decision_by:
+  - ADR-0015
+  - DEC-064
+supersedes: []
+superseded_by: []
+```
+
+이 Source는 `Draft for Foundation Review` 상태다. Current Repository Fact,
+Approved Target, Runtime 상태와 Deferred Technology를 혼합한 표현은
+Canonical Fact로 사용하지 않는다. Product Client Registry와 후속
+`system-catalog.yaml`의 논리 Metadata 후보만 보조한다.
+
+Supporting Architecture Input의 공통 우선순위:
+
+```text
+ADR-0015 / DEC-064
+> 현재 Foundation Canonical
+> Primary Governance Inputs
+> SRC-003 / SRC-004
+```
