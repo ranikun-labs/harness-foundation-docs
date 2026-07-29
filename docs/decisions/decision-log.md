@@ -3274,7 +3274,7 @@ superseded_by: []
 
 ## DEC-064 — 공통 플랫폼 통신·메시징·확장 기준을 정의한다
 
-**Status:** open
+**Status:** accepted_with_constraints
 **Owner:** architecture
 **Decision type:** architecture
 **Decision scope:** backend-service-foundation / communication / messaging / scaling
@@ -3282,9 +3282,9 @@ superseded_by: []
 **Implementation status:** not_started
 **Runtime support status:** not_supported
 **Product release status:** not_released
-**Reviewed at:** null
+**Reviewed at:** 2026-07-29
 
-### Decision Candidate
+### Decision
 
 ```text
 External API                = HTTP/JSON

@@ -23,10 +23,9 @@ related_decisions:
 
 이 디렉터리는 Carelog, Finance Harness Backend, Shared Identity 등 실제 MSA Backend Service가 공통으로 따라야 하는 서비스 경계, 데이터베이스 소유권, 통신 방식, 분산 정합성 원칙을 관리한다.
 
-이 디렉터리의 기술 규칙은 `ADR-0015` / `DEC-064`에서 공통 통신·메시징·확장
-Decision 후보로 검토한다. 현재 ADR과 Decision은 open이며, 용어·Repository 지도
-등록 자체만 `DEC-059`로 accepted다. 어떤 상태도 실제 구현·배포가 존재함을
-의미하지 않는다.
+이 디렉터리의 공통 통신·메시징·확장 선택은 `ADR-0015` / `DEC-064`에서
+`accepted_with_constraints`로 승인됐다. 이 Decision 상태는 실제 구현·배포 또는
+Runtime 지원이 존재함을 의미하지 않는다.
 
 ```text
 docs/architecture/backend-service-foundation/
@@ -83,8 +82,8 @@ docs/architecture/backend-service-foundation/
 
 공통 통신·메시징·확장 선택의 Decision Record는
 [`ADR-0015`](../../adr/ADR-0015-platform-communication-messaging-scaling.md)다.
-각 문서의 내용은 아직 Draft이며 `ADR-0015` / `DEC-064`가 accepted로 전환되기
-전까지 canonical candidate로만 취급한다.
+`ADR-0015` / `DEC-064`는 제약과 함께 승인됐으며, 각 세부 문서의 Draft 상태와
+구현·Runtime 지원·제품 출시 상태는 별도로 유지한다.
 
 ---
 
@@ -97,10 +96,9 @@ Runtime supported: No
 Product released: No
 ```
 
-`DEC-059`은 명칭·Repository 지도 등록만 accepted 상태이며, 위 5개 문서의
-기술적 내용 자체를 accepted로 전환하지 않는다. Proposed ADR의 존재나 Merge는
-Runtime 지원 Evidence가 아니다. Decision 승인과 구현 Evidence 없이 각 상태를
-올리지 않는다.
+`DEC-059`는 명칭·Repository 지도 등록을, `DEC-064`는 공통 통신·메시징·확장
+선택을 승인한다. 두 Decision의 승인이나 Merge는 위 5개 문서의 구현 완료 또는
+Runtime 지원 Evidence가 아니다. 구현 Evidence 없이 각 상태를 올리지 않는다.
 
 ---
 

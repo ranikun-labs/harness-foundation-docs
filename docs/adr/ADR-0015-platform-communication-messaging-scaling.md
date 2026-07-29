@@ -1,18 +1,20 @@
 ---
 title: "공통 플랫폼 통신·메시징·확장 기준을 정의한다"
 adr_id: "ADR-0015"
-document_status: draft
-decision_status: open
+document_status: accepted
+decision_status: accepted_with_constraints
 decision_scope: architecture
 owner: architecture
 authors:
   - codex
-reviewers: []
-approvers: []
+reviewers:
+  - 박성환
+approvers:
+  - 박성환
 created_at: "2026-07-29"
-reviewed_at: null
-approved_at: null
-effective_from: null
+reviewed_at: "2026-07-29"
+approved_at: "2026-07-29"
+effective_from: "2026-07-29"
 implementation_status: not_started
 runtime_support_status: not_supported
 product_release_status: not_released
@@ -47,7 +49,7 @@ replacement_decision_refs: []
 
 # ADR-0015: 공통 플랫폼 통신·메시징·확장 기준을 정의한다
 
-> 이 ADR은 Backend Service Foundation의 공통 선택을 기록하는 Proposed
+> 이 ADR은 Backend Service Foundation의 공통 선택을 제약과 함께 승인한
 > Architecture Decision이다.
 >
 > ```text
@@ -74,15 +76,16 @@ Timeout 값, Broker 설정, Migration과 운영 Runbook은 각 Service Repositor
 ## 2. Status
 
 ```text
-document_status: draft
-decision_status: open
+document_status: accepted
+decision_status: accepted_with_constraints
 implementation_status: not_started
 runtime_support_status: not_supported
 product_release_status: not_released
 ```
 
-이 ADR은 Draft PR 단계에서 승인된 결정이 아니다. Merge Review에서 Architecture
-승인이 확인되면 `document_status`와 `decision_status`를 별도로 전환한다.
+Architecture Owner의 인간 승인으로 Decision은 제약과 함께 채택됐다. 이 승인은
+구현 완료, Infrastructure Provisioning, Runtime 지원 또는 Product 출시를
+의미하지 않는다.
 
 ## 3. Decision Scope
 
