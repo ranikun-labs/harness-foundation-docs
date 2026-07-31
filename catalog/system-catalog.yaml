@@ -562,7 +562,529 @@ systems:
       - src.decision-dec-065
       - src.system-landscape
 
-communication_relations: []
+communication_relations:
+  - id: relation.product-client-to-gateway-product-api
+    category: external
+    caller:
+      kind: ref
+      ref: actor.product-client
+      role: product_client
+    callee:
+      kind: ref
+      ref: system.spring-cloud-gateway
+      role: external_gateway
+    via: []
+    purpose: 외부 제품 API 진입
+    protocol: http_json
+    lifecycle:
+      state: current
+      qualifiers:
+        - baseline
+    interaction: sync
+    data_ownership:
+      owner_refs: []
+      owner_scope: product
+      note: 제품 도메인 데이터
+    failure_policy: 명시적 4xx/5xx와 timeout 계약
+    adoption_trigger: 기본값
+    constraints: []
+    source_refs:
+      - src.system-landscape
+      - src.adr-0015
+
+  - id: relation.gateway-to-carelog-routing
+    category: external
+    caller:
+      kind: ref
+      ref: system.spring-cloud-gateway
+      role: external_gateway
+    callee:
+      kind: ref
+      ref: system.carelog
+      role: product_backend
+    via: []
+    purpose: Routing과 Edge 인증 Context 전달
+    protocol: http_json
+    lifecycle:
+      state: current
+      qualifiers:
+        - implementation
+    interaction: sync
+    data_ownership:
+      owner_refs:
+        - system.carelog
+      owner_scope: null
+      note: Carelog 제품 데이터
+    failure_policy: 인증 경계는 fail closed이며 제품 오류 계약을 보존
+    adoption_trigger: 현재 구현
+    constraints: []
+    source_refs:
+      - src.system-landscape
+      - src.service-communication-policy
+      - src.adr-0015
+
+  - id: relation.finance-frontend-to-finance-backend
+    category: external
+    caller:
+      kind: ref
+      ref: system.finance-harness
+      role: frontend
+    callee:
+      kind: ref
+      ref: system.finance-harness
+      role: backend
+    via: []
+    purpose: Finance 제품 API 호출
+    protocol: http_json
+    lifecycle:
+      state: target
+      qualifiers:
+        - backend_not_implemented
+    interaction: sync
+    data_ownership:
+      owner_refs:
+        - system.finance-harness
+      owner_scope: null
+      note: Finance 제품 데이터
+    failure_policy: 사용자 복구 가능 오류와 timeout 계약
+    adoption_trigger: Finance Backend 구현
+    constraints: []
+    source_refs:
+      - src.system-landscape
+
+  - id: relation.product-client-to-gateway-identity-entry
+    category: external
+    caller:
+      kind: ref
+      ref: actor.product-client
+      role: product_client
+    callee:
+      kind: ref
+      ref: system.spring-cloud-gateway
+      role: external_gateway
+    via: []
+    purpose: Login OAuth Refresh 외부 진입
+    protocol: http_json
+    lifecycle:
+      state: target
+      qualifiers: []
+    interaction: sync
+    data_ownership:
+      owner_refs:
+        - system.shared-identity
+      owner_scope: null
+      note: Identity와 OAuth 상태
+    failure_policy: fail closed와 timeout
+    adoption_trigger: 독립 Identity Endpoint
+    constraints:
+      - 제품별 Authorization은 제품이 소유한다
+    source_refs:
+      - src.system-landscape
+      - src.oauth-state-product-client-binding-contract
+      - src.adr-0015
+
+  - id: relation.gateway-to-shared-identity-endpoint
+    category: external
+    caller:
+      kind: ref
+      ref: system.spring-cloud-gateway
+      role: external_gateway
+    callee:
+      kind: ref
+      ref: system.shared-identity
+      role: public_identity_endpoint
+    via: []
+    purpose: 공개 Identity Endpoint Routing
+    protocol: http_json
+    lifecycle:
+      state: target
+      qualifiers:
+        - independent_runtime_required
+    interaction: sync
+    data_ownership:
+      owner_refs:
+        - system.shared-identity
+      owner_scope: null
+      note: Identity 데이터
+    failure_policy: 위조 Header 제거와 인증 오류 보존
+    adoption_trigger: 독립 Shared Identity Runtime
+    constraints:
+      - Shared Identity는 제품별 Authorization을 소유하지 않는다
+    source_refs:
+      - src.system-landscape
+      - src.oauth-state-product-client-binding-contract
+      - src.adr-0015
+
+  - id: relation.product-client-to-gateway-ai-entry
+    category: external
+    caller:
+      kind: ref
+      ref: actor.product-client
+      role: product_client
+    callee:
+      kind: ref
+      ref: system.spring-cloud-gateway
+      role: external_gateway
+    via: []
+    purpose: 제품 AI 요청 외부 진입
+    protocol: http_json
+    lifecycle:
+      state: target
+      qualifiers: []
+    interaction: sync
+    data_ownership:
+      owner_refs: []
+      owner_scope: product
+      note: 제품 입력과 제품 결과
+    failure_policy: 제품 오류 계약과 timeout
+    adoption_trigger: 제품 AI 기능
+    constraints:
+      - Product Client는 Shared AI를 직접 호출하지 않는다
+    source_refs:
+      - src.system-landscape
+      - src.adr-0015
+
+  - id: relation.gateway-to-product-backend-ai-request
+    category: external
+    caller:
+      kind: ref
+      ref: system.spring-cloud-gateway
+      role: external_gateway
+    callee:
+      kind: scope
+      scope: product_backend
+      role: backend
+    via: []
+    purpose: AI 요청과 인증 Context를 Product Backend에 전달
+    protocol: http_json
+    lifecycle:
+      state: target
+      qualifiers: []
+    interaction: sync
+    data_ownership:
+      owner_refs: []
+      owner_scope: product
+      note: 제품 입력과 Authorization Context
+    failure_policy: 인증 Context는 fail closed
+    adoption_trigger: 제품 AI 기능
+    constraints:
+      - Product Backend가 제품 Authorization을 소유한다
+    source_refs:
+      - src.system-landscape
+      - src.service-communication-policy
+      - src.adr-0015
+
+  - id: relation.product-backend-to-product-client-ai-stream
+    category: external
+    caller:
+      kind: scope
+      scope: product_backend
+      role: backend
+    callee:
+      kind: ref
+      ref: actor.product-client
+      role: product_client
+    via:
+      - kind: ref
+        ref: system.spring-cloud-gateway
+        role: external_gateway
+    purpose: 제품이 검증한 AI 결과 Streaming
+    protocol: sse
+    lifecycle:
+      state: target
+      qualifiers: []
+    interaction: sync_stream
+    data_ownership:
+      owner_refs: []
+      owner_scope: product
+      note: 제품이 검증한 결과
+    failure_policy: timeout cancellation reconnect 계약
+    adoption_trigger: 실제 Streaming 기능
+    constraints:
+      - 외부 Streaming은 Product Backend 경계를 통해 전달한다
+    source_refs:
+      - src.system-landscape
+      - src.adr-0015
+
+  - id: relation.product-backend-to-shared-identity-management
+    category: internal
+    caller:
+      kind: scope
+      scope: product_backend
+      role: backend
+    callee:
+      kind: ref
+      ref: system.shared-identity
+      role: management_endpoint
+    via: []
+    purpose: 사용자 계정 연결 Product Client 운영 Admin 관리 호출
+    protocol: direct_http_json
+    lifecycle:
+      state: target
+      qualifiers:
+        - limited_management_only
+    interaction: sync
+    data_ownership:
+      owner_refs:
+        - system.shared-identity
+      owner_scope: null
+      note: Identity와 Product Client 데이터
+    failure_policy: timeout bounded retry fail closed
+    adoption_trigger: 독립 Runtime과 실제 관리 Use Case
+    constraints:
+      - 일반 제품 요청마다 Shared Identity를 동기 호출하지 않는다
+      - 가능한 경우 Gateway 또는 Product Backend가 Token을 로컬 검증한다
+      - 제품별 Authorization은 제품이 소유한다
+    source_refs:
+      - src.system-landscape
+      - src.oauth-state-product-client-binding-contract
+      - src.service-communication-policy
+      - src.adr-0015
+
+  - id: relation.product-backend-to-shared-ai-execution
+    category: internal
+    caller:
+      kind: scope
+      scope: product_backend
+      role: backend
+    callee:
+      kind: ref
+      ref: system.shared-ai
+      role: provider_neutral_execution
+    via: []
+    purpose: 제품 정책 결정 후 Provider-neutral 실행 요청
+    protocol: direct_http_json
+    lifecycle:
+      state: target
+      qualifiers: []
+    interaction: sync
+    data_ownership:
+      owner_refs: []
+      owner_scope: split_product_and_ai_execution_metadata
+      note: 제품 입력과 결과는 제품 소유이며 Shared AI는 실행 Metadata만 소유 후보
+    failure_policy: timeout cancellation bounded retry
+    adoption_trigger: 실제 Shared AI 소비 제품
+    constraints:
+      - Product Client에서 Shared AI로 직접 호출하지 않는다
+      - Shared AI는 Public Direct Route를 갖지 않는다
+      - 내부 호출은 External Gateway를 우회한다
+      - Product Backend가 Authorization Prompt Domain Policy Tool Output Policy를 소유한다
+    source_refs:
+      - src.system-landscape
+      - src.service-communication-policy
+      - src.adr-0015
+
+  - id: relation.shared-ai-to-product-backend-stream
+    category: internal
+    caller:
+      kind: ref
+      ref: system.shared-ai
+      role: provider_neutral_execution
+    callee:
+      kind: scope
+      scope: product_backend
+      role: backend
+    via: []
+    purpose: Provider-neutral 실행 결과와 내부 Stream 반환
+    protocol: http_json_internal_stream
+    lifecycle:
+      state: target
+      qualifiers: []
+    interaction: sync_stream
+    data_ownership:
+      owner_refs: []
+      owner_scope: split_product_and_ai_execution_metadata
+      note: 제품 결과는 제품 소유이며 AI 실행 Metadata만 Shared AI 소유 후보
+    failure_policy: Provider 오류 정규화와 cancellation
+    adoption_trigger: 실제 Streaming 기능
+    constraints:
+      - Product Backend가 결과 검증과 외부 응답 계약을 소유한다
+    source_refs:
+      - src.system-landscape
+      - src.service-communication-policy
+      - src.adr-0015
+
+  - id: relation.dev-harness-local-to-dev-harness-cloud
+    category: internal
+    caller:
+      kind: ref
+      ref: system.dev-harness-local
+      role: local_runtime
+    callee:
+      kind: ref
+      ref: system.dev-harness-cloud
+      role: cloud_control_plane
+    via: []
+    purpose: Queue Memory Coordination
+    protocol: http_json
+    lifecycle:
+      state: future
+      qualifiers:
+        - cloud_not_implemented
+    interaction: sync_primary_async_undecided
+    data_ownership:
+      owner_refs:
+        - system.dev-harness-local
+        - system.dev-harness-cloud
+      owner_scope: null
+      note: Local과 Cloud 경계별 데이터 소유
+    failure_policy: offline-first degradation
+    adoption_trigger: Cloud Control Plane 수요
+    constraints:
+      - Dev Harness Local은 Cloud 없이도 기본 실행 가능해야 한다
+    source_refs:
+      - src.system-landscape
+
+  - id: relation.product-backend-to-shared-commerce
+    category: internal
+    caller:
+      kind: scope
+      scope: product_backend
+      role: backend
+    callee:
+      kind: ref
+      ref: system.shared-commerce
+      role: commerce_service
+    via: []
+    purpose: Entitlement Order Payment 조회와 명령
+    protocol: http_json
+    lifecycle:
+      state: future
+      qualifiers:
+        - shared_commerce_not_implemented
+    interaction: sync_event_undecided
+    data_ownership:
+      owner_refs:
+        - system.shared-commerce
+      owner_scope: product
+      note: 공통 Commerce 데이터는 Shared Commerce 후보이며 제품 정책은 제품 소유
+    failure_policy: Idempotency와 실패 정책은 계약 시 결정
+    adoption_trigger: 복수 제품의 공통 Commerce 수요
+    constraints: []
+    source_refs:
+      - src.system-landscape
+      - src.adr-0015
+
+  - id: relation.product-or-identity-to-audit-consumer
+    category: deferred
+    caller:
+      kind: scope
+      scope: product_or_identity
+      role: event_producer
+    callee:
+      kind: ref
+      ref: system.audit-consumer
+      role: audit_event_consumer
+    via: []
+    purpose: Audit와 Security Event 전달
+    protocol: nats_jetstream
+    lifecycle:
+      state: deferred
+      qualifiers:
+        - target
+    interaction: async
+    data_ownership:
+      owner_refs:
+        - system.audit-consumer
+      owner_scope: producer_business_data
+      note: Producer는 Business Data를 소유하고 Audit Consumer는 Projection만 소유
+    failure_policy: Durable Consumer Retry DLQ 정책은 도입 시 결정
+    adoption_trigger: 검증된 Audit Use Case
+    constraints:
+      - Audit Consumer는 제품 Business Transaction Primary Store가 아니다
+    source_refs:
+      - src.system-landscape
+      - src.adr-0015
+
+  - id: relation.high-volume-service-to-grpc-peer
+    category: deferred
+    caller:
+      kind: scope
+      scope: high_volume_service
+      role: caller
+    callee:
+      kind: scope
+      scope: grpc_peer
+      role: peer
+    via: []
+    purpose: 고빈도 저지연 내부 호출
+    protocol: grpc
+    lifecycle:
+      state: deferred
+      qualifiers: []
+    interaction: sync
+    data_ownership:
+      owner_refs: []
+      owner_scope: contract_specific
+      note: 호출 계약별 데이터 소유
+    failure_policy: Deadline과 Retry 계약 필요
+    adoption_trigger: 측정된 Latency와 Throughput 필요
+    constraints:
+      - HTTP JSON으로 충분한 동안 도입하지 않는다
+    source_refs:
+      - src.system-landscape
+      - src.adr-0015
+
+  - id: relation.event-producer-to-kafka-consumer
+    category: deferred
+    caller:
+      kind: scope
+      scope: event_producer
+      role: producer
+    callee:
+      kind: scope
+      scope: kafka_consumer
+      role: consumer
+    via: []
+    purpose: 대규모 Replay와 Stream Ecosystem
+    protocol: kafka
+    lifecycle:
+      state: deferred
+      qualifiers: []
+    interaction: async
+    data_ownership:
+      owner_refs: []
+      owner_scope: contract_specific
+      note: Event 계약별 데이터 소유
+    failure_policy: Kafka 운영 모델과 Consumer 정책 선행
+    adoption_trigger: 대규모 Replay CDC 처리량 Ecosystem 요구
+    constraints:
+      - NATS JetStream으로 충족하기 어려운 요구가 입증되기 전에는 도입하지 않는다
+    source_refs:
+      - src.system-landscape
+      - src.adr-0015
+
+  - id: relation.product-to-product-direct-call
+    category: negative
+    caller:
+      kind: scope
+      scope: product_system
+      role: source_product
+    callee:
+      kind: scope
+      scope: product_system
+      role: target_product
+    via: []
+    purpose: 제품 간 직접 기능 호출 금지
+    protocol: none
+    lifecycle:
+      state: absent
+      qualifiers:
+        - forbidden
+    interaction: not_applicable
+    data_ownership:
+      owner_refs: []
+      owner_scope: each_product
+      note: 각 제품이 자체 데이터와 정책을 소유
+    failure_policy: 제품 간 DB 공유와 암묵적 직접 호출을 허용하지 않음
+    adoption_trigger: 명시적 계약과 Architecture Decision 없이는 도입하지 않음
+    constraints:
+      - 제품 간 DB 공유 금지
+      - 제품 간 직접 호출을 현재 또는 Planned 관계로 해석하지 않는다
+    source_refs:
+      - src.system-landscape
+      - src.database-ownership-policy
+      - src.adr-0015
 
 data_groups: []
 

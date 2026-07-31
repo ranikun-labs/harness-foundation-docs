@@ -189,8 +189,32 @@ System Stable ID는 현재 Implementation Host가 아니라 논리 역할을 기
 System Dependency는 System 항목의 문자열이나 가짜 Reference가 아니라 Relation
 Registry에서 표현한다. Data Owner Reference는 Data Group Slice 이후에 연결한다.
 
+## Communication Relations
+
+검수된 Communication Relation은 정확히 17개다.
+
+- External: `8`
+- Internal: `5`
+- Deferred: `3`
+- Negative: `1`
+
+실제 Registry Entity는 `kind: ref`와 Stable ID를 사용한다. Generic 역할은
+`kind: scope`를 사용하며 Scope Participant는 Inventory에 추가하지 않는다. 같은
+System 내부의 Frontend와 Backend는 같은 `ref`를 사용하고 `role`로 구분한다.
+`via`는 중간 경유 Entity일 뿐 별도 Relation Count를 만들지 않는다.
+
+`negative`는 Planned 또는 Deferred Relation이 아니라 현재 금지되었거나 부재한
+계약을 표현한다. Adoption Trigger가 있어도 자동 도입 후보라는 뜻이 아니다.
+
+Identity와 AI 불변조건은 관련 Relation의 `constraints`에 포함한다. 이를 별도
+Relation으로 만들거나 Count를 늘리지 않는다.
+
+이번 Slice에서는 Data Group이 아직 없으므로 `data.*`를 참조하지 않는다. Data
+Ownership은 임시 구조로 의미를 보존하고, Data Slice에서 필요하면 실제 `data.*`
+Reference를 연결하되 Relation 수와 의미는 바꾸지 않는다.
+
 ## Current Slice
 
-현재 Slice는 Source Registry, External Actor Registry와 System Inventory 10개를
-등록한다. Communication Relation, Data Group, Architecture Gate와 Taxonomy의
-실제 항목은 후속 Slice에서 검수된 근거를 바탕으로 채운다.
+현재 Slice는 Source Registry, External Actor Registry, System Inventory 10개와
+Communication Relation 17개를 등록한다. Data Group, Architecture Gate와
+Taxonomy의 실제 항목은 후속 Slice에서 검수된 근거를 바탕으로 채운다.
