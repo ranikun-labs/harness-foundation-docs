@@ -1,0 +1,44 @@
+schema_version: 1
+
+metadata:
+  title: Ranikun Labs System Catalog
+  artifact_role: machine_readable_architecture_projection
+  canonical: false
+  canonical_priority:
+    - accepted_git_architecture_and_contracts
+    - merged_repository_state
+    - jira_work_state
+    - reviewed_system_landscape_projection
+    - system_catalog_projection
+  provenance:
+    landscape_jira: RPL-31
+    implementation_jira: RPL-33
+    confluence_page_id: "2129924"
+    reviewed_version: 3
+    publication_version: 4
+    review_state: reviewed_approved_for_system_catalog_projection
+  expected_counts:
+    systems: 10
+    communication_relations: 17
+    data_groups: 19
+    architecture_gates: 12
+
+sources: []
+
+actors: []
+
+systems: []
+
+communication_relations: []
+
+data_groups: []
+
+architecture_gates: []
+
+taxonomy_candidate:
+  status: candidate
+  workstreams: []
+  primary_repositories: []
+  areas: []
+  components: []
+  labels: []
