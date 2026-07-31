@@ -23,9 +23,208 @@ metadata:
     data_groups: 19
     architecture_gates: 12
 
-sources: []
+sources:
+  - id: src.portfolio-work-management-governance
+    kind: repository_document
+    title: Ranikun Labs Portfolio Work Management Governance v1.1
+    authority: canonical
+    location:
+      repository: aixion1506/harness-foundation-docs
+      ref: main
+      path: docs/governance/portfolio-work-management-governance.md
+      anchor: null
+    status:
+      document_status: accepted
+      decision_status: accepted_with_constraints
+    purpose: Catalog 경로·역할·운영 Phase의 근거를 제공한다.
 
-actors: []
+  - id: src.adr-0015
+    kind: repository_document
+    title: 공통 플랫폼 통신·메시징·확장 기준을 정의한다
+    authority: canonical
+    location:
+      repository: aixion1506/harness-foundation-docs
+      ref: main
+      path: docs/adr/ADR-0015-platform-communication-messaging-scaling.md
+      anchor: null
+    status:
+      document_status: accepted
+      decision_status: accepted_with_constraints
+      release_status: not_released
+    purpose: 공통 통신, Messaging, Scaling 정책과 도입 Trigger의 근거를 제공한다.
+
+  - id: src.decision-dec-064
+    kind: repository_section
+    title: DEC-064 — 공통 플랫폼 통신·메시징·확장 기준을 정의한다
+    authority: canonical
+    location:
+      repository: aixion1506/harness-foundation-docs
+      ref: main
+      path: docs/decisions/decision-log.md
+      anchor: DEC-064
+    status:
+      decision_status: accepted_with_constraints
+      release_status: not_released
+    purpose: Foundation 통신·Messaging·Scaling Decision의 승인 상태와 제약을 제공한다.
+
+  - id: src.decision-dec-065
+    kind: repository_section
+    title: DEC-065 — Jira·Git·Confluence·AI Session 통합 운영 Governance를 정의한다
+    authority: canonical
+    location:
+      repository: aixion1506/harness-foundation-docs
+      ref: main
+      path: docs/decisions/decision-log.md
+      anchor: DEC-065
+    status:
+      decision_status: accepted_with_constraints
+    purpose: Concern별 Canonical Owner와 Portfolio Projection 운영 기준을 제공한다.
+
+  - id: src.service-communication-policy
+    kind: repository_document
+    title: Service Communication Policy
+    authority: supporting
+    location:
+      repository: aixion1506/harness-foundation-docs
+      ref: main
+      path: docs/architecture/backend-service-foundation/service-communication-policy.md
+      anchor: null
+    status:
+      document_status: draft
+      release_status: not_released
+    purpose: Service 간 동기 API, 비동기 Event, 로컬 Token 검증 정책을 보조한다.
+
+  - id: src.database-ownership-policy
+    kind: repository_document
+    title: Database Ownership and Reference Policy
+    authority: supporting
+    location:
+      repository: aixion1506/harness-foundation-docs
+      ref: main
+      path: docs/architecture/backend-service-foundation/database-ownership-and-reference-policy.md
+      anchor: null
+    status:
+      document_status: draft
+      release_status: not_released
+    purpose: 제품별 DB 소유권과 Cross-service Reference 정책을 보조한다.
+
+  - id: src.repository-service-boundaries
+    kind: repository_document
+    title: Repository and Service Boundaries
+    authority: supporting
+    location:
+      repository: aixion1506/harness-foundation-docs
+      ref: main
+      path: docs/architecture/repository-service-boundaries.md
+      anchor: null
+    status:
+      document_status: draft
+    purpose: 논리 Service, Repository, 배포 단위와 데이터 소유권의 경계를 보조한다.
+
+  - id: src.service-boundaries
+    kind: repository_document
+    title: Backend Service Foundation — Service Boundaries
+    authority: supporting
+    location:
+      repository: aixion1506/harness-foundation-docs
+      ref: main
+      path: docs/architecture/backend-service-foundation/service-boundaries.md
+      anchor: null
+    status:
+      document_status: draft
+      release_status: not_released
+    purpose: Backend Service Foundation의 데이터·행동 소유권과 Service 경계를 보조한다.
+
+  - id: src.oauth-state-product-client-binding-contract
+    kind: external_repository_document
+    title: OAuth State Product Client Binding 구현 계약
+    authority: canonical_for_carelog_oauth_binding
+    location:
+      repository: care-log/carelog-be
+      ref: dev
+      path: docs/architecture/oauth-state-product-client-binding-contract.md
+      anchor: null
+    status:
+      implementation_status: not_started
+    purpose: Carelog OAuth state와 Product Client binding의 Service-specific 계약을 제공한다.
+
+  - id: src.system-landscape
+    kind: confluence_page
+    title: Ranikun Labs System Landscape
+    authority: reviewed_projection
+    location:
+      page_id: "2129924"
+      reviewed_version: 3
+      publication_version: 4
+      url: https://ranikunlabs.atlassian.net/wiki/spaces/RLAB/pages/2129924
+    status:
+      review_state: reviewed_approved_for_system_catalog_projection
+    purpose: 검수된 System Landscape Projection을 제공한다.
+
+  - id: src.jira-rpl-31
+    kind: jira_issue
+    title: RPL-31
+    authority: work_state
+    location:
+      key: RPL-31
+      url: https://ranikunlabs.atlassian.net/browse/RPL-31
+    status:
+      work_state: done
+    purpose: System Landscape 작업 상태의 근거를 제공한다.
+
+  - id: src.jira-rpl-33
+    kind: jira_issue
+    title: RPL-33
+    authority: work_state
+    location:
+      key: RPL-33
+      url: https://ranikunlabs.atlassian.net/browse/RPL-33
+    status:
+      work_state: in_progress
+    purpose: System Catalog 구현 작업 상태의 근거를 제공한다.
+
+  - id: src.dev-harness-v1-release
+    kind: github_release
+    title: oh-my-ai v1.0.0
+    authority: release_evidence
+    location:
+      repository: aixion1506/oh-my-ai
+      tag: v1.0.0
+      url: https://github.com/aixion1506/oh-my-ai/releases/tag/v1.0.0
+    status:
+      release_status: published
+      draft: false
+      prerelease: false
+      published_at: "2026-07-27"
+    purpose: Dev Harness V1 공개 Release evidence를 제공한다.
+
+actors:
+  - id: actor.product-client
+    display_name: Product Client
+    type: external_client
+    inventory_counted: false
+    description: 웹·모바일 등 제품 API와 공개 Identity Endpoint를 호출하는 외부 Client
+    sources:
+      - src.system-landscape
+
+  - id: actor.external-oauth-provider
+    display_name: External OAuth Provider
+    type: external_provider
+    inventory_counted: false
+    description: Shared Identity의 Provider Integration Core가 연동하는 외부 OAuth Provider 역할
+    sources:
+      - src.system-landscape
+      - src.oauth-state-product-client-binding-contract
+
+  - id: actor.cloudflare-tunnel
+    display_name: Cloudflare Tunnel
+    type: external_edge_infrastructure
+    inventory_counted: false
+    description: Current System Map에서 외부 요청이 Spring Cloud Gateway에 도달할 때 거치는 Edge 경유 구성요소
+    verification:
+      deployment: verification_required
+    sources:
+      - src.system-landscape
 
 systems: []
 

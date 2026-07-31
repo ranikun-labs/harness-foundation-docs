@@ -130,8 +130,48 @@ Catalog는 다음 상태와 경계를 혼합하지 않는다.
 Validator Script와 CI는 repository-wide convention을 확정하는 후속 결정
 대상이다.
 
+## Source Registry
+
+`sources`는 Catalog가 참조하는 근거의 위치, authority와 상태 차원을
+machine-readable하게 연결한다. Source Registry는 근거의 내용을 복제하거나
+새 canonical contract를 만들지 않는다.
+
+Source authority는 다음 역할을 구분한다.
+
+- `canonical`: Foundation의 승인된 Git 문서와 Decision
+- `supporting`: 현재 Draft 또는 보조 Architecture 문서
+- `canonical_for_carelog_oauth_binding`: Carelog OAuth binding concern에 한정된
+  canonical contract
+- `reviewed_projection`: 검수된 Confluence System Landscape Projection
+- `work_state`: Jira의 작업 상태
+- `release_evidence`: 공개 GitHub Release evidence
+
+Source 상태는 하나의 합성 상태로 합치지 않는다. 문서·Decision·작업·검수·출시
+상태는 각각 적용 가능한 차원(`document_status`, `decision_status`,
+`work_state`, `review_state`, `release_status`)에 기록한다. 적용되지 않는
+차원은 생략하거나 `null`을 사용한다.
+
+후속 Slice에서 Source를 추가할 수 있지만, 기존 Stable ID를 다른 근거의 의미로
+재사용하지 않는다.
+
+## External Actors and Participant Mapping
+
+`actors`는 10개 Portfolio System 수량에 포함되지 않는 외부 참여자를 표현한다.
+외부 Client, 외부 Provider, Inventory 외부 Edge 구성요소가 대상이다.
+
+- External Gateway는 `system.spring-cloud-gateway`로 매핑한다.
+- Shared Identity Endpoint는 `system.shared-identity`의 공개 Endpoint 역할이다.
+- Finance Frontend는 `system.finance-harness`의 현재 Frontend 역할이다.
+- Product Backend는 해당 제품 System의 Backend 역할이며 별도 Actor가 아니다.
+- Product, Identity, Any high-volume service, Event producers 등의 집합 Caller는
+  Relation Slice에서 `participant_scope`로 표현한다.
+- 집합 Caller를 가짜 System 또는 Actor로 생성하지 않는다.
+
+Actor는 named external participant이고, generic participant scope는 Relation의
+집합 Caller/참여 범위를 나타낸다는 점에서 구분한다.
+
 ## Current Slice
 
-현재 Slice는 역할 설명과 YAML 골격만 정의한다. Source Registry, Actor,
-System, Communication Relation, Data Group, Architecture Gate와 Taxonomy의
-실제 항목은 후속 Slice에서 검수된 근거를 바탕으로 채운다.
+현재 Slice는 Source Registry와 External Actor Registry만 등록한다. System,
+Communication Relation, Data Group, Architecture Gate와 Taxonomy의 실제 항목은
+후속 Slice에서 검수된 근거를 바탕으로 채운다.
