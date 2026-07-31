@@ -1334,12 +1334,245 @@ data_groups:
     constraints: [Audit Projection은 Audit Consumer 소유 후보이다, Audit Consumer는 제품 Business Transaction Primary Store가 아니다, 제품은 원본 Business Data를 소유한다]
     source_refs: [src.system-landscape, src.database-ownership-policy]
 
-architecture_gates: []
+architecture_gates:
+  - id: gate.shared-identity-extraction
+    display_name: Shared Identity physical extraction
+    status: deferred
+    adoption_decision: not_decided
+    deferral_policy: accepted_with_constraints
+    current_state: Shared Identity는 Carelog 내부 논리 경계이며 독립 Repository와 Runtime은 없음
+    why_deferred: 복수 제품 소비와 독립 배포·Schema·장애 격리 필요성이 아직 충분히 입증되지 않음
+    required_evidence: [둘 이상의 실제 제품 소비, 독립 배포 필요성, 독립 Schema Ownership, 장애 격리 필요성, Identity 부하와 운영 책임의 독립성]
+    adoption_triggers: [복수 제품의 실제 인증 소비, 독립 Release Cadence, 독립 장애 격리, 별도 데이터 Migration과 Ownership 확정]
+    owner: { kind: ref, ref: system.shared-identity }
+    blocked_work: [독립 Repository 확정, Schema Migration Ownership, Token/JWKS Contract, 배포·관측·장애복구 기준]
+    related_jira: [RPL-24, RPL-27, RPL-28]
+    related_decisions: [DEC-064]
+    constraints: [제품별 Authorization은 제품 소유, 일반 제품 요청마다 Shared Identity를 동기 호출하지 않음, 가능한 경우 Gateway 또는 Product Backend가 Token을 로컬 검증]
+    source_refs: [src.system-landscape, src.oauth-state-product-client-binding-contract, src.adr-0015, src.decision-dec-064]
+
+  - id: gate.oauth-backend-callback-topology
+    display_name: OAuth Backend Callback topology
+    status: deferred
+    adoption_decision: not_decided
+    deferral_policy: accepted_with_constraints
+    current_state: Product Client가 code/state를 Exchange Endpoint에 전달하며 Provider Callback Backend topology는 미확정
+    why_deferred: Callback·Completion Redirect·Session Handoff 책임과 Web/Mobile 보안 경계가 함께 결정돼야 함
+    required_evidence: [Backend Callback Provider 제약, Callback 위조·Replay·운영 실패 대응, Web/Mobile 완료 흐름, 기존 Exchange 방식 한계]
+    adoption_triggers: [Backend Callback Contract 승인, Completion Redirect Contract 승인, Session Handoff Contract 승인]
+    owner: { kind: ref, ref: system.shared-identity }
+    blocked_work: [Provider Callback Endpoint, Completion Redirect, Session Exchange, Gateway 공개 Route]
+    related_jira: [RPL-24, RPL-27, RPL-28]
+    related_decisions: []
+    constraints: [OAuth State Product Client Binding 계약 보존, Provider Callback 성공과 제품 Session 완료를 혼합하지 않음, Callback만으로 사용자 Session을 직접 발급하지 않음]
+    source_refs: [src.system-landscape, src.oauth-state-product-client-binding-contract, src.adr-0015]
+
+  - id: gate.product-completion-redirect
+    display_name: Product Completion Redirect
+    status: deferred
+    adoption_decision: not_decided
+    deferral_policy: accepted_with_constraints
+    current_state: OAuth 이후 제품 Completion Redirect 정책 미확정이며 path-only returnTo 계약은 RPL-27 구현 대상
+    why_deferred: Backend Callback topology와 Session Handoff 방식이 미확정이고 제품별 Web/Mobile 완료 경로가 다름
+    required_evidence: [제품별 완료 Route, path-only returnTo 검증, Redirect Replay 방지, 허용 Origin과 Client Context 검증]
+    adoption_triggers: [Callback topology 결정, Web/Mobile Session Handoff 결정, 제품 Client별 완료 경로 계약 승인]
+    owner: { kind: scope, scope: identity_and_gateway_owners }
+    blocked_work: [Completion Redirect Endpoint, Product Client별 Redirect Policy, Error Redirect Contract]
+    related_jira: [RPL-27, RPL-28]
+    related_decisions: []
+    constraints: [임의 외부 URL Redirect 금지, Access Token과 Refresh Token을 URL에 직접 포함하지 않음, Product Client Snapshot과 returnTo 검증 이후에만 Redirect]
+    source_refs: [src.system-landscape, src.oauth-state-product-client-binding-contract]
+
+  - id: gate.web-mobile-session-handoff
+    display_name: Web/Mobile Session handoff
+    status: deferred
+    adoption_decision: not_decided
+    deferral_policy: accepted_with_constraints
+    current_state: Web과 Mobile Session 전달 방식 미확정이며 실제 iOS/Android Product Client는 구현 또는 검증 필요
+    why_deferred: Web secure cookie와 Mobile deep-link 보안 경계가 다르고 일회성 Exchange Code 계약이 필요
+    required_evidence: [Web Cookie/Session Contract, Mobile Universal Link/App Link 또는 Custom Scheme 정책, 일회성 Exchange Code TTL, Replay 방지, 기기·Client Binding]
+    adoption_triggers: [Web Product Client 실제 연동, Mobile Product Client 실제 연동, 제품별 Session Storage 정책 승인]
+    owner: { kind: ref, ref: system.shared-identity }
+    blocked_work: [Web Session 발급, Mobile Session Exchange, Universal Link/App Link, Logout/Refresh Contract]
+    related_jira: [RPL-24, RPL-27, RPL-28]
+    related_decisions: []
+    constraints: [Access/Refresh Token을 Redirect URL에 직접 포함하지 않음, Web과 Mobile 전달 방식을 하나의 불명확한 계약으로 합치지 않음, 일회성 Code는 TTL과 단일 소비를 가져야 함]
+    source_refs: [src.system-landscape, src.oauth-state-product-client-binding-contract]
+
+  - id: gate.issuer-audience-jwks
+    display_name: issuer/audience/JWKS 및 Gateway validation context
+    status: deferred
+    adoption_decision: not_decided
+    deferral_policy: accepted_with_constraints
+    current_state: 독립 issuer·audience·JWKS Rotation·Gateway trusted context 전달 방식이 미확정이며 독립 Identity Runtime 없음
+    why_deferred: 단일 구현 Host에는 독립 issuer 분리 Evidence가 부족하고 다중 Token Consumer와 Key Rotation 운영 모델이 필요
+    required_evidence: [Token Consumer 목록, issuer/audience 구분 필요성, Key Rotation과 JWKS 운영, Gateway 위조 Header 제거, Product Backend Local Validation Evidence, Trusted Context 전달 Contract]
+    adoption_triggers: [독립 Shared Identity Runtime, 둘 이상의 Token Consumer, 다중 제품 Routing, Key Rotation 운영 요구, 명시적 Validation Contract]
+    owner: { kind: scope, scope: identity_and_gateway_owners }
+    blocked_work: [Token Claims Contract, JWKS Endpoint, Key Rotation Runbook, Gateway Trusted Header Contract, Product Local Validation Contract]
+    related_jira: [RPL-28]
+    related_decisions: [DEC-064]
+    constraints: [Gateway가 외부 위조 Header를 제거, Product Authorization은 제품 소유, Shared Identity를 모든 요청의 중앙 병목으로 만들지 않음, 가능한 경우 Token을 로컬 검증]
+    source_refs: [src.system-landscape, src.oauth-state-product-client-binding-contract, src.adr-0015, src.decision-dec-064]
+
+  - id: gate.shared-ai-runtime
+    display_name: Shared AI Runtime implementation
+    status: deferred
+    adoption_decision: not_decided
+    deferral_policy: accepted_with_constraints
+    current_state: Shared AI 책임 경계와 문서만 존재하며 독립 Repository·Runtime·실제 소비 제품 연동 없음
+    why_deferred: 반복 Provider-neutral 실행 수요와 Provider Routing·Streaming·Cost·Retry 운영 기준이 미확정
+    required_evidence: [둘 이상의 실제 소비 제품, 공통 Provider Routing 수요, Streaming Runtime 수요, 공통 Cost/Usage 관리, 독립 Scale/SLA]
+    adoption_triggers: [반복 Provider Integration, 제품별 중복 실행 코드, 독립 Scaling과 장애 격리 요구, Usage/Cost 공통 추적 요구]
+    owner: { kind: ref, ref: system.shared-ai }
+    blocked_work: [Shared AI Repository, Provider Adapter Contract, Streaming Contract, Usage/Cost Model, Credential 관리, Product Integration]
+    related_jira: [RPL-20]
+    related_decisions: [DEC-064]
+    constraints: [제품 Prompt·Domain Policy·Tool·Output Validation은 제품 소유, 제품 입력·결과 데이터는 Shared AI 소유가 아님, Product Client는 Shared AI를 직접 호출하지 않음, Shared AI는 Public Direct Route를 갖지 않음]
+    source_refs: [src.system-landscape, src.adr-0015, src.decision-dec-064]
+
+  - id: gate.nats-introduction
+    display_name: NATS JetStream introduction
+    status: deferred
+    adoption_decision: not_decided
+    deferral_policy: accepted_with_constraints
+    current_state: 실제 Broker Runtime과 검증된 Audit/Event/Post-processing Use Case 없음
+    why_deferred: 현재 동기 HTTP로 충분하고 Broker 운영과 메시지 계약 비용이 발생함
+    required_evidence: [비동기 Use Case, Durability 요구, Retry/Replay 요구, Consumer 수와 처리량, DB Commit 이후 Event 발행 필요성, Idempotent Consumer 계약]
+    adoption_triggers: [Audit Event, 장시간 Post-processing, 제품 상태 전파, 동기 호출로 장애 격리가 어려운 실제 문제]
+    owner: { kind: scope, scope: platform_foundation }
+    blocked_work: [Subject Naming, Event Envelope, Idempotency, Retry/DLQ, Retention, 운영 Runbook, Outbox 도입 판단]
+    related_jira: [RPL-20]
+    related_decisions: [DEC-064]
+    constraints: [기본 Delivery는 at-least-once, Consumer는 멱등성을 가져야 함, DB Commit 전 ACK 금지, Outbox는 필요한 Use Case에만 선택적으로 사용]
+    source_refs: [src.system-landscape, src.adr-0015, src.decision-dec-064]
+
+  - id: gate.shared-commerce-extraction
+    display_name: Shared Commerce extraction
+    status: deferred
+    adoption_decision: not_decided
+    deferral_policy: accepted_with_constraints
+    current_state: Shared Commerce는 후보 경계이며 Runtime·Repository·Store 없음
+    why_deferred: 복수 제품의 공통 Catalog·Plan·Subscription·Order·Payment 수요와 책임 경계가 미검증
+    required_evidence: [둘 이상의 제품 동일 Commerce 모델, 공통 Entitlement, 공통 Payment Provider 운영, 제품별 중복 Commerce 구현]
+    adoption_triggers: [복수 제품 실제 결제 도입, 공통 Subscription과 Entitlement, 독립 장애·정합성 관리 필요]
+    owner: { kind: ref, ref: system.shared-commerce }
+    blocked_work: [Commerce Boundary Contract, Data Ownership, Order/Payment Idempotency, Provider Adapter, Migration, Runtime Deployment]
+    related_jira: []
+    related_decisions: []
+    constraints: [제품별 상품 정책을 Shared Commerce가 무조건 소유하지 않음, 실제 수요 전 Repository와 Store를 추측하지 않음]
+    source_refs: [src.system-landscape, src.adr-0015]
+
+  - id: gate.audit-consumer-introduction
+    display_name: Audit Consumer introduction
+    status: deferred
+    adoption_decision: not_decided
+    deferral_policy: accepted_with_constraints
+    current_state: Audit Consumer Runtime 없음; Audit Event Producer와 Retention 요구 미확정
+    why_deferred: 실제 Audit Use Case와 보존 정책이 없고 NATS 도입 Gate에 의존함
+    required_evidence: [보안·운영 Audit Event 목록, Producer Contract, Retention과 조회 요구, Replay와 복구 요구, 개인정보 최소화 기준]
+    adoption_triggers: [독립 Audit Projection 필요, 제품별 Audit 중복 구현, 운영·보안 추적 요구, 비동기 보존 요구]
+    owner: { kind: ref, ref: system.audit-consumer }
+    blocked_work: [NATS Adoption, Event Contract, Retention Policy, Audit Store, PII Redaction, 운영 조회 기준]
+    related_jira: [RPL-20]
+    related_decisions: []
+    constraints: [Audit Consumer는 제품 Transaction Primary Store가 아님, Producer Business Data Ownership을 침범하지 않음, 원문 Secret과 불필요한 PII를 저장하지 않음]
+    source_refs: [src.system-landscape, src.adr-0015, src.database-ownership-policy]
+
+  - id: gate.grpc-adoption
+    display_name: gRPC adoption
+    status: deferred
+    adoption_decision: not_decided
+    deferral_policy: accepted_with_constraints
+    current_state: 내부 동기 호출 기본값은 HTTP/JSON이며 측정된 고빈도·저지연 요구 없음
+    why_deferred: Proto·Code Generation·Debugging·Versioning·운영 비용이 있고 현재 규모에는 HTTP/JSON으로 충분
+    required_evidence: [실제 Latency 측정, Throughput 측정, Payload 크기와 호출 빈도, Streaming 또는 강한 Schema 요구, 운영·디버깅 준비]
+    adoption_triggers: [HTTP/JSON이 SLO를 충족하지 못함, 고빈도·저지연 내부 호출, Proto 기반 계약 이점이 비용보다 큼]
+    owner: { kind: scope, scope: affected_system_owner }
+    blocked_work: [Proto Ownership, Compatibility Policy, Deadline/Retry Contract, Code Generation, Observability]
+    related_jira: [RPL-20]
+    related_decisions: [DEC-064]
+    constraints: [측정 없이 선도입하지 않음, 외부 API 기본값으로 사용하지 않음, HTTP/JSON과 중복 계약을 무분별하게 유지하지 않음]
+    source_refs: [src.system-landscape, src.adr-0015, src.decision-dec-064]
+
+  - id: gate.kafka-adoption
+    display_name: Kafka adoption
+    status: deferred
+    adoption_decision: not_decided
+    deferral_policy: accepted_with_constraints
+    current_state: Kafka Runtime 없음; 처리량·Replay·CDC·Stream Processing 요구 미입증이며 NATS도 Deferred
+    why_deferred: Cluster와 운영 인력 비용이 크고 현재 예상 Use Case는 NATS JetStream으로 충분할 가능성이 높음
+    required_evidence: [장기 Event Retention, 대규모 Replay, CDC, 다수 Consumer Ecosystem, 매우 높은 처리량, Kafka 운영 인력과 Runbook]
+    adoption_triggers: [NATS로 충족하기 어려운 Replay·Throughput, CDC와 Stream Processing, 복수 팀·Consumer Ecosystem, 장기 Retention]
+    owner: { kind: scope, scope: platform_foundation }
+    blocked_work: [Topic Ownership, Partition Strategy, Schema Registry 판단, Retention, Consumer Group 운영, Cluster 운영]
+    related_jira: []
+    related_decisions: [DEC-064]
+    constraints: [단순 비동기 처리만으로 Kafka를 도입하지 않음, NATS Gate와 실제 요구를 먼저 검증, 운영 인력 없는 Cluster 도입 금지]
+    source_refs: [src.system-landscape, src.adr-0015, src.decision-dec-064]
+
+  - id: gate.kubernetes-adoption
+    display_name: Kubernetes adoption
+    status: deferred
+    adoption_decision: not_decided
+    deferral_policy: accepted_with_constraints
+    current_state: Kubernetes Runtime 없음; 단일 Mac mini와 이미지 기반 배포 후보이며 다중 노드·대규모 Scale Evidence 없음
+    why_deferred: Cluster·Ingress·Network·Secret·Upgrade·Observability 운영 비용이 현재 단일 인스턴스 구조에는 과도함
+    required_evidence: [다중 노드 필요, 수평 확장, Rolling Deployment 문제, 강한 Workload Isolation, 서비스 수 증가, 운영 인력과 Cluster 관리 역량, Docker Compose 또는 ECS로 해결하기 어려운 Pain]
+    adoption_triggers: [지속적인 Scale-out 요구, 다중 인스턴스와 자동 복구, 복잡한 배포 조정, 여러 서버 일관된 Scheduling, 비용을 상쇄하는 운영 요구]
+    owner: { kind: scope, scope: platform_operations }
+    blocked_work: [Cluster Provider 선택, EKS 여부, Ingress, Helm/Kustomize 선택, Secret 관리, Monitoring, Backup/DR, 비용 모델]
+    related_jira: [RPL-20]
+    related_decisions: [DEC-064]
+    constraints: [현재 Mac mini + AWS DR 방향을 자동으로 EKS로 확정하지 않음, ECS Fargate와 Docker Compose 대안을 먼저 평가, Kubernetes를 MSA 존재만으로 도입하지 않음, Helm은 Kubernetes 채택 이후에만 판단, Harbor는 별도 Registry 요구가 생길 때 별도 판단]
+    source_refs: [src.system-landscape, src.adr-0015, src.decision-dec-064]
 
 taxonomy_candidate:
   status: candidate
-  workstreams: []
-  primary_repositories: []
-  areas: []
-  components: []
+  authority: not_approved_jira_metadata
+  source_refs:
+    - src.portfolio-work-management-governance
+    - src.system-landscape
+    - src.decision-dec-065
+  workstreams:
+    - Carelog
+    - Finance Harness
+    - Dev Harness
+    - Shared Identity
+    - Shared AI
+    - Platform Foundation
+  primary_repositories:
+    - care-log/carelog-be
+    - aixion1506/finance-harness-fe
+    - aixion1506/finance-harness-docs
+    - aixion1506/oh-my-ai
+    - aixion1506/harness-foundation-docs
+  areas:
+    - Auth / Identity
+    - API / Contract
+    - Data / Migration
+    - Messaging / Consistency
+    - AI / Model Integration
+    - Runtime / Deployment
+    - Security / Secret
+    - Observability / Operations
+    - Product / Workflow
+    - Architecture / Governance
+    - Documentation
+  components:
+    - Frontend
+    - Backend
+    - Local Runtime
+    - Cloud Control Plane
+    - Gateway / Ingress
+    - Shared Service
+    - Documentation
   labels: []
+  normalization_notes:
+    - Accepted Governance의 Platform Foundation을 Workstream으로 사용한다
+    - Landscape의 Platform Architecture 의미는 Architecture / Governance Area로 보존한다
+    - Platform Governance 의미를 Workstream으로 자동 승격하지 않는다
+    - 정식 Jira Field/Component 도입 전까지 Candidate 상태를 유지한다
+  unresolved_items:
+    - Jira Custom Field와 Component의 실제 도입은 별도 검토와 Migration 계획이 필요하다
+    - 기존 Issue 자동 Backfill은 승인되지 않았다

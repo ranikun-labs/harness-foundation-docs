@@ -229,8 +229,25 @@ Projection은 제품 Business Transaction의 Primary Store가 아니다.
 Store Technology는 System ID가 아니다. PostgreSQL, Redis, filesystem은 System
 Registry에 추가하지 않고 Owner System 아래의 기술·위치 설명으로 기록한다.
 
+## Architecture Gates
+
+Architecture Gate는 실제 Adoption 승인이나 Runtime 구현이 아니며 정확히 12개다.
+`deferral_policy`와 `adoption_decision`을 분리해 기록한다. Trigger가 충족되더라도
+별도 Decision과 구현 Jira가 필요하다.
+
+Docker, Compose, ECS, Terraform, Helm, Harbor의 실제 설정은 Catalog에 저장하지
+않는다. Kubernetes Gate에서는 Docker Compose와 ECS/Fargate 대안을 먼저 평가하고,
+Helm은 Kubernetes 채택 이후, Harbor는 별도 Registry 요구가 생긴 뒤 판단한다.
+
+## Taxonomy Candidate
+
+Taxonomy는 공식 Jira Metadata가 아닌 Candidate다. Workstream, Primary Repository,
+Area, Component, Label 후보를 제공할 뿐이며 Accepted Governance가 Landscape
+Candidate보다 우선한다. 정식 도입 전에는 별도 검토와 Migration 계획이 필요하고,
+기존 Issue를 자동 Backfill하지 않는다.
+
 ## Current Slice
 
 현재 Slice는 Source Registry, External Actor Registry, System Inventory 10개와
-Communication Relation 17개, Data Group 19개를 등록한다. Architecture Gate와
-Taxonomy의 실제 항목은 후속 Slice에서 검수된 근거를 바탕으로 채운다.
+Communication Relation 17개, Data Group 19개, Architecture Gate 12개와 Taxonomy
+Candidate를 등록한다.
