@@ -1086,7 +1086,253 @@ communication_relations:
       - src.database-ownership-policy
       - src.adr-0015
 
-data_groups: []
+data_groups:
+  - id: data.user-identity
+    display_name: User Identity
+    logical_owner: { kind: ref, ref: system.shared-identity }
+    current_store: { status: current, system_ref: system.carelog, technology: postgresql, description: 현재 Carelog DB/Auth 영역 }
+    target_store: { status: gate_dependent, system_ref: system.shared-identity, blocked_by: [], description: 독립 여부는 Gate 이후 결정 }
+    write_authority: { system_refs: [system.carelog], participant_scope: null, note: 현재 Carelog Auth; 향후 Identity }
+    read_consumers: { system_refs: [system.carelog], participant_scopes: [] }
+    sharing_method: [token, api]
+    migration: { state: logical_separation_in_progress, evidence: null }
+    follow_up: { state: gate_dependent, description: 독립 Shared Identity Store 여부 결정, related_jira: [] }
+    constraints: [현재 Store가 Carelog DB/Auth 영역이어도 Logical Owner는 Shared Identity logical boundary일 수 있다, 독립 Store 이전 완료로 표현하지 않는다]
+    source_refs: [src.system-landscape]
+
+  - id: data.oauth-account-link
+    display_name: OAuth Account Link
+    logical_owner: { kind: ref, ref: system.shared-identity }
+    current_store: { status: current, system_ref: system.carelog, technology: postgresql, description: 현재 Carelog DB/Auth 영역 }
+    target_store: { status: gate_dependent, system_ref: system.shared-identity, blocked_by: [], description: Gate 이후 미정 }
+    write_authority: { system_refs: [system.carelog], participant_scope: null, note: 현재 Carelog Auth }
+    read_consumers: { system_refs: [system.carelog], participant_scopes: [] }
+    sharing_method: [api, token_flow]
+    migration: { state: logical_separation_in_progress, evidence: null }
+    follow_up: { state: gate_dependent, description: 독립 Shared Identity Store 결정, related_jira: [] }
+    constraints: [독립 Store 이전 완료로 표현하지 않는다]
+    source_refs: [src.system-landscape]
+
+  - id: data.product-client
+    display_name: Product Client
+    logical_owner: { kind: ref, ref: system.shared-identity }
+    current_store: { status: current, system_ref: system.carelog, technology: postgresql, description: Carelog PostgreSQL Product Client Registry — V6 }
+    target_store: { status: gate_dependent, system_ref: system.shared-identity, blocked_by: [], description: Gate 이후 미정 }
+    write_authority: { system_refs: [system.carelog], participant_scope: null, note: 현재 Carelog Auth/Identity implementation boundary }
+    read_consumers: { system_refs: [system.carelog], participant_scopes: [] }
+    sharing_method: [registry_lookup]
+    migration: { state: complete, evidence: V6 / RPL-16 }
+    follow_up: { state: pending, description: OAuth State Product Client Binding 구현, related_jira: [RPL-27] }
+    constraints: [RPL-27은 Registry Migration이 아니다, V6 migration은 완료됐다]
+    source_refs: [src.system-landscape, src.oauth-state-product-client-binding-contract]
+
+  - id: data.carelog-customer
+    display_name: Carelog Customer
+    logical_owner: { kind: ref, ref: system.carelog }
+    current_store: { status: current, system_ref: system.carelog, technology: postgresql, description: Carelog PostgreSQL }
+    target_store: { status: current, system_ref: system.carelog, blocked_by: [], description: Carelog 소유 Store 유지 }
+    write_authority: { system_refs: [system.carelog], participant_scope: null, note: Carelog }
+    read_consumers: { system_refs: [system.carelog], participant_scopes: [] }
+    sharing_method: [api]
+    migration: { state: current, evidence: null }
+    follow_up: { state: null, description: null, related_jira: [] }
+    constraints: [제품은 자체 Business Data를 소유한다, 다른 제품이 DB Table을 직접 읽거나 쓰지 않는다, Cross-service 공유는 API, Token, 명시적 Event 또는 계약된 Projection으로 수행한다]
+    source_refs: [src.system-landscape, src.database-ownership-policy]
+
+  - id: data.carelog-record-timeline
+    display_name: Carelog Record / Timeline
+    logical_owner: { kind: ref, ref: system.carelog }
+    current_store: { status: current, system_ref: system.carelog, technology: postgresql, description: Carelog PostgreSQL }
+    target_store: { status: current, system_ref: system.carelog, blocked_by: [], description: Carelog 소유 Store 유지 }
+    write_authority: { system_refs: [system.carelog], participant_scope: null, note: Carelog }
+    read_consumers: { system_refs: [system.carelog], participant_scopes: [] }
+    sharing_method: [api, event_candidate]
+    migration: { state: evolving, evidence: Current / evolving }
+    follow_up: { state: null, description: null, related_jira: [] }
+    constraints: [제품은 자체 Business Data를 소유한다, 다른 제품이 DB Table을 직접 읽거나 쓰지 않는다]
+    source_refs: [src.system-landscape, src.database-ownership-policy]
+
+  - id: data.finance-question
+    display_name: Finance Question
+    logical_owner: { kind: ref, ref: system.finance-harness }
+    current_store: { status: not_implemented, system_ref: system.finance-harness, technology: null, description: "Backend 미구현, 현재 Store 미확정" }
+    target_store: { status: planned, system_ref: system.finance-harness, blocked_by: [], description: Finance 소유 Store }
+    write_authority: { system_refs: [system.finance-harness], participant_scope: null, note: Finance }
+    read_consumers: { system_refs: [system.finance-harness], participant_scopes: [] }
+    sharing_method: [api]
+    migration: { state: planned, evidence: null }
+    follow_up: { state: planned, description: Finance Backend 구현, related_jira: [] }
+    constraints: [미구현 Store를 추측하지 않는다, 다른 제품이 DB Table을 직접 읽거나 쓰지 않는다]
+    source_refs: [src.system-landscape]
+
+  - id: data.checklist
+    display_name: Checklist
+    logical_owner: { kind: ref, ref: system.finance-harness }
+    current_store: { status: not_implemented, system_ref: system.finance-harness, technology: null, description: "Backend 미구현, 현재 Store 미확정" }
+    target_store: { status: planned, system_ref: system.finance-harness, blocked_by: [], description: Finance 소유 Store }
+    write_authority: { system_refs: [system.finance-harness], participant_scope: null, note: Finance }
+    read_consumers: { system_refs: [system.finance-harness], participant_scopes: [] }
+    sharing_method: [api]
+    migration: { state: planned, evidence: null }
+    follow_up: { state: planned, description: Finance Backend 구현, related_jira: [] }
+    constraints: [미구현 Store를 추측하지 않는다, 다른 제품이 DB Table을 직접 읽거나 쓰지 않는다]
+    source_refs: [src.system-landscape]
+
+  - id: data.journal
+    display_name: Journal
+    logical_owner: { kind: ref, ref: system.finance-harness }
+    current_store: { status: not_implemented, system_ref: system.finance-harness, technology: null, description: "Backend 미구현, 현재 Store 미확정" }
+    target_store: { status: planned, system_ref: system.finance-harness, blocked_by: [], description: Finance 소유 Store }
+    write_authority: { system_refs: [system.finance-harness], participant_scope: null, note: Finance }
+    read_consumers: { system_refs: [system.finance-harness], participant_scopes: [] }
+    sharing_method: [api]
+    migration: { state: planned, evidence: null }
+    follow_up: { state: planned, description: Finance Backend 구현, related_jira: [] }
+    constraints: [미구현 Store를 추측하지 않는다, 다른 제품이 DB Table을 직접 읽거나 쓰지 않는다]
+    source_refs: [src.system-landscape]
+
+  - id: data.review
+    display_name: Review
+    logical_owner: { kind: ref, ref: system.finance-harness }
+    current_store: { status: not_implemented, system_ref: system.finance-harness, technology: null, description: "Backend 미구현, 현재 Store 미확정" }
+    target_store: { status: planned, system_ref: system.finance-harness, blocked_by: [], description: Finance 소유 Store }
+    write_authority: { system_refs: [system.finance-harness], participant_scope: null, note: Finance }
+    read_consumers: { system_refs: [system.finance-harness], participant_scopes: [] }
+    sharing_method: [api]
+    migration: { state: planned, evidence: null }
+    follow_up: { state: planned, description: Finance Backend 구현, related_jira: [] }
+    constraints: [미구현 Store를 추측하지 않는다, 다른 제품이 DB Table을 직접 읽거나 쓰지 않는다]
+    source_refs: [src.system-landscape]
+
+  - id: data.dev-harness-task-session-handoff
+    display_name: Dev Harness Task / Session / Handoff
+    logical_owner: { kind: ref, ref: system.dev-harness-local }
+    current_store: { status: current, system_ref: system.dev-harness-local, technology: local_filesystem, description: 사용자 장비의 Local artifacts/session }
+    target_store: { status: deferred, system_ref: system.dev-harness-cloud, blocked_by: [], description: Cloud 도입 시 분리 계약 필요 }
+    write_authority: { system_refs: [system.dev-harness-local], participant_scope: null, note: Local 사용자/Runtime }
+    read_consumers: { system_refs: [system.dev-harness-local, system.dev-harness-cloud], participant_scopes: [] }
+    sharing_method: [local_artifact, http]
+    migration: { state: evolving, evidence: Current Local / Cloud deferred }
+    follow_up: { state: deferred, description: Cloud 도입 시 분리 계약, related_jira: [] }
+    constraints: [현재 Local Artifact를 Shared Cloud DB로 표현하지 않는다]
+    source_refs: [src.system-landscape]
+
+  - id: data.product-prompt-domain-policy
+    display_name: Prompt / Domain Policy
+    logical_owner: { kind: scope, scope: each_product }
+    current_store: { status: repository_unconfirmed, system_ref: null, technology: null, description: "제품 Repository/Store별, 세부 미확정" }
+    target_store: { status: current, system_ref: null, blocked_by: [], description: 제품 소유 Store }
+    write_authority: { system_refs: [], participant_scope: product_domain, note: 제품 }
+    read_consumers: { system_refs: [system.shared-ai], participant_scopes: [] }
+    sharing_method: [api_request, versioned_contract]
+    migration: { state: current, evidence: 제품별 }
+    follow_up: { state: null, description: null, related_jira: [] }
+    constraints: [Prompt, Domain Policy, Tool 선택과 Output Policy는 제품이 소유한다, Shared AI는 제품 Prompt와 Domain Policy의 Owner가 아니다, 다른 제품이 DB Table을 직접 읽거나 쓰지 않는다]
+    source_refs: [src.system-landscape]
+
+  - id: data.ai-execution-metadata
+    display_name: AI Execution Metadata
+    logical_owner: { kind: ref, ref: system.shared-ai }
+    current_store: { status: not_implemented, system_ref: system.shared-ai, technology: null, description: Runtime 미구현 }
+    target_store: { status: planned, system_ref: system.shared-ai, blocked_by: [], description: Shared AI Store 후보 }
+    write_authority: { system_refs: [system.shared-ai], participant_scope: null, note: Shared AI }
+    read_consumers: { system_refs: [system.carelog, system.finance-harness, system.dev-harness-local], participant_scopes: [] }
+    sharing_method: [ai_api, usage_api]
+    migration: { state: planned, evidence: null }
+    follow_up: { state: planned, description: Shared AI Runtime 구현, related_jira: [] }
+    constraints: [제품 입력과 제품 결과 데이터는 Shared AI 소유가 아니다]
+    source_refs: [src.system-landscape]
+
+  - id: data.usage-cost
+    display_name: Usage / Cost
+    logical_owner: { kind: ref, ref: system.shared-ai }
+    current_store: { status: not_implemented, system_ref: system.shared-ai, technology: null, description: Runtime 미구현 }
+    target_store: { status: planned, system_ref: system.shared-ai, blocked_by: [], description: Shared AI Store 후보 }
+    write_authority: { system_refs: [system.shared-ai], participant_scope: null, note: Shared AI }
+    read_consumers: { system_refs: [system.carelog, system.finance-harness, system.dev-harness-local], participant_scopes: [] }
+    sharing_method: [api, report]
+    migration: { state: planned, evidence: null }
+    follow_up: { state: planned, description: Shared AI Runtime 구현, related_jira: [] }
+    constraints: [제품 입력과 제품 결과 데이터는 Shared AI 소유가 아니다]
+    source_refs: [src.system-landscape]
+
+  - id: data.product-catalog
+    display_name: Product Catalog
+    logical_owner: { kind: ref, ref: system.shared-commerce }
+    current_store: { status: deferred, system_ref: system.shared-commerce, technology: null, description: 미구현 / 미확정 }
+    target_store: { status: deferred, system_ref: system.shared-commerce, blocked_by: [], description: Shared Commerce 후보 }
+    write_authority: { system_refs: [system.shared-commerce], participant_scope: null, note: Shared Commerce }
+    read_consumers: { system_refs: [system.carelog, system.finance-harness, system.dev-harness-local], participant_scopes: [] }
+    sharing_method: [commerce_api]
+    migration: { state: deferred, evidence: null }
+    follow_up: { state: deferred, description: 복수 제품의 공통 Commerce 수요, related_jira: [] }
+    constraints: [확인되지 않은 현재 Store를 만들지 않는다, 제품별 상품 정책의 무조건적 소유가 아니다]
+    source_refs: [src.system-landscape]
+
+  - id: data.plan
+    display_name: Plan
+    logical_owner: { kind: ref, ref: system.shared-commerce }
+    current_store: { status: deferred, system_ref: system.shared-commerce, technology: null, description: 미구현 / 미확정 }
+    target_store: { status: deferred, system_ref: system.shared-commerce, blocked_by: [], description: Shared Commerce 후보 }
+    write_authority: { system_refs: [system.shared-commerce], participant_scope: null, note: Shared Commerce }
+    read_consumers: { system_refs: [system.carelog, system.finance-harness, system.dev-harness-local], participant_scopes: [] }
+    sharing_method: [commerce_api]
+    migration: { state: deferred, evidence: null }
+    follow_up: { state: deferred, description: 복수 제품의 공통 Commerce 수요, related_jira: [] }
+    constraints: [확인되지 않은 현재 Store를 만들지 않는다]
+    source_refs: [src.system-landscape]
+
+  - id: data.subscription
+    display_name: Subscription
+    logical_owner: { kind: ref, ref: system.shared-commerce }
+    current_store: { status: deferred, system_ref: system.shared-commerce, technology: null, description: 미구현 / 미확정 }
+    target_store: { status: deferred, system_ref: system.shared-commerce, blocked_by: [], description: Shared Commerce 후보 }
+    write_authority: { system_refs: [system.shared-commerce], participant_scope: null, note: Shared Commerce }
+    read_consumers: { system_refs: [system.carelog, system.finance-harness, system.dev-harness-local], participant_scopes: [] }
+    sharing_method: [commerce_api, event]
+    migration: { state: deferred, evidence: null }
+    follow_up: { state: deferred, description: 복수 제품의 공통 Commerce 수요, related_jira: [] }
+    constraints: [확인되지 않은 현재 Store를 만들지 않는다]
+    source_refs: [src.system-landscape]
+
+  - id: data.order
+    display_name: Order
+    logical_owner: { kind: ref, ref: system.shared-commerce }
+    current_store: { status: deferred, system_ref: system.shared-commerce, technology: null, description: 미구현 / 미확정 }
+    target_store: { status: deferred, system_ref: system.shared-commerce, blocked_by: [], description: Shared Commerce 후보 }
+    write_authority: { system_refs: [system.shared-commerce], participant_scope: null, note: Shared Commerce }
+    read_consumers: { system_refs: [system.carelog, system.finance-harness, system.dev-harness-local], participant_scopes: [] }
+    sharing_method: [commerce_api, event]
+    migration: { state: deferred, evidence: null }
+    follow_up: { state: deferred, description: 복수 제품의 공통 Commerce 수요, related_jira: [] }
+    constraints: [확인되지 않은 현재 Store를 만들지 않는다]
+    source_refs: [src.system-landscape]
+
+  - id: data.payment
+    display_name: Payment
+    logical_owner: { kind: ref, ref: system.shared-commerce }
+    current_store: { status: deferred, system_ref: system.shared-commerce, technology: null, description: 미구현 / 미확정 }
+    target_store: { status: deferred, system_ref: system.shared-commerce, blocked_by: [], description: Shared Commerce 후보 }
+    write_authority: { system_refs: [system.shared-commerce], participant_scope: null, note: Shared Commerce }
+    read_consumers: { system_refs: [system.carelog, system.finance-harness, system.dev-harness-local], participant_scopes: [] }
+    sharing_method: [provider_integration, api]
+    migration: { state: deferred, evidence: null }
+    follow_up: { state: deferred, description: 복수 제품의 공통 Commerce 수요, related_jira: [] }
+    constraints: [확인되지 않은 현재 Store를 만들지 않는다]
+    source_refs: [src.system-landscape]
+
+  - id: data.audit-event
+    display_name: Audit Event
+    logical_owner: { kind: scope, scope: producer }
+    current_store: { status: deferred, system_ref: system.audit-consumer, technology: null, description: Consumer 미구현 }
+    target_store: { status: deferred, system_ref: system.audit-consumer, blocked_by: [], description: Audit Store 후보 }
+    write_authority: { system_refs: [], participant_scope: producer, note: 생산자는 event 발행; Consumer는 projection 기록 }
+    read_consumers: { system_refs: [system.audit-consumer], participant_scopes: [] }
+    sharing_method: [nats_jetstream_candidate]
+    migration: { state: deferred, evidence: null }
+    follow_up: { state: deferred, description: 검증된 Audit Use Case와 Consumer 도입, related_jira: [] }
+    constraints: [Audit Projection은 Audit Consumer 소유 후보이다, Audit Consumer는 제품 Business Transaction Primary Store가 아니다, 제품은 원본 Business Data를 소유한다]
+    source_refs: [src.system-landscape, src.database-ownership-policy]
 
 architecture_gates: []
 

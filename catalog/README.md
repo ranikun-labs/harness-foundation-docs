@@ -213,8 +213,24 @@ Relation으로 만들거나 Count를 늘리지 않는다.
 Ownership은 임시 구조로 의미를 보존하고, Data Slice에서 필요하면 실제 `data.*`
 Reference를 연결하되 Relation 수와 의미는 바꾸지 않는다.
 
+## Data Groups
+
+검수된 Data Group은 정확히 19개다. Logical Owner와 Current Physical Store,
+Current Store와 Target Store, Write Authority와 Read Consumer, Migration 완료와
+후속 구현 대기는 각각 별도 필드로 기록한다.
+
+제품은 자체 Business Data를 소유하며 다른 제품이 DB Table을 직접 읽거나 쓰지
+않는다. Cross-service 공유는 API, Token, 명시적 Event 또는 계약된 Projection으로
+수행한다. 미구현 Store는 추측하지 않는다.
+
+Shared AI는 제품 Prompt·Domain Policy·제품 결과 데이터의 Owner가 아니다. Audit
+Projection은 제품 Business Transaction의 Primary Store가 아니다.
+
+Store Technology는 System ID가 아니다. PostgreSQL, Redis, filesystem은 System
+Registry에 추가하지 않고 Owner System 아래의 기술·위치 설명으로 기록한다.
+
 ## Current Slice
 
 현재 Slice는 Source Registry, External Actor Registry, System Inventory 10개와
-Communication Relation 17개를 등록한다. Data Group, Architecture Gate와
+Communication Relation 17개, Data Group 19개를 등록한다. Architecture Gate와
 Taxonomy의 실제 항목은 후속 Slice에서 검수된 근거를 바탕으로 채운다.
