@@ -226,7 +226,341 @@ actors:
     sources:
       - src.system-landscape
 
-systems: []
+systems:
+  - id: system.carelog
+    display_name: Carelog
+    type: product
+    workstream: Carelog
+    logical_boundary_status: established
+    primary_repository:
+      status: confirmed
+      repository: care-log/carelog-be
+    current_implementation_hosts:
+      - repository: care-log/carelog-be
+        module: null
+        role: product_backend
+    runtime_deployment:
+      status: current
+      description: Backend와 Gateway Module이 존재하는 현재 Carelog Runtime
+    lifecycle: active_in_development
+    release: null
+    verification:
+      production_deployment: verification_required
+    core_responsibilities:
+      - 고객
+      - 기록
+      - Timeline
+      - Follow-up
+      - Handoff
+      - 제품별 Authorization
+    non_responsibilities:
+      - 공용 인증 정책의 장기 소유
+      - Provider-neutral AI Runtime
+      - Shared Commerce
+    source_refs:
+      - src.system-landscape
+      - src.oauth-state-product-client-binding-contract
+      - src.database-ownership-policy
+
+  - id: system.finance-harness
+    display_name: Finance Harness
+    type: product
+    workstream: Finance Harness
+    logical_boundary_status: documented
+    primary_repository:
+      status: repository_unconfirmed
+      repository: null
+    current_implementation_hosts:
+      - repository: aixion1506/finance-harness-fe
+        module: null
+        role: frontend
+      - repository: aixion1506/finance-harness-docs
+        module: null
+        role: product_policy_documentation
+    runtime_deployment:
+      status: not_implemented
+      scope: backend_runtime
+      description: Frontend scaffold는 존재하지만 Backend Runtime은 구현되지 않았고 실제 배포 상태는 확인되지 않음
+    lifecycle: in_development_backend_planned
+    release: null
+    verification:
+      production_deployment: verification_required
+    core_responsibilities:
+      - Learn
+      - Checklist
+      - Journal
+      - Review
+      - 금융 안전 정책
+      - 금융 질문·기록·복기 데이터
+    non_responsibilities:
+      - 매수·매도 추천
+      - 수익률 예측
+      - 공용 인증
+      - Provider-neutral AI 실행
+    source_refs:
+      - src.system-landscape
+
+  - id: system.dev-harness-local
+    display_name: Dev Harness Local
+    type: product
+    workstream: Dev Harness
+    logical_boundary_status: established
+    primary_repository:
+      status: confirmed
+      repository: aixion1506/oh-my-ai
+    current_implementation_hosts:
+      - repository: aixion1506/oh-my-ai
+        module: null
+        role: local_runtime
+    runtime_deployment:
+      status: current
+      description: Public v1.0.0으로 공개된 Local-first Runtime
+    lifecycle: released_active_development
+    release:
+      artifact_status: published
+      version: v1.0.0
+      draft: false
+      prerelease: false
+      published_at: "2026-07-27"
+      source_ref: src.dev-harness-v1-release
+    verification:
+      fresh_install: verification_required
+    core_responsibilities:
+      - Local-first Execution
+      - Session/Handoff
+      - Skills
+      - Approval
+      - 사용자 장비 실행
+    non_responsibilities:
+      - Cloud Control Plane
+      - 중앙 계정
+      - 중앙 Queue
+      - 중앙 Project Memory Runtime
+    source_refs:
+      - src.system-landscape
+      - src.dev-harness-v1-release
+
+  - id: system.dev-harness-cloud
+    display_name: Dev Harness Cloud
+    type: product
+    workstream: Dev Harness
+    logical_boundary_status: target
+    primary_repository:
+      status: repository_unconfirmed
+      repository: null
+    current_implementation_hosts: []
+    runtime_deployment:
+      status: not_implemented
+      description: Cloud Runtime은 아직 구현되지 않음
+    lifecycle: planned
+    release: null
+    verification:
+      production_deployment: verification_required
+    core_responsibilities:
+      - Control Plane
+      - Approval Queue
+      - Project Memory
+      - Multi-AI Coordination
+    non_responsibilities:
+      - Local Executor 자체
+      - 현재 V1 기능으로의 오기
+    source_refs:
+      - src.system-landscape
+
+  - id: system.spring-cloud-gateway
+    display_name: Spring Cloud Gateway
+    type: edge
+    workstream: Platform Foundation
+    logical_boundary_status: established
+    primary_repository:
+      status: confirmed
+      repository: care-log/carelog-be
+    current_implementation_hosts:
+      - repository: care-log/carelog-be
+        module: carelog-gateway
+        role: edge_gateway
+    runtime_deployment:
+      status: current
+      description: carelog-gateway Module이 존재하는 외부 Ingress와 Edge 보안 경계
+    lifecycle: in_development
+    release: null
+    verification:
+      production_deployment: verification_required
+    core_responsibilities:
+      - 외부 Ingress
+      - Routing
+      - 공통 Edge 보안 경계
+    non_responsibilities:
+      - 제품 도메인 정책
+      - 내부 서비스 호출 우회 경로
+      - 제품 데이터 소유
+    source_refs:
+      - src.system-landscape
+      - src.service-communication-policy
+      - src.adr-0015
+
+  - id: system.shared-identity
+    display_name: Shared Identity
+    type: shared_platform
+    workstream: Platform Foundation
+    logical_boundary_status: in_progress
+    primary_repository:
+      status: repository_unconfirmed
+      repository: null
+    current_implementation_hosts:
+      - repository: care-log/carelog-be
+        module: auth-oauth
+        role: current_logical_implementation
+    runtime_deployment:
+      status: not_implemented
+      scope: independent_runtime
+      description: 현재 Carelog 내부 논리 경계이며 독립 Runtime은 아님
+    lifecycle: in_development
+    release: null
+    verification:
+      production_deployment: verification_required
+    core_responsibilities:
+      - 사용자 식별
+      - OAuth Provider Integration 공통 Core
+      - Product Client Registry
+      - Token 정책
+      - 향후 issuer/audience/JWKS
+    non_responsibilities:
+      - 제품별 Authorization
+      - Role/Permission
+      - 제품별 returnTo 의미
+      - 제품 도메인 데이터
+    source_refs:
+      - src.system-landscape
+      - src.oauth-state-product-client-binding-contract
+      - src.adr-0015
+
+  - id: system.shared-ai
+    display_name: Shared AI
+    type: shared_platform
+    workstream: Platform Foundation
+    logical_boundary_status: documented
+    primary_repository:
+      status: repository_unconfirmed
+      repository: null
+    current_implementation_hosts: []
+    runtime_deployment:
+      status: not_implemented
+      description: Provider-neutral Shared AI Runtime은 아직 구현되지 않음
+    lifecycle: planned
+    release: null
+    verification:
+      production_deployment: verification_required
+    core_responsibilities:
+      - Provider-neutral 실행
+      - Routing
+      - Streaming Runtime
+      - Cost/Usage
+      - Retry/Timeout
+      - Credential 관리
+    non_responsibilities:
+      - 제품 Prompt
+      - Domain Policy
+      - Tool 선택
+      - Output Validation
+      - 제품 결과 데이터
+    source_refs:
+      - src.system-landscape
+      - src.adr-0015
+
+  - id: system.shared-commerce
+    display_name: Shared Commerce
+    type: shared_platform
+    workstream: Platform Foundation
+    logical_boundary_status: candidate
+    primary_repository:
+      status: not_implemented
+      repository: null
+    current_implementation_hosts: []
+    runtime_deployment:
+      status: not_implemented
+      description: Shared Commerce Runtime은 아직 구현되지 않음
+    lifecycle: deferred_future
+    release: null
+    verification:
+      production_deployment: verification_required
+    core_responsibilities:
+      - Product Catalog
+      - Plan
+      - Subscription
+      - Order
+      - Payment
+      - Entitlement
+    non_responsibilities:
+      - 제품별 상품 정책의 무조건적 소유
+      - 확인되지 않은 제품 거래 데이터 소유
+    source_refs:
+      - src.system-landscape
+      - src.adr-0015
+
+  - id: system.audit-consumer
+    display_name: Audit Consumer
+    type: consumer
+    workstream: Platform Foundation
+    logical_boundary_status: candidate
+    primary_repository:
+      status: not_implemented
+      repository: null
+    current_implementation_hosts: []
+    runtime_deployment:
+      status: not_implemented
+      description: 비동기 Audit Event 소비 Runtime은 아직 구현되지 않음
+    lifecycle: deferred_future
+    release: null
+    verification:
+      production_deployment: verification_required
+    core_responsibilities:
+      - 비동기 Audit Event 소비
+      - 운영 추적
+      - 보안 이벤트 기록
+    non_responsibilities:
+      - 제품 Business Transaction Primary Store
+      - 제품 원본 데이터 소유
+    source_refs:
+      - src.system-landscape
+      - src.adr-0015
+      - src.database-ownership-policy
+
+  - id: system.platform-foundation-docs
+    display_name: Platform Foundation Docs
+    type: documentation
+    workstream: Platform Foundation
+    logical_boundary_status: canonical_documentation_boundary
+    primary_repository:
+      status: confirmed
+      repository: aixion1506/harness-foundation-docs
+    current_implementation_hosts:
+      - repository: aixion1506/harness-foundation-docs
+        module: null
+        role: canonical_documentation_repository
+    runtime_deployment:
+      status: documentation_only
+      description: Accepted Architecture와 공통 Governance를 소유하는 문서 경계
+    lifecycle: active
+    release: null
+    verification:
+      production_deployment: verification_required
+    core_responsibilities:
+      - Accepted Architecture
+      - ADR
+      - Decision Log
+      - 공통 Boundary/Contract
+      - 공통 Governance
+    non_responsibilities:
+      - 제품 Runtime
+      - Jira 작업 상태
+      - Production Configuration
+    source_refs:
+      - src.portfolio-work-management-governance
+      - src.adr-0015
+      - src.decision-dec-064
+      - src.decision-dec-065
+      - src.system-landscape
 
 communication_relations: []
 

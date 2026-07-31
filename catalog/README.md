@@ -170,8 +170,27 @@ Source 상태는 하나의 합성 상태로 합치지 않는다. 문서·Decisio
 Actor는 named external participant이고, generic participant scope는 Relation의
 집합 Caller/참여 범위를 나타낸다는 점에서 구분한다.
 
+## System Inventory
+
+검수된 Portfolio System은 정확히 10개이며 `actors`는 이 수에 포함하지 않는다.
+System Stable ID는 현재 Implementation Host가 아니라 논리 역할을 기준으로 한다.
+
+각 System은 다음 차원을 별도 필드로 유지한다.
+
+- `primary_repository`와 `current_implementation_hosts`
+- `logical_boundary_status`와 `runtime_deployment`
+- `lifecycle`, `release`, `verification`
+
+따라서 논리 경계가 존재하면서 독립 Runtime이 아직 구현되지 않은 상태를 함께
+표현할 수 있다. `repository_unconfirmed`는 단일 Primary Repository가 아직
+확정되지 않았음을 뜻하고, `not_implemented`는 해당 Repository 또는 Runtime이
+아직 없음을 뜻한다.
+
+System Dependency는 System 항목의 문자열이나 가짜 Reference가 아니라 Relation
+Registry에서 표현한다. Data Owner Reference는 Data Group Slice 이후에 연결한다.
+
 ## Current Slice
 
-현재 Slice는 Source Registry와 External Actor Registry만 등록한다. System,
-Communication Relation, Data Group, Architecture Gate와 Taxonomy의 실제 항목은
-후속 Slice에서 검수된 근거를 바탕으로 채운다.
+현재 Slice는 Source Registry, External Actor Registry와 System Inventory 10개를
+등록한다. Communication Relation, Data Group, Architecture Gate와 Taxonomy의
+실제 항목은 후속 Slice에서 검수된 근거를 바탕으로 채운다.
