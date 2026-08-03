@@ -1,0 +1,1578 @@
+schema_version: 1
+
+metadata:
+  title: Ranikun Labs System Catalog
+  artifact_role: machine_readable_architecture_projection
+  canonical: false
+  canonical_priority:
+    - accepted_git_architecture_and_contracts
+    - merged_repository_state
+    - jira_work_state
+    - reviewed_system_landscape_projection
+    - system_catalog_projection
+  provenance:
+    landscape_jira: RPL-31
+    implementation_jira: RPL-33
+    confluence_page_id: "2129924"
+    reviewed_version: 3
+    publication_version: 4
+    review_state: reviewed_approved_for_system_catalog_projection
+  expected_counts:
+    systems: 10
+    communication_relations: 17
+    data_groups: 19
+    architecture_gates: 12
+
+sources:
+  - id: src.portfolio-work-management-governance
+    kind: repository_document
+    title: Ranikun Labs Portfolio Work Management Governance v1.1
+    authority: canonical
+    location:
+      repository: aixion1506/harness-foundation-docs
+      ref: main
+      path: docs/governance/portfolio-work-management-governance.md
+      anchor: null
+    status:
+      document_status: accepted
+      decision_status: accepted_with_constraints
+    purpose: Catalog 경로·역할·운영 Phase의 근거를 제공한다.
+
+  - id: src.adr-0015
+    kind: repository_document
+    title: 공통 플랫폼 통신·메시징·확장 기준을 정의한다
+    authority: canonical
+    location:
+      repository: aixion1506/harness-foundation-docs
+      ref: main
+      path: docs/adr/ADR-0015-platform-communication-messaging-scaling.md
+      anchor: null
+    status:
+      document_status: accepted
+      decision_status: accepted_with_constraints
+      release_status: not_released
+    purpose: 공통 통신, Messaging, Scaling 정책과 도입 Trigger의 근거를 제공한다.
+
+  - id: src.decision-dec-064
+    kind: repository_section
+    title: DEC-064 — 공통 플랫폼 통신·메시징·확장 기준을 정의한다
+    authority: canonical
+    location:
+      repository: aixion1506/harness-foundation-docs
+      ref: main
+      path: docs/decisions/decision-log.md
+      anchor: DEC-064
+    status:
+      decision_status: accepted_with_constraints
+      release_status: not_released
+    purpose: Foundation 통신·Messaging·Scaling Decision의 승인 상태와 제약을 제공한다.
+
+  - id: src.decision-dec-065
+    kind: repository_section
+    title: DEC-065 — Jira·Git·Confluence·AI Session 통합 운영 Governance를 정의한다
+    authority: canonical
+    location:
+      repository: aixion1506/harness-foundation-docs
+      ref: main
+      path: docs/decisions/decision-log.md
+      anchor: DEC-065
+    status:
+      decision_status: accepted_with_constraints
+    purpose: Concern별 Canonical Owner와 Portfolio Projection 운영 기준을 제공한다.
+
+  - id: src.service-communication-policy
+    kind: repository_document
+    title: Service Communication Policy
+    authority: supporting
+    location:
+      repository: aixion1506/harness-foundation-docs
+      ref: main
+      path: docs/architecture/backend-service-foundation/service-communication-policy.md
+      anchor: null
+    status:
+      document_status: draft
+      release_status: not_released
+    purpose: Service 간 동기 API, 비동기 Event, 로컬 Token 검증 정책을 보조한다.
+
+  - id: src.database-ownership-policy
+    kind: repository_document
+    title: Database Ownership and Reference Policy
+    authority: supporting
+    location:
+      repository: aixion1506/harness-foundation-docs
+      ref: main
+      path: docs/architecture/backend-service-foundation/database-ownership-and-reference-policy.md
+      anchor: null
+    status:
+      document_status: draft
+      release_status: not_released
+    purpose: 제품별 DB 소유권과 Cross-service Reference 정책을 보조한다.
+
+  - id: src.repository-service-boundaries
+    kind: repository_document
+    title: Repository and Service Boundaries
+    authority: supporting
+    location:
+      repository: aixion1506/harness-foundation-docs
+      ref: main
+      path: docs/architecture/repository-service-boundaries.md
+      anchor: null
+    status:
+      document_status: draft
+    purpose: 논리 Service, Repository, 배포 단위와 데이터 소유권의 경계를 보조한다.
+
+  - id: src.service-boundaries
+    kind: repository_document
+    title: Backend Service Foundation — Service Boundaries
+    authority: supporting
+    location:
+      repository: aixion1506/harness-foundation-docs
+      ref: main
+      path: docs/architecture/backend-service-foundation/service-boundaries.md
+      anchor: null
+    status:
+      document_status: draft
+      release_status: not_released
+    purpose: Backend Service Foundation의 데이터·행동 소유권과 Service 경계를 보조한다.
+
+  - id: src.oauth-state-product-client-binding-contract
+    kind: external_repository_document
+    title: OAuth State Product Client Binding 구현 계약
+    authority: canonical_for_carelog_oauth_binding
+    location:
+      repository: care-log/carelog-be
+      ref: dev
+      path: docs/architecture/oauth-state-product-client-binding-contract.md
+      anchor: null
+    status:
+      implementation_status: not_started
+    purpose: Carelog OAuth state와 Product Client binding의 Service-specific 계약을 제공한다.
+
+  - id: src.system-landscape
+    kind: confluence_page
+    title: Ranikun Labs System Landscape
+    authority: reviewed_projection
+    location:
+      page_id: "2129924"
+      reviewed_version: 3
+      publication_version: 4
+      url: https://ranikunlabs.atlassian.net/wiki/spaces/RLAB/pages/2129924
+    status:
+      review_state: reviewed_approved_for_system_catalog_projection
+    purpose: 검수된 System Landscape Projection을 제공한다.
+
+  - id: src.jira-rpl-31
+    kind: jira_issue
+    title: RPL-31
+    authority: work_state
+    location:
+      key: RPL-31
+      url: https://ranikunlabs.atlassian.net/browse/RPL-31
+    status:
+      work_state: done
+    purpose: System Landscape 작업 상태의 근거를 제공한다.
+
+  - id: src.jira-rpl-33
+    kind: jira_issue
+    title: RPL-33
+    authority: work_state
+    location:
+      key: RPL-33
+      url: https://ranikunlabs.atlassian.net/browse/RPL-33
+    status:
+      work_state: in_progress
+    purpose: System Catalog 구현 작업 상태의 근거를 제공한다.
+
+  - id: src.dev-harness-v1-release
+    kind: github_release
+    title: oh-my-ai v1.0.0
+    authority: release_evidence
+    location:
+      repository: aixion1506/oh-my-ai
+      tag: v1.0.0
+      url: https://github.com/aixion1506/oh-my-ai/releases/tag/v1.0.0
+    status:
+      release_status: published
+      draft: false
+      prerelease: false
+      published_at: "2026-07-27"
+    purpose: Dev Harness V1 공개 Release evidence를 제공한다.
+
+actors:
+  - id: actor.product-client
+    display_name: Product Client
+    type: external_client
+    inventory_counted: false
+    description: 웹·모바일 등 제품 API와 공개 Identity Endpoint를 호출하는 외부 Client
+    sources:
+      - src.system-landscape
+
+  - id: actor.external-oauth-provider
+    display_name: External OAuth Provider
+    type: external_provider
+    inventory_counted: false
+    description: Shared Identity의 Provider Integration Core가 연동하는 외부 OAuth Provider 역할
+    sources:
+      - src.system-landscape
+      - src.oauth-state-product-client-binding-contract
+
+  - id: actor.cloudflare-tunnel
+    display_name: Cloudflare Tunnel
+    type: external_edge_infrastructure
+    inventory_counted: false
+    description: Current System Map에서 외부 요청이 Spring Cloud Gateway에 도달할 때 거치는 Edge 경유 구성요소
+    verification:
+      deployment: verification_required
+    sources:
+      - src.system-landscape
+
+systems:
+  - id: system.carelog
+    display_name: Carelog
+    type: product
+    workstream: Carelog
+    logical_boundary_status: established
+    primary_repository:
+      status: confirmed
+      repository: care-log/carelog-be
+    current_implementation_hosts:
+      - repository: care-log/carelog-be
+        module: null
+        role: product_backend
+    runtime_deployment:
+      status: current
+      description: Backend와 Gateway Module이 존재하는 현재 Carelog Runtime
+    lifecycle: active_in_development
+    release: null
+    verification:
+      production_deployment: verification_required
+    core_responsibilities:
+      - 고객
+      - 기록
+      - Timeline
+      - Follow-up
+      - Handoff
+      - 제품별 Authorization
+    non_responsibilities:
+      - 공용 인증 정책의 장기 소유
+      - Provider-neutral AI Runtime
+      - Shared Commerce
+    source_refs:
+      - src.system-landscape
+      - src.oauth-state-product-client-binding-contract
+      - src.database-ownership-policy
+
+  - id: system.finance-harness
+    display_name: Finance Harness
+    type: product
+    workstream: Finance Harness
+    logical_boundary_status: documented
+    primary_repository:
+      status: repository_unconfirmed
+      repository: null
+    current_implementation_hosts:
+      - repository: aixion1506/finance-harness-fe
+        module: null
+        role: frontend
+      - repository: aixion1506/finance-harness-docs
+        module: null
+        role: product_policy_documentation
+    runtime_deployment:
+      status: not_implemented
+      scope: backend_runtime
+      description: Frontend scaffold는 존재하지만 Backend Runtime은 구현되지 않았고 실제 배포 상태는 확인되지 않음
+    lifecycle: in_development_backend_planned
+    release: null
+    verification:
+      production_deployment: verification_required
+    core_responsibilities:
+      - Learn
+      - Checklist
+      - Journal
+      - Review
+      - 금융 안전 정책
+      - 금융 질문·기록·복기 데이터
+    non_responsibilities:
+      - 매수·매도 추천
+      - 수익률 예측
+      - 공용 인증
+      - Provider-neutral AI 실행
+    source_refs:
+      - src.system-landscape
+
+  - id: system.dev-harness-local
+    display_name: Dev Harness Local
+    type: product
+    workstream: Dev Harness
+    logical_boundary_status: established
+    primary_repository:
+      status: confirmed
+      repository: aixion1506/oh-my-ai
+    current_implementation_hosts:
+      - repository: aixion1506/oh-my-ai
+        module: null
+        role: local_runtime
+    runtime_deployment:
+      status: current
+      description: Public v1.0.0으로 공개된 Local-first Runtime
+    lifecycle: released_active_development
+    release:
+      artifact_status: published
+      version: v1.0.0
+      draft: false
+      prerelease: false
+      published_at: "2026-07-27"
+      source_ref: src.dev-harness-v1-release
+    verification:
+      fresh_install: verification_required
+    core_responsibilities:
+      - Local-first Execution
+      - Session/Handoff
+      - Skills
+      - Approval
+      - 사용자 장비 실행
+    non_responsibilities:
+      - Cloud Control Plane
+      - 중앙 계정
+      - 중앙 Queue
+      - 중앙 Project Memory Runtime
+    source_refs:
+      - src.system-landscape
+      - src.dev-harness-v1-release
+
+  - id: system.dev-harness-cloud
+    display_name: Dev Harness Cloud
+    type: product
+    workstream: Dev Harness
+    logical_boundary_status: target
+    primary_repository:
+      status: repository_unconfirmed
+      repository: null
+    current_implementation_hosts: []
+    runtime_deployment:
+      status: not_implemented
+      description: Cloud Runtime은 아직 구현되지 않음
+    lifecycle: planned
+    release: null
+    verification:
+      production_deployment: verification_required
+    core_responsibilities:
+      - Control Plane
+      - Approval Queue
+      - Project Memory
+      - Multi-AI Coordination
+    non_responsibilities:
+      - Local Executor 자체
+      - 현재 V1 기능으로의 오기
+    source_refs:
+      - src.system-landscape
+
+  - id: system.spring-cloud-gateway
+    display_name: Spring Cloud Gateway
+    type: edge
+    workstream: Platform Foundation
+    logical_boundary_status: established
+    primary_repository:
+      status: confirmed
+      repository: care-log/carelog-be
+    current_implementation_hosts:
+      - repository: care-log/carelog-be
+        module: carelog-gateway
+        role: edge_gateway
+    runtime_deployment:
+      status: current
+      description: carelog-gateway Module이 존재하는 외부 Ingress와 Edge 보안 경계
+    lifecycle: in_development
+    release: null
+    verification:
+      production_deployment: verification_required
+    core_responsibilities:
+      - 외부 Ingress
+      - Routing
+      - 공통 Edge 보안 경계
+    non_responsibilities:
+      - 제품 도메인 정책
+      - 내부 서비스 호출 우회 경로
+      - 제품 데이터 소유
+    source_refs:
+      - src.system-landscape
+      - src.service-communication-policy
+      - src.adr-0015
+
+  - id: system.shared-identity
+    display_name: Shared Identity
+    type: shared_platform
+    workstream: Platform Foundation
+    logical_boundary_status: in_progress
+    primary_repository:
+      status: repository_unconfirmed
+      repository: null
+    current_implementation_hosts:
+      - repository: care-log/carelog-be
+        module: auth-oauth
+        role: current_logical_implementation
+    runtime_deployment:
+      status: not_implemented
+      scope: independent_runtime
+      description: 현재 Carelog 내부 논리 경계이며 독립 Runtime은 아님
+    lifecycle: in_development
+    release: null
+    verification:
+      production_deployment: verification_required
+    core_responsibilities:
+      - 사용자 식별
+      - OAuth Provider Integration 공통 Core
+      - Product Client Registry
+      - Token 정책
+      - 향후 issuer/audience/JWKS
+    non_responsibilities:
+      - 제품별 Authorization
+      - Role/Permission
+      - 제품별 returnTo 의미
+      - 제품 도메인 데이터
+    source_refs:
+      - src.system-landscape
+      - src.oauth-state-product-client-binding-contract
+      - src.adr-0015
+
+  - id: system.shared-ai
+    display_name: Shared AI
+    type: shared_platform
+    workstream: Platform Foundation
+    logical_boundary_status: documented
+    primary_repository:
+      status: repository_unconfirmed
+      repository: null
+    current_implementation_hosts: []
+    runtime_deployment:
+      status: not_implemented
+      description: Provider-neutral Shared AI Runtime은 아직 구현되지 않음
+    lifecycle: planned
+    release: null
+    verification:
+      production_deployment: verification_required
+    core_responsibilities:
+      - Provider-neutral 실행
+      - Routing
+      - Streaming Runtime
+      - Cost/Usage
+      - Retry/Timeout
+      - Credential 관리
+    non_responsibilities:
+      - 제품 Prompt
+      - Domain Policy
+      - Tool 선택
+      - Output Validation
+      - 제품 결과 데이터
+    source_refs:
+      - src.system-landscape
+      - src.adr-0015
+
+  - id: system.shared-commerce
+    display_name: Shared Commerce
+    type: shared_platform
+    workstream: Platform Foundation
+    logical_boundary_status: candidate
+    primary_repository:
+      status: not_implemented
+      repository: null
+    current_implementation_hosts: []
+    runtime_deployment:
+      status: not_implemented
+      description: Shared Commerce Runtime은 아직 구현되지 않음
+    lifecycle: deferred_future
+    release: null
+    verification:
+      production_deployment: verification_required
+    core_responsibilities:
+      - Product Catalog
+      - Plan
+      - Subscription
+      - Order
+      - Payment
+      - Entitlement
+    non_responsibilities:
+      - 제품별 상품 정책의 무조건적 소유
+      - 확인되지 않은 제품 거래 데이터 소유
+    source_refs:
+      - src.system-landscape
+      - src.adr-0015
+
+  - id: system.audit-consumer
+    display_name: Audit Consumer
+    type: consumer
+    workstream: Platform Foundation
+    logical_boundary_status: candidate
+    primary_repository:
+      status: not_implemented
+      repository: null
+    current_implementation_hosts: []
+    runtime_deployment:
+      status: not_implemented
+      description: 비동기 Audit Event 소비 Runtime은 아직 구현되지 않음
+    lifecycle: deferred_future
+    release: null
+    verification:
+      production_deployment: verification_required
+    core_responsibilities:
+      - 비동기 Audit Event 소비
+      - 운영 추적
+      - 보안 이벤트 기록
+    non_responsibilities:
+      - 제품 Business Transaction Primary Store
+      - 제품 원본 데이터 소유
+    source_refs:
+      - src.system-landscape
+      - src.adr-0015
+      - src.database-ownership-policy
+
+  - id: system.platform-foundation-docs
+    display_name: Platform Foundation Docs
+    type: documentation
+    workstream: Platform Foundation
+    logical_boundary_status: canonical_documentation_boundary
+    primary_repository:
+      status: confirmed
+      repository: aixion1506/harness-foundation-docs
+    current_implementation_hosts:
+      - repository: aixion1506/harness-foundation-docs
+        module: null
+        role: canonical_documentation_repository
+    runtime_deployment:
+      status: documentation_only
+      description: Accepted Architecture와 공통 Governance를 소유하는 문서 경계
+    lifecycle: active
+    release: null
+    verification:
+      production_deployment: verification_required
+    core_responsibilities:
+      - Accepted Architecture
+      - ADR
+      - Decision Log
+      - 공통 Boundary/Contract
+      - 공통 Governance
+    non_responsibilities:
+      - 제품 Runtime
+      - Jira 작업 상태
+      - Production Configuration
+    source_refs:
+      - src.portfolio-work-management-governance
+      - src.adr-0015
+      - src.decision-dec-064
+      - src.decision-dec-065
+      - src.system-landscape
+
+communication_relations:
+  - id: relation.product-client-to-gateway-product-api
+    category: external
+    caller:
+      kind: ref
+      ref: actor.product-client
+      role: product_client
+    callee:
+      kind: ref
+      ref: system.spring-cloud-gateway
+      role: external_gateway
+    via: []
+    purpose: 외부 제품 API 진입
+    protocol: http_json
+    lifecycle:
+      state: current
+      qualifiers:
+        - baseline
+    interaction: sync
+    data_ownership:
+      owner_refs: []
+      owner_scope: product
+      note: 제품 도메인 데이터
+    failure_policy: 명시적 4xx/5xx와 timeout 계약
+    adoption_trigger: 기본값
+    constraints: []
+    source_refs:
+      - src.system-landscape
+      - src.adr-0015
+
+  - id: relation.gateway-to-carelog-routing
+    category: external
+    caller:
+      kind: ref
+      ref: system.spring-cloud-gateway
+      role: external_gateway
+    callee:
+      kind: ref
+      ref: system.carelog
+      role: product_backend
+    via: []
+    purpose: Routing과 Edge 인증 Context 전달
+    protocol: http_json
+    lifecycle:
+      state: current
+      qualifiers:
+        - implementation
+    interaction: sync
+    data_ownership:
+      owner_refs:
+        - system.carelog
+      owner_scope: null
+      note: Carelog 제품 데이터
+    failure_policy: 인증 경계는 fail closed이며 제품 오류 계약을 보존
+    adoption_trigger: 현재 구현
+    constraints: []
+    source_refs:
+      - src.system-landscape
+      - src.service-communication-policy
+      - src.adr-0015
+
+  - id: relation.finance-frontend-to-finance-backend
+    category: external
+    caller:
+      kind: ref
+      ref: system.finance-harness
+      role: frontend
+    callee:
+      kind: ref
+      ref: system.finance-harness
+      role: backend
+    via: []
+    purpose: Finance 제품 API 호출
+    protocol: http_json
+    lifecycle:
+      state: target
+      qualifiers:
+        - backend_not_implemented
+    interaction: sync
+    data_ownership:
+      owner_refs:
+        - system.finance-harness
+      owner_scope: null
+      note: Finance 제품 데이터
+    failure_policy: 사용자 복구 가능 오류와 timeout 계약
+    adoption_trigger: Finance Backend 구현
+    constraints: []
+    source_refs:
+      - src.system-landscape
+
+  - id: relation.product-client-to-gateway-identity-entry
+    category: external
+    caller:
+      kind: ref
+      ref: actor.product-client
+      role: product_client
+    callee:
+      kind: ref
+      ref: system.spring-cloud-gateway
+      role: external_gateway
+    via: []
+    purpose: Login OAuth Refresh 외부 진입
+    protocol: http_json
+    lifecycle:
+      state: target
+      qualifiers: []
+    interaction: sync
+    data_ownership:
+      owner_refs:
+        - system.shared-identity
+      owner_scope: null
+      note: Identity와 OAuth 상태
+    failure_policy: fail closed와 timeout
+    adoption_trigger: 독립 Identity Endpoint
+    constraints:
+      - 제품별 Authorization은 제품이 소유한다
+    source_refs:
+      - src.system-landscape
+      - src.oauth-state-product-client-binding-contract
+      - src.adr-0015
+
+  - id: relation.gateway-to-shared-identity-endpoint
+    category: external
+    caller:
+      kind: ref
+      ref: system.spring-cloud-gateway
+      role: external_gateway
+    callee:
+      kind: ref
+      ref: system.shared-identity
+      role: public_identity_endpoint
+    via: []
+    purpose: 공개 Identity Endpoint Routing
+    protocol: http_json
+    lifecycle:
+      state: target
+      qualifiers:
+        - independent_runtime_required
+    interaction: sync
+    data_ownership:
+      owner_refs:
+        - system.shared-identity
+      owner_scope: null
+      note: Identity 데이터
+    failure_policy: 위조 Header 제거와 인증 오류 보존
+    adoption_trigger: 독립 Shared Identity Runtime
+    constraints:
+      - Shared Identity는 제품별 Authorization을 소유하지 않는다
+    source_refs:
+      - src.system-landscape
+      - src.oauth-state-product-client-binding-contract
+      - src.adr-0015
+
+  - id: relation.product-client-to-gateway-ai-entry
+    category: external
+    caller:
+      kind: ref
+      ref: actor.product-client
+      role: product_client
+    callee:
+      kind: ref
+      ref: system.spring-cloud-gateway
+      role: external_gateway
+    via: []
+    purpose: 제품 AI 요청 외부 진입
+    protocol: http_json
+    lifecycle:
+      state: target
+      qualifiers: []
+    interaction: sync
+    data_ownership:
+      owner_refs: []
+      owner_scope: product
+      note: 제품 입력과 제품 결과
+    failure_policy: 제품 오류 계약과 timeout
+    adoption_trigger: 제품 AI 기능
+    constraints:
+      - Product Client는 Shared AI를 직접 호출하지 않는다
+    source_refs:
+      - src.system-landscape
+      - src.adr-0015
+
+  - id: relation.gateway-to-product-backend-ai-request
+    category: external
+    caller:
+      kind: ref
+      ref: system.spring-cloud-gateway
+      role: external_gateway
+    callee:
+      kind: scope
+      scope: product_backend
+      role: backend
+    via: []
+    purpose: AI 요청과 인증 Context를 Product Backend에 전달
+    protocol: http_json
+    lifecycle:
+      state: target
+      qualifiers: []
+    interaction: sync
+    data_ownership:
+      owner_refs: []
+      owner_scope: product
+      note: 제품 입력과 Authorization Context
+    failure_policy: 인증 Context는 fail closed
+    adoption_trigger: 제품 AI 기능
+    constraints:
+      - Product Backend가 제품 Authorization을 소유한다
+    source_refs:
+      - src.system-landscape
+      - src.service-communication-policy
+      - src.adr-0015
+
+  - id: relation.product-backend-to-product-client-ai-stream
+    category: external
+    caller:
+      kind: scope
+      scope: product_backend
+      role: backend
+    callee:
+      kind: ref
+      ref: actor.product-client
+      role: product_client
+    via:
+      - kind: ref
+        ref: system.spring-cloud-gateway
+        role: external_gateway
+    purpose: 제품이 검증한 AI 결과 Streaming
+    protocol: sse
+    lifecycle:
+      state: target
+      qualifiers: []
+    interaction: sync_stream
+    data_ownership:
+      owner_refs: []
+      owner_scope: product
+      note: 제품이 검증한 결과
+    failure_policy: timeout cancellation reconnect 계약
+    adoption_trigger: 실제 Streaming 기능
+    constraints:
+      - 외부 Streaming은 Product Backend 경계를 통해 전달한다
+    source_refs:
+      - src.system-landscape
+      - src.adr-0015
+
+  - id: relation.product-backend-to-shared-identity-management
+    category: internal
+    caller:
+      kind: scope
+      scope: product_backend
+      role: backend
+    callee:
+      kind: ref
+      ref: system.shared-identity
+      role: management_endpoint
+    via: []
+    purpose: 사용자 계정 연결 Product Client 운영 Admin 관리 호출
+    protocol: direct_http_json
+    lifecycle:
+      state: target
+      qualifiers:
+        - limited_management_only
+    interaction: sync
+    data_ownership:
+      owner_refs:
+        - system.shared-identity
+      owner_scope: null
+      note: Identity와 Product Client 데이터
+    failure_policy: timeout bounded retry fail closed
+    adoption_trigger: 독립 Runtime과 실제 관리 Use Case
+    constraints:
+      - 일반 제품 요청마다 Shared Identity를 동기 호출하지 않는다
+      - 가능한 경우 Gateway 또는 Product Backend가 Token을 로컬 검증한다
+      - 제품별 Authorization은 제품이 소유한다
+    source_refs:
+      - src.system-landscape
+      - src.oauth-state-product-client-binding-contract
+      - src.service-communication-policy
+      - src.adr-0015
+
+  - id: relation.product-backend-to-shared-ai-execution
+    category: internal
+    caller:
+      kind: scope
+      scope: product_backend
+      role: backend
+    callee:
+      kind: ref
+      ref: system.shared-ai
+      role: provider_neutral_execution
+    via: []
+    purpose: 제품 정책 결정 후 Provider-neutral 실행 요청
+    protocol: direct_http_json
+    lifecycle:
+      state: target
+      qualifiers: []
+    interaction: sync
+    data_ownership:
+      owner_refs: []
+      owner_scope: split_product_and_ai_execution_metadata
+      note: 제품 입력과 결과는 제품 소유이며 Shared AI는 실행 Metadata만 소유 후보
+    failure_policy: timeout cancellation bounded retry
+    adoption_trigger: 실제 Shared AI 소비 제품
+    constraints:
+      - Product Client에서 Shared AI로 직접 호출하지 않는다
+      - Shared AI는 Public Direct Route를 갖지 않는다
+      - 내부 호출은 External Gateway를 우회한다
+      - Product Backend가 Authorization Prompt Domain Policy Tool Output Policy를 소유한다
+    source_refs:
+      - src.system-landscape
+      - src.service-communication-policy
+      - src.adr-0015
+
+  - id: relation.shared-ai-to-product-backend-stream
+    category: internal
+    caller:
+      kind: ref
+      ref: system.shared-ai
+      role: provider_neutral_execution
+    callee:
+      kind: scope
+      scope: product_backend
+      role: backend
+    via: []
+    purpose: Provider-neutral 실행 결과와 내부 Stream 반환
+    protocol: http_json_internal_stream
+    lifecycle:
+      state: target
+      qualifiers: []
+    interaction: sync_stream
+    data_ownership:
+      owner_refs: []
+      owner_scope: split_product_and_ai_execution_metadata
+      note: 제품 결과는 제품 소유이며 AI 실행 Metadata만 Shared AI 소유 후보
+    failure_policy: Provider 오류 정규화와 cancellation
+    adoption_trigger: 실제 Streaming 기능
+    constraints:
+      - Product Backend가 결과 검증과 외부 응답 계약을 소유한다
+    source_refs:
+      - src.system-landscape
+      - src.service-communication-policy
+      - src.adr-0015
+
+  - id: relation.dev-harness-local-to-dev-harness-cloud
+    category: internal
+    caller:
+      kind: ref
+      ref: system.dev-harness-local
+      role: local_runtime
+    callee:
+      kind: ref
+      ref: system.dev-harness-cloud
+      role: cloud_control_plane
+    via: []
+    purpose: Queue Memory Coordination
+    protocol: http_json
+    lifecycle:
+      state: future
+      qualifiers:
+        - cloud_not_implemented
+    interaction: sync_primary_async_undecided
+    data_ownership:
+      owner_refs:
+        - system.dev-harness-local
+        - system.dev-harness-cloud
+      owner_scope: null
+      note: Local과 Cloud 경계별 데이터 소유
+    failure_policy: offline-first degradation
+    adoption_trigger: Cloud Control Plane 수요
+    constraints:
+      - Dev Harness Local은 Cloud 없이도 기본 실행 가능해야 한다
+    source_refs:
+      - src.system-landscape
+
+  - id: relation.product-backend-to-shared-commerce
+    category: internal
+    caller:
+      kind: scope
+      scope: product_backend
+      role: backend
+    callee:
+      kind: ref
+      ref: system.shared-commerce
+      role: commerce_service
+    via: []
+    purpose: Entitlement Order Payment 조회와 명령
+    protocol: http_json
+    lifecycle:
+      state: future
+      qualifiers:
+        - shared_commerce_not_implemented
+    interaction: sync_event_undecided
+    data_ownership:
+      owner_refs:
+        - system.shared-commerce
+      owner_scope: product
+      note: 공통 Commerce 데이터는 Shared Commerce 후보이며 제품 정책은 제품 소유
+    failure_policy: Idempotency와 실패 정책은 계약 시 결정
+    adoption_trigger: 복수 제품의 공통 Commerce 수요
+    constraints: []
+    source_refs:
+      - src.system-landscape
+      - src.adr-0015
+
+  - id: relation.product-or-identity-to-audit-consumer
+    category: deferred
+    caller:
+      kind: scope
+      scope: product_or_identity
+      role: event_producer
+    callee:
+      kind: ref
+      ref: system.audit-consumer
+      role: audit_event_consumer
+    via: []
+    purpose: Audit와 Security Event 전달
+    protocol: nats_jetstream
+    lifecycle:
+      state: deferred
+      qualifiers:
+        - target
+    interaction: async
+    data_ownership:
+      owner_refs:
+        - system.audit-consumer
+      owner_scope: producer_business_data
+      note: Producer는 Business Data를 소유하고 Audit Consumer는 Projection만 소유
+    failure_policy: Durable Consumer Retry DLQ 정책은 도입 시 결정
+    adoption_trigger: 검증된 Audit Use Case
+    constraints:
+      - Audit Consumer는 제품 Business Transaction Primary Store가 아니다
+    source_refs:
+      - src.system-landscape
+      - src.adr-0015
+
+  - id: relation.high-volume-service-to-grpc-peer
+    category: deferred
+    caller:
+      kind: scope
+      scope: high_volume_service
+      role: caller
+    callee:
+      kind: scope
+      scope: grpc_peer
+      role: peer
+    via: []
+    purpose: 고빈도 저지연 내부 호출
+    protocol: grpc
+    lifecycle:
+      state: deferred
+      qualifiers: []
+    interaction: sync
+    data_ownership:
+      owner_refs: []
+      owner_scope: contract_specific
+      note: 호출 계약별 데이터 소유
+    failure_policy: Deadline과 Retry 계약 필요
+    adoption_trigger: 측정된 Latency와 Throughput 필요
+    constraints:
+      - HTTP JSON으로 충분한 동안 도입하지 않는다
+    source_refs:
+      - src.system-landscape
+      - src.adr-0015
+
+  - id: relation.event-producer-to-kafka-consumer
+    category: deferred
+    caller:
+      kind: scope
+      scope: event_producer
+      role: producer
+    callee:
+      kind: scope
+      scope: kafka_consumer
+      role: consumer
+    via: []
+    purpose: 대규모 Replay와 Stream Ecosystem
+    protocol: kafka
+    lifecycle:
+      state: deferred
+      qualifiers: []
+    interaction: async
+    data_ownership:
+      owner_refs: []
+      owner_scope: contract_specific
+      note: Event 계약별 데이터 소유
+    failure_policy: Kafka 운영 모델과 Consumer 정책 선행
+    adoption_trigger: 대규모 Replay CDC 처리량 Ecosystem 요구
+    constraints:
+      - NATS JetStream으로 충족하기 어려운 요구가 입증되기 전에는 도입하지 않는다
+    source_refs:
+      - src.system-landscape
+      - src.adr-0015
+
+  - id: relation.product-to-product-direct-call
+    category: negative
+    caller:
+      kind: scope
+      scope: product_system
+      role: source_product
+    callee:
+      kind: scope
+      scope: product_system
+      role: target_product
+    via: []
+    purpose: 제품 간 직접 기능 호출 금지
+    protocol: none
+    lifecycle:
+      state: absent
+      qualifiers:
+        - forbidden
+    interaction: not_applicable
+    data_ownership:
+      owner_refs: []
+      owner_scope: each_product
+      note: 각 제품이 자체 데이터와 정책을 소유
+    failure_policy: 제품 간 DB 공유와 암묵적 직접 호출을 허용하지 않음
+    adoption_trigger: 명시적 계약과 Architecture Decision 없이는 도입하지 않음
+    constraints:
+      - 제품 간 DB 공유 금지
+      - 제품 간 직접 호출을 현재 또는 Planned 관계로 해석하지 않는다
+    source_refs:
+      - src.system-landscape
+      - src.database-ownership-policy
+      - src.adr-0015
+
+data_groups:
+  - id: data.user-identity
+    display_name: User Identity
+    logical_owner: { kind: ref, ref: system.shared-identity }
+    current_store: { status: current, system_ref: system.carelog, technology: postgresql, description: 현재 Carelog DB/Auth 영역 }
+    target_store: { status: gate_dependent, system_ref: system.shared-identity, blocked_by: [], description: 독립 여부는 Gate 이후 결정 }
+    write_authority: { system_refs: [system.carelog], participant_scope: null, note: 현재 Carelog Auth; 향후 Identity }
+    read_consumers: { system_refs: [system.carelog], participant_scopes: [] }
+    sharing_method: [token, api]
+    migration: { state: logical_separation_in_progress, evidence: null }
+    follow_up: { state: gate_dependent, description: 독립 Shared Identity Store 여부 결정, related_jira: [] }
+    constraints: [현재 Store가 Carelog DB/Auth 영역이어도 Logical Owner는 Shared Identity logical boundary일 수 있다, 독립 Store 이전 완료로 표현하지 않는다]
+    source_refs: [src.system-landscape]
+
+  - id: data.oauth-account-link
+    display_name: OAuth Account Link
+    logical_owner: { kind: ref, ref: system.shared-identity }
+    current_store: { status: current, system_ref: system.carelog, technology: postgresql, description: 현재 Carelog DB/Auth 영역 }
+    target_store: { status: gate_dependent, system_ref: system.shared-identity, blocked_by: [], description: Gate 이후 미정 }
+    write_authority: { system_refs: [system.carelog], participant_scope: null, note: 현재 Carelog Auth }
+    read_consumers: { system_refs: [system.carelog], participant_scopes: [] }
+    sharing_method: [api, token_flow]
+    migration: { state: logical_separation_in_progress, evidence: null }
+    follow_up: { state: gate_dependent, description: 독립 Shared Identity Store 결정, related_jira: [] }
+    constraints: [독립 Store 이전 완료로 표현하지 않는다]
+    source_refs: [src.system-landscape]
+
+  - id: data.product-client
+    display_name: Product Client
+    logical_owner: { kind: ref, ref: system.shared-identity }
+    current_store: { status: current, system_ref: system.carelog, technology: postgresql, description: Carelog PostgreSQL Product Client Registry — V6 }
+    target_store: { status: gate_dependent, system_ref: system.shared-identity, blocked_by: [], description: Gate 이후 미정 }
+    write_authority: { system_refs: [system.carelog], participant_scope: null, note: 현재 Carelog Auth/Identity implementation boundary }
+    read_consumers: { system_refs: [system.carelog], participant_scopes: [] }
+    sharing_method: [registry_lookup]
+    migration: { state: complete, evidence: V6 / RPL-16 }
+    follow_up: { state: pending, description: OAuth State Product Client Binding 구현, related_jira: [RPL-27] }
+    constraints: [RPL-27은 Registry Migration이 아니다, V6 migration은 완료됐다]
+    source_refs: [src.system-landscape, src.oauth-state-product-client-binding-contract]
+
+  - id: data.carelog-customer
+    display_name: Carelog Customer
+    logical_owner: { kind: ref, ref: system.carelog }
+    current_store: { status: current, system_ref: system.carelog, technology: postgresql, description: Carelog PostgreSQL }
+    target_store: { status: current, system_ref: system.carelog, blocked_by: [], description: Carelog 소유 Store 유지 }
+    write_authority: { system_refs: [system.carelog], participant_scope: null, note: Carelog }
+    read_consumers: { system_refs: [system.carelog], participant_scopes: [] }
+    sharing_method: [api]
+    migration: { state: current, evidence: null }
+    follow_up: { state: null, description: null, related_jira: [] }
+    constraints: [제품은 자체 Business Data를 소유한다, 다른 제품이 DB Table을 직접 읽거나 쓰지 않는다, Cross-service 공유는 API, Token, 명시적 Event 또는 계약된 Projection으로 수행한다]
+    source_refs: [src.system-landscape, src.database-ownership-policy]
+
+  - id: data.carelog-record-timeline
+    display_name: Carelog Record / Timeline
+    logical_owner: { kind: ref, ref: system.carelog }
+    current_store: { status: current, system_ref: system.carelog, technology: postgresql, description: Carelog PostgreSQL }
+    target_store: { status: current, system_ref: system.carelog, blocked_by: [], description: Carelog 소유 Store 유지 }
+    write_authority: { system_refs: [system.carelog], participant_scope: null, note: Carelog }
+    read_consumers: { system_refs: [system.carelog], participant_scopes: [] }
+    sharing_method: [api, event_candidate]
+    migration: { state: evolving, evidence: Current / evolving }
+    follow_up: { state: null, description: null, related_jira: [] }
+    constraints: [제품은 자체 Business Data를 소유한다, 다른 제품이 DB Table을 직접 읽거나 쓰지 않는다]
+    source_refs: [src.system-landscape, src.database-ownership-policy]
+
+  - id: data.finance-question
+    display_name: Finance Question
+    logical_owner: { kind: ref, ref: system.finance-harness }
+    current_store: { status: not_implemented, system_ref: system.finance-harness, technology: null, description: "Backend 미구현, 현재 Store 미확정" }
+    target_store: { status: planned, system_ref: system.finance-harness, blocked_by: [], description: Finance 소유 Store }
+    write_authority: { system_refs: [system.finance-harness], participant_scope: null, note: Finance }
+    read_consumers: { system_refs: [system.finance-harness], participant_scopes: [] }
+    sharing_method: [api]
+    migration: { state: planned, evidence: null }
+    follow_up: { state: planned, description: Finance Backend 구현, related_jira: [] }
+    constraints: [미구현 Store를 추측하지 않는다, 다른 제품이 DB Table을 직접 읽거나 쓰지 않는다]
+    source_refs: [src.system-landscape]
+
+  - id: data.checklist
+    display_name: Checklist
+    logical_owner: { kind: ref, ref: system.finance-harness }
+    current_store: { status: not_implemented, system_ref: system.finance-harness, technology: null, description: "Backend 미구현, 현재 Store 미확정" }
+    target_store: { status: planned, system_ref: system.finance-harness, blocked_by: [], description: Finance 소유 Store }
+    write_authority: { system_refs: [system.finance-harness], participant_scope: null, note: Finance }
+    read_consumers: { system_refs: [system.finance-harness], participant_scopes: [] }
+    sharing_method: [api]
+    migration: { state: planned, evidence: null }
+    follow_up: { state: planned, description: Finance Backend 구현, related_jira: [] }
+    constraints: [미구현 Store를 추측하지 않는다, 다른 제품이 DB Table을 직접 읽거나 쓰지 않는다]
+    source_refs: [src.system-landscape]
+
+  - id: data.journal
+    display_name: Journal
+    logical_owner: { kind: ref, ref: system.finance-harness }
+    current_store: { status: not_implemented, system_ref: system.finance-harness, technology: null, description: "Backend 미구현, 현재 Store 미확정" }
+    target_store: { status: planned, system_ref: system.finance-harness, blocked_by: [], description: Finance 소유 Store }
+    write_authority: { system_refs: [system.finance-harness], participant_scope: null, note: Finance }
+    read_consumers: { system_refs: [system.finance-harness], participant_scopes: [] }
+    sharing_method: [api]
+    migration: { state: planned, evidence: null }
+    follow_up: { state: planned, description: Finance Backend 구현, related_jira: [] }
+    constraints: [미구현 Store를 추측하지 않는다, 다른 제품이 DB Table을 직접 읽거나 쓰지 않는다]
+    source_refs: [src.system-landscape]
+
+  - id: data.review
+    display_name: Review
+    logical_owner: { kind: ref, ref: system.finance-harness }
+    current_store: { status: not_implemented, system_ref: system.finance-harness, technology: null, description: "Backend 미구현, 현재 Store 미확정" }
+    target_store: { status: planned, system_ref: system.finance-harness, blocked_by: [], description: Finance 소유 Store }
+    write_authority: { system_refs: [system.finance-harness], participant_scope: null, note: Finance }
+    read_consumers: { system_refs: [system.finance-harness], participant_scopes: [] }
+    sharing_method: [api]
+    migration: { state: planned, evidence: null }
+    follow_up: { state: planned, description: Finance Backend 구현, related_jira: [] }
+    constraints: [미구현 Store를 추측하지 않는다, 다른 제품이 DB Table을 직접 읽거나 쓰지 않는다]
+    source_refs: [src.system-landscape]
+
+  - id: data.dev-harness-task-session-handoff
+    display_name: Dev Harness Task / Session / Handoff
+    logical_owner: { kind: ref, ref: system.dev-harness-local }
+    current_store: { status: current, system_ref: system.dev-harness-local, technology: local_filesystem, description: 사용자 장비의 Local artifacts/session }
+    target_store: { status: deferred, system_ref: system.dev-harness-cloud, blocked_by: [], description: Cloud 도입 시 분리 계약 필요 }
+    write_authority: { system_refs: [system.dev-harness-local], participant_scope: null, note: Local 사용자/Runtime }
+    read_consumers: { system_refs: [system.dev-harness-local, system.dev-harness-cloud], participant_scopes: [] }
+    sharing_method: [local_artifact, http]
+    migration: { state: evolving, evidence: Current Local / Cloud deferred }
+    follow_up: { state: deferred, description: Cloud 도입 시 분리 계약, related_jira: [] }
+    constraints: [현재 Local Artifact를 Shared Cloud DB로 표현하지 않는다]
+    source_refs: [src.system-landscape]
+
+  - id: data.product-prompt-domain-policy
+    display_name: Prompt / Domain Policy
+    logical_owner: { kind: scope, scope: each_product }
+    current_store: { status: repository_unconfirmed, system_ref: null, technology: null, description: "제품 Repository/Store별, 세부 미확정" }
+    target_store: { status: current, system_ref: null, blocked_by: [], description: 제품 소유 Store }
+    write_authority: { system_refs: [], participant_scope: product_domain, note: 제품 }
+    read_consumers: { system_refs: [system.shared-ai], participant_scopes: [] }
+    sharing_method: [api_request, versioned_contract]
+    migration: { state: current, evidence: 제품별 }
+    follow_up: { state: null, description: null, related_jira: [] }
+    constraints: [Prompt, Domain Policy, Tool 선택과 Output Policy는 제품이 소유한다, Shared AI는 제품 Prompt와 Domain Policy의 Owner가 아니다, 다른 제품이 DB Table을 직접 읽거나 쓰지 않는다]
+    source_refs: [src.system-landscape]
+
+  - id: data.ai-execution-metadata
+    display_name: AI Execution Metadata
+    logical_owner: { kind: ref, ref: system.shared-ai }
+    current_store: { status: not_implemented, system_ref: system.shared-ai, technology: null, description: Runtime 미구현 }
+    target_store: { status: planned, system_ref: system.shared-ai, blocked_by: [], description: Shared AI Store 후보 }
+    write_authority: { system_refs: [system.shared-ai], participant_scope: null, note: Shared AI }
+    read_consumers: { system_refs: [system.carelog, system.finance-harness, system.dev-harness-local], participant_scopes: [] }
+    sharing_method: [ai_api, usage_api]
+    migration: { state: planned, evidence: null }
+    follow_up: { state: planned, description: Shared AI Runtime 구현, related_jira: [] }
+    constraints: [제품 입력과 제품 결과 데이터는 Shared AI 소유가 아니다]
+    source_refs: [src.system-landscape]
+
+  - id: data.usage-cost
+    display_name: Usage / Cost
+    logical_owner: { kind: ref, ref: system.shared-ai }
+    current_store: { status: not_implemented, system_ref: system.shared-ai, technology: null, description: Runtime 미구현 }
+    target_store: { status: planned, system_ref: system.shared-ai, blocked_by: [], description: Shared AI Store 후보 }
+    write_authority: { system_refs: [system.shared-ai], participant_scope: null, note: Shared AI }
+    read_consumers: { system_refs: [system.carelog, system.finance-harness, system.dev-harness-local], participant_scopes: [] }
+    sharing_method: [api, report]
+    migration: { state: planned, evidence: null }
+    follow_up: { state: planned, description: Shared AI Runtime 구현, related_jira: [] }
+    constraints: [제품 입력과 제품 결과 데이터는 Shared AI 소유가 아니다]
+    source_refs: [src.system-landscape]
+
+  - id: data.product-catalog
+    display_name: Product Catalog
+    logical_owner: { kind: ref, ref: system.shared-commerce }
+    current_store: { status: deferred, system_ref: system.shared-commerce, technology: null, description: 미구현 / 미확정 }
+    target_store: { status: deferred, system_ref: system.shared-commerce, blocked_by: [], description: Shared Commerce 후보 }
+    write_authority: { system_refs: [system.shared-commerce], participant_scope: null, note: Shared Commerce }
+    read_consumers: { system_refs: [system.carelog, system.finance-harness, system.dev-harness-local], participant_scopes: [] }
+    sharing_method: [commerce_api]
+    migration: { state: deferred, evidence: null }
+    follow_up: { state: deferred, description: 복수 제품의 공통 Commerce 수요, related_jira: [] }
+    constraints: [확인되지 않은 현재 Store를 만들지 않는다, 제품별 상품 정책의 무조건적 소유가 아니다]
+    source_refs: [src.system-landscape]
+
+  - id: data.plan
+    display_name: Plan
+    logical_owner: { kind: ref, ref: system.shared-commerce }
+    current_store: { status: deferred, system_ref: system.shared-commerce, technology: null, description: 미구현 / 미확정 }
+    target_store: { status: deferred, system_ref: system.shared-commerce, blocked_by: [], description: Shared Commerce 후보 }
+    write_authority: { system_refs: [system.shared-commerce], participant_scope: null, note: Shared Commerce }
+    read_consumers: { system_refs: [system.carelog, system.finance-harness, system.dev-harness-local], participant_scopes: [] }
+    sharing_method: [commerce_api]
+    migration: { state: deferred, evidence: null }
+    follow_up: { state: deferred, description: 복수 제품의 공통 Commerce 수요, related_jira: [] }
+    constraints: [확인되지 않은 현재 Store를 만들지 않는다]
+    source_refs: [src.system-landscape]
+
+  - id: data.subscription
+    display_name: Subscription
+    logical_owner: { kind: ref, ref: system.shared-commerce }
+    current_store: { status: deferred, system_ref: system.shared-commerce, technology: null, description: 미구현 / 미확정 }
+    target_store: { status: deferred, system_ref: system.shared-commerce, blocked_by: [], description: Shared Commerce 후보 }
+    write_authority: { system_refs: [system.shared-commerce], participant_scope: null, note: Shared Commerce }
+    read_consumers: { system_refs: [system.carelog, system.finance-harness, system.dev-harness-local], participant_scopes: [] }
+    sharing_method: [commerce_api, event]
+    migration: { state: deferred, evidence: null }
+    follow_up: { state: deferred, description: 복수 제품의 공통 Commerce 수요, related_jira: [] }
+    constraints: [확인되지 않은 현재 Store를 만들지 않는다]
+    source_refs: [src.system-landscape]
+
+  - id: data.order
+    display_name: Order
+    logical_owner: { kind: ref, ref: system.shared-commerce }
+    current_store: { status: deferred, system_ref: system.shared-commerce, technology: null, description: 미구현 / 미확정 }
+    target_store: { status: deferred, system_ref: system.shared-commerce, blocked_by: [], description: Shared Commerce 후보 }
+    write_authority: { system_refs: [system.shared-commerce], participant_scope: null, note: Shared Commerce }
+    read_consumers: { system_refs: [system.carelog, system.finance-harness, system.dev-harness-local], participant_scopes: [] }
+    sharing_method: [commerce_api, event]
+    migration: { state: deferred, evidence: null }
+    follow_up: { state: deferred, description: 복수 제품의 공통 Commerce 수요, related_jira: [] }
+    constraints: [확인되지 않은 현재 Store를 만들지 않는다]
+    source_refs: [src.system-landscape]
+
+  - id: data.payment
+    display_name: Payment
+    logical_owner: { kind: ref, ref: system.shared-commerce }
+    current_store: { status: deferred, system_ref: system.shared-commerce, technology: null, description: 미구현 / 미확정 }
+    target_store: { status: deferred, system_ref: system.shared-commerce, blocked_by: [], description: Shared Commerce 후보 }
+    write_authority: { system_refs: [system.shared-commerce], participant_scope: null, note: Shared Commerce }
+    read_consumers: { system_refs: [system.carelog, system.finance-harness, system.dev-harness-local], participant_scopes: [] }
+    sharing_method: [provider_integration, api]
+    migration: { state: deferred, evidence: null }
+    follow_up: { state: deferred, description: 복수 제품의 공통 Commerce 수요, related_jira: [] }
+    constraints: [확인되지 않은 현재 Store를 만들지 않는다]
+    source_refs: [src.system-landscape]
+
+  - id: data.audit-event
+    display_name: Audit Event
+    logical_owner: { kind: scope, scope: producer }
+    current_store: { status: deferred, system_ref: system.audit-consumer, technology: null, description: Consumer 미구현 }
+    target_store: { status: deferred, system_ref: system.audit-consumer, blocked_by: [], description: Audit Store 후보 }
+    write_authority: { system_refs: [], participant_scope: producer, note: 생산자는 event 발행; Consumer는 projection 기록 }
+    read_consumers: { system_refs: [system.audit-consumer], participant_scopes: [] }
+    sharing_method: [nats_jetstream_candidate]
+    migration: { state: deferred, evidence: null }
+    follow_up: { state: deferred, description: 검증된 Audit Use Case와 Consumer 도입, related_jira: [] }
+    constraints: [Audit Projection은 Audit Consumer 소유 후보이다, Audit Consumer는 제품 Business Transaction Primary Store가 아니다, 제품은 원본 Business Data를 소유한다]
+    source_refs: [src.system-landscape, src.database-ownership-policy]
+
+architecture_gates:
+  - id: gate.shared-identity-extraction
+    display_name: Shared Identity physical extraction
+    status: deferred
+    adoption_decision: not_decided
+    deferral_policy: accepted_with_constraints
+    current_state: Shared Identity는 Carelog 내부 논리 경계이며 독립 Repository와 Runtime은 없음
+    why_deferred: 복수 제품 소비와 독립 배포·Schema·장애 격리 필요성이 아직 충분히 입증되지 않음
+    required_evidence: [둘 이상의 실제 제품 소비, 독립 배포 필요성, 독립 Schema Ownership, 장애 격리 필요성, Identity 부하와 운영 책임의 독립성]
+    adoption_triggers: [복수 제품의 실제 인증 소비, 독립 Release Cadence, 독립 장애 격리, 별도 데이터 Migration과 Ownership 확정]
+    owner: { kind: ref, ref: system.shared-identity }
+    blocked_work: [독립 Repository 확정, Schema Migration Ownership, Token/JWKS Contract, 배포·관측·장애복구 기준]
+    related_jira: [RPL-24, RPL-27, RPL-28]
+    related_decisions: [DEC-064]
+    constraints: [제품별 Authorization은 제품 소유, 일반 제품 요청마다 Shared Identity를 동기 호출하지 않음, 가능한 경우 Gateway 또는 Product Backend가 Token을 로컬 검증]
+    source_refs: [src.system-landscape, src.oauth-state-product-client-binding-contract, src.adr-0015, src.decision-dec-064]
+
+  - id: gate.oauth-backend-callback-topology
+    display_name: OAuth Backend Callback topology
+    status: deferred
+    adoption_decision: not_decided
+    deferral_policy: accepted_with_constraints
+    current_state: Product Client가 code/state를 Exchange Endpoint에 전달하며 Provider Callback Backend topology는 미확정
+    why_deferred: Callback·Completion Redirect·Session Handoff 책임과 Web/Mobile 보안 경계가 함께 결정돼야 함
+    required_evidence: [Backend Callback Provider 제약, Callback 위조·Replay·운영 실패 대응, Web/Mobile 완료 흐름, 기존 Exchange 방식 한계]
+    adoption_triggers: [Backend Callback Contract 승인, Completion Redirect Contract 승인, Session Handoff Contract 승인]
+    owner: { kind: ref, ref: system.shared-identity }
+    blocked_work: [Provider Callback Endpoint, Completion Redirect, Session Exchange, Gateway 공개 Route]
+    related_jira: [RPL-24, RPL-27, RPL-28]
+    related_decisions: []
+    constraints: [OAuth State Product Client Binding 계약 보존, Provider Callback 성공과 제품 Session 완료를 혼합하지 않음, Callback만으로 사용자 Session을 직접 발급하지 않음]
+    source_refs: [src.system-landscape, src.oauth-state-product-client-binding-contract, src.adr-0015]
+
+  - id: gate.product-completion-redirect
+    display_name: Product Completion Redirect
+    status: deferred
+    adoption_decision: not_decided
+    deferral_policy: accepted_with_constraints
+    current_state: OAuth 이후 제품 Completion Redirect 정책 미확정이며 path-only returnTo 계약은 RPL-27 구현 대상
+    why_deferred: Backend Callback topology와 Session Handoff 방식이 미확정이고 제품별 Web/Mobile 완료 경로가 다름
+    required_evidence: [제품별 완료 Route, path-only returnTo 검증, Redirect Replay 방지, 허용 Origin과 Client Context 검증]
+    adoption_triggers: [Callback topology 결정, Web/Mobile Session Handoff 결정, 제품 Client별 완료 경로 계약 승인]
+    owner: { kind: scope, scope: identity_and_gateway_owners }
+    blocked_work: [Completion Redirect Endpoint, Product Client별 Redirect Policy, Error Redirect Contract]
+    related_jira: [RPL-27, RPL-28]
+    related_decisions: []
+    constraints: [임의 외부 URL Redirect 금지, Access Token과 Refresh Token을 URL에 직접 포함하지 않음, Product Client Snapshot과 returnTo 검증 이후에만 Redirect]
+    source_refs: [src.system-landscape, src.oauth-state-product-client-binding-contract]
+
+  - id: gate.web-mobile-session-handoff
+    display_name: Web/Mobile Session handoff
+    status: deferred
+    adoption_decision: not_decided
+    deferral_policy: accepted_with_constraints
+    current_state: Web과 Mobile Session 전달 방식 미확정이며 실제 iOS/Android Product Client는 구현 또는 검증 필요
+    why_deferred: Web secure cookie와 Mobile deep-link 보안 경계가 다르고 일회성 Exchange Code 계약이 필요
+    required_evidence: [Web Cookie/Session Contract, Mobile Universal Link/App Link 또는 Custom Scheme 정책, 일회성 Exchange Code TTL, Replay 방지, 기기·Client Binding]
+    adoption_triggers: [Web Product Client 실제 연동, Mobile Product Client 실제 연동, 제품별 Session Storage 정책 승인]
+    owner: { kind: ref, ref: system.shared-identity }
+    blocked_work: [Web Session 발급, Mobile Session Exchange, Universal Link/App Link, Logout/Refresh Contract]
+    related_jira: [RPL-24, RPL-27, RPL-28]
+    related_decisions: []
+    constraints: [Access/Refresh Token을 Redirect URL에 직접 포함하지 않음, Web과 Mobile 전달 방식을 하나의 불명확한 계약으로 합치지 않음, 일회성 Code는 TTL과 단일 소비를 가져야 함]
+    source_refs: [src.system-landscape, src.oauth-state-product-client-binding-contract]
+
+  - id: gate.issuer-audience-jwks
+    display_name: issuer/audience/JWKS 및 Gateway validation context
+    status: deferred
+    adoption_decision: not_decided
+    deferral_policy: accepted_with_constraints
+    current_state: 독립 issuer·audience·JWKS Rotation·Gateway trusted context 전달 방식이 미확정이며 독립 Identity Runtime 없음
+    why_deferred: 단일 구현 Host에는 독립 issuer 분리 Evidence가 부족하고 다중 Token Consumer와 Key Rotation 운영 모델이 필요
+    required_evidence: [Token Consumer 목록, issuer/audience 구분 필요성, Key Rotation과 JWKS 운영, Gateway 위조 Header 제거, Product Backend Local Validation Evidence, Trusted Context 전달 Contract]
+    adoption_triggers: [독립 Shared Identity Runtime, 둘 이상의 Token Consumer, 다중 제품 Routing, Key Rotation 운영 요구, 명시적 Validation Contract]
+    owner: { kind: scope, scope: identity_and_gateway_owners }
+    blocked_work: [Token Claims Contract, JWKS Endpoint, Key Rotation Runbook, Gateway Trusted Header Contract, Product Local Validation Contract]
+    related_jira: [RPL-28]
+    related_decisions: [DEC-064]
+    constraints: [Gateway가 외부 위조 Header를 제거, Product Authorization은 제품 소유, Shared Identity를 모든 요청의 중앙 병목으로 만들지 않음, 가능한 경우 Token을 로컬 검증]
+    source_refs: [src.system-landscape, src.oauth-state-product-client-binding-contract, src.adr-0015, src.decision-dec-064]
+
+  - id: gate.shared-ai-runtime
+    display_name: Shared AI Runtime implementation
+    status: deferred
+    adoption_decision: not_decided
+    deferral_policy: accepted_with_constraints
+    current_state: Shared AI 책임 경계와 문서만 존재하며 독립 Repository·Runtime·실제 소비 제품 연동 없음
+    why_deferred: 반복 Provider-neutral 실행 수요와 Provider Routing·Streaming·Cost·Retry 운영 기준이 미확정
+    required_evidence: [둘 이상의 실제 소비 제품, 공통 Provider Routing 수요, Streaming Runtime 수요, 공통 Cost/Usage 관리, 독립 Scale/SLA]
+    adoption_triggers: [반복 Provider Integration, 제품별 중복 실행 코드, 독립 Scaling과 장애 격리 요구, Usage/Cost 공통 추적 요구]
+    owner: { kind: ref, ref: system.shared-ai }
+    blocked_work: [Shared AI Repository, Provider Adapter Contract, Streaming Contract, Usage/Cost Model, Credential 관리, Product Integration]
+    related_jira: [RPL-20]
+    related_decisions: [DEC-064]
+    constraints: [제품 Prompt·Domain Policy·Tool·Output Validation은 제품 소유, 제품 입력·결과 데이터는 Shared AI 소유가 아님, Product Client는 Shared AI를 직접 호출하지 않음, Shared AI는 Public Direct Route를 갖지 않음]
+    source_refs: [src.system-landscape, src.adr-0015, src.decision-dec-064]
+
+  - id: gate.nats-introduction
+    display_name: NATS JetStream introduction
+    status: deferred
+    adoption_decision: not_decided
+    deferral_policy: accepted_with_constraints
+    current_state: 실제 Broker Runtime과 검증된 Audit/Event/Post-processing Use Case 없음
+    why_deferred: 현재 동기 HTTP로 충분하고 Broker 운영과 메시지 계약 비용이 발생함
+    required_evidence: [비동기 Use Case, Durability 요구, Retry/Replay 요구, Consumer 수와 처리량, DB Commit 이후 Event 발행 필요성, Idempotent Consumer 계약]
+    adoption_triggers: [Audit Event, 장시간 Post-processing, 제품 상태 전파, 동기 호출로 장애 격리가 어려운 실제 문제]
+    owner: { kind: scope, scope: platform_foundation }
+    blocked_work: [Subject Naming, Event Envelope, Idempotency, Retry/DLQ, Retention, 운영 Runbook, Outbox 도입 판단]
+    related_jira: [RPL-20]
+    related_decisions: [DEC-064]
+    constraints: [기본 Delivery는 at-least-once, Consumer는 멱등성을 가져야 함, DB Commit 전 ACK 금지, Outbox는 필요한 Use Case에만 선택적으로 사용]
+    source_refs: [src.system-landscape, src.adr-0015, src.decision-dec-064]
+
+  - id: gate.shared-commerce-extraction
+    display_name: Shared Commerce extraction
+    status: deferred
+    adoption_decision: not_decided
+    deferral_policy: accepted_with_constraints
+    current_state: Shared Commerce는 후보 경계이며 Runtime·Repository·Store 없음
+    why_deferred: 복수 제품의 공통 Catalog·Plan·Subscription·Order·Payment 수요와 책임 경계가 미검증
+    required_evidence: [둘 이상의 제품 동일 Commerce 모델, 공통 Entitlement, 공통 Payment Provider 운영, 제품별 중복 Commerce 구현]
+    adoption_triggers: [복수 제품 실제 결제 도입, 공통 Subscription과 Entitlement, 독립 장애·정합성 관리 필요]
+    owner: { kind: ref, ref: system.shared-commerce }
+    blocked_work: [Commerce Boundary Contract, Data Ownership, Order/Payment Idempotency, Provider Adapter, Migration, Runtime Deployment]
+    related_jira: []
+    related_decisions: []
+    constraints: [제품별 상품 정책을 Shared Commerce가 무조건 소유하지 않음, 실제 수요 전 Repository와 Store를 추측하지 않음]
+    source_refs: [src.system-landscape, src.adr-0015]
+
+  - id: gate.audit-consumer-introduction
+    display_name: Audit Consumer introduction
+    status: deferred
+    adoption_decision: not_decided
+    deferral_policy: accepted_with_constraints
+    current_state: Audit Consumer Runtime 없음; Audit Event Producer와 Retention 요구 미확정
+    why_deferred: 실제 Audit Use Case와 보존 정책이 없고 NATS 도입 Gate에 의존함
+    required_evidence: [보안·운영 Audit Event 목록, Producer Contract, Retention과 조회 요구, Replay와 복구 요구, 개인정보 최소화 기준]
+    adoption_triggers: [독립 Audit Projection 필요, 제품별 Audit 중복 구현, 운영·보안 추적 요구, 비동기 보존 요구]
+    owner: { kind: ref, ref: system.audit-consumer }
+    blocked_work: [NATS Adoption, Event Contract, Retention Policy, Audit Store, PII Redaction, 운영 조회 기준]
+    related_jira: [RPL-20]
+    related_decisions: []
+    constraints: [Audit Consumer는 제품 Transaction Primary Store가 아님, Producer Business Data Ownership을 침범하지 않음, 원문 Secret과 불필요한 PII를 저장하지 않음]
+    source_refs: [src.system-landscape, src.adr-0015, src.database-ownership-policy]
+
+  - id: gate.grpc-adoption
+    display_name: gRPC adoption
+    status: deferred
+    adoption_decision: not_decided
+    deferral_policy: accepted_with_constraints
+    current_state: 내부 동기 호출 기본값은 HTTP/JSON이며 측정된 고빈도·저지연 요구 없음
+    why_deferred: Proto·Code Generation·Debugging·Versioning·운영 비용이 있고 현재 규모에는 HTTP/JSON으로 충분
+    required_evidence: [실제 Latency 측정, Throughput 측정, Payload 크기와 호출 빈도, Streaming 또는 강한 Schema 요구, 운영·디버깅 준비]
+    adoption_triggers: [HTTP/JSON이 SLO를 충족하지 못함, 고빈도·저지연 내부 호출, Proto 기반 계약 이점이 비용보다 큼]
+    owner: { kind: scope, scope: affected_system_owner }
+    blocked_work: [Proto Ownership, Compatibility Policy, Deadline/Retry Contract, Code Generation, Observability]
+    related_jira: [RPL-20]
+    related_decisions: [DEC-064]
+    constraints: [측정 없이 선도입하지 않음, 외부 API 기본값으로 사용하지 않음, HTTP/JSON과 중복 계약을 무분별하게 유지하지 않음]
+    source_refs: [src.system-landscape, src.adr-0015, src.decision-dec-064]
+
+  - id: gate.kafka-adoption
+    display_name: Kafka adoption
+    status: deferred
+    adoption_decision: not_decided
+    deferral_policy: accepted_with_constraints
+    current_state: Kafka Runtime 없음; 처리량·Replay·CDC·Stream Processing 요구 미입증이며 NATS도 Deferred
+    why_deferred: Cluster와 운영 인력 비용이 크고 현재 예상 Use Case는 NATS JetStream으로 충분할 가능성이 높음
+    required_evidence: [장기 Event Retention, 대규모 Replay, CDC, 다수 Consumer Ecosystem, 매우 높은 처리량, Kafka 운영 인력과 Runbook]
+    adoption_triggers: [NATS로 충족하기 어려운 Replay·Throughput, CDC와 Stream Processing, 복수 팀·Consumer Ecosystem, 장기 Retention]
+    owner: { kind: scope, scope: platform_foundation }
+    blocked_work: [Topic Ownership, Partition Strategy, Schema Registry 판단, Retention, Consumer Group 운영, Cluster 운영]
+    related_jira: []
+    related_decisions: [DEC-064]
+    constraints: [단순 비동기 처리만으로 Kafka를 도입하지 않음, NATS Gate와 실제 요구를 먼저 검증, 운영 인력 없는 Cluster 도입 금지]
+    source_refs: [src.system-landscape, src.adr-0015, src.decision-dec-064]
+
+  - id: gate.kubernetes-adoption
+    display_name: Kubernetes adoption
+    status: deferred
+    adoption_decision: not_decided
+    deferral_policy: accepted_with_constraints
+    current_state: Kubernetes Runtime 없음; 단일 Mac mini와 이미지 기반 배포 후보이며 다중 노드·대규모 Scale Evidence 없음
+    why_deferred: Cluster·Ingress·Network·Secret·Upgrade·Observability 운영 비용이 현재 단일 인스턴스 구조에는 과도함
+    required_evidence: [다중 노드 필요, 수평 확장, Rolling Deployment 문제, 강한 Workload Isolation, 서비스 수 증가, 운영 인력과 Cluster 관리 역량, Docker Compose 또는 ECS로 해결하기 어려운 Pain]
+    adoption_triggers: [지속적인 Scale-out 요구, 다중 인스턴스와 자동 복구, 복잡한 배포 조정, 여러 서버 일관된 Scheduling, 비용을 상쇄하는 운영 요구]
+    owner: { kind: scope, scope: platform_operations }
+    blocked_work: [Cluster Provider 선택, EKS 여부, Ingress, Helm/Kustomize 선택, Secret 관리, Monitoring, Backup/DR, 비용 모델]
+    related_jira: [RPL-20]
+    related_decisions: [DEC-064]
+    constraints: [현재 Mac mini + AWS DR 방향을 자동으로 EKS로 확정하지 않음, ECS Fargate와 Docker Compose 대안을 먼저 평가, Kubernetes를 MSA 존재만으로 도입하지 않음, Helm은 Kubernetes 채택 이후에만 판단, Harbor는 별도 Registry 요구가 생길 때 별도 판단]
+    source_refs: [src.system-landscape, src.adr-0015, src.decision-dec-064]
+
+taxonomy_candidate:
+  status: candidate
+  authority: not_approved_jira_metadata
+  source_refs:
+    - src.portfolio-work-management-governance
+    - src.system-landscape
+    - src.decision-dec-065
+  workstreams:
+    - Carelog
+    - Finance Harness
+    - Dev Harness
+    - Shared Identity
+    - Shared AI
+    - Platform Foundation
+  primary_repositories:
+    - care-log/carelog-be
+    - aixion1506/finance-harness-fe
+    - aixion1506/finance-harness-docs
+    - aixion1506/oh-my-ai
+    - aixion1506/harness-foundation-docs
+  areas:
+    - Auth / Identity
+    - API / Contract
+    - Data / Migration
+    - Messaging / Consistency
+    - AI / Model Integration
+    - Runtime / Deployment
+    - Security / Secret
+    - Observability / Operations
+    - Product / Workflow
+    - Architecture / Governance
+    - Documentation
+  components:
+    - Frontend
+    - Backend
+    - Local Runtime
+    - Cloud Control Plane
+    - Gateway / Ingress
+    - Shared Service
+    - Documentation
+  labels: []
+  normalization_notes:
+    - Accepted Governance의 Platform Foundation을 Workstream으로 사용한다
+    - Landscape의 Platform Architecture 의미는 Architecture / Governance Area로 보존한다
+    - Platform Governance 의미를 Workstream으로 자동 승격하지 않는다
+    - 정식 Jira Field/Component 도입 전까지 Candidate 상태를 유지한다
+  unresolved_items:
+    - Jira Custom Field와 Component의 실제 도입은 별도 검토와 Migration 계획이 필요하다
+    - 기존 Issue 자동 Backfill은 승인되지 않았다
