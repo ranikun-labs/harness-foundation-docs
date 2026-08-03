@@ -209,9 +209,10 @@ System 내부의 Frontend와 Backend는 같은 `ref`를 사용하고 `role`로 �
 Identity와 AI 불변조건은 관련 Relation의 `constraints`에 포함한다. 이를 별도
 Relation으로 만들거나 Count를 늘리지 않는다.
 
-이번 Slice에서는 Data Group이 아직 없으므로 `data.*`를 참조하지 않는다. Data
-Ownership은 임시 구조로 의미를 보존하고, Data Slice에서 필요하면 실제 `data.*`
-Reference를 연결하되 Relation 수와 의미는 바꾸지 않는다.
+Communication Relation은 Data Group 등록 이전 Slice에서 작성되었으므로 현재도
+자체 `data_ownership` 설명을 유지하며 `data.*`를 직접 참조하지 않는다. Data
+Group 19개는 별도 Registry로 존재하고, Relation과 Data Group의 직접 Reference
+연결은 별도 검토 없이 임의로 추가하지 않는다.
 
 ## Data Groups
 
