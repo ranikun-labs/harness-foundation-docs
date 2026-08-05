@@ -1,20 +1,22 @@
 ---
 title: "Mac mini Primary와 AWS DR 기반 배포·재해복구 경계를 정의한다"
 adr_id: "ADR-0016"
-document_status: draft
-decision_status: open
+document_status: accepted
+decision_status: accepted_with_constraints
 decision_scope: architecture
 owner: architecture
 authors: []
-reviewers: []
-approvers: []
+reviewers:
+  - codex
+approvers:
+  - 박성환
 created_at: "2026-08-03"
-reviewed_at: null
-approved_at: null
-effective_from: null
+reviewed_at: "2026-08-06"
+approved_at: "2026-08-06T01:04:27+09:00"
+effective_from: "2026-08-06"
 implementation_status: not_started
 constraints:
-  - "이 ADR은 Architecture 후보를 검토하며 Runtime 구현이나 배포 완료를 승인하지 않는다"
+  - "승인 범위는 Architecture Direction이며 Production Adoption, Runtime 구현이나 배포 완료를 승인하지 않는다"
   - "현재 사실, 사용자 승인 목표, Planning Candidate, Deferred 기술을 분리한다"
   - "RTO와 RPO는 실제 Restore·Failover Drill 전까지 target_not_verified 상태다"
   - "기존 ADR-0012~0015와 DEC-064~065를 supersede하지 않는다"
@@ -26,6 +28,8 @@ affected_docs:
 evidence_refs:
   - RPL-42
   - RPL-42-comment-10144
+  - RPL-42-explicit-user-approval-2026-08-06
+  - DEC-066
   - RPL-20
   - RPL-23
   - RPL-31
@@ -46,10 +50,10 @@ replacement_decision_refs: []
 > **상태 경고**
 >
 > ```text
-> Proposed architecture candidate
-> ≠ Accepted decision
+> Architecture direction accepted_with_constraints
 > ≠ Runtime implemented
 > ≠ Infrastructure provisioned
+> ≠ Production adoption approved
 > ≠ RTO/RPO achieved
 > ≠ Disaster recovery verified
 > ```
@@ -63,15 +67,15 @@ replacement_decision_refs: []
 ## 1. Decision Summary
 
 이 ADR은 Mac mini Primary와 AWS DR 사이에서 Ranikun Labs 서비스의 배포·복구
-경계를 결정하기 위한 Architecture Record다. 현재 `decision_status`는 `open`이다.
-RPL-42 Comment 10144로 비용, RTO, RPO, Failover, Write Policy와 운영 대응 목표가
-승인 입력으로 고정됐지만, 이를 달성할 기술은 이 ADR의 대안 비교, Candidate Reframe
-HEAD의 독립 재검수와 사용자 결정 이후에만 결정한다. 실제 Runtime, Infrastructure와 운영
-상태는 검증되지 않았다.
+기준 방향을 제약과 함께 승인한다. RPL-42의 명시적 사용자 승인에 따라 Mac mini +
+Docker Compose Primary, EC2 + Docker Compose Application DR, 별도 EC2 PostgreSQL Warm
+Physical Standby + 독립 PITR, GHCR 우선 검증과 Human-approved Failover/Failback을
+Runtime Discovery와 Isolated Spike·Restore Drill의 기준으로 사용한다. 실제 Runtime,
+Infrastructure, Production Adoption과 목표 달성은 검증·승인되지 않았다.
 
 ```text
-Approved target input
-≠ Technology adoption
+Architecture direction accepted_with_constraints
+≠ Production topology adopted
 ≠ Runtime evidence
 ≠ Target achievement
 ```
@@ -85,22 +89,24 @@ Approved target input
 현재:
 
 ```text
-document_status: draft
+document_status: accepted
 ```
 
-Draft 작성은 Architecture 승인이 아니다.
+문서가 승인됐어도 Production Adoption이나 Runtime 구현 완료를 의미하지 않는다.
 
 ### Decision Status
 
 현재:
 
 ```text
-decision_status: open
-Architecture Option Accepted: No
-Production Adoption: not approved
+decision_status: accepted_with_constraints
+Architecture Direction Accepted: Yes
+Production Adoption: not_approved
+Runtime Evidence: runtime_unverified
+RTO/RPO: target_not_verified
 ```
 
-Decision Input Lock은 Technology Adoption이 아니다.
+승인 범위는 Runtime Discovery와 Isolated Spike·Restore Drill의 기준 방향이다.
 
 ### Implementation Status
 
@@ -276,7 +282,8 @@ Existing ADR Supersession: none
 - `verified_fact`: Foundation Repository의 Canonical main은
   `034bb175ce45c571d84292c701989d830f2bf8c3`이다.
 - `verified_fact`: RPL-42는 `진행 중`이며 Resolution은 `None`이다.
-- `verified_fact`: ADR-0016은 `draft` / `open` / `not_started` 상태다.
+- `verified_fact`: ADR-0016은 사용자 승인에 따라 `accepted` /
+  `accepted_with_constraints` / `not_started` 상태다.
 - `verified_fact`: RPL-42 Comment 10144는 박성환이 작성한 사용자 승인 Target
   Input이다.
 - `verified_fact`: System Catalog와 Confluence System Landscape는 Projection이다.
@@ -523,7 +530,8 @@ Driver는 해결책 이름이나 기술 채택 선언이 아니다.
 
 ### Hard Constraints
 
-- 이 ADR은 Architecture 후보를 검토하며 Runtime 구현이나 배포 완료를 승인하지 않는다.
+- 이 ADR은 Architecture Direction만 승인하며 Production Adoption, Runtime 구현이나 배포
+  완료를 승인하지 않는다.
 - 현재 사실, 사용자 승인 목표, Planning Candidate, Deferred 기술을 분리한다.
 - RTO와 RPO는 실제 Restore·Failover Drill 전까지 `target_not_verified` 상태다.
 - 기존 ADR-0012~0015와 DEC-064~065를 supersede하지 않는다.
@@ -551,6 +559,17 @@ Driver는 해결책 이름이나 기술 채택 선언이 아니다.
 - Primary Runtime Host 상실이 유일한 승인 복구 Image의 상실로 이어지지 않아야
   한다.
 
+```text
+Architecture Direction Accepted
+≠ Production Adoption Approved
+
+Planning Leader
+≠ Production Topology
+
+First Validation Target
+≠ Runtime Implemented
+```
+
 #### Approved Operational Constraints
 
 - 평상시 DR 고정비 목표는 월 50,000원 이하이고 Hard cap은 월 100,000원이다.
@@ -572,6 +591,28 @@ Driver는 해결책 이름이나 기술 채택 선언이 아니다.
 - `planning_candidate`: WAL Archive로 15분 RPO Target을 검증할 수 있다.
 
 Assumption은 Constraint나 Fact로 승격하지 않는다.
+
+#### Acceptance Constraints
+
+- 실제 Mac mini Runtime Inventory가 완료되지 않았다.
+- Docker Engine/Compose Runtime과 Product Image 호환성이 검증되지 않았다.
+- PostgreSQL Version·Extension과 Shared Library가 확인되지 않았다.
+- Database Size와 WAL Rate가 측정되지 않았다.
+- Warm EC2/EBS/Network와 Monitoring 비용은 `measurement_required`다.
+- Replication Lag·Slot·WAL Retention·Disk Full 위험이 검증되지 않았다.
+- Base Backup + Continuous WAL Archive/PITR Prototype이 구현되지 않았다.
+- GHCR Private Image Pull과 Credential Rotation이 검증되지 않았다.
+- EC2 Compose Bootstrap과 Incident-time Provision 시간이 검증되지 않았다.
+- Cloudflare Tunnel DR Origin이 검증되지 않았다.
+- EC2 Compose/Fargate+ALB 및 Warm/Cold 비교 Spike가 실행되지 않았다.
+- Authoritative Fencing과 Read-only Mechanism이 구현되지 않았다.
+- Warm Standby Promotion과 Final-sync Failback Drill이 실행되지 않았다.
+- Monthly Restore Check와 Quarterly Full DR Drill이 실행되지 않았다.
+- RTO 4시간과 RPO 15분은 `target_not_verified`다.
+- Production Security Review가 완료되지 않았다.
+
+위 Constraint 중 하나도 현재 Runtime 부재를 단정하지 않는다. 해당 상태는
+`runtime_unverified`, `measurement_required` 또는 `verification_required`로 기록한다.
 
 #### Known Limitations
 
@@ -743,7 +784,8 @@ Reason:
 - AWS DR image reuse
 - Kubernetes triggers not verified
 
-Decision state: open
+Decision state: accepted_with_constraints for architecture direction
+Production adoption: not_approved
 
 Blocking verification:
 - actual Mac mini runtime
@@ -1278,7 +1320,8 @@ Entry first validation: Cloudflare Tunnel direct to EC2 Gateway, ALB initially o
 Conditional alternative: ECS Fargate + Application Load Balancer
 Deferred: EKS
 Not recommended as canonical path: No Predefined AWS Runtime
-Decision state: open
+Decision state: accepted_with_constraints for architecture direction
+Production adoption: not_approved
 ```
 
 **Blocking verification**: Actual Application Image Compatibility · AWS Account/IAM · Region · VPC/Security Group · Image Pull · Task/Instance Startup · ALB Health · Secret/Configuration · Read-only Startup · Cost Estimate · Full DR Drill.
@@ -1449,7 +1492,8 @@ Current planning leader: Health Detection + Human-approved Failover
 Not recommended initially: Fully Automatic Failover
 Temporary fallback: Fully Manual Detection and Failover
 Not recommended as sole mechanism: DNS-only Manual Switch
-Decision state: open
+Decision state: accepted_with_constraints for architecture direction
+Production adoption: not_approved
 ```
 
 ### 8.25 Fencing Invariant
@@ -1856,7 +1900,8 @@ Current planning leader / first validation target: AWS EC2 Warm Physical Standby
 Conditional alternative: Base Backup + Continuous WAL Archive 기반 Cold Restore
 Deferred / initially not adopted: Managed PostgreSQL Primary
 Not recommended as canonical recovery: Logical Dump-only / Incident-time Manual Rebuild
-Decision state: open
+Decision state: accepted_with_constraints for architecture direction
+Production adoption: not_approved
 ```
 
 **Blocking verification**: Actual PostgreSQL Version · Extension Inventory · Database Size · WAL Rate · Backup Duration · Archive Lag · Restore Time · Replay Time · Cost · Full Restore Drill · Failover Drill · Failback Drill.
@@ -2432,8 +2477,8 @@ Entry: Cloudflare Tunnel direct to EC2 Gateway first validation
 ALB: deferred until Fargate or multi-replica requirement
 Traffic: automated health detection + human approval
 Failback: automatic prohibited
-Decision state: open
-Decision readiness: direction_reframed_pending_independent_review
+Decision state: accepted_with_constraints for architecture direction
+Production adoption readiness: verification_required
 ```
 
 - EC2 Compose → Fargate: Multi-replica 지속 운영, Service별 독립 Scale, Host Patch 부담,
@@ -2902,7 +2947,7 @@ Account/IAM · EC2 Compose Bootstrap · GHCR Private Pull · Warm Standby Networ
 Fargate/ALB 대안 호환성 · Cloudflare 실제 구성 ·
 Fencing 구현 · Read-only 구현 · Restore 성공 · Promotion 성공 · Cost · RTO/RPO.
 
-### 8.90 Decision Blockers
+### 8.90 Production Adoption Evidence Gates
 
 | # | Blocker | Classification |
 |---:|---|---|
@@ -2921,22 +2966,20 @@ Fencing 구현 · Read-only 구현 · Restore 성공 · Promotion 성공 · Cost
 | 13 | Monthly Restore Evidence | `drill_required` |
 | 14 | Quarterly Full DR Drill Evidence | `drill_required` |
 | 15 | RTO/RPO Measurement | `measurement_required` |
-| 16 | Security Review | `independent_review_required` |
-| 17 | Independent ADR Review | `independent_review_required` |
-| 18 | User Final Approval | `human_approval_required` |
+| 16 | Production Security Review | `independent_review_required` |
 
-### 8.91 Pre-decision Allowed and Prohibited Work
+### 8.91 Post-direction Allowed and Prohibited Work
 
-ADR이 `open`이어도 허용 가능한 후보: Runtime Inventory · Cost Estimate · AWS Account/
+Architecture Direction 승인 후 허용된 Evidence 작업: Runtime Inventory · Cost Estimate · AWS Account/
 IAM Discovery · Cloudflare State Discovery · PostgreSQL Inventory · Isolated Backup
 Prototype · Isolated Restore Drill · Image Compatibility Test · Terraform Spike · Read-only
 Mechanism Spike · Fencing Design · Evidence Schema Design. 실제 Production 변경은 별도
 Jira와 승인에 의해서만 가능하다.
 
-Final Decision 전 금지: Production Primary 변경 · Production Database Migration · RDS
+Production Adoption 승인 전 금지: Production Primary 변경 · Production Database Migration · RDS
 Primary 전환 · Automatic Failover/Failback 활성화 · Cloudflare Traffic 정책 변경 ·
 Production Credential 폐기 · Production Backup Retention 삭제 · Writer Promotion 자동화 ·
-Accepted ADR 표현 · RTO/RPO 달성 표현 · RPL-42 완료 전환.
+RTO/RPO 달성 표현 · Production Adoption 완료 표현 · PR Merge 전 RPL-42 완료 전환.
 
 ### 8.92 Integrated Decision Candidate Summary
 
@@ -2959,8 +3002,8 @@ Current integrated planning candidate:
 - Automatic Failback: prohibited initial candidate
 - Managed PostgreSQL Primary: deferred
 
-Decision state: open
-Decision readiness: direction_reframed_pending_independent_review
+Decision state: accepted_with_constraints for architecture direction
+Production adoption readiness: verification_required
 ```
 
 ### 8.93 Integrated Alternatives Summary
@@ -2980,7 +3023,7 @@ Decision readiness: direction_reframed_pending_independent_review
 
 ### 8.94 Integrated Consequence Candidates
 
-현재 통합 후보를 나중에 채택할 경우의 긍정 후보: Primary/DR Compose 모델 유사성 ·
+현재 Architecture Direction을 Production에 채택할 경우의 긍정 후보: Primary/DR Compose 모델 유사성 ·
 평상시 Application Compute 제한 가능성 · 동일 OCI Artifact 재사용 · Database Promotion
 시간 단축 가능성 · Human-approved Write/Traffic · Standby와 독립된 PostgreSQL PITR ·
 명확한 Authority Evidence · Drill 가능한 단계 분리.
@@ -2999,10 +3042,11 @@ Cost 측정 필요 · Cross-region 부재.
 | C — Feasibility | Image Build, Fargate/EC2 Start, Restore, Read-only, Fencing, Promotion | `not_started` |
 | D — Measurement | Cost, Stage Durations, WAL Lag, Restore Time, RTO/RPO | `not_started` |
 | E — Drill | Monthly Restore, Quarterly Full DR, Failback/Re-seed | `not_started` |
-| F — Governance | Independent Review, Human Decision, DEC-066, ADR Index, Decision Log, PR Merge Gate | `blocked` |
+| F — Governance | Independent Review, Human Decision, DEC-066, ADR Index, Decision Log, PR Merge Gate | `verification_required` |
 
-Gate A의 `complete`는 Slice 6 문서 요구 충족 후보이며 Architecture Decision 승인이나
-Runtime Evidence를 뜻하지 않는다. Gate F는 B~E와 독립 Review 전 진행할 수 없다.
+Gate A와 Architecture Direction 승인은 Runtime Evidence나 Production Adoption을 뜻하지
+않는다. Gate F의 문서화·PR 작업은 진행할 수 있지만 Production Adoption은 B~E와
+Security Review, Independent Merge Gate 전 승인할 수 없다.
 
 ### 8.96 Follow-up Jira Candidates
 
@@ -3036,65 +3080,51 @@ Confluence는 수정하지 않는다.
 
 ## 9. Decision
 
-**No architecture option is accepted in the Candidate Reframe.**
-
-현재 Decision은 `open`이다. 기존 단계별 평가는 Planning 상태로 보존되며 통합 분석은
-이를 End-to-end Recovery Candidate, Drill과 Decision Readiness Gate로 연결할 뿐
-Accepted로 승격하지 않는다.
+RPL-42의 명시적 사용자 승인에 따라 다음 Architecture Direction을 제약과 함께
+채택한다. 이는 Runtime Discovery와 Isolated Spike·Restore Drill의 기준이며 Production
+Adoption이나 Resource 생성 승인이 아니다.
 
 ```text
-Current integrated planning candidate (open, not accepted):
-- Mac mini Docker Compose Primary
-- Multi-platform OCI Image
-- GHCR first validation / ECR alternative
-- EC2 + Docker Compose Application DR first validation
-- Cloudflare Tunnel direct to EC2 Gateway first validation; ALB initially omitted
-- Separate EC2 Warm Physical Standby first validation
-- Base Backup + Continuous WAL Archive/PITR independent of Standby
-- Health Detection + Human Approval
-- Primary Fencing before Write
-- Read-only Validation before Promotion
-- Manual Failback with Re-seed
-- Monthly Restore Check
-- Quarterly Full DR Drill
-- Terraform planning candidate
-
-Conditional alternatives:
-- ECS Fargate + ALB
-- Cold Base Backup + WAL Restore
-- ECR
-- Incident-created ALB
-
-Deferred:
-- EKS
-- Managed PostgreSQL Primary
-- Cross-region DR
-- Fully Automatic Failover
-
-Initial prohibition candidate:
-- Automatic Failback
-
-Decision readiness: direction_reframed_pending_independent_review
-Blocking reasons:
-- runtime discovery
-- cost measurement
-- replication/network feasibility
-- restore and promotion drill
-- full DR drill
-- fencing/read-only design
-- independent review
-- user approval
-
-decision_status: open
+decision_status: accepted_with_constraints
+implementation_status: not_started
+Production Adoption: not_approved
+Runtime Evidence: runtime_unverified
+RTO/RPO: target_not_verified
 ```
 
-이 문구는 Considered Option 평가이며 Accepted Decision이 아니다. 다음 표현을
-사용하지 않는다: "S3를 채택한다", "pg_basebackup을 운영한다", "WAL Archive가
-동작 중이다", "EC2 Standby가 존재한다", "RDS를 사용한다", "RPO 15분을 달성했다",
-"RTO 4시간을 달성했다", "Restore가 검증됐다", "Promotion이 구현됐다".
+### Accepted Architecture Direction
 
-These planning evaluations require detached independent re-review of the Candidate Reframe HEAD and
-user decision approval.
+| Concern | Accepted direction | Boundary / Re-evaluation |
+|---|---|---|
+| Primary | Mac mini + Docker Compose | Runtime inventory와 Compose compatibility 필요 |
+| Application DR first validation | EC2 + Docker Compose; Database Host와 분리; stopped 또는 incident-time provision 후보 | Host patch/bootstrap 부담이 크면 Fargate 재평가 |
+| Application DR alternative | ECS Fargate + ALB | Multi-replica, independent scale, zero-downtime 또는 EC2 host 부담 시 재평가 |
+| Database DR first validation | Application EC2와 분리된 EC2 PostgreSQL Warm Physical Standby | 비용·network·replication 운영 검증 필요 |
+| Data Safety | Standby와 독립된 Base Backup + Continuous WAL Archive/PITR, integrity와 restore drill | Warm Standby는 Backup이 아님 |
+| Database DR alternative | Cold Base Backup + WAL Restore | Warm 비용·network·운영 부적합 또는 Cold Restore RTO 충족 시 재평가 |
+| Registry | Container Registry required; GHCR first validation; ECR alternative | Fargate 채택 또는 GHCR credential 부담 시 ECR 재평가 |
+| Release Evidence | Git Tag와 OCI Manifest/Platform Digest 분리 | Incident rebuild는 검증 Artifact를 대체하지 않음 |
+| AWS Entry | Cloudflare Tunnel → EC2 Gateway first validation | 실제 connector/origin 검증 필요 |
+| ALB | `deferred_until_runtime_choice` | Fargate·Multi-AZ·Multi-replica·Direct Tunnel 실패 시 재평가 |
+| Traffic | Automatic Health Detection/Evidence Collection + Human-approved Write/Traffic Failover | Health는 Fencing이나 Writer Authority가 아님 |
+| Failback | Automatic Failback 금지; DR Write Freeze → Cutover Boundary → Final WAL/Data Catch-up → Boundary Validation → Human-approved Primary Promotion → Controlled Write → Traffic Failback | Final-sync와 Human Approval 생략 금지 |
+| IaC | Terraform planning direction | State/security 결정과 별도 구현 승인 필요 |
+| Kubernetes | `deferred` | ADR-0015 Trigger 전 도입하지 않음 |
+
+### Production Adoption Gate
+
+Production Adoption은 별도 승인 대상이다. Runtime Inventory, 비용 모델, Security Review,
+PITR Prototype, EC2/GHCR/Tunnel/Fargate 비교, Promotion/Failback Drill과 Full DR Drill의
+Evidence를 통과하기 전에는 `not_approved`를 유지한다.
+
+다음 표현을 사용하지 않는다: "EC2가 존재한다", "Warm Standby가 실행 중이다",
+"Replication이 구성됐다", "Base Backup/WAL Archive가 동작한다", "GHCR/ECR Repository가
+존재한다", "Direct Tunnel이 구성됐다", "ALB가 불필요하다고 검증됐다", "Terraform이
+적용됐다", "비용 목표를 충족했다", "RTO 4시간을 달성했다", "RPO 15분을 달성했다",
+"Production Adoption이 완료됐다".
+
+Architecture Direction 승인 이후에도 각 first validation target의 Runtime Adoption은
+`verification_required`다.
 
 ### Ownership
 
@@ -3110,8 +3140,8 @@ user decision approval.
 
 ## 10. Rationale
 
-No decision has been accepted in this section. 아래는 Candidate Reframe Planning Leader가
-현재 Driver에서 앞선 이유이며 채택 근거가 아니다.
+Architecture Direction은 제약과 함께 승인됐다. 아래는 first validation target이 현재
+Driver에서 앞선 이유이며 Production Adoption 또는 Runtime 성공 근거가 아니다.
 
 - **EC2 Compose는 Emergency DR와 Primary Runtime 유사성을 함께 검증하는 가장 작은
   Application Spike다.** Host Patch 책임은 늘지만 Task Definition, ECS Service, ALB와
@@ -3131,9 +3161,10 @@ No decision has been accepted in this section. 아래는 Candidate Reframe Plann
 - **RTO 4시간은 단계별 측정 전까지 Runtime 선택으로 보장되지 않는다.** Runtime
   후보 선택은 RTO 달성 주장과 분리된다.
 
-이 Rationale은 후속 Evidence와 Detached Independent Review 전까지 Decision이 아니다.
+이 Rationale은 승인된 Architecture Direction을 설명하지만 후속 Evidence 전까지
+Production Adoption 근거가 아니다.
 
-### Slice 5 Rationale (No decision accepted)
+### Slice 5 Rationale (Architecture direction accepted, runtime unverified)
 
 - **PostgreSQL Native PITR가 Business SSOT와 RPO/RTO Driver에 가장 직접적이다.** Base
   Backup + Continuous WAL Archive는 Warm Standby와 독립된 PITR 안전망이다. RPO는
@@ -3149,9 +3180,10 @@ No decision has been accepted in this section. 아래는 Candidate Reframe Plann
 - **Promotion과 Failback은 Fencing·Validation·Timeline 관리 없이는 Split-brain을
   만든다.** 그래서 Promotion Invariant와 Automatic Failback 금지 후보를 유지한다.
 
-이 Slice 5 Rationale도 Full Restore/Failover/Failback Drill 전까지 Decision이 아니다.
+이 Slice 5 Rationale도 Full Restore/Failover/Failback Drill 전까지 Production Adoption
+근거가 아니다.
 
-### Slice 6 Rationale (No decision accepted)
+### Slice 6 Rationale (Architecture direction accepted, production not adopted)
 
 - Candidate B는 Compose 동등성과 Warm Database 활성화 가능성을 연결해 현재 사용자
   조건에서 `planning_leader`다. Host와 Replication 운영 부담 때문에 검증이 필수다.
@@ -3162,17 +3194,17 @@ No decision has been accepted in this section. 아래는 Candidate Reframe Plann
 - Health, Runtime 준비와 Evidence 수집은 병렬화할 수 있지만 Writer Authority 전이는
   Fencing·Validation·Human Approval을 따라 직렬이어야 한다.
 - Document Completeness만으로 Runtime Feasibility, Cost 또는 RTO/RPO를 증명할 수 없으므로
-  Decision Readiness는 `direction_reframed_pending_independent_review`다.
+  Production Adoption Readiness는 `verification_required`다.
 
-이 Slice 6 Rationale도 Architecture Option 채택 근거가 아니라 독립 Review 전 비교
-Projection이다.
+이 Slice 6 Rationale은 승인된 Architecture Direction의 비교 근거이며 Runtime 또는
+Production Adoption Evidence가 아니다.
 
 ---
 
 ## 11. Consequences
 
-No decision has been accepted in this section. 아래는 Planning Leader가 채택될
-경우의 예상 결과 후보이며 현재 발생한 사실이 아니다.
+Architecture Direction은 승인됐지만 아래 결과는 Runtime에 실제 발생한 사실이 아니라
+Production Adoption 시 예상되는 결과다.
 
 ### 채택 시 긍정 후보
 
@@ -3197,7 +3229,7 @@ No decision has been accepted in this section. 아래는 Planning Leader가 채�
 - AWS에 여러 Service를 배치해도 Logical Service Boundary를 통합하지 않는다.
 - Runtime, Infrastructure, Cloudflare 구성, RTO/RPO 달성을 주장하지 않는다.
 
-### Slice 5 Consequences (No decision accepted)
+### Slice 5 Consequences (Architecture direction accepted, runtime unverified)
 
 채택 시 긍정 후보:
 
@@ -3219,7 +3251,7 @@ No decision has been accepted in this section. 아래는 Planning Leader가 채�
 - 같은 PostgreSQL Cluster 사용도 Logical Ownership을 통합하지 않는다.
 - Backup 존재, WAL Archive 동작, Restore 성공, RPO/RTO 달성을 주장하지 않는다.
 
-### Slice 6 Consequences (No decision accepted)
+### Slice 6 Consequences (Architecture direction accepted, production not adopted)
 
 채택 시 긍정 후보: Primary/DR Compose 유사성 · 평상시 Application Compute 제한 가능성 ·
 동일 OCI Artifact 재사용 · Warm Database 활성화 단축 가능성 · Human-approved
@@ -3233,9 +3265,8 @@ Failback/Re-seed 복잡성 · Cost 측정 필요 · Cross-region 부재.
 
 ## 12. Human Authority Impact
 
-No decision has been accepted in this section. 아래 Human Authority Matrix는
-Failover/Failback Action의 승인 경계를 논의하기 위한 Architecture Candidate이며
-실행 권한 위임이나 Runtime Approval이 아니다.
+Architecture Direction의 Human Authority 경계를 승인한다. 아래 Matrix는
+Failover/Failback Action의 승인 기준이며 실행 권한 위임이나 Runtime Approval이 아니다.
 
 | Action | Automated Signal | Human Decision Required | Evidence | Owner |
 |---|---|---|---|---|
@@ -3392,7 +3423,7 @@ Projection Ready ≠ Source of Truth Ready
 
 ## 14. Shared Core and Extension Impact
 
-No decision has been accepted in this section.
+Architecture Direction 승인으로 Shared Core나 Extension의 구현·배치가 승인되지 않는다.
 
 이 ADR은 Shared Identity, Shared AI, Shared Commerce 또는 Audit Consumer의
 독립 Runtime 구현을 승인하지 않으며 기존 Shared Core/Extension Ownership을 변경하지
@@ -3402,7 +3433,7 @@ No decision has been accepted in this section.
 
 ## 15. Contract Impact
 
-No decision has been accepted in this section.
+Architecture Direction 승인으로 기존 Contract 의미가 변경되지 않는다.
 
 - 이 ADR의 Architecture Candidate 분석은 Contract 의미, Field, Validation 또는 Human
   Gate를 변경하지 않는다.
@@ -3423,7 +3454,7 @@ No change
 
 ### Roadmap
 
-No decision has been accepted in this section.
+Architecture Direction 승인으로 Product Scope가 변경되지 않는다.
 
 ADR 작성은 Product SLA, Release Requirement 또는 Roadmap Commitment를 생성하지
 않는다. Runtime Discovery, Prototype와 Drill은 별도 승인된 후속 Jira 후보로만 남는다.
@@ -3432,8 +3463,8 @@ ADR 작성은 Product SLA, Release Requirement 또는 Roadmap Commitment를 생�
 
 ## 17. Testing and Evidence
 
-No decision has been accepted in this section. 아래는 Slice 4 Architecture 후보를
-승인하기 전 필요한 검증 후보이며 각 상태는 `not_run` 또는 `verification_required`다.
+Architecture Direction 승인 후 Production Adoption 전에 필요한 검증이며 각 상태는
+`not_run` 또는 `verification_required`다.
 
 ### Runtime
 
@@ -3713,7 +3744,7 @@ Implementation Notes는 실행 코드나 운영 구성의 Source of Truth가 아
 - Full Restore/Failover/Failback Drill이 `not_run`이라 RPO 15분·RTO 4시간은
   `target_not_verified`다.
 - Integrated Candidate A~D 모두 Runtime Inventory, Cost, Fencing, Read-only와 Drill
-  Evidence가 부족해 Decision Readiness는 `direction_reframed_pending_independent_review`다.
+  Evidence가 부족해 Production Adoption Readiness는 `verification_required`다.
 - Operator 단일 인물 의존과 Cloudflare/AWS 단일 Provider 결합은 해소되지 않았다.
 - Slice 5에서 `## 19. Implementation Notes` 구조 Header 누락이 복구됐고 현재 Canonical
   Tip의 26개 주요 Section 구조는 정상이다. Runtime Architecture 의미 변경은 없다.
@@ -3904,7 +3935,8 @@ DB 정책과 Drill 주기는 Open Question으로 되돌리지 않는다.
 - `docs/adr/README.md`
 - `docs/decisions/decision-log.md`
 
-Affected Documents는 Architecture 승인 이후 별도 Governance 작업에서만 수정한다.
+Affected Documents는 DEC-066 Governance Record와 ADR Index에서 연결하며 Production
+Projection은 별도 Evidence와 승인 없이는 갱신하지 않는다.
 
 ---
 
@@ -3935,6 +3967,7 @@ Existing ADR Supersession: none
 | 2026-08-05 | open | open | not_applicable | not_applicable | Slice 5에서 PostgreSQL Backup/Restore/Promotion과 RPO/RTO 검증 경계를 비교 | RPL-42 / Comment 10144 |
 | 2026-08-05 | open | open | not_applicable | not_applicable | Slice 6에서 통합 복구 흐름, Drill과 Decision Readiness 조건을 연결 | RPL-42 / Comment 10144 |
 | 2026-08-05 | open | open | not_applicable | not_applicable | 1인 운영 조건으로 EC2 Compose·Warm Standby+PITR·GHCR 우선 검증 방향을 재비교 | RPL-42 Human-provided Planning Input |
+| 2026-08-06 | open | accepted_with_constraints | codex | 박성환 | Independent PASS 뒤 Runtime Discovery와 Isolated Spike·Restore Drill 기준 방향을 조건부 승인 | RPL-42 explicit user approval / review target `28bd677995dc7ed787ef2cecf3229d97313d1947` |
 
 이 History는 Architecture Option Approval이 아니다.
 
@@ -3952,8 +3985,8 @@ Existing ADR Supersession: none
 
 - [x] AWS DR Runtime과 Traffic Failover의 실질적 대안을 비교했다.
 - [x] 선택 이유(Planning Leader)를 Driver와 연결했다.
-- [x] Slice 3·Slice 4 모두 Architecture Option을 채택하지 않았다.
-- [x] Slice 6에서 Candidate A~D를 통합 비교하고 Accepted Decision과 분리했다.
+- [x] Slice 3·Slice 4 후보를 first validation/alternative로 구분하고 Production Adoption과 분리했다.
+- [x] Slice 6에서 Candidate A~D를 통합 비교하고 Production Adoption과 분리했다.
 
 ### Safety
 
@@ -3969,7 +4002,7 @@ Existing ADR Supersession: none
 - [x] `adr_id`와 Source Authority를 기록했다.
 - [x] Owner, Author, Reviewer, Approver를 분리했다.
 - [x] Supersession이 `none`임을 기록했다.
-- [ ] ADR Index와 Decision Log는 Architecture 승인 이후 별도 Governance 작업에서 연결한다.
+- [x] ADR Index와 Decision Log를 DEC-066 Governance Record로 연결한다.
 
 ### Truthfulness
 
@@ -3977,9 +4010,8 @@ Existing ADR Supersession: none
 - [x] Planning Candidate와 Adoption을 분리했다.
 - [x] Repository Module과 Production Deployment를 분리했다.
 - [x] Runtime 구현 상태를 `not_started`로 기록했다.
-- [x] Decision Readiness를 `direction_reframed_pending_independent_review`로 기록하고
-  RTO/RPO를 `target_not_verified`로
-  기록했다.
+- [x] Architecture Direction은 `accepted_with_constraints`, Production Adoption은
+  `not_approved`, RTO/RPO는 `target_not_verified`로 기록했다.
 
 ---
 
@@ -3988,8 +4020,11 @@ Existing ADR Supersession: none
 ### Decision
 
 ```text
-decision_status: open
-No architecture option is accepted in the Candidate Reframe.
+decision_status: accepted_with_constraints
+Architecture Direction Accepted: Yes
+Production Adoption: not_approved
+Runtime Implementation: not_started
+RTO/RPO: target_not_verified
 ```
 
 ### Constraints
@@ -3999,24 +4034,43 @@ Front Matter와 Section 7의 Constraints를 적용한다.
 ### Effective Scope
 
 ```text
-Evidence Boundary, Decision Input State, and
-Slice 3~6 and Candidate Reframe Considered Option evaluations only
-(Primary Deployment / Image / Registry / AWS DR Runtime / Traffic Failover /
-PostgreSQL Backup·Restore·Promotion / Integrated Recovery / Drill / Decision Readiness)
+Approval Scope: Architecture Direction only
+Runtime Discovery and Isolated Spike/Restore Drill baseline
+Production Resource and Runtime Adoption excluded
 ```
+
+### Approval Evidence
+
+| Field | Value |
+|---|---|
+| Decision Owner | 박성환 |
+| Decision Source | RPL-42 explicit user approval |
+| Approval Scope | Architecture Direction only |
+| Production Adoption | `not_approved` |
+| Runtime Implementation | `not_started` |
+| Runtime Evidence | `runtime_unverified` |
+| Independent Review | `PASS` |
+| Blocking / Major / Minor | `0 / 0 / 0` |
+| Review Target | `28bd677995dc7ed787ef2cecf3229d97313d1947` |
+| Candidate Reframe Verdict | `PASS_WITH_CONDITIONS` |
+| Reviewer Recommendation | `ACCEPT_REVISED_DIRECTION_WITH_CONSTRAINTS` |
+| Existing ADR Supersession | `none` |
 
 ### Required Follow-up
 
-- Candidate Reframe HEAD의 Detached Independent Re-review
-- 독립 재검수 통과 후 사용자 Architecture Direction Decision 준비
-- ADR Index와 DEC-066 연결은 Architecture 승인 이후 별도 Governance 작업
+- Runtime/PostgreSQL Inventory와 Cost/Network Feasibility 확인
+- Isolated PITR, GHCR Pull, EC2 Bootstrap, Direct Tunnel과 Fargate 비교 Spike
+- Warm Promotion, Final-sync Failback과 Full DR Drill
+- 승인 Metadata 포함 Final HEAD의 Independent PR Review와 Merge Gate
+- Production Adoption 별도 Decision
 
 ### Review and Approval
 
 ```text
-reviewed_at: null
-approved_at: null
-approvers: []
+reviewed_at: 2026-08-06
+approved_at: 2026-08-06T01:04:27+09:00
+approvers: [박성환]
 ```
 
-Architecture Option, Runtime 구현과 Infrastructure Provisioning은 승인되지 않았다.
+Architecture Direction만 승인됐다. Runtime 구현, Infrastructure Provisioning과 Production
+Adoption은 승인되지 않았다.
