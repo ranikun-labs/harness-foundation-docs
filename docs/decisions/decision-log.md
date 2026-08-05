@@ -3,7 +3,7 @@ title: Decision Log
 status: draft
 implementation_status: partial
 owner: core
-last_reviewed: 2026-07-29
+last_reviewed: 2026-08-06
 supersedes: []
 superseded_by: []
 related_adrs:
@@ -3505,6 +3505,174 @@ DEC-035
 DEC-038
 DEC-059
 DEC-064
+```
+
+---
+
+## DEC-066 — Mac mini Primary와 AWS Warm Database DR 방향을 조건부 채택한다
+
+**Status:** accepted_with_constraints
+**Owner:** architecture
+**Decision type:** architecture
+**Decision scope:** primary-deployment / disaster-recovery
+**Decision date:** 2026-08-06
+**Implementation status:** not_started
+**Production adoption:** not_approved
+**Runtime evidence:** runtime_unverified
+**RTO/RPO status:** target_not_verified
+**Decision owner:** 박성환
+**Reviewed at:** 2026-08-06
+
+### Source and Approval Scope
+
+```text
+Source: RPL-42 explicit user approval
+Related ADR: ADR-0016
+Approval Scope: Architecture Direction only
+Production Adoption: not_approved
+```
+
+Independent Review `PASS`(`Blocking 0 / Major 0 / Minor 0`)와 Review Target
+`28bd677995dc7ed787ef2cecf3229d97313d1947`을 근거로 Runtime Discovery와 Isolated
+Spike·Restore Drill의 기준 방향을 승인한다. Candidate Reframe Verdict는
+`PASS_WITH_CONDITIONS`, Reviewer Recommendation은
+`ACCEPT_REVISED_DIRECTION_WITH_CONSTRAINTS`다.
+
+### Accepted Direction
+
+```text
+Primary
+= Mac mini + Docker Compose
+
+Application DR first validation
+= EC2 + Docker Compose
+= Application/Database Host separation
+
+Database DR first validation
+= separate EC2 PostgreSQL Warm Physical Standby
+
+Data Safety
+= Base Backup + Continuous WAL Archive/PITR independent of Standby
+
+Registry
+= GHCR first validation / ECR alternative
+
+AWS Entry
+= Cloudflare Tunnel direct to EC2 Gateway first validation
+
+ALB
+= deferred_until_runtime_choice
+
+Traffic
+= Automatic Detection and Evidence Collection
++ Human-approved Fencing, Promotion, Write Enable and Traffic Failover
+
+Failback
+= Automatic Failback prohibited
++ DR Write Freeze, Cutover Boundary, Final Catch-up, Boundary Validation
++ Human-approved Primary Promotion, Controlled Write and Traffic Failback
+
+IaC
+= Terraform planning direction
+
+Kubernetes
+= deferred under ADR-0015 triggers
+```
+
+ECS Fargate + ALB, Cold Base Backup + WAL Restore, ECR와 incident-created/always-on
+ALB는 조건부 대안으로 보존한다. Git Tag와 OCI Manifest/Platform Digest는 서로 다른
+Release Evidence다.
+
+### Constraints
+
+- 실제 Mac mini, Docker/Compose와 PostgreSQL Runtime Inventory는 미완료다.
+- PostgreSQL Version·Extension·Size·WAL Rate는 미확인·미측정이다.
+- Warm EC2/EBS/Network, Monitoring과 Registry 비용은 `measurement_required`다.
+- Replication Lag·Slot·WAL Retention·Disk Full 위험은 `verification_required`다.
+- Base Backup/WAL Archive, GHCR Pull, EC2 Bootstrap과 Direct Tunnel은 미검증이다.
+- Fencing, Read-only와 Writer Authority Mechanism은 미구현이다.
+- Promotion, Final-sync Failback, Monthly Restore와 Quarterly Full DR Drill은 `not_run`이다.
+- RTO 4시간과 RPO 15분은 `target_not_verified`다.
+- Production Security Review와 Production Adoption Gate는 미완료다.
+
+```text
+Architecture Direction Accepted
+≠ Production Adoption Approved
+
+First Validation Target
+≠ Runtime Implemented
+```
+
+### Evidence Gates
+
+1. Runtime과 PostgreSQL Inventory
+2. Warm EC2/EBS/Network Cost Model
+3. Replication Network/Lag/Slot/Disk 검증
+4. Base Backup + Continuous WAL Archive/PITR Prototype
+5. GHCR Private Pull과 EC2 Compose Bootstrap
+6. Cloudflare Tunnel → EC2 Gateway 검증
+7. Fargate + ALB 비교 Spike
+8. Warm Standby Promotion과 Final-sync Failback Drill
+9. Production Security Review와 Full DR Drill
+10. 별도 Production Adoption Decision
+
+### Re-evaluation Triggers
+
+- Multi-replica, independent scale 또는 zero-downtime 요구가 확인되면 Fargate+ALB를
+  재평가한다.
+- EC2 Host patch/bootstrap 부담이 RTO 또는 1인 운영 범위를 넘으면 Fargate를 재평가한다.
+- Warm 비용이 Guardrail을 넘거나 Network/Replication 운영이 부적합하면 Cold Restore를
+  재평가한다.
+- Fargate 채택, GHCR Credential 부담 또는 External Pull 문제가 확인되면 ECR을 재평가한다.
+- Fargate, Multi-AZ/Multi-replica 또는 Direct Tunnel 실패 시 ALB를 재평가한다.
+
+### Prohibited Claims
+
+- EC2, Warm Standby, Replication, Backup/WAL, Registry 또는 Tunnel Resource가 존재하거나
+  동작한다는 주장
+- ALB가 영구적으로 불필요하거나 Terraform이 적용됐다는 주장
+- 비용 Guardrail, RTO 4시간 또는 RPO 15분을 달성했다는 주장
+- Production Adoption 또는 Runtime 구현이 완료됐다는 주장
+
+### Follow-up Work
+
+- 승인된 Runtime/PostgreSQL Inventory와 Isolated Spike를 별도 실행 범위에서 수행한다.
+- Restore/Promotion/Failback Evidence와 Production Security Review를 보존한다.
+- Production Adoption은 모든 Gate 통과 후 별도 사용자 승인으로 결정한다.
+- 승인 Metadata를 포함한 HEAD는 Independent PR Review와 Merge Gate를 거친다.
+
+### Relationship and Supersession
+
+```text
+related_adr:
+- ADR-0016
+
+preserves:
+- ADR-0013
+- ADR-0015
+
+supersedes: []
+superseded_by: []
+```
+
+### Affected Documents
+
+```text
+docs/adr/ADR-0016-primary-deployment-and-disaster-recovery.md
+docs/adr/README.md
+docs/decisions/decision-log.md
+```
+
+System Catalog에는 현재 ADR-0016 Runtime Topology Projection이 없어 이번 Decision과
+명백한 충돌이 없다. Production Runtime 상태를 추측하는 Projection은 추가하지 않는다.
+
+### References
+
+```text
+ADR-0013
+ADR-0015
+ADR-0016
+RPL-42
 ```
 
 ---
