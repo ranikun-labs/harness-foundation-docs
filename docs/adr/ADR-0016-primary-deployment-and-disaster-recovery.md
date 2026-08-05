@@ -65,9 +65,9 @@ replacement_decision_refs: []
 이 ADR은 Mac mini Primary와 AWS DR 사이에서 Ranikun Labs 서비스의 배포·복구
 경계를 결정하기 위한 Architecture Record다. 현재 `decision_status`는 `open`이다.
 RPL-42 Comment 10144로 비용, RTO, RPO, Failover, Write Policy와 운영 대응 목표가
-승인 입력으로 고정됐지만, 이를 달성할 기술은 후속 Writer Slice의 대안 비교와
-독립 검수 이후에만 결정한다. 실제 Runtime, Infrastructure와 운영 상태는 검증되지
-않았다.
+승인 입력으로 고정됐지만, 이를 달성할 기술은 이 ADR의 대안 비교, Correction HEAD의
+독립 재검수와 사용자 결정 이후에만 결정한다. 실제 Runtime, Infrastructure와 운영
+상태는 검증되지 않았다.
 
 ```text
 Approved target input
@@ -1190,16 +1190,20 @@ Mac mini Primary 장애가 감지됐을 때, 오탐으로 AWS DR를 활성 Write
 |---|---|---|
 | PRIMARY_HEALTHY | Liveness·Readiness·Write Readiness 정상 | 불필요한 Failover |
 | PRIMARY_SUSPECTED | Health Signal 이상 감지, 미확정 | 이 신호만으로 Write 전환 |
-| PRIMARY_UNAVAILABLE | Primary 서비스 불가 확인 | Fencing 없이 DR Write |
+| PRIMARY_UNAVAILABLE | Primary 서비스 불가 확인 | Authoritative Fencing 없이 DR Write |
 | DR_PREPARING | Incident 선언 후 DR 준비 시작 | Traffic 전환 |
-| DR_RESTORING | PostgreSQL Restore/Promotion 진행 | Write Enable |
+| DR_RESTORING | PostgreSQL Restore/WAL Replay 진행 | Write Enable |
 | DR_READ_ONLY | DR Runtime이 Read-only로 기동 | Business Write |
-| DR_VALIDATING | Consistency/Business Read Check 진행 | Traffic Failover 승인 |
-| DR_WRITE_APPROVED | Fencing+Restore+Consistency 후 Write 승인 | Fencing 미확인 상태 승격 |
+| DR_VALIDATING | Database/Application Read-only Check 진행 | Promotion 승인 |
+| DR_PROMOTION_PENDING | DB/App Read-only PASS, Promotion 승인 대기 | 승인 없는 Promotion |
+| DR_DATABASE_PROMOTED | Promotion 완료, Writer Authority Record 갱신 | Application Write 자동 활성화 |
+| DR_WRITE_APPROVED | 별도 Application Write 승인 완료 | Controlled Write 전 Traffic 전환 |
 | TRAFFIC_FAILOVER_APPROVED | Traffic 전환 승인 완료 | Rollback Target 없이 전환 |
 | DR_ACTIVE | DR가 활성 Writer | Primary 동시 Write 허용 |
 | FAILBACK_PREPARING | Primary 복구 후 Failback 준비 | 자동 Failback |
 | PRIMARY_RESTORING | Primary Re-seed/동기화 진행 | Primary Write |
+| DR_WRITE_FROZEN | Failback Cutover 승인 후 DR 신규 Write 중단 | Final Boundary 미기록 전 전이 |
+| FAILBACK_FINAL_SYNC | Cutover Boundary 기준 Final Catch-up·검증 진행 | Primary Promotion |
 | PRIMARY_READ_ONLY | Primary가 Read-only로 기동 | Primary Business Write |
 | PRIMARY_VALIDATING | Primary Consistency Validation | Traffic Failback 승인 |
 | FAILBACK_APPROVED | Failback 승인 완료 | DR 즉시 종료 |
@@ -1329,9 +1333,47 @@ DR Write Enable must not occur until the Primary writer has been fenced
 or its inability to write has been independently established.
 ```
 
-한국어 의미: **Primary Writer가 Fence되었거나 Write 불가능이 독립적으로 확인되기 전에는 DR Write를 활성화하지 않는다.**
+한국어 의미: **Primary Writer가 Fence되었거나 Write 불가능이 서로 독립적인 Evidence로
+충분히 입증되기 전에는 DR Write를 활성화하지 않는다.**
 
-Fencing 후보: Primary Host Power-off 확인 · Primary Network Isolation · Database Write Credential Revocation · Tunnel Disable · Application Stop · Storage Lock 또는 Write Lease · Operator Physical Confirmation · Independent Monitoring Confirmation.
+#### A. Authoritative Fencing Mechanism Candidate
+
+Primary의 Business Write를 직접 불가능하게 만드는 후보: Database Write Credential
+Revocation 또는 비활성화 · Storage Lock 또는 Exclusive Write Lease 이전 · Primary Host
+Power-off를 독립 Evidence로 확인 · Primary의 Database Write 경로를 차단하는 검증된
+Network Isolation · Database Writer Process 또는 Database Runtime의 종료를 독립적으로
+확인하는 Mechanism · 동등한 Write Authority Control.
+
+각 후보는 구현된 상태가 아니며 `open / verification_required`다.
+
+#### B. Supporting Containment Action
+
+장애 범위를 줄이는 후보: Application Stop · Gateway Stop · Cloudflare Tunnel Disable ·
+Traffic Route 제거 · Maintenance Mode · Primary Application Credential 제거.
+
+```text
+Supporting Containment Action alone ≠ Authoritative Fencing
+```
+
+#### C. Observation / Evidence Signal
+
+판단을 돕지만 Write를 직접 막지 않는 Signal 후보: Cloudflare Health Failure · Tunnel
+Down · Application Health Failure · Infrastructure Monitoring · Operator Observation ·
+Independent Monitoring Confirmation · Physical Observation.
+
+```text
+Observation alone ≠ Fencing Mechanism
+Health Failure ≠ Database Write Impossibility
+Tunnel Disable ≠ Database Write Impossibility
+Application Stop ≠ Database Write Impossibility
+```
+
+#### DR Write Fencing Gate
+
+DR Write는 1) 하나 이상의 Authoritative Fencing Mechanism이 적용되고 검증됐거나,
+2) Primary의 Business Write 불가능이 서로 독립적인 Evidence로 충분히 입증된 경우에만
+승인 후보가 된다. Supporting Containment Action 또는 Observation만으로는 DR Write를
+허용하지 않는다.
 
 ```text
 Traffic Switch ≠ Fencing
@@ -1339,7 +1381,7 @@ Health Check Failure ≠ Fencing
 Tunnel Down ≠ Database Write 불가능
 ```
 
-현재 Fencing 방식은 `open`이다.
+현재 Authoritative Fencing 방식과 독립 Evidence의 충분성 기준은 `open / verification_required`다.
 
 ### 8.26 Write Enable Gate
 
@@ -1347,29 +1389,36 @@ DR Write 허용을 위한 최소 Gate 후보(순서):
 
 1. Incident 선언
 2. Primary 상태 Evidence 수집
-3. Primary Fencing 또는 Independent Write-impossibility 확인
-4. AWS DR Runtime 준비
-5. PostgreSQL Restore 또는 Promotion 완료
-6. Migration Compatibility 확인
-7. Application Read-only Boot
-8. Database Connectivity 확인
-9. Consistency Check
-10. Critical Business Read Check
-11. Secret/Configuration 확인
-12. Operator 승인
-13. Write Enable
+3. Authoritative Fencing 적용·검증 또는 서로 독립적인 Write-impossibility Evidence 확인
+4. AWS Database/Application Runtime 준비
+5. Restore Target 도달
+6. PostgreSQL을 Read-only 또는 Recovery-safe 상태로 기동
+7. Database-level Validation
+8. Application Runtime을 강제 Read-only 상태로 기동
+9. Application Read-only Query와 Critical Business Read 검증
+10. Database Promotion Approval
+11. PostgreSQL Promotion
+12. Database Writer Authority Record 갱신
+13. Application Write Enable Approval
 14. Controlled Write Probe
-15. Traffic Failover 승인
+15. Traffic Failover Approval
 
 ```text
 Runtime Healthy ≠ Write Enabled
 Database Connected ≠ Data Consistent
-Read-only Boot PASS ≠ Traffic Failover Approved
+Application Read-only PASS ≠ Database Promoted
+Database Promotion Approval ≠ Application Write Approval
+Database Promotion Success ≠ Application Write Enabled
+Controlled Write PASS ≠ Traffic Failover Approved
 ```
 
 ### 8.27 Traffic Failover Gate
 
-Traffic 전환 전 최소 Evidence 후보: DR Runtime Healthy · ALB 또는 Target Health 정상 · Application Readiness 정상 · Database Restore 완료 · Read-only Business Check · Fencing Evidence · Write Enable 승인 · Controlled Write Probe · Audit Record · Rollback Target 준비 · Operator 승인.
+Traffic 전환 전 최소 Evidence 후보: DR Runtime Healthy · ALB 또는 Target Health 정상 ·
+Application Readiness 정상 · Database Restore 완료 · Database/Application Read-only
+Validation · Authoritative Fencing Evidence 또는 독립 Write-impossibility Proof · Database
+Promotion Approval/실행 · Writer Authority Record · Application Write Enable 승인 ·
+Controlled Write Probe · Audit Record · Rollback Target 준비 · Operator 승인.
 
 Cloudflare Health Monitor만으로 Failover하지 않는다.
 
@@ -1391,20 +1440,18 @@ Automatic failback is prohibited for the initial architecture candidate.
 
 한국어 의미: **초기 Architecture 후보에서 자동 Failback을 금지한다.**
 
-Failback 최소 후보 순서:
+Failback 최소 후보 순서: 기존 Primary 복구·호환 확인 → 초기 Re-seed → Primary Initial
+Read-only Validation → Failback Cutover Window 승인 → AWS DR 신규 Business Write Freeze →
+Final Write/Cutover Boundary 기록 → Primary Final WAL/Data Catch-up → Timeline·LSN·Business
+Boundary Validation → Primary Final Read-only Validation → AWS DR Writer Authority 해제 승인 →
+Primary Promotion/Writer Authority 활성화 → Controlled Write Probe → Traffic Failback 승인 →
+AWS DR Read-only/Cold 전환 → Incident Close.
 
-1. 기존 Primary 복구
-2. Primary Runtime과 Image Digest 확인
-3. Database Re-seed 또는 동기화
-4. Primary Read-only Boot
-5. Consistency Validation
-6. AWS DR Write Freeze
-7. Primary Write 승인
-8. Controlled Write Probe
-9. Traffic Failback 승인
-10. AWS DR Read-only 전환
-11. AWS DR 종료 또는 Cold 상태
-12. Incident 종료
+```text
+DR Write Freeze ≠ Final Catch-up Complete
+Initial Re-seed ≠ Failback Promotion Approved
+Traffic Failback ≠ Writer Authority Transfer
+```
 
 이 순서는 Planning Candidate이며 실행 Runbook이 아니다.
 
@@ -1771,28 +1818,61 @@ Restore Target 선택은 Human Approval이 필요한 후보로 기록한다. Own
 | RECOVERY_TARGET_REACHED | Target 도달 | Consistency 미검증 승격 |
 | DATABASE_READ_ONLY | Read-only 기동 | Business Write |
 | DATABASE_VALIDATING | Validation 진행 | Promotion 승인 |
-| DATABASE_PROMOTION_PENDING | Validation 통과, 승인 대기 | Fencing 미확인 승격 |
+| APPLICATION_READ_ONLY_VALIDATING | Application 강제 Read-only 검증 | Promotion·Business Write |
+| DATABASE_PROMOTION_PENDING | DB/App Read-only Validation 통과, 승인 대기 | Fencing 미확인 승격 |
 | DATABASE_WRITE_APPROVED | Fencing+Validation 후 승인 | 승인 범위 초과 |
 | DATABASE_ACTIVE_WRITER | 활성 Writer | Old Primary 동시 Write |
 | OLD_PRIMARY_RESEED_REQUIRED | Old Primary 재사용 판정 | 검증 없이 Writer 복귀 |
 | FAILBACK_DATABASE_PREPARING | Failback DB 준비 | 자동 Failback |
+| FAILBACK_FINAL_SYNC | DR Final Boundary 기준 Catch-up·검증 | Primary Promotion |
 | INCIDENT_DATABASE_CLOSED | Evidence 보존 후 종료 | Evidence 미기록 종료 |
 
 ### 8.52 Restore Order Candidate
 
-Cold Restore 최소 후보 순서: 1) Incident 선언 2) Primary Fencing Evidence 3) Backup Catalog 확인 4) Base Backup 선택 5) Manifest/Integrity 확인 6) WAL 연속성 확인 7) Restore Target 선택·승인 8) AWS Database Runtime 준비 9) Version·Extension 확인 10) Base Backup Restore 11) WAL Replay 12) Recovery Target 도달 13) Read-only Startup 14) Database-level Validation 15) Application Read-only Connection 16) Business Read Check 17) Promotion 승인 18) Write Enable 19) Controlled Write Probe 20) Traffic Failover 승인.
+Backup/Restore 선행 후보 순서: Incident 선언 → Authoritative Fencing Evidence 또는 독립
+Write-impossibility Proof → Backup Catalog/Manifest/WAL 연속성 확인 → Restore Target
+선택·승인 → AWS Database Runtime과 Version·Extension 준비 → Base Backup Restore → WAL
+Replay → Restore Target 도달.
+
+#### Canonical Promotion Planning Sequence
+
+1. Restore Target 도달
+2. PostgreSQL을 Read-only 또는 Recovery-safe 상태로 기동
+3. Database-level Validation
+4. Application Runtime을 강제 Read-only 상태로 기동
+5. Application Read-only Query와 Critical Business Read 검증
+6. Database Promotion Approval
+7. PostgreSQL Promotion
+8. Database Writer Authority Record 갱신
+9. Application Write Enable Approval
+10. Controlled Write Probe
+11. Traffic Failover Approval
+12. DR Active
+
+Application Read-only Validation은 Promotion 전에 실행하는 Planning Candidate다. 복구
+Database가 Promotion 전 Read-only 검증을 제공하는 실제 방식은 `open`이며 PostgreSQL
+Hot Standby · Recovery-safe Read-only Runtime · Read-only Role · Application-level Write
+Block · Gateway Write Block · Combination 후보 중 하나를 채택하지 않는다.
 
 ```text
 Restore Complete ≠ Promotion Approved
 Recovery Target Reached ≠ Data Consistency Verified
 Database Started ≠ Application Write Safe
+Application Read-only PASS ≠ Database Promoted
+Database Promoted ≠ Application Write Approved
+Controlled Write PASS ≠ Traffic Failover Approved
 ```
 
 이 순서는 Planning Candidate이며 실행 Runbook이 아니다.
 
 ### 8.53 Database Read-only Validation
 
-Promotion 전 최소 Validation 후보: PostgreSQL Startup · Recovery 종료 상태 · Expected Database 목록 · Schema Version · Migration Version · Extension Availability · Role/Grant Availability · Critical Table 존재 · Referential/Logical Invariant · Recent Business Record · Restore Target 시각 · Timeline · WAL Replay 종료 지점 · Application Read-only Query · Critical Business Read · Audit/Projection 상태.
+Promotion 전 최소 Validation 후보: PostgreSQL Startup · Recovery-safe 상태와 Restore
+Target 도달 확인 · Expected Database 목록 · Schema Version · Migration Version · Extension
+Availability · Role/Grant Availability · Critical Table 존재 · Referential/Logical Invariant ·
+Recent Business Record · Restore Target 시각 · Timeline · WAL Replay 종료 지점 · Application
+강제 Read-only 기동 · Application Read-only Query · Critical Business Read · Audit/Projection
+상태.
 
 Read-only 구현 방식은 `open`이다. 후보: PostgreSQL Hot Standby · Read-only Database Role · Transaction Read-only · Application Feature Flag · Gateway Write Block · Combination. 이번 Slice에서 하나를 채택하지 않는다.
 
@@ -1806,13 +1886,25 @@ recovered database has passed approved validation.
 
 한국어 의미: **복원되거나 Standby인 PostgreSQL Instance는 Old Primary Writer가 Fence되고 복구된 Database가 승인된 Validation을 통과하기 전에는 활성 Writer로 승격되지 않는다.**
 
-Promotion 조건 후보: Old Primary Fencing · Correct Restore Target · Required WAL Replay 완료 · Version/Extension Compatibility · Schema/Migration Compatibility · Database Read-only Validation · Business Read Check · Secret/Role 확인 · Promotion Owner 승인 · Audit Evidence 생성.
+Promotion 조건 후보: Old Primary Authoritative Fencing 또는 독립 Write-impossibility Proof ·
+Correct Restore Target · Required WAL Replay 완료 · Version/Extension Compatibility · Schema/
+Migration Compatibility · Database Read-only Validation · Application 강제 Read-only 기동 ·
+Application Read-only Query와 Critical Business Read · Secret/Role 확인 · Promotion Owner
+승인 · Audit Evidence 생성.
+
+```text
+Database Promotion Approval ≠ Application Write Approval
+Database Promotion Success ≠ Application Write Enabled
+```
 
 Promotion 명령이나 Tool을 최종 채택하지 않는다. `pg_ctl promote` 또는 `pg_promote()`는 Capability Evidence로만 언급한다.
 
 ### 8.55 Writer Authority
 
-Database Writer Authority 후보 속성: Current Writer Environment · Database Instance Identity · Timeline · Promotion Time · Incident ID · Approval Owner · Fencing Evidence · Write Credential Version · Application Release Digest · Configuration Version · Last Validation Result.
+Database Writer Authority 후보 속성: Current Writer Environment · Database Instance Identity ·
+Timeline · Promotion Approval/Time · Incident ID · Approval Owner · Fencing Evidence · Write
+Credential Version · Application Release Digest · Configuration Version · Last Validation
+Result · Failback Cutover Boundary Reference · Final Synchronization Result.
 
 ```text
 Traffic Destination ≠ Database Writer Authority
@@ -1829,6 +1921,8 @@ Writer Authority 변경은 Audit Evidence가 필요하다.
 - Old Primary의 자동 재접속을 금지한다.
 - Old Primary를 그대로 Writer로 복귀시키면 Split-brain 위험이 있다.
 - Failback 전 Re-seed 또는 동기화가 필요하다.
+- DR 신규 Business Write를 Freeze한 뒤 Final Write Boundary를 기록하고, 그 Boundary까지
+  Primary가 Catch-up됐음을 Timeline·LSN·Business Evidence로 검증해야 한다.
 - pg_rewind는 조건부 Capability(`wal_log_hints` 또는 checksum, 분기점 WAL 필요)다.
 - WAL 보존과 Timeline History가 필요하며 Backup Chain은 Promotion 이후 새 Timeline을 따라야 한다.
 
@@ -1840,9 +1934,45 @@ Promotion 이후 Old Primary는 검증 없이 Writer가 될 수 없다.
 
 ### 8.57 Failback / Re-seed Boundary
 
-AWS DR Writer → Mac mini Primary 후보 순서: 1) Mac mini Host 복구 2) PostgreSQL Runtime Version 확인 3) Extension 확인 4) Old Data Directory 폐기 여부 판단 5) AWS Active Writer Fencing 계획 6) Mac Primary Re-seed 7) Required WAL/Data 동기화 8) Mac Database Read-only Startup 9) Schema/Business Validation 10) AWS 신규 Write Freeze 11) Mac Promotion 승인 12) Controlled Write Probe 13) Traffic Failback 승인 14) AWS Database Read-only 전환 15) AWS DR Cold 상태 전환 16) Incident 종료.
+#### Canonical Failback Planning Sequence
 
-Automatic Database Failback은 금지 후보를 유지한다. Re-seed 방법은 `open`이다. 후보: New Base Backup · Physical Copy · pg_rewind 조건부 · Logical Migration · Managed Migration Tool. 이번 Slice에서 하나를 채택하지 않는다.
+1. Mac mini Host·PostgreSQL Runtime 복구
+2. PostgreSQL Version·Extension 호환 확인
+3. Mac Primary 초기 Re-seed
+4. Mac Database를 Read-only 상태로 기동
+5. Initial Schema·Business Validation
+6. Failback Cutover Window 승인
+7. AWS DR Application의 신규 Business Write Freeze
+8. AWS DR Database의 Final Write Boundary 기록
+9. Cutover Boundary Evidence 기록
+10. Mac Primary로 Final WAL/Data Catch-up
+11. Final Catch-up 완료 확인
+12. Timeline·LSN·Business Boundary 일치 검증
+13. Mac Primary Final Read-only Validation
+14. AWS DR Writer Authority 해제 승인
+15. Mac Primary Promotion Approval
+16. Mac Primary Writer Authority 활성화
+17. Controlled Write Probe
+18. Traffic Failback Approval
+19. AWS DR를 Read-only 상태로 전환
+20. AWS DR를 Cold 상태로 전환
+21. Incident Close
+
+Cutover Boundary Evidence 후보: Incident ID · DR Timeline Reference · Final LSN Reference ·
+Last Committed Business Event Boundary · Final WAL Segment Reference · Write Freeze Time ·
+Database Validation Result · Application Validation Result · Approval Owner · Audit Record.
+실제 LSN 값이나 Business Data는 ADR에 기록하지 않는다.
+
+`failback_final_sync`는 DR Write Freeze 후 Cutover Boundary를 기준으로 Final Catch-up과
+Boundary Validation을 수행하는 Architecture State 후보다.
+
+Failback Promotion 금지 조건: Final Boundary 기록 없음 · Final WAL/Data Catch-up 불완전 ·
+Timeline 불일치 · LSN 또는 Business Boundary 불일치 · Primary Read-only Validation 실패 ·
+DR Write가 다시 활성화됨 · Writer Authority 불명확 · Human Approval 없음.
+
+Automatic Database Failback은 금지 후보를 유지한다. Re-seed와 Final Catch-up 방법은
+`open`이다. 후보: New Base Backup · Physical Copy · pg_rewind 조건부 · Logical Migration ·
+Managed Migration Tool. 이번 ADR에서 하나를 채택하지 않는다.
 
 ### 8.58 Replication Slot / WAL Retention Risk
 
@@ -1891,7 +2021,14 @@ Signal 후보: Last Successful Base Backup · Last Backup Verification · Last S
 
 ### 8.63 Audit Evidence Candidate (Data DR)
 
-Backup/Restore/Promotion Evidence 후보: Incident ID · Backup ID Reference · Base Backup Start/End · Backup Manifest Reference · Backup Integrity Result · Last Archived WAL · Restore Target · Recovery Timeline · Replayed WAL Range · Recovery Target Reached Time · PostgreSQL Version · Extension Inventory Reference · Database Runtime Identity · Read-only Validation Result · Promotion Approval · Writer Authority Record · Write Probe Result · Failover Time · Failback Re-seed Reference · Drill/Real Incident 구분 · Owner.
+Backup/Restore/Promotion/Failback Evidence 후보: Incident ID · Backup ID Reference · Base
+Backup Start/End · Backup Manifest Reference · Backup Integrity Result · Last Archived WAL ·
+Restore Target · Recovery Timeline · Replayed WAL Range · Recovery Target Reached Time ·
+PostgreSQL Version · Extension Inventory Reference · Database Runtime Identity · Database/
+Application Read-only Validation Result · Promotion Approval/Result · Writer Authority Record ·
+Write Probe Result · Failover Time · Failback Re-seed Reference · DR Final Write Boundary
+Reference · Final WAL/LSN Reference · Write Freeze Time · Final Catch-up Result · Timeline/LSN/
+Business Boundary Validation Result · Failback Time · Drill/Real Incident 구분 · Owner.
 
 실제 Secret, Bucket, Account, Host, IP는 기록하지 않는다.
 
@@ -1956,7 +2093,11 @@ status: measurement_required
 사용자 승인 Input(§4.6)을 유지한다: Monthly Restore Check · Quarterly Full DR Drill.
 
 - **Monthly Restore Check** 후보 범위: Backup 발견 · Manifest/Integrity · Decryption 가능 · 제한된 Restore · PostgreSQL Startup · 기본 Read Check.
-- **Quarterly Full DR Drill** 후보 범위: Mac Primary 장애 가정 · AWS Runtime Provision · Full PostgreSQL Restore · WAL Replay · Read-only Application · Promotion Approval Simulation · Traffic Failover Simulation · Failback/Re-seed 검증 · RTO/RPO 측정.
+- **Quarterly Full DR Drill** 후보 범위: Mac Primary 장애 가정 · AWS Runtime Provision ·
+  Full PostgreSQL Restore · WAL Replay · Database/Application Read-only Validation · Promotion
+  Approval/실행 Simulation · Writer Authority Record · Controlled Write · Traffic Failover
+  Simulation · Initial Re-seed · DR Write Freeze · Cutover Boundary · Final Catch-up/Boundary
+  Validation · Primary Promotion/Traffic Failback Simulation · RTO/RPO 측정.
 
 실제 Drill이 실행됐다고 주장하지 않는다. Drill Evidence 저장 위치는 `open`이다.
 
@@ -1982,9 +2123,11 @@ Traffic Failover, Failback/Re-seed, RTO/RPO 측정, 비용과 1인 운영 제약
 - AWS Application 후보: ECS Fargate + ALB.
 - AWS Database 후보: Application과 분리된 EC2/EBS PostgreSQL Cold Restore Runtime.
 - Backup 후보: Primary 밖의 암호화 Object Storage에 Base Backup + WAL.
-- Recovery 후보: Fencing → Restore → Read-only Validation → Human Promotion Approval.
+- Recovery 후보: Authoritative Fencing → Restore → Database/Application Read-only Validation
+  → Human Promotion Approval → Promotion/Writer Authority Record → Application Write Approval.
 - Traffic 후보: Cloudflare Detection + Human Approval.
-- Failback 후보: DR Write Freeze → Primary Re-seed → Read-only Validation → Human Approval.
+- Failback 후보: Initial Re-seed/Read-only Validation → DR Write Freeze → Cutover Boundary →
+  Final Catch-up/Boundary Validation → Human Promotion Approval.
 
 평가: `planning_leader` integrated candidate. Accepted가 아니며 Database EC2 Runtime도
 `open`이고 `runtime_unverified`다.
@@ -2067,10 +2210,12 @@ Incident Detection
 → Base Backup Restore
 → WAL Replay
 → Database Read-only Validation
-→ Database Promotion Approval
 → Application Runtime Start
 → Application Read-only Validation
-→ Write Enable Approval
+→ Database Promotion Approval
+→ PostgreSQL Promotion
+→ Database Writer Authority Record Update
+→ Application Write Enable Approval
 → Controlled Write Probe
 → Traffic Failover Approval
 → DR Active
@@ -2081,22 +2226,32 @@ Incident Detection
 | Incident Detection | Health·Operator Signal | Timestamped Detection | Automated System observation | Acknowledgement | `runtime_unverified` |
 | Operator Acknowledgement | Detection | Operator Ack | 박성환 | Classification | `not_run` |
 | Failure Classification | Correlated Signals | Failure Class와 영향 | 박성환 | Fencing | `verification_required` |
-| Primary Fencing | Classification | Host·Network·Credential 격리 Evidence | 박성환 | Writer transfer | `verification_required` |
+| Primary Fencing | Classification | Authoritative Mechanism 또는 독립 Write-impossibility Proof | 박성환 | Writer transfer | `verification_required` |
 | Backup/WAL Validation | Catalog·Manifest·WAL | Integrity, Gap, decryptability | 박성환 | Restore | `runtime_unverified` |
 | Database Runtime Provision | IaC·Version Inventory | Runtime Identity, Version, Extension | 박성환 | Base Restore | `planning_candidate` |
 | Base Backup Restore | Selected Backup | Restore Log, Manifest match | 박성환 | WAL Replay | `not_run` |
 | WAL Replay | Required WAL range | Gap-free Replay, Timeline | 박성환 | DB Validation | `not_run` |
-| Database Read-only Validation | Restored Cluster | Read-only, Schema, Critical Read | 박성환 | Promotion | `not_run` |
-| Database Promotion Approval | Fencing+Validation | Approval Record | 박성환 | Writer state | `verification_required` |
-| Application Runtime Start | Approved Digest·Config·Secret | Runtime/Readiness Evidence | 박성환 | App Validation | `runtime_unverified` |
-| Application Read-only Validation | App+DB read-only | Business Read, Schema Compatibility | 박성환 | Write Approval | `not_run` |
-| Write Enable Approval | Authority Record inputs | Single Writer Evidence와 Approval | 박성환 | Write Probe | `verification_required` |
+| Database Read-only Validation | Restored Cluster | Recovery-safe Read-only, Schema, Critical Read | 박성환 | App Start | `not_run` |
+| Application Runtime Start | DB Read-only Validation+Digest·Config·Secret | 강제 Read-only Runtime Evidence | 박성환 | App Validation | `runtime_unverified` |
+| Application Read-only Validation | App+DB read-only | Query, Business Read, Schema Compatibility | 박성환 | Promotion Approval | `not_run` |
+| Database Promotion Approval | Fencing+DB/App Validation | Approval Record | 박성환 | Promotion | `verification_required` |
+| PostgreSQL Promotion | Promotion Approval | Promotion Result·Timeline | 박성환 | Authority Record | `not_run` |
+| Database Writer Authority Record Update | Promotion Result | Single Writer·Timeline·Approval Evidence | 박성환 | App Write Approval | `verification_required` |
+| Application Write Enable Approval | Authority Record inputs | Single Writer Evidence와 별도 Approval | 박성환 | Write Probe | `verification_required` |
 | Controlled Write Probe | Approved DR Writer | Write·Readback·Audit Result | 박성환 | Traffic Approval | `not_run` |
 | Traffic Failover Approval | All prior Evidence | Target, Rollback, Human Approval | 박성환 | DR Active | `verification_required` |
 | DR Active | Traffic switched | User Recovery Confirmation | 박성환 | Incident operation | `blocked_by_evidence` |
 
+Failback Dependency 후보는 Primary Runtime 복구 → Initial Re-seed/Read-only Validation →
+Cutover Window 승인 → DR Write Freeze → Final Write/Cutover Boundary 기록 →
+`failback_final_sync` → Timeline·LSN·Business Boundary Validation → Primary Final Read-only →
+DR Writer Authority 해제/Primary Promotion 승인 → Primary Authority 활성화/Controlled Write →
+Traffic Failback → DR Read-only/Cold → Incident Close 순서를 보존한다.
+
 ```text
 Application Runtime은 Database Validation을 건너뛰지 않는다.
+Application Read-only Validation은 Database Promotion보다 먼저 수행한다.
+Database Promotion은 Application Write Approval을 대체하지 않는다.
 Traffic Failover는 Writer Authority 이전을 대체하지 않는다.
 Health Check는 Fencing을 대체하지 않는다.
 Restore 완료는 Promotion 승인을 대체하지 않는다.
@@ -2109,17 +2264,18 @@ Restore 완료는 Promotion 승인을 대체하지 않는다.
 | 1. Detection | `unknown / measurement_required` | No | Incident 발생 | Detection timestamp | Yes |
 | 2. Operator Acknowledgement | `unknown / measurement_required` | No | Detection | Ack timestamp | Yes |
 | 3. Classification | `unknown / measurement_required` | Partially | Ack | Correlated failure evidence | Yes |
-| 4. Fencing | `unknown / measurement_required` | Partially | Classification | Fencing evidence | Yes |
+| 4. Fencing | `unknown / measurement_required` | Partially | Classification | Authoritative mechanism/proof evidence | Yes |
 | 5. AWS Runtime Preparation | `unknown / measurement_required` | Yes | Incident declaration | IaC/runtime evidence | Yes |
 | 6. Backup Download | `unknown / measurement_required` | Partially | Backup selection | Object integrity | Yes |
 | 7. Base Restore | `unknown / measurement_required` | No | Runtime+download | Restore log | Yes |
 | 8. WAL Replay | `unknown / measurement_required` | No | Base Restore | WAL continuity·timeline | Yes |
 | 9. Database Validation | `unknown / measurement_required` | No | Replay | DB read evidence | Yes |
-| 10. Promotion Approval | `unknown / measurement_required` | No | Fencing+validation | Human approval | Yes |
-| 11. Application Startup | `unknown / measurement_required` | No | Database ready | Digest/config/readiness | Yes |
-| 12. Application Validation | `unknown / measurement_required` | No | Startup | Business read evidence | Yes |
-| 13. Write Probe | `unknown / measurement_required` | No | Write approval | Write/readback result | Yes |
-| 14. Traffic Switch | `unknown / measurement_required` | No | Probe+approval | Traffic audit | Yes |
+| 10. Application Startup | `unknown / measurement_required` | No | DB read-only validation | Digest/config/forced read-only | Yes |
+| 11. Application Validation | `unknown / measurement_required` | No | Startup | Query/business read evidence | Yes |
+| 12. Promotion Approval | `unknown / measurement_required` | No | Fencing+DB/App validation | Human approval | Yes |
+| 13. Promotion/Authority Record | `unknown / measurement_required` | No | Promotion approval | Timeline/single-writer record | Yes |
+| 14. Application Write Approval/Probe | `unknown / measurement_required` | No | Authority record | Approval/write/readback result | Yes |
+| 15. Traffic Switch | `unknown / measurement_required` | No | Probe+approval | Traffic audit | Yes |
 
 RTO 4시간은 위 Stage의 Drill 측정 전 `target_not_verified`다. 정확한 시간이나 병렬화
 효과를 발명하지 않는다.
@@ -2129,9 +2285,10 @@ RTO 4시간은 위 Stage의 Drill 측정 전 `target_not_verified`다. 정확한
 병렬 준비 후보: AWS Network Runtime 준비 · Image Pull · Backup Catalog 확인 · Secret/
 Configuration 확인 · Operator Evidence 준비 · Application Task Definition 준비.
 
-직렬 Gate: Fencing 이전 Write Enable 금지 · Base Restore 이후 WAL Replay · Database
-Validation 이후 Promotion · Promotion 이후 Controlled Write · Write Approval 이후 Traffic
-Failover.
+직렬 Gate: Authoritative Fencing 또는 독립 Write-impossibility Proof 이전 Write Enable 금지 ·
+Base Restore 이후 WAL Replay · Database Read-only Validation 이후 Application 강제 Read-only
+Validation · Application Read-only Validation 이후 Promotion Approval/실행 · Writer Authority
+Record 이후 Application Write Approval · Controlled Write 이후 Traffic Failover.
 
 ```text
 Parallel Preparation ≠ Parallel Writer Activation
@@ -2145,6 +2302,7 @@ Terraform Dependency Graph의 병렬 실행 Capability도 Writer Authority Gate�
 | Condition | Automatic Stop | Human Review | Allowed Fallback | Write Allowed |
 |---|---:|---:|---|---:|
 | Primary Fencing 불확실 | Yes | Required | Maintenance, 추가 격리 | No |
+| Supporting Action/Observation만 있고 Authoritative Fencing 없음 | Yes | Required | 추가 Mechanism/독립 Evidence | No |
 | Backup Manifest 불일치 | Yes | Required | 다른 검증 Backup | No |
 | WAL Gap | Yes | Required | 이전 Recovery Point 재선택 | No |
 | Restore Target 불명확 | Yes | Required | Target Evidence 재수집 | No |
@@ -2160,6 +2318,12 @@ Terraform Dependency Graph의 병렬 실행 Capability도 Writer Authority Gate�
 | Writer Authority 불명확 | Yes | Required | Authority 재구성 | No |
 | Cloudflare Target만 Healthy이고 Database Evidence 없음 | Yes | Required | Maintenance/Manual Review | No |
 | Operator가 상황을 확정할 수 없음 | Yes | Required | Maintenance/지원 안내 | No |
+| Final Boundary 기록 없음 | Yes | Required | DR Write Freeze 유지·Evidence 재수집 | No |
+| Final WAL/Data Catch-up 불완전 | Yes | Required | Final Sync 재개 | No |
+| Timeline 불일치 | Yes | Required | Re-seed/Sync 방식 재검토 | No |
+| LSN 또는 Business Boundary 불일치 | Yes | Required | Boundary 재검증 | No |
+| Primary Final Read-only Validation 실패 | Yes | Required | Primary 재동기화/검증 | No |
+| Failback Freeze 후 DR Write 재활성화 | Yes | Required | 새 Boundary 기록·Final Sync 재실행 | No |
 
 Unknown 상태에서는 Write를 금지하고 Traffic은 Maintenance 또는 Manual Review 후보로
 제한한다. Unknown Evidence를 소비해 Candidate를 승격하거나 Architecture Decision을
@@ -2246,20 +2410,26 @@ End-to-end Projection으로 연결한다.
 |---|---|---|---|---|---:|
 | Incident Declare | Health/Operator Signal | Required | Detection·Ack | 박성환 | Yes |
 | Primary Unavailable 판정 | Correlated Signals | Required | Failure Classification | 박성환 | Yes |
-| Primary Fencing | Isolation observation | Required | Fencing Reference | 박성환 | Yes |
+| Primary Fencing | Mechanism/Observation Evidence | Required | Authoritative Mechanism 또는 독립 Write-impossibility Proof | 박성환 | Yes |
 | Backup 선택 | Catalog/Integrity | Required | Manifest·Decrypt·WAL Range | 박성환 | Yes |
 | Restore Target 선택 | Candidate boundary | Required | Business/WAL boundary | 박성환 | Yes |
 | Database Restore 시작 | Runtime readiness | Required | Incident·Backup·Target | 박성환 | Yes |
 | Database Read-only 승인 | DB validation | Required | Version·Extension·Schema·Read | 박성환 | Yes |
-| Database Promotion 승인 | Validation passed | Required | Fencing+Restore+Timeline | 박성환 | Yes |
 | Application Read-only 승인 | App readiness | Required | Digest·Config·Business Read | 박성환 | Yes |
-| Write Credential 활성화 | None | Required | Writer Authority Record | 박성환 | Yes |
+| Database Promotion 승인 | DB/App validation passed | Required | Fencing+Restore+DB/App Read-only+Timeline | 박성환 | Yes |
+| PostgreSQL Promotion | Approval present | Required | Promotion Approval·Result·Timeline | 박성환 | Yes |
+| Writer Authority Record 갱신 | Promotion result | Required | Single Writer·Timeline·Approval | 박성환 | Yes |
+| Write Credential 활성화 | None | Required | Writer Authority Record+별도 App Write Approval | 박성환 | Yes |
 | Controlled Write Probe 승인 | Write readiness | Required | Single Writer·Rollback Target | 박성환 | Yes |
 | Traffic Failover 승인 | Target Health | Required | Probe+Traffic Gate | 박성환 | Yes |
 | Failback 시작 | Primary recovery signal | Required | Incident/DR Authority | 박성환 | Yes |
 | Primary Re-seed | Re-seed progress | Required | Source Timeline·Method | 박성환 | Yes |
+| Failback Cutover Window 승인 | Read-only validation | Required | Initial Re-seed·Schema·Business Read | 박성환 | Yes |
 | DR Write Freeze | None | Required | Freeze·Credential Evidence | 박성환 | Yes |
-| Primary Promotion | Validation passed | Required | DR fenced+Primary read-only | 박성환 | Yes |
+| Final Write/Cutover Boundary 기록 | WAL/Business signal | Required | Timeline·LSN·Business Boundary Reference | 박성환 | Yes |
+| Final Catch-up·Boundary Validation | Sync progress | Required | Catch-up Result·Timeline/LSN/Business Match | 박성환 | Yes |
+| DR Writer Authority 해제 | Final validation passed | Required | Final Primary Read-only·DR Freeze | 박성환 | Yes |
+| Primary Promotion | Authority release approved | Required | Final Sync+Primary Promotion Approval | 박성환 | Yes |
 | Traffic Failback 승인 | Primary readiness | Required | Write Probe+Rollback Target | 박성환 | Yes |
 | Incident Close | Evidence completeness | Required | Final Authority·Timeline·Findings | 박성환 | Yes |
 
@@ -2278,6 +2448,9 @@ End-to-end Projection으로 연결한다.
 | `fencing_evidence_reference` | Primary/DR Fencing Evidence 참조 |
 | `restore_evidence_reference` | Backup·WAL·Restore Evidence 참조 |
 | `validation_evidence_reference` | DB/App Validation 참조 |
+| `final_write_boundary_reference` | Failback DR Final Write/Cutover Boundary 참조 |
+| `final_wal_reference` | Final Catch-up 대상 WAL/LSN 참조 |
+| `final_sync_validation_reference` | Timeline·LSN·Business Boundary 일치 Evidence 참조 |
 | `approved_by` | Human Approver |
 | `approved_at` | Approval Timestamp |
 | `superseded_authority_reference` | 직전 Authority Record 참조 |
@@ -2288,7 +2461,7 @@ Domain, Account ID를 기록하지 않는다.
 
 State 후보: `primary_authoritative` · `authority_unknown` · `primary_fenced` ·
 `dr_read_only` · `dr_promotion_pending` · `dr_authoritative` · `failback_pending` ·
-`dr_write_frozen` · `primary_read_only` · `primary_promotion_pending` ·
+`dr_write_frozen` · `failback_final_sync` · `primary_read_only` · `primary_promotion_pending` ·
 `primary_authoritative_restored` · `incident_closed`.
 
 ### 8.80 Write Authority Transition Matrix
@@ -2296,19 +2469,22 @@ State 후보: `primary_authoritative` · `authority_unknown` · `primary_fenced`
 | From | To | Required Evidence | Human Approval | Forbidden When |
 |---|---|---|---:|---|
 | `primary_authoritative` | `authority_unknown` | Incident declaration | Yes | Incident 근거 없음 |
-| `authority_unknown` | `primary_fenced` | Primary Fencing Evidence | Yes | 격리 불확실 |
+| `authority_unknown` | `primary_fenced` | Authoritative Mechanism 또는 독립 Write-impossibility Proof | Yes | Supporting Action/Observation만 존재 |
 | `primary_fenced` | `dr_read_only` | Restore+Read-only Startup | Yes | Backup/WAL/Version 불일치 |
-| `dr_read_only` | `dr_promotion_pending` | DB·Business Read Validation | Yes | Validation 실패 |
-| `dr_promotion_pending` | `dr_authoritative` | Fencing+Promotion+Credential | Yes | 다른 Writer 가능 |
+| `dr_read_only` | `dr_promotion_pending` | DB·Application 강제 Read-only·Business Read Validation | Yes | Validation 실패 |
+| `dr_promotion_pending` | `dr_authoritative` | Promotion Approval+실행+Authority Record | Yes | 다른 Writer 가능/Record 불완전 |
 | `dr_authoritative` | `failback_pending` | Primary 복구 계획 | Yes | Incident 안정화 전 |
-| `failback_pending` | `dr_write_frozen` | Re-seed 완료 준비 | Yes | DR Write 지속 |
-| `dr_write_frozen` | `primary_read_only` | Primary Re-seed+DR Fence | Yes | Timeline 불명확 |
-| `primary_read_only` | `primary_promotion_pending` | Primary Read Validation | Yes | Schema/Business Read 실패 |
-| `primary_promotion_pending` | `primary_authoritative_restored` | Single Writer+Write Probe | Yes | DR Writer 가능 |
+| `failback_pending` | `dr_write_frozen` | Initial Re-seed/Read Validation+Cutover 승인+DR Write Freeze | Yes | DR 신규 Write 지속 |
+| `dr_write_frozen` | `failback_final_sync` | Final Write/Cutover Boundary Record | Yes | Boundary 없음/DR Write 재활성화 |
+| `failback_final_sync` | `primary_read_only` | Final Catch-up+Timeline/LSN/Business Boundary Validation | Yes | Catch-up/Boundary 불일치 |
+| `primary_read_only` | `primary_promotion_pending` | Final Primary Read Validation+DR Authority 해제 승인 | Yes | Schema/Business Read 실패/DR Writer 가능 |
+| `primary_promotion_pending` | `primary_authoritative_restored` | Primary Promotion Approval+Authority 활성화+Write Probe | Yes | DR Writer Authority 잔존 |
 | `primary_authoritative_restored` | `incident_closed` | Traffic Failback+Evidence 보존 | Yes | 미해결 Finding |
 
 동시에 두 `authoritative` Writer 상태가 존재해서는 안 된다. 상태 전이 Record가
 불완전하면 `authority_unknown`으로 취급하고 Write를 금지한다.
+`dr_authoritative` 전이는 Database Writer Authority를 나타내며 Application Write는 별도
+Approval 전까지 비활성 상태를 유지한다.
 
 ### 8.81 Failover Timeline Candidate
 
@@ -2322,14 +2498,20 @@ State 후보: `primary_authoritative` · `authority_unknown` · `primary_fenced`
 | T5 | Base Restore Complete | Restore log |
 | T6 | WAL Replay Complete | WAL range/timeline |
 | T7 | Database Validation Complete | Read-only validation |
-| T8 | Promotion Approved | Human approval |
-| T9 | Application Read-only Ready | Digest/readiness/business read |
+| T8 | Application Read-only Ready | Digest/readiness/business read |
+| T9 | Promotion Approved/Executed, Authority Recorded | Approval/result/timeline/authority record |
 | T10 | Write Probe Passed | Write/readback evidence |
 | T11 | Traffic Switched | Traffic approval/change reference |
 | T12 | User Recovery Confirmed | User-facing validation |
 
 RTO 측정 후보는 `T12 - T0`다. 각 Timestamp는 Audit Evidence 후보이며 Full Drill 전
 검증된 RTO 값이 아니다.
+
+Failback 측정 후보 순서: F0 Initial Re-seed/Read-only Validation 완료 → F1 Cutover Window
+승인 → F2 DR Write Freeze → F3 Final Write/Cutover Boundary 기록 → F4 Final Catch-up 완료 →
+F5 Timeline·LSN·Business Boundary Validation 완료 → F6 Primary Final Read-only 완료 → F7 DR
+Writer Authority 해제/Primary Promotion 승인 → F8 Primary Authority/Write Probe 완료 → F9
+Traffic Failback → F10 Incident Close. 정확한 Duration은 `measurement_required`다.
 
 ### 8.82 RPO Evidence Candidate
 
@@ -2363,8 +2545,8 @@ Evidence가 필요하다.
 | Full Database Restore Drill | Full Base+WAL+Validation | Isolated only | No | Yes | Yes | Quarterly Full DR Drill |
 | Application Read-only Drill | Digest·Config·Business Read | No | No | Yes | No | Quarterly Full DR Drill |
 | Traffic Failover Simulation | Health·Approval·Synthetic switch | Approval required | Open | Yes | No | Quarterly Full DR Drill |
-| Writer Authority Transfer Simulation | Fencing·Promotion·Record | Approval required | No | Yes | No | Quarterly Full DR Drill |
-| Full Failback/Re-seed Drill | Freeze·Re-seed·Validation·return | Isolated only | Open | Yes | Partially | Quarterly/Event-driven |
+| Writer Authority Transfer Simulation | Authoritative Fencing·DB/App Read-only·Promotion·Record | Approval required | No | Yes | No | Quarterly Full DR Drill |
+| Full Failback/Re-seed Drill | Initial Re-seed·Freeze·Boundary·Final Catch-up·Validation·return | Isolated only | Open | Yes | Partially | Quarterly/Event-driven |
 | Security Credential Loss Drill | Registry/Backup/Key access loss | No real destruction | No | Partially | Partially | Event-driven Drill |
 | Operator Unavailable Tabletop | Escalation·Maintenance decision | No | No | Partially | No | Before Major Architecture Change |
 
@@ -2384,9 +2566,12 @@ Failback은 검증되지 않는다.
 
 최소 후보: Primary Host Loss 가정 · Detection · Operator Acknowledgement · Fencing
 Simulation 또는 승인된 실제 격리 · AWS Runtime Provision · Image Pull · Full PostgreSQL
-Restore · WAL Replay · Database Read-only Validation · Application Read-only Startup ·
-Promotion Approval Simulation · Controlled Write · Traffic Failover Simulation · RTO 측정 ·
-RPO 측정 · Failback/Re-seed · Incident Close Evidence.
+Restore · WAL Replay · Database Read-only Validation · Application 강제 Read-only Startup과
+Critical Business Read · Promotion Approval/실행 Simulation · Writer Authority Record · 별도
+Application Write Approval · Controlled Write · Traffic Failover Simulation · RTO 측정 · RPO
+측정 · Initial Re-seed/Read-only Validation · DR Write Freeze · Cutover Boundary 기록 · Final
+WAL/Data Catch-up · Timeline/LSN/Business Boundary Validation · Primary Promotion/Traffic
+Failback Simulation · Incident Close Evidence.
 
 실제 Production Traffic 사용 여부는 `open`이며 별도 승인 없이는 사용하지 않는다.
 
@@ -2396,6 +2581,10 @@ RPO 측정 · Failback/Re-seed · Incident Close Evidence.
 Credential 무승인 폐기 · 실제 Traffic 무승인 전환 · Backup Retention 삭제 · 실제
 Encryption Key 폐기 · Production Database Promotion · Production Data Directory 덮어쓰기 ·
 실제 DNS/Cloudflare 무승인 변경.
+
+Drill에서도 Supporting Containment Action/Observation만으로 Production DR Write를
+허용하거나, Failback Final Synchronization Gate를 생략해 Production Primary를
+Promotion해서는 안 된다.
 
 Drill Mode 후보: Isolated Sandbox · Dedicated AWS DR Environment · Read-only Restore ·
 Synthetic Traffic · Controlled Maintenance Window. Slice 6에서 하나를 채택하지 않는다.
@@ -2471,9 +2660,9 @@ Fencing 구현 · Read-only 구현 · Restore 성공 · Promotion 성공 · Cost
 | 3 | Database Size/WAL Measurement | `measurement_required` |
 | 4 | Backup/Archive Design | `architecture_decision_required` |
 | 5 | Restore Runtime 선택 | `architecture_decision_required` |
-| 6 | Fencing Mechanism | `architecture_decision_required` |
+| 6 | Authoritative Fencing Mechanism과 독립 Proof 기준 | `architecture_decision_required` |
 | 7 | Read-only Mechanism | `architecture_decision_required` |
-| 8 | Writer Authority Storage/Control | `architecture_decision_required` |
+| 8 | Writer Authority Storage/Control과 Failback Final Sync Gate | `architecture_decision_required` |
 | 9 | AWS Account/IAM Boundary | `runtime_discovery_required` |
 | 10 | Cloudflare Current State | `runtime_discovery_required` |
 | 11 | Image Compatibility | `implementation_required` |
@@ -2593,7 +2782,7 @@ Confluence는 수정하지 않는다.
 
 **No architecture option is accepted in Slice 6.**
 
-현재 Decision은 `open`이다. Slice 1~5의 평가는 Planning 상태로 보존되며 Slice 6은
+현재 Decision은 `open`이다. 기존 단계별 평가는 Planning 상태로 보존되며 통합 분석은
 이를 End-to-end Recovery Candidate, Drill과 Decision Readiness Gate로 연결할 뿐
 Accepted로 승격하지 않는다.
 
@@ -2644,7 +2833,8 @@ decision_status: open
 동작 중이다", "EC2 Standby가 존재한다", "RDS를 사용한다", "RPO 15분을 달성했다",
 "RTO 4시간을 달성했다", "Restore가 검증됐다", "Promotion이 구현됐다".
 
-These planning evaluations require later RPL-42 independent review and user decision approval.
+These planning evaluations require detached independent re-review of the correction HEAD and
+user decision approval.
 
 ### Ownership
 
@@ -2784,14 +2974,17 @@ Failover/Failback Action의 승인 경계를 논의하기 위한 Architecture Ca
 |---|---|---|---|---|
 | Incident Declare | Health/Monitor 이상 | 예 | Detection Log, Operator Ack | 박성환 |
 | Primary Unavailable 판정 | Health/Tunnel/DB Signal | 예 | 복수 Signal 상관, Operator 확인 | 박성환 |
-| Primary Fencing 승인 | 없음(수동) | 예 | Power-off/Isolation/Credential Revocation 증거 | 박성환 |
+| Primary Fencing 승인 | Mechanism/Observation Signal | 예 | Authoritative Mechanism 또는 독립 Write-impossibility Proof | 박성환 |
 | DR Runtime Start | 조건부 Trigger 가능 | 예(초기) | Runtime State, Image Digest | 박성환 |
 | Database Restore 시작 | 없음 | 예 | Backup/WAL Reference (Slice 5) | 박성환 |
-| Read-only Boot 승인 | Runtime Health | 예 | Read-only State, Schema Check | 박성환 |
-| Write Enable 승인 | 없음 | 예 | Fencing+Restore+Consistency Evidence | 박성환 |
+| Database Read-only 승인 | Runtime Health | 예 | Recovery-safe Read-only, Schema Check | 박성환 |
+| Application Read-only 승인 | Application Readiness | 예 | 강제 Read-only, Query, Critical Business Read | 박성환 |
+| Database Promotion 승인 | DB/App Validation | 예 | Fencing+Restore+DB/App Read-only Evidence | 박성환 |
+| Application Write Enable 승인 | 없음 | 예 | Promotion Result+Writer Authority Record | 박성환 |
 | Traffic Failover 승인 | Target/Readiness Health | 예 | Failover Gate Evidence, Rollback Target | 박성환 |
 | Failback 시작 | Primary 복구 Signal | 예 | Primary Runtime/Digest 확인 | 박성환 |
-| Primary Write Enable | 없음 | 예 | Primary Consistency, DR Write Freeze | 박성환 |
+| Failback Cutover/Final Sync 승인 | 없음 | 예 | DR Freeze+Boundary+Final Catch-up Validation | 박성환 |
+| Primary Write Enable | 없음 | 예 | DR Authority 해제+Primary Final Read-only+Promotion | 박성환 |
 | Traffic Failback 승인 | Primary Readiness | 예 | Failback Gate Evidence | 박성환 |
 | Incident Close | 없음 | 예 | Audit Evidence 보존 | 박성환 |
 
@@ -2811,11 +3004,15 @@ automated system은 Owner 후보로만 기록하고 이번 Slice에서 위임하
 | Restore Target 선택 | 없음 | 예 | Target Evidence(§8.50) | 박성환 |
 | WAL Gap 예외 처리 | Gap 탐지 | 예 | Gap 범위, 영향 평가 | 박성환 |
 | Database Read-only 승인 | Recovery 종료 | 예 | Read-only Validation | 박성환 |
-| Promotion 승인 | Validation 통과 | 예 | Fencing + Validation Evidence | 박성환 |
+| Application Read-only 승인 | Application Readiness | 예 | 강제 Read-only Query+Critical Business Read | 박성환 |
+| Promotion 승인 | DB/App Validation 통과 | 예 | Authoritative Fencing + DB/App Validation Evidence | 박성환 |
 | Write Credential 활성화 | 없음 | 예 | Writer Authority Record | 박성환 |
 | Database Writer Authority 변경 | 없음 | 예 | Audit Evidence | 박성환 |
 | Failback 시작 | Primary 복구 Signal | 예 | Primary Version/Extension 확인 | 박성환 |
 | Re-seed 승인 | 없음 | 예 | Re-seed 방식/Evidence | 박성환 |
+| DR Write Freeze/Cutover Boundary 승인 | 없음 | 예 | Initial Validation+Final Boundary Evidence | 박성환 |
+| Final Catch-up 승인 | Sync Signal | 예 | Timeline·LSN·Business Boundary 일치 | 박성환 |
+| DR Writer Authority 해제/Primary Promotion | Validation 통과 | 예 | Final Primary Read-only+Single Writer Evidence | 박성환 |
 | Old Primary 폐기 | 없음 | 예 | Timeline/Divergence 판단 | 박성환 |
 | Incident Database Close | 없음 | 예 | Audit Evidence 보존 | 박성환 |
 
@@ -2840,7 +3037,7 @@ Merge, Runtime Action Approval 또는 Write Enable Approval로 확대 해석하�
 
 ### Cloud Boundary
 
-다음은 후속 Slice에서 판단할 `planning_candidate` 또는 `open` 범위다.
+다음은 이 ADR에서 비교됐지만 채택되지 않은 `planning_candidate` 또는 `open` 범위다.
 
 - Container Image Registry
 - AWS Application DR Runtime
@@ -2910,10 +3107,12 @@ Database Backup도 Application Image를 대체하지 않는다.
 
 ### Slice 5 Stateful Recovery Order
 
-최소 후보 순서: 1) Incident/Authority Evidence 2) Secret and Configuration 3) Backup
-Catalog 4) PostgreSQL Base Backup/WAL 5) PostgreSQL Read-only Validation 6) Uploaded
-Business Asset 7) Application Runtime 8) Redis Rebuild 9) Projection Rebuild 10) Write
-Enable 11) Traffic Failover 12) Audit Closure.
+최소 후보 순서: 1) Incident/Authoritative Fencing Evidence 2) Secret and Configuration 3)
+Backup Catalog 4) PostgreSQL Base Backup/WAL 5) PostgreSQL Read-only Validation 6) Uploaded
+Business Asset 7) Application Runtime 강제 Read-only 8) Application Query/Critical Business
+Read 9) Database Promotion Approval/실행 10) Writer Authority Record 11) Redis/Projection
+Rebuild 12) Application Write Approval 13) Controlled Write Probe 14) Traffic Failover 15)
+Audit Closure.
 
 ```text
 Application Runtime 시작 ≠ Stateful Recovery 완료
@@ -2925,11 +3124,11 @@ Projection Ready ≠ Source of Truth Ready
 
 ## 14. Shared Core and Extension Impact
 
-Pending later RPL-42 writer slice.
 No decision has been accepted in this section.
 
 이 ADR은 Shared Identity, Shared AI, Shared Commerce 또는 Audit Consumer의
-독립 Runtime 구현을 승인하지 않는다.
+독립 Runtime 구현을 승인하지 않으며 기존 Shared Core/Extension Ownership을 변경하지
+않는다.
 
 ---
 
@@ -2937,7 +3136,8 @@ No decision has been accepted in this section.
 
 No decision has been accepted in this section.
 
-- Slice 1~5는 Contract 의미, Field, Validation 또는 Human Gate를 변경하지 않는다.
+- 이 ADR의 Architecture Candidate 분석은 Contract 의미, Field, Validation 또는 Human
+  Gate를 변경하지 않는다.
 - Backup/Restore/Promotion은 Runtime·Data 복구 Concern이며 Token/Event/API Contract를
   변경하지 않는다.
 - Writer Authority와 Fencing은 Data 계층 Invariant이며 기존 Contract Field를 추가하거나
@@ -2955,11 +3155,10 @@ No change
 
 ### Roadmap
 
-Pending later RPL-42 writer slice.
 No decision has been accepted in this section.
 
 ADR 작성은 Product SLA, Release Requirement 또는 Roadmap Commitment를 생성하지
-않는다.
+않는다. Runtime Discovery, Prototype와 Drill은 별도 승인된 후속 Jira 후보로만 남는다.
 
 ---
 
@@ -2977,19 +3176,24 @@ No decision has been accepted in this section. 아래는 Slice 4 Architecture �
 ### Failover
 
 - Health False Positive · Primary Host Loss · Local Network Loss · Tunnel Loss ·
-  Primary Fencing · DR Read-only · Write Approval · Traffic Switch · Traffic
-  Rollback.
+  Authoritative Fencing Mechanism · Supporting Containment/Observation-only 거부 · Database
+  Read-only · Application 강제 Read-only · Promotion Approval/실행 · Writer Authority Record ·
+  별도 Application Write Approval · Controlled Write · Traffic Switch · Traffic Rollback.
 
 ### Failback
 
-- Primary Restore · Database Re-seed · Primary Read-only · DR Write Freeze · Write
-  Authority Transfer · Traffic Failback.
+- Primary Restore · Initial Re-seed · Primary Initial Read-only · Cutover Window 승인 · DR Write
+  Freeze · Final Write/Cutover Boundary 기록 · Final WAL/Data Catch-up · Timeline/LSN/Business
+  Boundary Validation · Primary Final Read-only · DR Writer Authority 해제 · Primary Promotion/
+  Authority 활성화 · Controlled Write · Traffic Failback.
 
 ### Negative Tests
 
-- Fencing Evidence 없음 · Restore 미완료 · Consistency Check 실패 · Secret 불일치 ·
-  Image Digest 불일치 · Operator Approval 없음 · Cloudflare Health만 정상 · Primary
-  재등장 · Operator 부재. 각 경우 Write가 거부되고 Manual Review로 진행되어야 한다.
+- Authoritative Fencing 없이 Supporting Action/Observation만 존재 · Restore 미완료 ·
+  Consistency Check 실패 · Secret 불일치 · Image Digest 불일치 · Operator Approval 없음 ·
+  Cloudflare Health만 정상 · Primary 재등장 · Operator 부재 · Final Boundary 없음 · Final
+  Catch-up/Boundary Validation 실패 · Freeze 후 DR Write 재활성화. 각 경우 Write 또는
+  Failback Promotion이 거부되고 Manual Review로 진행되어야 한다.
 
 ```text
 각 검증 상태: not_run / verification_required
@@ -3017,11 +3221,14 @@ Canonical Evidence로 사용하지 않는 항목:
 - **Restore**: Empty Runtime Restore · Specific Timestamp PITR · Latest Consistent
   Point · Missing WAL Failure · Wrong Version Failure · Missing Extension Failure ·
   Wrong Timeline Failure · Read-only Startup · Business Read Validation.
-- **Promotion**: Primary Fenced · Primary Not Fenced · Promotion 승인 없음 · Promotion
-  후 Timeline · Old Primary Reappearance · Write Credential Activation · Controlled
-  Write Probe.
-- **Failback**: Re-seed · pg_rewind 조건부 가능성 · Old Primary Data 폐기 · Primary
-  Read-only · AWS Write Freeze · Writer Authority Transfer · Traffic Failback.
+- **Promotion**: Primary Authoritative Fencing/독립 Proof · Supporting Action-only 거부 ·
+  Database Read-only · Application 강제 Read-only Query/Business Read · Promotion 승인 없음 ·
+  Promotion 후 Timeline · Writer Authority Record · 별도 Application Write Approval · Old
+  Primary Reappearance · Write Credential Activation · Controlled Write Probe.
+- **Failback**: Initial Re-seed · pg_rewind 조건부 가능성 · Old Primary Data 폐기 · Primary
+  Initial Read-only · AWS Write Freeze · Final Write/Cutover Boundary · Final WAL/Data Catch-up ·
+  Timeline/LSN/Business Boundary Validation · Primary Final Read-only · DR Writer Authority
+  해제 · Primary Promotion/Authority Transfer · Traffic Failback.
 - **Negative**: Backup 없음 · WAL Gap · Decryption 실패 · Restore Target 불명확 ·
   Schema Version 불일치 · Extension 불일치 · Operator Approval 없음 · Fencing
   Evidence 없음 · Primary 재접속 가능 · RPO 초과 · RTO 초과. 각 경우 Promotion/Write가
@@ -3036,12 +3243,13 @@ Drill Policy(§8.67)의 Monthly Restore Check와 Quarterly Full DR Drill은 승�
 
 - **Topology**: Candidate A/B/C Application·Database Host 분리 · 승인 Digest 재사용 ·
   Registry/Backup Failure Domain 분리.
-- **Dependency**: Fencing 없는 Writer 전이 거부 · Database Validation 전 Application
-  Write 거부 · Write Probe 전 Traffic Switch 거부.
+- **Dependency**: Authoritative Fencing 없는 Writer 전이 거부 · Database Validation 전
+  Application Start 거부 · Application Read-only Validation 전 Promotion 거부 · Promotion/
+  Authority Record 전 Application Write 거부 · Write Probe 전 Traffic Switch 거부.
 - **Abort**: Manifest 불일치 · WAL Gap · Version/Extension/Schema 불일치 · Secret/Config/
   Digest 불일치 · Approval 부재에서 Write/Traffic Stop.
-- **Authority**: Writer Authority Record 전이 · Dual-authoritative State 거부 · Failback
-  중 DR Write Freeze.
+- **Authority**: Writer Authority Record 전이 · Dual-authoritative State 거부 · Failback 중
+  DR Write Freeze → Cutover Boundary → `failback_final_sync` → Boundary Validation 전이.
 - **Drill**: Monthly Restore Check · Quarterly Full DR Drill · RTO Stage Timestamp · RPO
   Business Boundary · Evidence Schema 보존.
 
@@ -3136,7 +3344,8 @@ Promotion ≠ Reversible without new restore
 - `desiredCount 0` 또는 stopped instance 등 Cold Idle 상태의 고정비를 산정해야 한다.
 - ALB를 상시 유지할지 Incident 때 생성할지, NAT Gateway 없이 필요한 접근을 구성할
   수 있는지 검증해야 한다.
-- Fencing Mechanism과 Read-only 구현 방식을 후보 중에서 검증·선택해야 한다.
+- Authoritative Fencing Mechanism, Supporting Containment Action과 Observation의 구현·검증
+  경계를 정하고 Read-only 구현 방식을 후보 중에서 검증·선택해야 한다.
 - Write Authority를 기술적으로 표현하는 방법(Write Credential/Lease 등)을 검증해야
   한다.
 - Human Approval을 수행할 Interface와 Audit Evidence 저장 위치·Owner를 정해야 한다.
@@ -3154,9 +3363,11 @@ Promotion ≠ Reversible without new restore
 - pg_verifybackup 또는 동등 무결성 검증과 실제 Restore Drill로 복구 가능성을 확인해야
   한다.
 - Promotion Interface, Write Credential 활성화/폐기, Writer Authority 기록 위치를
-  정해야 한다.
+  정해야 한다. Promotion 전 Application 강제 Read-only Validation을 구현해야 한다.
 - Failback Re-seed 방식(New Base Backup/Physical Copy/조건부 pg_rewind 등)과 pg_rewind
   전제(`wal_log_hints` 또는 checksum)를 검증해야 한다.
+- Failback Cutover Boundary 기록, Final WAL/Data Catch-up과 Timeline·LSN·Business Boundary
+  일치 검증 방식을 정해야 한다.
 - Monthly Restore Check와 Quarterly Full DR Drill의 Evidence 저장 위치·Owner를 정해야
   한다.
 - Integrated Writer Authority Record의 저장·동시성 제어·감사 보존 방식을 정해야 한다.
@@ -3204,7 +3415,7 @@ Implementation Notes는 실행 코드나 운영 구성의 Source of Truth가 아
 - 실제 AWS Account·IAM과 Cloudflare Load Balancing 구성이 미검증이다.
 - 실제 DB 크기와 Restore 시간, ALB/Fargate 비용, Cold Standby Provision 시간이
   미측정이다.
-- Fencing Mechanism과 Read-only 구현 방식이 미결정이다.
+- Authoritative Fencing Mechanism/독립 Proof 기준과 Read-only 구현 방식이 미결정이다.
 - Cross-region DR는 `deferred`, Automatic Failover는 초기 `not_recommended`,
   Automatic Failback은 초기 후보에서 금지 상태다.
 - AWS DR Runtime 후보의 RTO 4시간 달성 여부는 Full DR Drill 전 `target_not_verified`다.
@@ -3212,7 +3423,8 @@ Implementation Notes는 실행 코드나 운영 구성의 Source of Truth가 아
   Rate가 미측정이다.
 - Base Backup과 WAL Archive 존재 여부가 미확인이며 Archive Gap 탐지·Backup Encryption·
   Restore Runtime이 미구현이다.
-- Promotion Procedure와 Failback Re-seed 방식(조건부 pg_rewind 포함)이 미결정이다.
+- Promotion Procedure와 Failback Re-seed/Final Synchronization 방식(조건부 pg_rewind 포함)이
+  미결정이다.
 - Warm Standby Cost와 Cross-region Backup(`deferred`)이 미측정·미결정이다.
 - Full Restore/Failover/Failback Drill이 `not_run`이라 RPO 15분·RTO 4시간은
   `target_not_verified`다.
@@ -3269,13 +3481,17 @@ DB 정책과 Drill 주기는 Open Question으로 되돌리지 않는다.
 - Load Balancing 기능을 사용할 것인가?
 - Health Endpoint의 Liveness/Readiness/Write Readiness를 어떻게 분리할 것인가?
 - Human Approval을 어떤 Interface에서 수행할 것인가?
-- Primary Fencing Evidence는 무엇인가?
+- 어떤 Authoritative Fencing Mechanism으로 Primary Business Write를 차단하는가?
+- Supporting Containment Action/Observation과 독립 Write-impossibility Proof의 충분성은
+  어떻게 판정하는가?
 - Write Authority를 기술적으로 어떻게 표현할 것인가?
 
 ### Failback
 
 - DR 중 발생한 Write를 Primary에 어떻게 반영할 것인가?
 - Database Re-seed 방식은 무엇인가?
+- DR Final Write/Cutover Boundary와 Final WAL/Data Catch-up 완료를 어떤 Evidence로
+  판정하는가?
 - Failback 중 Maintenance Window가 필요한가?
 - AWS DR를 언제 Cold 상태로 되돌릴 것인가?
 
@@ -3308,6 +3524,7 @@ DB 정책과 Drill 주기는 Open Question으로 되돌리지 않는다.
 - Restore용 Image 또는 AMI는 어떻게 관리하는가?
 - PITR Target을 어떤 Evidence로 선택하는가?
 - Read-only Validation은 어떤 방식인가?
+- Application Runtime을 Promotion 전에 어떤 방식으로 강제 Read-only 기동하는가?
 - Extension 설치 순서는 무엇인가?
 
 ### Promotion (Slice 5)
@@ -3322,6 +3539,7 @@ DB 정책과 Drill 주기는 Open Question으로 되돌리지 않는다.
 - Mac Primary를 어떻게 Re-seed하는가?
 - pg_rewind 조건을 충족할 수 있는가?
 - DR Write를 언제 Freeze하는가?
+- Freeze 후 Final Boundary와 Timeline·LSN·Business Boundary 일치를 어떻게 검증하는가?
 - Failback Maintenance Window가 필요한가?
 
 ### Data DR Verification (Slice 5)
@@ -3392,7 +3610,7 @@ DB 정책과 Drill 주기는 Open Question으로 되돌리지 않는다.
 - `docs/adr/README.md`
 - `docs/decisions/decision-log.md`
 
-Affected Documents는 후속 Slice에서만 수정한다.
+Affected Documents는 Architecture 승인 이후 별도 Governance 작업에서만 수정한다.
 
 ---
 
@@ -3433,7 +3651,7 @@ Existing ADR Supersession: none
 
 - [x] Architecture Scope In·Out을 분리했다.
 - [x] Product Scope와 Runtime 구현을 변경하지 않는다.
-- [ ] 후속 Slice에서 대안과 선택 근거를 완성한다.
+- [x] 대안과 Planning Leader 선택 근거를 통합 Candidate 관점으로 완성했다.
 
 ### Alternatives
 
@@ -3456,7 +3674,7 @@ Existing ADR Supersession: none
 - [x] `adr_id`와 Source Authority를 기록했다.
 - [x] Owner, Author, Reviewer, Approver를 분리했다.
 - [x] Supersession이 `none`임을 기록했다.
-- [ ] ADR Index와 Decision Log는 후속 Slice에서 연결한다.
+- [ ] ADR Index와 Decision Log는 Architecture 승인 이후 별도 Governance 작업에서 연결한다.
 
 ### Truthfulness
 
@@ -3493,9 +3711,9 @@ PostgreSQL Backup·Restore·Promotion / Integrated Recovery / Drill / Decision R
 
 ### Required Follow-up
 
-- ADR-0016 Slice 7 - Independent Full Review and User Decision Preparation
-- 통합 Candidate의 독립 Review와 사용자 Decision 준비
-- ADR Index와 DEC-066 연결은 별도 Slice
+- Correction HEAD의 Detached Independent Re-review
+- 재검수 통과 후 사용자 Architecture Direction Decision 준비
+- ADR Index와 DEC-066 연결은 Architecture 승인 이후 별도 Governance 작업
 
 ### Review and Approval
 
