@@ -945,32 +945,550 @@ AWS ECR conditional planning leader
 - Multi-platform 선택은 Fargate 선택을 강제하지 않는다.
 - AWS DR 선택은 Registry를 반드시 AWS에 두도록 강제하지 않는다.
 
+### 8.11 Slice 4 Official Capability Evidence
+
+Accessed date: `2026-08-05`
+
+| Source | Capability Evidence | Not Evidence Of |
+|---|---|---|
+| [AWS Fargate for Amazon ECS](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/AWS_Fargate.html) | Server/Cluster 관리 없이 Container 실행, Task별 격리 경계, AWS가 platform version(kernel/runtime) patch, `awsvpc` networking, ALB `ip` target 연계 | Ranikun Labs 채택 또는 실제 Task 실행 |
+| [ECS Task Definition](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definitions.html) | Image, CPU/Memory, Environment, Secret, IAM Task Role, Container Health Check, Log Configuration 정의 | 현재 Task Definition 존재 |
+| [ECS Service Definition Parameters](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service_definition_parameters.html) | `desiredCount`(0 설정 가능), `healthCheckGracePeriodSeconds`, Load Balancer Target Group 등록, Deployment Controller | 현재 Service 존재 또는 Cold Idle 운영 |
+| [Application Load Balancer](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/introduction.html) | Listener, Target Group, Health Check, ACM 기반 TLS Termination, Security Group, L7 Routing | ALB 존재 또는 운영 |
+| [ALB Target Group Health Checks](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/target-group-health-checks.html) | HTTP(S) Path Probe, Healthy/Unhealthy Threshold, Interval, 전량 Unhealthy 시 fail-open | 현재 Target Health 검증 |
+| [EC2 Automatic Instance Recovery](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-recover.html) | System Status Check 실패 시 다른 Host로 migrate, Instance ID/IP/EBS 유지, RAM 손실, Instance Status Check·App/OS-level 실패는 대상 아님, 단일 Instance는 resilient system 아님 | 현재 EC2 또는 복구 구성 |
+| [EC2 User Data](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/user-data.html) | Launch 시 Bootstrap 실행, 기본 1회 실행, 16KB 제한, opaque data, AWS API 사용 시 Instance Profile 필요 | 현재 Bootstrap 자동화 |
+| [ECS Task IAM Role](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-iam-roles.html) | Task Role(App의 AWS 접근)과 Execution Role(Image Pull)의 분리, Task별 Credential, `taskArn` 기반 Auditability | 현재 IAM Role 구성 |
+| [Amazon EKS](https://docs.aws.amazon.com/eks/latest/userguide/what-is-eks.html) | Managed Control Plane, Shared Responsibility, Node/Add-on/Upgrade/Networking은 고객 책임, Cluster별 과금 | EKS 채택 필요 또는 존재 |
+| [Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/) | Origin이 Edge로 outbound-only 연결, inbound Port 미개방 | 현재 Tunnel 운영 |
+| [Cloudflare Load Balancing](https://developers.cloudflare.com/load-balancing/) | Load Balancer/Pool/Origin/Monitor/Steering, Pool 간 Failover | 현재 Load Balancing 구성 |
+| [Cloudflare Health Monitors](https://developers.cloudflare.com/load-balancing/monitors/) | HTTP/TCP/ICMP 등 Probe, Region별 복수 Data Center, majority-healthy 판정 | 현재 Health Monitor 구성 |
+| [Cloudflare Pools](https://developers.cloudflare.com/load-balancing/pools/) | Endpoint 그룹, Monitor 연결, Healthy Endpoint만 반환 | 현재 Pool 구성 |
+| [Terraform State](https://developer.hashicorp.com/terraform/language/state) | Resource-Object Binding, Remote Backend, State Locking, Secret 포함으로 secure storage 필요 | Terraform 적용 완료 |
+
+Vendor 문서는 Capability, 지원 Configuration, 서비스 책임 경계, Health Check/Routing 기능과 IAM·Network 구성 가능성만 증명한다. Ranikun Labs 채택, 현재 AWS Resource·Cloudflare Load Balancing 존재, 비용 상한 충족, RTO/RPO 달성 또는 Failover 검증을 증명하지 않는다.
+
+### 8.12 AWS DR Runtime Problem
+
+Mac mini Primary 전체를 사용할 수 없을 때, 동일한 승인 Release Image를 사용해 Gateway와 Product Application을 AWS에서 4시간 RTO Target 내에 복구하면서, 평상시 고정비와 1인 운영 복잡도를 제한할 Runtime Boundary는 무엇인가?
+
+```text
+RTO 4h = target_not_verified
+Application Runtime 선택 ≠ RTO 달성
+PostgreSQL Backup/Restore 상세 = Slice 5
+```
+
+이번 Slice는 Application Runtime을 비교한다. Application Runtime 선택만으로 RTO 달성을 주장하지 않는다.
+
+### 8.13 AWS DR Runtime Matrix
+
+| Criterion | ECS Fargate + ALB | EC2 + Docker Compose | EKS | No Predefined Runtime |
+|---|---|---|---|---|
+| Cold Standby 적합성 | strong, `desiredCount 0` | acceptable, stopped instance | weak, Control Plane 상시 | weak, 즉석 구성 |
+| 평상시 Fixed Cost | ALB 고정비 존재, Task 0 | EBS/상시 시 비용, stopped 시 절감 | Cluster 시간당 고정비 | 평상시 near-zero, incident 시 급증 |
+| Incident-time Startup Time | Task Pull+Start (measurement_required) | Instance Boot+Bootstrap (measurement_required) | Cluster/Node 준비 (measurement_required) | unknown, 예측 불가 |
+| Host OS 관리 | AWS 책임 | operator 책임 | Node는 operator 책임 | operator 책임 |
+| Container Runtime 관리 | AWS 책임 | operator 책임 | operator 책임 | operator 책임 |
+| Control Plane 관리 | AWS 책임 | not_applicable | 고객 부담(managed지만 운영 존재) | not_applicable |
+| Patch 책임 | AWS(platform version) | operator | operator(Node)+AWS(Plane) | operator |
+| Desired Count 0 / Idle | strong | stopped instance로 근사 | weak | not_applicable |
+| Multi-platform OCI Image 지원 | verification_required | verification_required | verification_required | weak |
+| ECR Integration | strong | acceptable | strong | weak |
+| GHCR Integration | acceptable, external pull | acceptable | acceptable | acceptable |
+| Digest 기반 배포 | strong | strong | strong | weak |
+| IAM Role 분리 | strong, Task/Execution Role | acceptable, Instance Profile | strong, IRSA | weak |
+| Secret Injection | acceptable, Secret/SSM 연계 | acceptable, host 절차 | strong | weak |
+| Environment Injection | strong | strong | strong | weak |
+| Health Check | strong, container+ALB | acceptable, compose+ALB/tunnel | strong | weak |
+| Readiness 표현 | acceptable, grace period | acceptable | strong | weak |
+| ALB Target Registration | strong, `ip` target | acceptable, instance/ip target | strong, controller | weak |
+| TLS Termination | strong, ALB+ACM | ALB 또는 tunnel 의존 | strong | weak |
+| Horizontal Replica | strong | weak, 단일 host | strong | weak |
+| Emergency Scale-out | strong | weak | strong | weak |
+| Stateful Volume 적합성 | weak, ephemeral (PostgreSQL 부적합) | acceptable, EBS | acceptable, PV | weak |
+| PostgreSQL Runtime과 분리 | required, Task 외부 | required, 별도 판단(Slice 5) | required | unknown |
+| Observability | acceptable, CloudWatch | operator 구성 | strong | weak |
+| Log 수집 | strong, log driver | operator 구성 | strong | weak |
+| Rollback | strong, digest/task revision | strong, digest | strong | weak |
+| Terraform 재현성 | strong | acceptable | acceptable | weak |
+| Incident Complexity | medium | medium-high | high | high |
+| One-person Operation | strong candidate | conditionally_viable | weak | weak |
+| RTO 4시간 가능성 | measurement_required | measurement_required | measurement_required | unknown |
+| Cost Cap 적합성 | measurement_required | measurement_required | measurement_required | measurement_required |
+| Current Runtime Evidence | runtime_unverified | runtime_unverified | runtime_unverified | runtime_unverified |
+| Verification Requirement | verification_required | verification_required | verification_required | verification_required |
+| Failure Domain | AWS Region/Account | AWS Region/AZ/Host | AWS Region/Account | build env/operator |
+
+단순 점수가 아닌 후보별 설명은 8.14~8.17에서 상술한다.
+
+### 8.14 ECS Fargate + ALB Analysis
+
+**Planning Candidate 장점**
+
+- EC2 Host OS를 직접 운영하지 않는 Container Runtime 후보다.
+- Task Definition으로 Application Runtime(Image·CPU/Memory·Env·Secret·Health)을 정의할 수 있다.
+- `desiredCount`로 Task 수를 제어하고 0에 가까운 Idle 상태를 만들 수 있다.
+- ALB Target Group Health Check로 Readiness를 연계할 수 있다.
+- IAM Task Role과 Execution Role을 분리할 수 있다.
+- ECR과 IAM 기반으로 연계할 수 있다.
+- Mac mini와 DR에서 동일 OCI Image를 재사용할 수 있다.
+- 필요 시 Replica를 늘릴 수 있다.
+- Terraform으로 재생성할 수 있고 Incident 시 Host Provisioning 단계를 줄일 수 있다.
+
+**한계와 위험**
+
+- ECS Service, Task Definition, IAM, VPC, Security Group, ALB를 운영해야 한다.
+- Fargate Runtime과 Local Compose 사이에 Configuration Drift가 생길 수 있다.
+- Task Startup과 Image Pull 시간, ALB Target Health 대기 시간이 있다.
+- NAT Gateway 또는 Network 경로 비용이 생길 수 있다.
+- ECR/GHCR 접근 경계를 관리해야 한다.
+- Stateful PostgreSQL을 Fargate Task 내부에 두지 않아야 하며 Ephemeral Filesystem에 의존하지 않아야 한다.
+- Secret Store와 Configuration Source가 별도로 필요하다.
+- 같은 Region의 ALB/ECS/ECR는 Region 장애 시 동시 영향 가능성이 있다.
+- Task를 0에 가깝게 유지해도 ALB 등 고정비가 남을 수 있다.
+- 비용 상한은 측정이 필요하고, Fargate가 RTO 4시간을 자동 보장하지 않는다.
+
+```text
+planning assessment: planning_leader
+condition: AWS Application DR Runtime을 관리형 Container 방식으로 운영할 경우
+adoption state: open
+```
+
+**Verification required**
+
+AWS Account/IAM · `ap-northeast-2` 가용성 · ARM64/AMD64 Task Runtime · Image Pull · Task Startup · ALB Target Healthy 시간 · `desiredCount` 0→1(또는 equivalent) 복구 · Secret Injection · Network Egress · Cost Estimate · Terraform Recreation · Read-only Boot · Write Enable Gate · Full DR Drill.
+
+ECS Fargate를 최종 채택하지 않는다.
+
+### 8.15 EC2 + Docker Compose Analysis
+
+**장점**
+
+- Primary Compose 운영 모델과 유사성이 높은 후보다.
+- 동일 Compose File 또는 Override를 재사용할 수 있다.
+- Host 수준 Debugging이 용이하고 Emergency SSH/Console 접근이 가능하다.
+- Application과 Supporting Process를 단일 Instance에서 기동할 수 있다.
+- Fargate 제약이 있는 Native Dependency에 대응할 수 있다.
+- 단일 EC2를 중지 상태로 두거나 Incident 때 생성하는 후보다.
+- ALB 또는 직접 Tunnel Target이 될 수 있다.
+
+**한계와 위험**
+
+- OS Patch와 Hardening, Docker Engine·Compose 설치와 Version 관리 책임이 있다.
+- Instance Bootstrap 시간과 User Data 실패 가능성, AMI Drift가 있다.
+- Host Failure와 Application Failure가 결합되고 단일 EC2 자체 HA가 없다.
+- SSH/Key/Break-glass, EBS Volume/Backup, Host Monitoring을 관리해야 한다.
+- Incident 때 사람이 더 많은 절차를 수행하고 Cold Provisioning이 RTO를 초과할 수 있다.
+- Configuration Drift와 Manual Recovery 의존이 증가한다.
+- EC2 위 PostgreSQL 배치 여부는 Slice 5에서 별도 판단한다.
+- EC2 Automatic Instance Recovery는 System Status Check 실패만 대상이며 App/OS-level 실패나 Host 상실 전체를 대체하지 않는다.
+
+```text
+planning assessment: conditionally_viable
+adoption state: open
+```
+
+**Preferred when**: Compose 동등성이 최우선 · Fargate 호환성 미검증 · 낮은 빈도의 Cold DR · 운영자가 EC2 Bootstrap을 감당 가능.
+
+ECS Fargate보다 무조건 열등하다고 판단하지 않는다.
+
+### 8.16 EKS Analysis
+
+ADR-0015 Trigger를 유지한다.
+
+```text
+trigger evidence: not_found
+planning state: deferred
+```
+
+EKS는 Control Plane, Node 또는 Fargate Profile, CNI, Ingress/ALB Controller, IRSA, Cluster Upgrade, Kubernetes Version, Helm, Persistent Volume, Backup, Observability, Certificate, Secret, Node Lifecycle 운영 부담이 있고, Local Compose와 EKS Manifest의 Drift와 1인 운영 부담이 크다.
+
+**재평가 Trigger**: 복수 물리 Node · 지속적 Multi-replica · 자동 Scale-out · Zero-downtime Deployment · 여러 서비스의 독립 Scheduling · 다수 운영자 · Compose/ECS의 측정된 한계 · EKS 운영비와 복잡도를 정당화하는 요구.
+
+```text
+서비스 수 증가만으로 EKS Trigger는 충족되지 않는다.
+```
+
+EKS를 영구 거부하지 않는다.
+
+### 8.17 No Predefined Runtime Analysis
+
+Incident 발생 후 Console에서 Resource를 수동 구성하고, Image를 다시 Build하거나 Runtime을 즉석 결정하며, IaC 없이 수동으로 VPC/Instance/Load Balancer를 생성하고, 문서 또는 개인 기억에 의존하는 방식이다.
+
+**위험**: RTO 예측 불가 · IAM/Network 오설정 · 승인 Artifact와 Digest 불일치 · Human Error · Repeatability 부족 · Drill 불가 · Restore와 Traffic 절차 결합 · Operator 부재 시 복구 곤란 · Evidence 부족.
+
+```text
+planning assessment: not_recommended
+```
+
+단, Break-glass Manual Procedure는 Canonical Runtime 정의의 보조 수단으로 별도로 존재할 수 있다.
+
+### 8.18 AWS Runtime Planning Result
+
+```text
+Current planning leader: ECS Fargate + Application Load Balancer
+Conditional alternative: EC2 + Docker Compose
+Deferred: EKS
+Not recommended as canonical path: No Predefined AWS Runtime
+Decision state: open
+```
+
+**Blocking verification**: Actual Application Image Compatibility · AWS Account/IAM · Region · VPC/Security Group · Image Pull · Task/Instance Startup · ALB Health · Secret/Configuration · Read-only Startup · Cost Estimate · Full DR Drill.
+
+Planning Leader는 Accepted Decision이 아니다.
+
+### 8.19 Traffic Failover Problem
+
+Mac mini Primary 장애가 감지됐을 때, 오탐으로 AWS DR를 활성 Writer로 만들거나 Primary와 DR가 동시에 Write하는 Split-brain을 만들지 않으면서, 언제 누가 어떤 Evidence를 확인하고 사용자 Traffic을 전환할 것인가?
+
+### 8.20 Traffic State Vocabulary
+
+실제 Runtime State Machine을 구현·채택하지 않는다. 아래는 Failover Procedure 논의를 위한 Architecture State Vocabulary다.
+
+| State | Entry Condition | 금지 행위 |
+|---|---|---|
+| PRIMARY_HEALTHY | Liveness·Readiness·Write Readiness 정상 | 불필요한 Failover |
+| PRIMARY_SUSPECTED | Health Signal 이상 감지, 미확정 | 이 신호만으로 Write 전환 |
+| PRIMARY_UNAVAILABLE | Primary 서비스 불가 확인 | Fencing 없이 DR Write |
+| DR_PREPARING | Incident 선언 후 DR 준비 시작 | Traffic 전환 |
+| DR_RESTORING | PostgreSQL Restore/Promotion 진행 | Write Enable |
+| DR_READ_ONLY | DR Runtime이 Read-only로 기동 | Business Write |
+| DR_VALIDATING | Consistency/Business Read Check 진행 | Traffic Failover 승인 |
+| DR_WRITE_APPROVED | Fencing+Restore+Consistency 후 Write 승인 | Fencing 미확인 상태 승격 |
+| TRAFFIC_FAILOVER_APPROVED | Traffic 전환 승인 완료 | Rollback Target 없이 전환 |
+| DR_ACTIVE | DR가 활성 Writer | Primary 동시 Write 허용 |
+| FAILBACK_PREPARING | Primary 복구 후 Failback 준비 | 자동 Failback |
+| PRIMARY_RESTORING | Primary Re-seed/동기화 진행 | Primary Write |
+| PRIMARY_READ_ONLY | Primary가 Read-only로 기동 | Primary Business Write |
+| PRIMARY_VALIDATING | Primary Consistency Validation | Traffic Failback 승인 |
+| FAILBACK_APPROVED | Failback 승인 완료 | DR 즉시 종료 |
+| PRIMARY_ACTIVE | Primary가 다시 활성 Writer | DR 동시 Write |
+| INCIDENT_CLOSED | Incident 종료, Evidence 보존 | Evidence 미기록 종료 |
+
+### 8.21 Health Detection Analysis
+
+Health Detection Source 후보: Cloudflare Health Monitor · Cloudflare Tunnel 상태 · Application External Health Endpoint · Gateway Health Endpoint · Operator Observation · Infrastructure Monitoring · Database Availability Signal.
+
+```text
+Liveness PASS ≠ Readiness PASS ≠ Write Readiness PASS
+```
+
+- **Liveness**: Process 또는 Endpoint가 응답하는가?
+- **Readiness**: 사용자 요청을 안전하게 처리할 준비가 됐는가?
+- **Write Readiness**: Business Write를 안전하게 허용할 수 있는가?
+
+Cloudflare Health Check 성공만으로 Write Enable을 승인하지 않는다.
+
+### 8.22 Failure Classification Matrix
+
+| Failure Type | Primary Failure | DR 필요 | App Restart로 해결 | Traffic Failover | DB Restore | Human Approval |
+|---|---|---|---|---|---|---|
+| Application Process Failure | 부분 | 아니오 | 가능 | 아니오 | 아니오 | 낮음 |
+| Gateway Failure | 부분 | 조건부 | 가능 | 조건부 | 아니오 | 조건부 |
+| Docker/Host Runtime Failure | 예 | 조건부 | 가능성 있음 | 조건부 | 아니오 | 예 |
+| Mac mini Host Failure | 예 | 예 | 불가 | 예 | 가능성 있음 | 예 |
+| Home/Office Network Failure | 예(접근) | 조건부 | 불가 | 조건부 | 아니오 | 예 |
+| Power Failure | 예 | 예 | 불가 | 예 | 가능성 있음 | 예 |
+| Cloudflare Tunnel Failure | 아니오(접근 계층) | 아니오 | 조건부 | 아니오 | 아니오 | 조건부 |
+| PostgreSQL Failure | 예(데이터) | 조건부 | 불가 | 조건부 | 예 | 예 |
+| Redis Failure | 부분 | 아니오 | 가능(ephemeral) | 아니오 | 아니오 | 낮음 |
+| Registry Failure | 아니오 | 아니오(복구 Image 영향) | 아니오 | 아니오 | 아니오 | 조건부 |
+| AWS Region/Service Failure | 아니오 | DR 자체 영향 | 아니오 | 조건부 | 조건부 | 예 |
+| Operator Unavailable | 상황별 | 상황별 | 불가(승인 부재) | 지연 | 지연 | 차단 |
+| False Positive Health Failure | 아니오 | 아니오 | not_applicable | 금지 | 금지 | 예(억제) |
+
+`Tunnel Down ≠ Database Write 불가능`. 접근 계층 장애와 데이터 계층 장애를 구분한다.
+
+### 8.23 Traffic Failover Matrix
+
+| Criterion | Fully Automatic | Detection + Human Approval | Fully Manual | DNS-only Manual |
+|---|---|---|---|---|
+| Detection Speed | strong | acceptable(자동 감지) | weak | weak |
+| False Positive Risk | high | low(사람 확인) | low | medium |
+| Split-brain Risk | high | low | medium | high |
+| Dual Writer Risk | high | low | medium | high |
+| Operator Burden | low | medium | high | medium |
+| 1인 운영 적합성 | weak(오설정 탐지難) | strong | conditionally_viable | weak |
+| RTO Predictability | strong if 정상 | medium(operator 의존) | weak | weak |
+| Write Safety | weak | strong | medium | weak |
+| Data Restore Coordination | weak | strong | medium | weak |
+| Read-only Boot 지원 | weak | strong | medium | weak |
+| Evidence Requirement | low | high | medium | low |
+| Auditability | weak | strong | medium | weak |
+| Rollback | weak | acceptable | medium | weak, cache 혼재 |
+| Failback Safety | weak(자동 Failback 위험) | strong(수동 승인) | medium | weak |
+| Cloudflare Integration | LB 자동 failover | Monitor+수동 전환 | 수동 | DNS record 변경 |
+| Implementation Complexity | high | medium | low | low |
+| Cost | LB/health 비용 | LB/health 비용 | low | low |
+| Current Evidence | runtime_unverified | runtime_unverified | runtime_unverified | runtime_unverified |
+| Verification Requirement | verification_required | verification_required | verification_required | verification_required |
+
+#### 8.23.1 Fully Automatic Failover
+
+**장점**: 빠른 Traffic 전환 가능성 · Operator 부재 시 자동 대응.
+
+**위험**: Health Check 오탐 · Primary가 실제 Write 가능 상태로 복귀 · DB 미Restore 상태에서 Traffic 유입 · Dual Writer · Split-brain · Cloudflare Routing과 Database Promotion의 비동기 · 자동 Failback 위험 · 1인 운영에서 자동화 오설정 탐지 곤란.
+
+```text
+planning assessment: not_recommended for initial release
+```
+
+**re-evaluation trigger**: Fencing 자동화 · Database Promotion 자동화 · Write Lease · 충분한 Drill · False Positive 통계 · Runbook 자동 검증 · Independent Review. 영구 거부하지 않는다.
+
+#### 8.23.2 Health Detection + Human Approval
+
+**장점**: Detection은 자동화, Write Enable과 Traffic Switch는 사람 승인 · Restore·Consistency Evidence 확인 · 오탐 대응 · Split-brain 방지 · 1인 운영에서 자동화 범위 제한 · Incident Audit 가능.
+
+**위험**: Operator 부재 시 RTO 초과 · 승인 절차 불명확 시 지연 · 승인자 오판 · Fencing/Restore Evidence를 수동 수집할 수 있음 · 야간·부재 시간 대응 한계.
+
+```text
+planning assessment: planning_leader
+adoption state: open
+approval owner: 박성환
+operator response target: 가능한 경우 인지 후 1시간 이내 착수
+24/7 SLA: none
+```
+
+#### 8.23.3 Fully Manual Detection and Failover
+
+**장점**: 자동 오탐 없음 · 단순한 초기 구현.
+
+**위험**: 장애 인지 지연 · Operator 부재 · RTO 예측 곤란 · 수동 판단 누락 · Health Evidence 부족 · 반복 Drill 곤란 · 절차 편차.
+
+```text
+planning assessment: conditionally_viable as temporary fallback
+```
+
+Canonical Planning Leader로 지정하지 않는다.
+
+#### 8.23.4 DNS-only Manual Switch
+
+DNS Record 변경 · TTL과 Resolver Cache 영향 · Application/Database 준비와 무관하게 Traffic만 변경할 위험 · Failback 시 Cache 혼재 · Read-only/Write 승인 상태 표현 부족.
+
+```text
+planning assessment: not_recommended as sole failover mechanism
+```
+
+Cloudflare Load Balancing 또는 Tunnel Steering 대안과 비교하되 실제 Cloudflare 구성을 주장하지 않는다.
+
+### 8.24 Traffic Planning Result
+
+```text
+Current planning leader: Health Detection + Human-approved Failover
+Not recommended initially: Fully Automatic Failover
+Temporary fallback: Fully Manual Detection and Failover
+Not recommended as sole mechanism: DNS-only Manual Switch
+Decision state: open
+```
+
+### 8.25 Fencing Invariant
+
+```text
+DR Write Enable must not occur until the Primary writer has been fenced
+or its inability to write has been independently established.
+```
+
+한국어 의미: **Primary Writer가 Fence되었거나 Write 불가능이 독립적으로 확인되기 전에는 DR Write를 활성화하지 않는다.**
+
+Fencing 후보: Primary Host Power-off 확인 · Primary Network Isolation · Database Write Credential Revocation · Tunnel Disable · Application Stop · Storage Lock 또는 Write Lease · Operator Physical Confirmation · Independent Monitoring Confirmation.
+
+```text
+Traffic Switch ≠ Fencing
+Health Check Failure ≠ Fencing
+Tunnel Down ≠ Database Write 불가능
+```
+
+현재 Fencing 방식은 `open`이다.
+
+### 8.26 Write Enable Gate
+
+DR Write 허용을 위한 최소 Gate 후보(순서):
+
+1. Incident 선언
+2. Primary 상태 Evidence 수집
+3. Primary Fencing 또는 Independent Write-impossibility 확인
+4. AWS DR Runtime 준비
+5. PostgreSQL Restore 또는 Promotion 완료
+6. Migration Compatibility 확인
+7. Application Read-only Boot
+8. Database Connectivity 확인
+9. Consistency Check
+10. Critical Business Read Check
+11. Secret/Configuration 확인
+12. Operator 승인
+13. Write Enable
+14. Controlled Write Probe
+15. Traffic Failover 승인
+
+```text
+Runtime Healthy ≠ Write Enabled
+Database Connected ≠ Data Consistent
+Read-only Boot PASS ≠ Traffic Failover Approved
+```
+
+### 8.27 Traffic Failover Gate
+
+Traffic 전환 전 최소 Evidence 후보: DR Runtime Healthy · ALB 또는 Target Health 정상 · Application Readiness 정상 · Database Restore 완료 · Read-only Business Check · Fencing Evidence · Write Enable 승인 · Controlled Write Probe · Audit Record · Rollback Target 준비 · Operator 승인.
+
+Cloudflare Health Monitor만으로 Failover하지 않는다.
+
+### 8.28 Read-only First Invariant
+
+```text
+복구된 DR Runtime은 가능한 경우 처음에는 Read-only 상태로 기동한다.
+```
+
+Read-only 단계 목적: Database Restore 검증 · Application Schema 검증 · Secret/Configuration 검증 · Business Read Check · Migration Compatibility 검증 · Write 전 Evidence 확보.
+
+Read-only 구현 방식은 아직 `open`이다. 후보: Application-level Feature Flag · Database Read-only Credential · Gateway Write Method Block · Maintenance Mode · Combination. 이번 Slice에서 하나를 채택하지 않는다.
+
+### 8.29 Failback Invariant
+
+```text
+Automatic failback is prohibited for the initial architecture candidate.
+```
+
+한국어 의미: **초기 Architecture 후보에서 자동 Failback을 금지한다.**
+
+Failback 최소 후보 순서:
+
+1. 기존 Primary 복구
+2. Primary Runtime과 Image Digest 확인
+3. Database Re-seed 또는 동기화
+4. Primary Read-only Boot
+5. Consistency Validation
+6. AWS DR Write Freeze
+7. Primary Write 승인
+8. Controlled Write Probe
+9. Traffic Failback 승인
+10. AWS DR Read-only 전환
+11. AWS DR 종료 또는 Cold 상태
+12. Incident 종료
+
+이 순서는 Planning Candidate이며 실행 Runbook이 아니다.
+
+### 8.30 Split-brain Prevention
+
+- 동시에 두 Writer를 허용하지 않는다.
+- Traffic Routing은 Writer Authority를 결정하지 않는다.
+- Database Write Credential은 Writer Authority와 연계돼야 한다.
+- Failover 승인 전 Primary 재접속 가능성을 확인한다.
+- Failback 중 AWS DR를 바로 종료하지 않는다.
+- Write Authority 변경은 Audit Evidence를 요구한다.
+- Automatic Failback을 금지한다.
+- Unknown 상태에서는 Write보다 Manual Review를 우선한다.
+
+### 8.31 Cloudflare Responsibility Boundary
+
+Cloudflare의 Candidate 역할: External Health Observation · Traffic Steering · Pool/Origin 선택 · Tunnel Endpoint 접근 · Failover Target 전환.
+
+Cloudflare가 소유하지 않는 책임: PostgreSQL Restore · Data Consistency · Write Authority · Primary Fencing · Secret Rotation · Application Migration Compatibility · Incident Approval.
+
+```text
+Cloudflare Traffic Failover ≠ Disaster Recovery Completion
+Cloudflare Health Check ≠ Business Write Safety
+```
+
+### 8.32 AWS / Cloudflare Failure Domain
+
+분리 대상 Failure Domain: Mac mini Host · Local Power · Local Network · Cloudflare · AWS Account · AWS Region · VPC · ALB · ECS/Fargate · EC2 · ECR · S3/Backup Storage · IAM · DNS · Operator.
+
+결합 위험 분석:
+
+- ECS + ALB + ECR가 같은 Region에 있으면 Region 장애에 동시 결합될 수 있다.
+- AWS DR와 ECR를 분리하려면 GHCR를 선택할 수 있다(§8.8 Registry 대안과 연결).
+- Cloudflare 장애 시 Primary와 DR 모두 접근 불가할 수 있다.
+- Operator 단일 인물 의존이 별도 Failure Domain이다.
+
+최종 Multi-region 설계를 채택하지 않는다. Cross-region DR는 `deferred`를 유지한다.
+
+### 8.33 Observability Candidate Requirements
+
+Signal 후보: Primary External Health · Tunnel Health · Gateway Liveness · Gateway Readiness · Application Readiness · PostgreSQL Availability · Backup Freshness · WAL Archive Freshness · Registry Pull Test · AWS Task/Instance State · ALB Target Health · DR Read-only State · Current Write Authority · Last Failover Drill · Last Restore Drill · Operator Acknowledgement.
+
+실제 Monitoring Tool을 채택하지 않는다.
+
+### 8.34 Audit Evidence Candidate
+
+Failover/Failback 과정에서 남길 Evidence 후보: Incident ID · Detection Time · Operator Acknowledgement Time · Primary State · Fencing Evidence · Backup/Restore Reference · Restored Point-in-time · Image Manifest Digest · Platform Digest · Configuration Version · Secret Version Reference · Read-only Check Result · Consistency Check Result · Write Approval · Traffic Approval · Failover Time · Failback Time · Drill/Incident 구분 · Owner.
+
+실제 Secret, Credential, Host, IP, Bucket 이름을 ADR에 기록하지 않는다.
+
+### 8.35 RTO Stage Analysis
+
+RTO 4시간 Target을 다음 단계로 분해한다. 각 시간은 현재 `unknown` 또는 `measurement_required`다.
+
+| Stage | Current State |
+|---|---|
+| Detection | measurement_required |
+| Operator Acknowledgement | measurement_required |
+| Incident Classification | measurement_required |
+| AWS Runtime Provision | measurement_required |
+| Image Pull | measurement_required |
+| Database Restore | measurement_required(Slice 5) |
+| Application Read-only Boot | measurement_required |
+| Validation | measurement_required |
+| Write Approval | measurement_required |
+| Traffic Switch | measurement_required |
+
+```text
+RTO Target ≠ Sum of verified stage durations
+```
+
+정확한 시간을 발명하지 않는다. Full DR Drill 전 RTO는 `target_not_verified`다.
+
+### 8.36 Cost Boundary
+
+비용 Concern 후보: ALB 고정비 · Fargate Task 실행비 · EC2 Instance/EBS · NAT Gateway · Data Transfer · ECR/GHCR Storage · Cloudflare Load Balancing · Logging · Monitoring · Backup Storage · Terraform State Backend.
+
+```text
+status: measurement_required
+```
+
+사용자 승인 Guardrail(§4.6과 일치): 월 고정비 목표 50,000원 이하 · Hard Cap 100,000원. Burst Incident/Drill 비용은 고정비와 분리해 기록한다. 정확한 Vendor 가격은 기록하지 않는다.
+
 ---
 
 ## 9. Decision
 
-**No architecture option is accepted in Slice 3.**
+**No architecture option is accepted in Slice 4.**
 
-현재 Decision은 `open`이다. Slice 3는 Primary Deployment, Image Architecture와
-Registry 대안의 현재 평가만 기록한다.
+현재 Decision은 `open`이다. Slice 3의 Primary Deployment, Image Architecture,
+Registry 평가는 그대로 Planning 상태로 보존되며 Slice 4에서 Accepted로 승격되지
+않는다. Slice 4는 AWS DR Runtime과 승인 기반 Traffic Failover 대안의 현재 평가만
+추가한다.
 
 ```text
-Current planning leaders:
+Preserved Slice 3 planning leaders (still open, not accepted):
 - Primary Deployment: Docker Compose
 - Image Architecture: Multi-platform OCI Image
 - Registry: AWS ECR if AWS DR is selected
+  Conditional alternative: GHCR when Registry failure-domain independence from AWS is prioritized
+  Deferred: K3s / Kubernetes, Harbor
+
+Slice 4 planning leaders (open, not accepted):
+- AWS Application DR Runtime: ECS Fargate + Application Load Balancer
+- Traffic Failover: Health Detection + Human-approved Failover
 
 Conditional alternative:
-- GHCR when Registry failure-domain independence from AWS is prioritized
+- EC2 + Docker Compose
 
 Deferred:
-- K3s / Kubernetes
-- Harbor
+- EKS
+- Fully Automatic Failover
+- Cross-region DR
 
-Primary Deployment Decision: open
-Image Architecture Decision: open
-Registry Decision: open
+Initial candidate prohibition:
+- Automatic Failback
+
+AWS DR Runtime Decision: open
+Traffic Failover Decision: open
 ```
+
+이 문구는 Considered Option 평가이며 Accepted Decision이 아니다. 다음 표현을
+사용하지 않는다: "We will use ECS Fargate", "ECR을 채택한다", "Cloudflare Load
+Balancing을 사용한다", "자동 전환을 구성한다", "ALB가 운영 중이다", "DR 환경이
+준비됐다", "RTO 4시간을 달성했다", "Failover가 검증됐다".
 
 These planning evaluations require later RPL-42 decision approval.
 
@@ -988,22 +1506,78 @@ These planning evaluations require later RPL-42 decision approval.
 
 ## 10. Rationale
 
-Pending later RPL-42 writer slice.
-No decision has been accepted in this section.
+No decision has been accepted in this section. 아래는 Slice 4 Planning Leader가
+현재 Driver에서 앞선 이유이며 채택 근거가 아니다.
+
+- **관리형 Container가 1인 운영 Driver에 부합한다.** ECS Fargate는 Host OS와
+  Container Runtime Patch를 AWS 책임으로 두어 Incident 시 Host Provisioning 단계를
+  줄일 수 있다. 이는 Slice 3의 Docker Compose Planning Leader와 동일 OCI Image를
+  재사용한다는 전제와 모순되지 않는다.
+- **Cold Standby와 비용 Driver를 함께 만족할 후보다.** `desiredCount 0`으로 Task를
+  Idle에 둘 수 있으나 ALB 등 고정비가 남을 수 있어 비용은 `measurement_required`다.
+- **EC2 + Compose는 Compose 동등성이 최우선이거나 Fargate 호환성이 미검증일 때
+  우월할 수 있어** conditionally_viable로 보존한다.
+- **오탐과 Split-brain 위험이 자동 전환의 속도 이점을 상회한다.** 그래서 Traffic은
+  Detection은 자동화하되 Write Enable과 Traffic Switch는 사람 승인을 요구하는
+  방식이 현재 앞선다.
+- **RTO 4시간은 단계별 측정 전까지 Runtime 선택으로 보장되지 않는다.** Runtime
+  후보 선택은 RTO 달성 주장과 분리된다.
+
+이 Rationale은 후속 RPL-42 Slice의 검증과 독립 Review 전까지 Decision이 아니다.
 
 ---
 
 ## 11. Consequences
 
-Pending later RPL-42 writer slice.
-No decision has been accepted in this section.
+No decision has been accepted in this section. 아래는 Planning Leader가 채택될
+경우의 예상 결과 후보이며 현재 발생한 사실이 아니다.
+
+### 채택 시 긍정 후보
+
+- Primary와 DR가 동일 OCI Image와 Digest를 재사용할 수 있다.
+- Incident 절차가 Fencing → Restore → Read-only → Consistency → Write Enable →
+  Traffic 순서로 구조화되어 Split-brain 위험이 감소한다.
+- Human Approval Gate로 오탐 기반 자동 전환을 방지한다.
+- Terraform 재현으로 Cold Standby Provisioning을 반복 가능하게 만들 수 있다.
+
+### 채택 시 부담 후보
+
+- ECS/ALB/IAM/VPC/Security Group과 Cloudflare, Secret Store 운영 표면이 늘어난다.
+- Fargate와 Local Compose 사이 Configuration Drift 관리가 필요하다.
+- ALB 등 고정비와 Incident/Drill Burst 비용이 발생할 수 있다.
+- Operator 부재 시 Human Approval 의존이 RTO를 초과시킬 수 있다.
+
+### 하지 않는 것
+
+- 이 Slice는 ADR-0013 Data Ownership과 ADR-0015 Deferred Trigger를 바꾸지 않는다.
+- AWS에 여러 Service를 배치해도 Logical Service Boundary를 통합하지 않는다.
+- Runtime, Infrastructure, Cloudflare 구성, RTO/RPO 달성을 주장하지 않는다.
 
 ---
 
 ## 12. Human Authority Impact
 
-Pending later RPL-42 writer slice.
-No decision has been accepted in this section.
+No decision has been accepted in this section. 아래 Human Authority Matrix는
+Failover/Failback Action의 승인 경계를 논의하기 위한 Architecture Candidate이며
+실행 권한 위임이나 Runtime Approval이 아니다.
+
+| Action | Automated Signal | Human Decision Required | Evidence | Owner |
+|---|---|---|---|---|
+| Incident Declare | Health/Monitor 이상 | 예 | Detection Log, Operator Ack | 박성환 |
+| Primary Unavailable 판정 | Health/Tunnel/DB Signal | 예 | 복수 Signal 상관, Operator 확인 | 박성환 |
+| Primary Fencing 승인 | 없음(수동) | 예 | Power-off/Isolation/Credential Revocation 증거 | 박성환 |
+| DR Runtime Start | 조건부 Trigger 가능 | 예(초기) | Runtime State, Image Digest | 박성환 |
+| Database Restore 시작 | 없음 | 예 | Backup/WAL Reference (Slice 5) | 박성환 |
+| Read-only Boot 승인 | Runtime Health | 예 | Read-only State, Schema Check | 박성환 |
+| Write Enable 승인 | 없음 | 예 | Fencing+Restore+Consistency Evidence | 박성환 |
+| Traffic Failover 승인 | Target/Readiness Health | 예 | Failover Gate Evidence, Rollback Target | 박성환 |
+| Failback 시작 | Primary 복구 Signal | 예 | Primary Runtime/Digest 확인 | 박성환 |
+| Primary Write Enable | 없음 | 예 | Primary Consistency, DR Write Freeze | 박성환 |
+| Traffic Failback 승인 | Primary Readiness | 예 | Failback Gate Evidence | 박성환 |
+| Incident Close | 없음 | 예 | Audit Evidence 보존 | 박성환 |
+
+현재 Approval Owner는 박성환이며 24/7 SLA가 아니다. Future delegated operator와
+automated system은 Owner 후보로만 기록하고 이번 Slice에서 위임하지 않는다.
 
 Comment 10144는 Target Input Authority다. Architecture Option Approval, Repository
 Merge, Runtime Action Approval 또는 Write Enable Approval로 확대 해석하지 않는다.
@@ -1053,6 +1627,19 @@ Container Image와 Registry는 Local Runtime과 별도 Failure Domain을 갖는 
 Artifact Concern이다. Image Retention은 PostgreSQL Backup 보존을 대체하지 않고,
 Database Backup도 Application Image를 대체하지 않는다.
 
+### Slice 4 DR Runtime Data Boundary
+
+- AWS DR Application Runtime 후보(ECS Fargate/EC2)는 Stateful PostgreSQL을 자신의
+  Ephemeral Filesystem 또는 Task 내부에 두지 않는다. Business Data SSOT의 물리
+  복구는 Slice 5에서 별도 판단한다.
+- AWS에 Application Runtime을 배치하더라도 각 Product/Service의 Data Ownership과
+  Migration Owner는 통합되지 않는다(§4.4, ADR-0013 유지).
+- 같은 ALB, VPC 또는 Account를 공유해도 Service Ownership 통합을 뜻하지 않는다.
+- Write Authority는 Traffic Routing이 아니라 Database Write Credential과 연계되어야
+  하며, 어느 시점에도 단일 Writer만 허용한다(§8.30).
+- AWS DR Runtime, ECR, ALB가 같은 Region에 있으면 Region 장애에 결합될 수 있어
+  Registry Failure Domain 분리(§8.8, §8.32)와 함께 검토한다.
+
 ---
 
 ## 14. Shared Core and Extension Impact
@@ -1094,8 +1681,35 @@ ADR 작성은 Product SLA, Release Requirement 또는 Roadmap Commitment를 생�
 
 ## 17. Testing and Evidence
 
-Pending later RPL-42 writer slice.
-No decision has been accepted in this section.
+No decision has been accepted in this section. 아래는 Slice 4 Architecture 후보를
+승인하기 전 필요한 검증 후보이며 각 상태는 `not_run` 또는 `verification_required`다.
+
+### Runtime
+
+- Fargate Task Start · EC2 Bootstrap · Image Pull by Digest · ARM64/AMD64
+  Compatibility · ALB Target Healthy · Read-only Boot · Secret Injection · Config
+  Injection · Rollback.
+
+### Failover
+
+- Health False Positive · Primary Host Loss · Local Network Loss · Tunnel Loss ·
+  Primary Fencing · DR Read-only · Write Approval · Traffic Switch · Traffic
+  Rollback.
+
+### Failback
+
+- Primary Restore · Database Re-seed · Primary Read-only · DR Write Freeze · Write
+  Authority Transfer · Traffic Failback.
+
+### Negative Tests
+
+- Fencing Evidence 없음 · Restore 미완료 · Consistency Check 실패 · Secret 불일치 ·
+  Image Digest 불일치 · Operator Approval 없음 · Cloudflare Health만 정상 · Primary
+  재등장 · Operator 부재. 각 경우 Write가 거부되고 Manual Review로 진행되어야 한다.
+
+```text
+각 검증 상태: not_run / verification_required
+```
 
 RTO/RPO는 실제 크기와 장애 조건을 반영한 Restore·Failover·Failback Drill
 Evidence 전까지 `target_not_verified`를 유지한다.
@@ -1141,9 +1755,19 @@ Application rollback
 
 Database Migration Rollback은 별도 구현 Decision이 필요할 수 있다.
 
----
+### Slice 4 Failover / Failback Candidate Order
 
-## 19. Implementation Notes
+- Failover 방향은 Write Enable Gate(§8.26)와 Traffic Failover Gate(§8.27)를 따른다.
+- Failback 방향은 Failback Invariant(§8.29)의 후보 순서를 따르며 Automatic Failback을
+  금지한다.
+- Traffic Rollback을 위해 이전 활성 경로(Primary 또는 DR)를 Rollback Target으로
+  준비한다.
+- Failback 중 AWS DR를 즉시 종료하지 않고 Read-only로 전환한 뒤 Cold 상태로 되돌린다.
+
+```text
+Traffic switch ≠ Write authority transfer
+Automatic failback = prohibited (initial candidate)
+```
 
 - Product Repository별 Dockerfile 존재 여부와 대상 revision을 조사해야 한다.
 - ARM64/AMD64 Native Dependency와 platform별 test 결과를 조사해야 한다.
@@ -1160,6 +1784,18 @@ Database Migration Rollback은 별도 구현 Decision이 필요할 수 있다.
   검증해야 한다.
 - Lifecycle/Retention 정책이 최소 Rollback Image를 보존하는지 검증해야 한다.
 - Local Export Artifact는 Registry 장애 보조 경로로만 검토해야 한다.
+- AWS DR Runtime 후보의 ARM64/AMD64 Task/Instance 호환성과 Image Pull·Startup
+  시간을 측정해야 한다.
+- `desiredCount 0` 또는 stopped instance 등 Cold Idle 상태의 고정비를 산정해야 한다.
+- ALB를 상시 유지할지 Incident 때 생성할지, NAT Gateway 없이 필요한 접근을 구성할
+  수 있는지 검증해야 한다.
+- Fencing Mechanism과 Read-only 구현 방식을 후보 중에서 검증·선택해야 한다.
+- Write Authority를 기술적으로 표현하는 방법(Write Credential/Lease 등)을 검증해야
+  한다.
+- Human Approval을 수행할 Interface와 Audit Evidence 저장 위치·Owner를 정해야 한다.
+- Cloudflare Tunnel/Load Balancing의 실제 운영 여부와 Health Endpoint의
+  Liveness/Readiness/Write Readiness 분리를 확인해야 한다.
+- Terraform State의 저장, 암호화, Locking, 접근·복구 경계를 확인해야 한다.
 
 ```text
 Implementation note
@@ -1193,6 +1829,14 @@ Implementation Notes는 실행 코드나 운영 구성의 Source of Truth가 아
 - Registry 비용은 Region, usage, retention과 replication 전까지
   `measurement_required`다.
 - Digest 기반 Rollback은 아직 rehearsal Evidence가 없다.
+- 1인 Operator 의존이며 24/7 SLA가 없어 Operator 부재 시 RTO를 초과할 수 있다.
+- 실제 AWS Account·IAM과 Cloudflare Load Balancing 구성이 미검증이다.
+- 실제 DB 크기와 Restore 시간, ALB/Fargate 비용, Cold Standby Provision 시간이
+  미측정이다.
+- Fencing Mechanism과 Read-only 구현 방식이 미결정이다.
+- Cross-region DR는 `deferred`, Automatic Failover는 초기 `not_recommended`,
+  Automatic Failback은 초기 후보에서 금지 상태다.
+- AWS DR Runtime 후보의 RTO 4시간 달성 여부는 Full DR Drill 전 `target_not_verified`다.
 
 ---
 
@@ -1225,6 +1869,37 @@ DB 정책과 Drill 주기는 Open Question으로 되돌리지 않는다.
 - Retention 기간과 최소 Rollback Digest 수는 얼마인가?
 - Cross-region Replication이 필요한가?
 - Break-glass Pull Credential은 어떻게 보관하는가?
+
+### AWS Runtime
+
+- Fargate와 EC2 중 실제 Application 호환성이 높은가?
+- `desiredCount 0` 또는 equivalent Cold 상태가 비용 목표에 맞는가?
+- ALB를 상시 유지할 것인가, Incident 때 생성할 것인가?
+- NAT Gateway 없이 필요한 접근을 구성할 수 있는가?
+- ECR과 GHCR 중 Failure Domain 우선순위는 무엇인가?
+- Terraform State를 어디에 둘 것인가?
+
+### Traffic
+
+- 현재 Cloudflare Tunnel이 실제 운영 중인가?
+- Load Balancing 기능을 사용할 것인가?
+- Health Endpoint의 Liveness/Readiness/Write Readiness를 어떻게 분리할 것인가?
+- Human Approval을 어떤 Interface에서 수행할 것인가?
+- Primary Fencing Evidence는 무엇인가?
+- Write Authority를 기술적으로 어떻게 표현할 것인가?
+
+### Failback
+
+- DR 중 발생한 Write를 Primary에 어떻게 반영할 것인가?
+- Database Re-seed 방식은 무엇인가?
+- Failback 중 Maintenance Window가 필요한가?
+- AWS DR를 언제 Cold 상태로 되돌릴 것인가?
+
+### Verification
+
+- 4시간 RTO를 Cold Standby로 달성 가능한가?
+- Operator 부재 시 Escalation은 어떻게 하는가?
+- Drill Evidence의 저장 위치와 Owner는 무엇인가?
 
 ---
 
@@ -1268,6 +1943,12 @@ DB 정책과 Drill 주기는 Open Question으로 되돌리지 않는다.
 - GitHub official documentation: Container Registry, Packages Permissions
 - AWS official documentation: ECR Push, Lifecycle Policies, Private Replication
 - Harbor official documentation: Repositories, Installation Prerequisites
+- AWS official documentation (Slice 4): Fargate for ECS, Task Definition, Service
+  Definition Parameters, Application Load Balancer, ALB Target Group Health Checks,
+  EC2 Automatic Instance Recovery, EC2 User Data, ECS Task IAM Role, Amazon EKS
+- Cloudflare official documentation (Slice 4): Tunnel, Load Balancing, Health
+  Monitors, Pools
+- Terraform official documentation (Slice 4): Terraform State
 
 ### Affected Documents
 
@@ -1301,6 +1982,7 @@ Existing ADR Supersession: none
 | 2026-08-03 | not_applicable | open | not_applicable | not_applicable | Slice 1에서 Evidence Boundary와 Target Input을 기록 | RPL-42 / Comment 10144 |
 | 2026-08-04 | open | open | not_applicable | not_applicable | Slice 2에서 Verified Fact, Target, Candidate와 Runtime-unverified 상태를 분리 | RPL-42 / Comment 10144 |
 | 2026-08-04 | open | open | not_applicable | not_applicable | Slice 3에서 Primary Deployment, Image와 Registry 대안을 비교 | RPL-42 / Comment 10144 |
+| 2026-08-05 | open | open | not_applicable | not_applicable | Slice 4에서 AWS DR Runtime과 승인 기반 Traffic Failover 대안을 비교 | RPL-42 / Comment 10144 |
 
 이 History는 Architecture Option Approval이 아니다.
 
@@ -1316,15 +1998,16 @@ Existing ADR Supersession: none
 
 ### Alternatives
 
-- [ ] 실질적인 대안을 비교했다.
-- [ ] 선택 이유를 Driver와 연결했다.
-- [x] Slice 3에서 Architecture Option을 채택하지 않았다.
+- [x] AWS DR Runtime과 Traffic Failover의 실질적 대안을 비교했다.
+- [x] 선택 이유(Planning Leader)를 Driver와 연결했다.
+- [x] Slice 3·Slice 4 모두 Architecture Option을 채택하지 않았다.
 
 ### Safety
 
 - [x] Write Enable과 Fencing을 Decision Scope에 포함했다.
+- [x] Fencing·Write Enable·Traffic Failover·Read-only·Failback Invariant를 정의했다.
 - [x] 실제 Secret, Credential, Host, IP와 Account ID를 기록하지 않았다.
-- [ ] 후속 Slice에서 Local·Cloud·Data Failure Domain을 검토한다.
+- [x] Slice 4에서 AWS/Cloudflare Failure Domain 결합 위험을 검토했다.
 
 ### Traceability
 
@@ -1348,7 +2031,7 @@ Existing ADR Supersession: none
 
 ```text
 decision_status: open
-No architecture option is accepted in Slice 3.
+No architecture option is accepted in Slice 4.
 ```
 
 ### Constraints
@@ -1358,12 +2041,14 @@ Front Matter와 Section 7의 Constraints를 적용한다.
 ### Effective Scope
 
 ```text
-Evidence Boundary and Decision Input State only
+Evidence Boundary, Decision Input State, and
+Slice 3~4 Considered Option evaluations only
+(Primary Deployment / Image / Registry / AWS DR Runtime / Traffic Failover)
 ```
 
 ### Required Follow-up
 
-- ADR-0016 Slice 4 - AWS DR Runtime and Approval-gated Traffic Failover Matrix
+- ADR-0016 Slice 5 - PostgreSQL Backup, Restore, Promotion and RTO/RPO Matrix
 - 후속 Slice의 대안 비교와 독립 Review
 - ADR Index와 DEC-066 연결은 별도 Slice
 
