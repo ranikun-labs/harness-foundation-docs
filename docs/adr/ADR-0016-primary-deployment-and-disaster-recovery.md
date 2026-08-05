@@ -411,6 +411,31 @@ Vendor 문서는 제품 Capability, 지원 Configuration, 지원 Architecture와
 제약만 증명한다. 현재 Runtime 구성, 비용 상한 충족, Product Image 호환 또는
 장애 복구 검증을 증명하지 않는다.
 
+### 4.9 Slice 5 Official Capability Evidence
+
+Accessed date: `2026-08-05`
+
+| Source | Capability Evidence | Not Evidence Of |
+|---|---|---|
+| [PostgreSQL Continuous Archiving and PITR](https://www.postgresql.org/docs/current/continuous-archiving.html) | Base Backup + WAL Archive(`archive_command`), `restore_command`, `recovery_target_time/xid/lsn/name`, `recovery_target_timeline`, PITR마다 새 Timeline 생성, Timeline History File, 복구 시간은 Replay할 WAL 양에 비례, `postgresql.conf`/`pg_hba.conf`는 WAL로 복구되지 않음 | 현재 Backup 또는 WAL Archive 동작 |
+| [pg_basebackup](https://www.postgresql.org/docs/current/app-pgbasebackup.html) | 실행 중 Cluster의 물리 Base Backup, Backup Manifest(checksum), `-X stream/fetch/none`, plain/tar 형식, REPLICATION 권한 필요 | 현재 Base Backup 존재 |
+| [pg_verifybackup](https://www.postgresql.org/docs/current/app-pgverifybackup.html) | Manifest 기반 4단계 무결성 검증, WAL 검증(plain), "test restore는 여전히 필요", 모든 문제를 탐지하지 못함 | Restore 성공 또는 Business Consistency |
+| [PostgreSQL Log-Shipping / Streaming Replication](https://www.postgresql.org/docs/current/warm-standby.html) | `standby.signal`, 연속 WAL Replay, File-based(async, `archive_timeout` 손실창) vs Streaming(async 기본 <1s), `pg_ctl promote`/`pg_promote()`, Failover 후 Old Primary에 재접속 안 함, 동일 Major Version·동일 Hardware Architecture 필요 | 현재 Standby 존재 또는 Replication 동작 |
+| [PostgreSQL Replication Slots](https://www.postgresql.org/docs/current/warm-standby.html) | 필요한 WAL만 자동 보존, 단절 시 `pg_wal` 소진 위험, `max_slot_wal_keep_size` 완화 | 현재 Slot 구성 |
+| [pg_rewind](https://www.postgresql.org/docs/current/app-pgrewind.html) | Timeline 분기 후 재동기화, `wal_log_hints` 또는 data checksum 필요, 분기점까지 WAL 필요, 실패 시 대상 복구 불가 | Failback 성공 또는 조건 충족 |
+| [PostgreSQL Hot Standby](https://www.postgresql.org/docs/current/hot-standby.html) | Recovery 중 Read-only Query, `transaction_read_only` 항상 true, XID 미할당, 모든 Write 차단, eventually consistent | 현재 Standby 검증 |
+| [PostgreSQL SQL Dump](https://www.postgresql.org/docs/current/backup-dump.html) | 논리 Backup, dump 시점 snapshot, PITR 없음, Role 선존재 필요, Version/Architecture 이식성 | Canonical DR 충분성 |
+| [Amazon S3 Object Lock](https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lock.html) | WORM, Retention Period + Legal Hold, Governance/Compliance Mode, Versioning 필요, Compliance는 root도 삭제 불가 | 현재 Bucket 또는 Immutability 구성 |
+| [Amazon S3 Default Encryption](https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucket-encryption.html) | 모든 Bucket SSE-S3 기본, SSE-KMS/DSSE-KMS 옵션, at-rest 암호화 | 현재 Bucket 존재 또는 Key 접근 |
+| [Amazon EBS Snapshots](https://docs.aws.amazon.com/ebs/latest/userguide/ebs-snapshots.html) | 증분 Point-in-time Backup, S3-backed(직접 접근 불가), Region 내 AZ 복제, AWS 자동 backup 아님(고객 책임), Snapshot으로 새 Volume 복원, Snapshot Lock | 현재 Snapshot 존재 |
+| [Amazon RDS Point-in-time Recovery](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_PIT.html) | Automated Backup + Transaction Log(약 5분 간격 S3 업로드), Retention 창 내 새 Instance로 복원, `LatestRestorableTime` | RDS 구성 또는 채택 |
+| [Amazon RDS Multi-AZ](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Concepts.MultiAZ.html) | 동기 Standby, 자동 Failover, 단일 Standby는 Read 미제공, Backup 대체 아님 | RDS 구성 또는 채택 |
+| [AWS Backup](https://docs.aws.amazon.com/aws-backup/latest/devguide/whatisbackup.html) | 중앙 Backup Plan/Vault, EBS·RDS·EC2·S3·EFS 등 지원, Vault Lock WORM, 독립 암호화, Cross-region/account | 현재 Backup 구성 |
+
+Vendor 문서는 PostgreSQL/AWS Capability, 지원 Configuration, Recovery·Replication
+방식, 서비스 책임 경계, 제한사항만 증명한다. 현재 Backup·WAL Archive·S3 Bucket·RDS
+존재, Restore 성공, 15분 RPO 또는 4시간 RTO 달성, Ranikun Labs 채택을 증명하지 않는다.
+
 ---
 
 ## 5. Problem Statement
@@ -1447,48 +1472,521 @@ status: measurement_required
 
 사용자 승인 Guardrail(§4.6과 일치): 월 고정비 목표 50,000원 이하 · Hard Cap 100,000원. Burst Incident/Drill 비용은 고정비와 분리해 기록한다. 정확한 Vendor 가격은 기록하지 않는다.
 
+### 8.37 Data DR Problem
+
+Mac mini에 위치할 가능성이 있는 PostgreSQL Business SSOT를 잃었을 때, 승인된 Backup와 WAL Evidence를 사용해 최대 15분 RPO Target과 4시간 RTO Target 안에서 AWS에 복구하되, Primary와 DR가 동시에 Write하지 않고 복구 시점을 검증 가능한 형태로 어떻게 선택·복원·승격할 것인가?
+
+```text
+PostgreSQL Host = runtime_unverified
+Version / Size / WAL Rate / Extension = unknown
+Backup 존재 = runtime_unverified
+RTO 4h / RPO 15m = target (not achieved)
+```
+
+이번 Slice는 Architecture 비교다. Backup Script나 Database Resource를 만들지 않는다.
+
+### 8.38 Recovery Strategy Matrix
+
+| Criterion | Cold Base Backup + WAL | Warm Physical Standby | Managed Primary | Dump-only / Manual |
+|---|---|---|---|---|
+| Business SSOT 적합성 | strong | strong | strong(Architecture 변경) | weak |
+| PostgreSQL Native Recovery | strong | strong | managed | weak |
+| Point-in-time Recovery | strong | strong(+base backup) | strong(managed) | weak, dump 시점만 |
+| RPO 15분 가능성 | conditionally_viable, archive lag 의존 | strong candidate | strong(약 5분 log) | weak |
+| RTO 4시간 가능성 | measurement_required | measurement_required(단축 가능) | measurement_required | weak |
+| Continuous WAL 필요 | 필요 | 필요 | managed | 불필요 |
+| Streaming Replication 필요 | 불필요 | 필요 | managed | 불필요 |
+| Base Backup 필요 | 필요 | 필요(초기) | managed | not_applicable |
+| Backup Verification | pg_verifybackup 후보 | 동일 + standby | managed | 제한적 |
+| Recovery Timeline 관리 | 필요 | 필요(promotion 후) | managed | not_applicable |
+| Restore Target 선택 | strong(PITR) | acceptable | strong | weak |
+| Promotion | 복구 후 promote | pg_ctl promote/pg_promote() | managed failover | not_applicable |
+| Old Primary Fencing | 필요 | 필요 | managed 경계 | 필요 |
+| Split-brain 위험 | medium(수동 통제) | medium(timeline divergence) | low(managed) | medium |
+| Primary/DR Version 호환 | 필요 | 동일 Major 필요 | managed | 이식성 높음 |
+| Extension 호환 | 필요 | 필요 | 제약 가능 | 부분 |
+| Major Version 제약 | 복구 Runtime 일치 | 동일 Major 필수 | vendor 지원 목록 | 완화 |
+| Storage 용량 | base+WAL | base+WAL+standby | managed | dump 크기 |
+| WAL 생성량 영향 | archive 부하 | archive+stream 부하 | managed | not_applicable |
+| Network Bandwidth 영향 | archive 전송 | 지속 stream | managed | dump 전송 |
+| 평상시 고정비 | low(off-host storage) | medium-high(상시 compute) | high(상시 managed) | low |
+| Incident Burst Cost | restore compute | 낮음(이미 warm) | 낮음 | restore compute |
+| One-person Operation | strong candidate | conditionally_viable | acceptable(운영 위임) | weak |
+| Operational Complexity | medium | high | medium(managed) | low-medium |
+| Monitoring | archive/backup 관측 | +lag/slot 관측 | managed metric | 제한적 |
+| Archive Gap 탐지 | 필요 | 필요 | managed | not_applicable |
+| Replication Lag 탐지 | not_applicable | 필요 | managed | not_applicable |
+| Backup Encryption | 후보(at rest/in transit) | 동일 | managed(KMS) | 후보 |
+| Off-host Storage | required | required | managed | required |
+| Immutability | S3 Object Lock 후보 | 동일 | managed 경계 | 후보 |
+| Credential Separation | Backup/Restore 분리 후보 | +replication cred | managed IAM | 부분 |
+| Restore Drill | 필요 | 필요 | 필요 | 필요 |
+| Failback Complexity | re-seed 가능성 | pg_rewind 조건부/re-seed | managed 경계 재설계 | rebuild |
+| Re-seed 필요성 | 높음 | 조건부(pg_rewind) | 낮음 | 높음 |
+| Terraform 재현성 | acceptable | acceptable | strong(managed) | weak |
+| Current Evidence | runtime_unverified | runtime_unverified | runtime_unverified | runtime_unverified |
+| Verification Requirement | verification_required | verification_required | verification_required | verification_required |
+
+각 대안의 근거는 8.39~8.42에서 상술한다.
+
+### 8.39 Cold Base Backup + WAL Analysis
+
+**Candidate 장점**
+
+- PostgreSQL Native Base Backup과 WAL Replay를 사용할 수 있다.
+- Primary Host와 분리된 Off-host Backup이 가능하다.
+- 평상시 AWS Compute를 최소화할 수 있다.
+- 특정 복구 시점(PITR)을 선택할 수 있다.
+- Cold Standby Cost Guardrail과 정렬된다.
+- 장애 전 승인된 Backup와 WAL을 사용하고 복구 Runtime을 Incident 때 생성할 수 있다.
+- Warm Standby보다 상시 운영 부담이 낮을 수 있다.
+- Restore Drill로 절차를 검증할 수 있다.
+- 동일 Major Version과 Extension을 복구하는 후보다.
+
+**한계와 위험**
+
+- Base Backup Download와 WAL Replay 시간이 Database Size·WAL 양에 민감하다.
+- Archive Gap이 있으면 RPO를 달성할 수 없다.
+- Backup 손상 시 복구 불가, Restore Environment를 Incident 때 준비해야 할 수 있다.
+- PostgreSQL Version·Extension 호환이 필요하고 Restore Target을 잘못 선택할 위험이 있다.
+- 최신 미전송 WAL 구간이 손실될 수 있다.
+- Backup Encryption Key 접근과 Backup Catalog/Metadata가 필요하다.
+- 복구 후 Write Enable 전 Validation이 필요하고 Failback 시 Primary Re-seed 가능성이 있다.
+- Full Drill 전 RTO/RPO를 검증할 수 없다.
+
+```text
+planning assessment: planning_leader for initial data DR
+adoption state: open
+```
+
+**Required verification**: Actual PostgreSQL Version · Extension Inventory · Database Size · WAL Generation Rate · Base Backup Duration · WAL Archive Lag · Archive Gap Detection · Restore Download Time · WAL Replay Time · PITR Target Selection · Backup Verification · Read-only Startup · Consistency Check · Promotion · Full DR Drill.
+
+Cold Restore를 최종 채택하지 않는다.
+
+### 8.40 Warm Physical Standby Analysis
+
+**Candidate 장점**
+
+- 지속적 WAL 수신으로 더 짧은 RPO가 가능할 수 있다.
+- Restore 단계 일부를 축소할 수 있다.
+- Hot Standby로 Read-only 검증이 가능하다.
+- Incident 시 Promotion 시간을 단축할 수 있다.
+- Backup과 Replication을 병행하고 Replication Lag를 지속 관측할 수 있다.
+
+**한계와 위험**
+
+- AWS Compute와 Storage 상시 비용이 발생한다.
+- Primary-Standby Network 연결과 Replication Credential 관리가 필요하다.
+- Replication Slot 또는 WAL Retention 위험(`pg_wal` 소진)이 있다.
+- Network 단절 시 WAL 축적과 Standby Lag가 생긴다.
+- 동일 Major Version과 Extension·Hardware Architecture 정합성이 필요하다.
+- Standby 운영·Patch 책임과 Promotion 후 Timeline Divergence가 있다.
+- Old Primary 재등장 시 Split-brain 위험, Failback을 위한 Re-seed 또는 pg_rewind 검토가 필요하다.
+- 1인 운영 복잡도가 증가하고 Cost Guardrail을 초과할 수 있다.
+
+```text
+planning assessment: conditionally_viable
+adoption state: open
+```
+
+**Preferred when**: Cold Restore Drill이 4시간 RTO를 충족하지 못함 · 더 강한 RPO 필요 · 상시 비용과 운영 복잡도 감당 가능 · Stable Network와 Monitoring 확보.
+
+Warm Standby가 반드시 더 안전하다고 단정하지 않는다.
+
+### 8.41 Managed PostgreSQL Primary Analysis
+
+Business Primary 자체를 RDS PostgreSQL 등 Managed Service로 이전하고 Automated Backup, Snapshot, PITR, Multi-AZ Capability를 활용하는 후보다.
+
+**장점**: Host OS와 일부 Backup 운영 부담 감소 · Managed Backup/PITR(약 5분 log) · Multi-AZ 동기 Standby와 자동 Failover · AWS Runtime/Network Integration · Managed Monitoring/Maintenance.
+
+**한계와 위험**: 현재 승인 Target은 Managed DB Primary **초기 미채택** · Primary Architecture 자체 변경 · 월 고정비 증가 · Local Mac mini 중심 모델 변경 · 인터넷·AWS 의존 증가 · Version/Extension 제약 가능 · Migration·Cutover 별도 프로젝트 · Data Transfer/Downtime/Rollback 설계 · Vendor Lock-in · Cost Guardrail 충돌 가능 · 현재 Size/Workload 부재로 판단 불가.
+
+```text
+planning assessment: deferred / initially_not_adopted
+```
+
+**re-evaluation trigger**: Local Primary Reliability 한계 · Cold/Warm DR 운영 복잡도 과다 · 비용 대비 운영효율 우위 · Availability 요구 증가 · 실제 Workload/비용 측정 · Migration 승인.
+
+Managed Primary를 영구 거부하지 않는다.
+
+### 8.42 Logical Dump-only / Manual Rebuild Analysis
+
+pg_dump 또는 Application Export만 보존하고 Incident 시 새 Database에 Import하며 WAL 기반 PITR이 없는 방식이다.
+
+**가능한 장점**: 논리적 이식 Export · 일부 Schema/Data Migration 활용 · 작은 DB에서 단순 · Selective Restore.
+
+**한계와 위험**: 15분 RPO 달성 곤란 · Large DB Restore 장시간 · Dump 시점 이후 손실 · Transaction Consistency/Restore 순서 · Roles/Grants/Extensions/Settings 누락 가능 · Binary vs Logical 차이 · Incident 때 수동 환경 구성 · RTO 예측 불가 · PITR 불가 · Continuous Recovery Evidence 부족 · Full SSOT Recovery 경로로 불충분.
+
+```text
+planning assessment: not_recommended as canonical DR
+```
+
+단, Logical Portability · Schema Inspection · Selective Recovery · Migration · Secondary Safety Export 용도의 보조 수단으로 유지할 수 있다.
+
+### 8.43 Recovery Planning Result
+
+```text
+Current planning leader: Base Backup + Continuous WAL Archive 기반 Cold Restore
+Conditional alternative: AWS EC2 Warm Physical Standby
+Deferred / initially not adopted: Managed PostgreSQL Primary
+Not recommended as canonical recovery: Logical Dump-only / Incident-time Manual Rebuild
+Decision state: open
+```
+
+**Blocking verification**: Actual PostgreSQL Version · Extension Inventory · Database Size · WAL Rate · Backup Duration · Archive Lag · Restore Time · Replay Time · Cost · Full Restore Drill · Failover Drill · Failback Drill.
+
+Planning Leader는 Accepted Decision이 아니다.
+
+### 8.44 Backup Artifact Model
+
+| Artifact | Content Owner | Storage Owner | Integrity Evidence | Retention | Encryption | Restore Use | Runtime Evidence |
+|---|---|---|---|---|---|---|---|
+| Base Backup | Business Data owner | Off-host storage owner | Manifest/checksum | open | required | 물리 복원 시작점 | runtime_unverified |
+| Backup Manifest | Business Data owner | Off-host storage owner | pg_verifybackup | base backup와 동일 | required | 무결성 검증 | runtime_unverified |
+| WAL Segment | Business Data owner | Off-host storage owner | archive 검증 | open | required | Replay | runtime_unverified |
+| Timeline History File | Business Data owner | Off-host storage owner | 존재 확인 | WAL과 동일 | required | Timeline 선택 | runtime_unverified |
+| Recovery Metadata | Operations | Catalog owner | 필드 검증 | open | 후보 | Target 선택 | unknown |
+| Backup Catalog Entry | Operations | Catalog owner | 필드 검증 | open | 후보 | Backup 발견 | unknown |
+| PostgreSQL Version Reference | Business Data owner | Catalog owner | Inventory 대조 | 영구 | not_applicable | 호환 확인 | unknown |
+| Extension Inventory Reference | Business Data owner | Catalog owner | Inventory 대조 | 영구 | not_applicable | 호환 확인 | unknown |
+| Configuration Version Reference | Operations | Config source owner | Version 대조 | open | 후보 | 재구성 | runtime_unverified |
+| Encryption Key Reference | Security/Operations | Key store owner | 접근 test | 별도 | key material | 복호화 | runtime_unverified |
+| Integrity Verification Result | Operations | Evidence store owner | 검증 로그 | open | 후보 | 승인 근거 | not_run |
+| Restore Drill Result | DR Drill owner | Evidence store owner | Drill 로그 | open | 후보 | RTO/RPO 근거 | not_run |
+| Retention State | Operations | Storage owner | Policy 검토 | open | not_applicable | Coverage 판단 | unknown |
+| Deletion Protection State | Operations | Storage owner | Lock 확인 | open | not_applicable | 삭제 방지 | unknown |
+
+실제 파일명, Bucket, Host, Credential은 기록하지 않는다.
+
+### 8.45 Backup Storage Failure Domain
+
+```text
+Primary Host failure must not remove the only usable database backup,
+WAL archive, backup manifest, or decryption path.
+```
+
+한국어 의미: **Primary Host 장애가 유일하게 사용 가능한 DB Backup, WAL Archive, Backup Manifest 또는 복호화 경로를 제거해서는 안 된다.**
+
+- Primary Mac mini와 Off-host Storage를 분리한다.
+- Backup Credential과 Application Credential을 분리한다.
+- Backup Write 권한과 Restore Read 권한을 분리하는 후보.
+- Backup Storage가 Primary Filesystem에만 존재하지 않는다.
+- Encryption Key를 Backup Data와 같은 단일 Failure Domain에만 두지 않는다.
+- Retention 오설정으로 모든 Restore Point가 제거되지 않도록 방지한다(S3 Object Lock/Versioning 후보).
+- Backup Storage 손상 또는 계정 잠금에 대한 Break-glass를 고려한다.
+- Region 장애와 Backup Storage Region 결합을 분석한다. Cross-region Backup은 `deferred`를 유지한다.
+
+S3를 최종 채택하지 않는다. **Off-host encrypted object storage planning candidate**로 기록한다.
+
+### 8.46 Backup Encryption Boundary
+
+후보 요구사항: Backup at rest encryption · Backup in transit encryption · Encryption Key Reference 분리 · Restore Operator 최소 권한 · Application Runtime은 Backup 삭제 권한 없음 · DR Runtime은 필요 시 Read-only Restore 권한 후보 · Key Loss 시 복구 불가 위험 · Key Rotation과 Old Backup 복구 가능성 · Break-glass · Audit Evidence.
+
+실제 KMS Key ID, Secret, Credential은 기록하지 않는다.
+
+```text
+Encryption Capability ≠ Restore Verification
+```
+
+### 8.47 Base Backup Boundary
+
+```text
+Base Backup + Required WAL = Point-in-time Recovery Candidate
+Base Backup만 존재 ≠ RPO 15분 달성
+```
+
+Base Backup은 특정 시점의 Database Physical State를 제공하지만 그 자체만으로 최신 RPO를 제공하지 않는다.
+
+Base Backup 후보 검증: Start/End Time · PostgreSQL Version · Backup Manifest · Integrity Verification · Required WAL 범위 · Storage Size · Transfer Duration · Restore Duration · Last Successful Restore · Retention State.
+
+정확한 Backup 주기를 확정하지 않는다. Frequency는 `measurement_required` / `open`을 유지한다.
+
+### 8.48 WAL Archive Boundary
+
+WAL Archive 후보 요구사항: Continuous 또는 bounded-delay archive · Archive 성공/실패 관측 · Last Archived WAL · Archive Lag · Archive Gap 탐지 · Duplicate Segment 처리 · Partial File 방지 · Compression 후보 · Encryption · Retention · Timeline History 보존 · Restore 접근 · Failed Archive Alert · Storage Full Alert.
+
+```text
+WAL Archive Process Running ≠ WAL Archive Complete
+Last Archive Timestamp ≠ Recoverable Restore Point
+```
+
+15분 RPO Target을 주장하려면 WAL 생성 시간 · Archive 완료 시간 · Missing Segment 없음 · Base Backup 연결 가능 · Restore Drill Replay · Target Point 검증이 필요하다.
+
+### 8.49 RPO State Model
+
+State Vocabulary: `rpo_target_defined` · `backup_missing` · `base_backup_available` · `wal_archive_unknown` · `wal_archive_lagging` · `wal_archive_gap_detected` · `recoverable_point_estimated` · `recoverable_point_verified` · `rpo_target_not_verified` · `rpo_target_met_in_drill` · `rpo_target_breached`.
+
+```text
+Archive Lag ≤ 15분 ≠ RPO Verified
+```
+
+RPO는 성공한 Restore Drill과 복구 시점 검증 전까지 `target_not_verified`다.
+
+### 8.50 Restore Target Selection
+
+복구 목표 후보와 위험:
+
+| Target Candidate | 주요 위험 |
+|---|---|
+| Latest Consistent Point | Corruption 이후 시점 복구 가능성 |
+| Incident Detection 이전 시점 | Detection 시각 부정확 |
+| Operator-selected Timestamp | Timezone 오류, Clock Drift, Operator 입력 오류 |
+| Transaction ID | Application Event와 DB Time 불일치 |
+| LSN | 사람이 판단하기 어려움 |
+| Named Recovery Point | 사전 생성 필요 |
+| End of Available WAL | Missing WAL·Wrong Timeline 위험 |
+
+Restore Target 선택은 Human Approval이 필요한 후보로 기록한다. Owner: 박성환. 정확한 Target Syntax를 구현·채택하지 않는다.
+
+### 8.51 Restore State Model
+
+구현된 State Machine이 아니라 Architecture Vocabulary다.
+
+| State | Entry Condition | 금지 행위 |
+|---|---|---|
+| BACKUP_STATE_UNKNOWN | Backup 상태 미확인 | Restore 시작 |
+| BACKUP_CATALOG_VALIDATING | Catalog 조회 시작 | Base Backup 선택 |
+| BASE_BACKUP_SELECTED | 후보 Base Backup 식별 | Manifest 미검증 진행 |
+| WAL_RANGE_VALIDATING | 필요한 WAL 범위 확인 | Target 확정 |
+| RESTORE_TARGET_SELECTED | Target 선택·승인 | 승인 없이 복원 |
+| RESTORE_ENVIRONMENT_PREPARING | Runtime 준비 | Version 미확인 복원 |
+| BASE_BACKUP_RESTORING | Base Backup 복원 진행 | WAL Replay 병행 승격 |
+| WAL_REPLAYING | WAL Replay 진행 | Write Enable |
+| RECOVERY_TARGET_REACHED | Target 도달 | Consistency 미검증 승격 |
+| DATABASE_READ_ONLY | Read-only 기동 | Business Write |
+| DATABASE_VALIDATING | Validation 진행 | Promotion 승인 |
+| DATABASE_PROMOTION_PENDING | Validation 통과, 승인 대기 | Fencing 미확인 승격 |
+| DATABASE_WRITE_APPROVED | Fencing+Validation 후 승인 | 승인 범위 초과 |
+| DATABASE_ACTIVE_WRITER | 활성 Writer | Old Primary 동시 Write |
+| OLD_PRIMARY_RESEED_REQUIRED | Old Primary 재사용 판정 | 검증 없이 Writer 복귀 |
+| FAILBACK_DATABASE_PREPARING | Failback DB 준비 | 자동 Failback |
+| INCIDENT_DATABASE_CLOSED | Evidence 보존 후 종료 | Evidence 미기록 종료 |
+
+### 8.52 Restore Order Candidate
+
+Cold Restore 최소 후보 순서: 1) Incident 선언 2) Primary Fencing Evidence 3) Backup Catalog 확인 4) Base Backup 선택 5) Manifest/Integrity 확인 6) WAL 연속성 확인 7) Restore Target 선택·승인 8) AWS Database Runtime 준비 9) Version·Extension 확인 10) Base Backup Restore 11) WAL Replay 12) Recovery Target 도달 13) Read-only Startup 14) Database-level Validation 15) Application Read-only Connection 16) Business Read Check 17) Promotion 승인 18) Write Enable 19) Controlled Write Probe 20) Traffic Failover 승인.
+
+```text
+Restore Complete ≠ Promotion Approved
+Recovery Target Reached ≠ Data Consistency Verified
+Database Started ≠ Application Write Safe
+```
+
+이 순서는 Planning Candidate이며 실행 Runbook이 아니다.
+
+### 8.53 Database Read-only Validation
+
+Promotion 전 최소 Validation 후보: PostgreSQL Startup · Recovery 종료 상태 · Expected Database 목록 · Schema Version · Migration Version · Extension Availability · Role/Grant Availability · Critical Table 존재 · Referential/Logical Invariant · Recent Business Record · Restore Target 시각 · Timeline · WAL Replay 종료 지점 · Application Read-only Query · Critical Business Read · Audit/Projection 상태.
+
+Read-only 구현 방식은 `open`이다. 후보: PostgreSQL Hot Standby · Read-only Database Role · Transaction Read-only · Application Feature Flag · Gateway Write Block · Combination. 이번 Slice에서 하나를 채택하지 않는다.
+
+### 8.54 Promotion Invariant
+
+```text
+A restored or standby PostgreSQL instance must not be promoted to the
+active writer until the old Primary writer has been fenced and the
+recovered database has passed approved validation.
+```
+
+한국어 의미: **복원되거나 Standby인 PostgreSQL Instance는 Old Primary Writer가 Fence되고 복구된 Database가 승인된 Validation을 통과하기 전에는 활성 Writer로 승격되지 않는다.**
+
+Promotion 조건 후보: Old Primary Fencing · Correct Restore Target · Required WAL Replay 완료 · Version/Extension Compatibility · Schema/Migration Compatibility · Database Read-only Validation · Business Read Check · Secret/Role 확인 · Promotion Owner 승인 · Audit Evidence 생성.
+
+Promotion 명령이나 Tool을 최종 채택하지 않는다. `pg_ctl promote` 또는 `pg_promote()`는 Capability Evidence로만 언급한다.
+
+### 8.55 Writer Authority
+
+Database Writer Authority 후보 속성: Current Writer Environment · Database Instance Identity · Timeline · Promotion Time · Incident ID · Approval Owner · Fencing Evidence · Write Credential Version · Application Release Digest · Configuration Version · Last Validation Result.
+
+```text
+Traffic Destination ≠ Database Writer Authority
+Database Credential Possession ≠ Approved Writer Authority
+Promotion Command Success ≠ Application Write Approval
+```
+
+Writer Authority 변경은 Audit Evidence가 필요하다.
+
+### 8.56 Timeline Divergence
+
+- Promotion 이후 새로운 Timeline이 생성될 수 있다.
+- Old Primary는 과거 Timeline에 남는다.
+- Old Primary의 자동 재접속을 금지한다.
+- Old Primary를 그대로 Writer로 복귀시키면 Split-brain 위험이 있다.
+- Failback 전 Re-seed 또는 동기화가 필요하다.
+- pg_rewind는 조건부 Capability(`wal_log_hints` 또는 checksum, 분기점 WAL 필요)다.
+- WAL 보존과 Timeline History가 필요하며 Backup Chain은 Promotion 이후 새 Timeline을 따라야 한다.
+
+```text
+Old Primary Restart ≠ Safe Failback
+```
+
+Promotion 이후 Old Primary는 검증 없이 Writer가 될 수 없다.
+
+### 8.57 Failback / Re-seed Boundary
+
+AWS DR Writer → Mac mini Primary 후보 순서: 1) Mac mini Host 복구 2) PostgreSQL Runtime Version 확인 3) Extension 확인 4) Old Data Directory 폐기 여부 판단 5) AWS Active Writer Fencing 계획 6) Mac Primary Re-seed 7) Required WAL/Data 동기화 8) Mac Database Read-only Startup 9) Schema/Business Validation 10) AWS 신규 Write Freeze 11) Mac Promotion 승인 12) Controlled Write Probe 13) Traffic Failback 승인 14) AWS Database Read-only 전환 15) AWS DR Cold 상태 전환 16) Incident 종료.
+
+Automatic Database Failback은 금지 후보를 유지한다. Re-seed 방법은 `open`이다. 후보: New Base Backup · Physical Copy · pg_rewind 조건부 · Logical Migration · Managed Migration Tool. 이번 Slice에서 하나를 채택하지 않는다.
+
+### 8.58 Replication Slot / WAL Retention Risk
+
+Warm Standby 후보 분석: Replication Slot이 WAL 삭제를 막아 Disk를 소진할 가능성 · Standby 장기 단절 · WAL Retention 증가 · Slot Monitoring 필요 · Slot Drop 또는 Recovery 절차 · Archive와 Streaming의 역할 분리 · Standby 재구축 조건 · Lag Threshold · Storage Full Failure.
+
+Replication Slot은 현재 채택 상태가 아니다. Capability와 위험으로만 기록한다(`max_slot_wal_keep_size` 완화 후보).
+
+### 8.59 PostgreSQL Version / Extension Boundary
+
+확인 전 `unknown`: PostgreSQL Major/Minor Version · Extension 목록/Version · Collation · Locale · Encoding · Timezone · Roles · Tablespaces · Custom Configuration · Shared Library · Native Dependency.
+
+```text
+Same Container Image ≠ Same Database Compatibility
+Same PostgreSQL Major Version ≠ Extension Compatibility Verified
+```
+
+Version/Extension Inventory가 없으면 Restore Approval을 내릴 수 없다.
+
+### 8.60 Backup Retention Candidate
+
+Retention Concern: Base Backup 보존 수 · WAL 보존 기간 · Timeline History · Restore Point Coverage · Monthly Restore Check · Quarterly Full DR Drill · Legal/Privacy Retention · Storage Cost · Accidental Deletion · Compromised Backup · Key Rotation · Promotion 이후 Timeline.
+
+정확한 일수·Backup 수를 확정하지 않는다.
+
+```text
+status: open / measurement_required
+Retention ≠ Verified Restore Coverage
+Backup Count ≠ Recoverable Point Count
+```
+
+### 8.61 Backup Integrity
+
+검증 후보: Backup Manifest · Checksum · pg_verifybackup 또는 동등 Capability · Object Storage Integrity · File Count · Required WAL Presence · Timeline History Presence · Encryption Decryption Test · Restore Test · Schema Validation.
+
+```text
+Checksum PASS ≠ Full Restore PASS
+Backup Download PASS ≠ PostgreSQL Startup PASS
+PostgreSQL Startup PASS ≠ Business Consistency PASS
+```
+
+### 8.62 Monitoring Candidate
+
+Signal 후보: Last Successful Base Backup · Last Backup Verification · Last Successful Restore · Last Archived WAL · WAL Archive Lag · Archive Failure Count · Missing WAL · Backup Storage Usage · Backup Retention Deletion · Encryption Key Availability · Replication Lag · Replication Slot Retained WAL · Primary Disk Usage · Standby Disk Usage · Current Timeline · Current Writer Authority · Last Promotion · Last Failback · RPO Estimate · RTO Drill Result.
+
+실제 Monitoring Tool을 채택하지 않는다.
+
+### 8.63 Audit Evidence Candidate (Data DR)
+
+Backup/Restore/Promotion Evidence 후보: Incident ID · Backup ID Reference · Base Backup Start/End · Backup Manifest Reference · Backup Integrity Result · Last Archived WAL · Restore Target · Recovery Timeline · Replayed WAL Range · Recovery Target Reached Time · PostgreSQL Version · Extension Inventory Reference · Database Runtime Identity · Read-only Validation Result · Promotion Approval · Writer Authority Record · Write Probe Result · Failover Time · Failback Re-seed Reference · Drill/Real Incident 구분 · Owner.
+
+실제 Secret, Bucket, Account, Host, IP는 기록하지 않는다.
+
+### 8.64 RPO Stage Analysis
+
+| Stage | Current State |
+|---|---|
+| Transaction WAL 생성 | unknown |
+| WAL Segment/Partial 준비 | measurement_required |
+| Archive 전송 시작 | measurement_required |
+| Archive 전송 완료 | measurement_required |
+| Archive Object 검증 | measurement_required |
+| Catalog 반영 | unknown |
+| Restore 시 WAL 발견 | measurement_required |
+| WAL Replay 가능성 | measurement_required |
+| Restore Target 검증 | measurement_required |
+
+```text
+RPO 15분 Target ≠ Archive Process가 실행 중
+RPO 15분 Target ≠ Last WAL Timestamp가 15분 이내
+```
+
+RPO 달성은 Restore Drill에서 실제 복구 시점과 Business Data를 확인해야 한다.
+
+### 8.65 RTO Stage Analysis (Database)
+
+| Stage | Current State |
+|---|---|
+| Incident Detection | measurement_required |
+| Operator Acknowledgement | measurement_required |
+| Primary Fencing | measurement_required |
+| Backup Catalog Selection | measurement_required |
+| AWS Database Runtime Provision | measurement_required |
+| Base Backup Download | measurement_required |
+| Base Backup Restore | measurement_required |
+| WAL Replay | measurement_required |
+| PostgreSQL Startup | measurement_required |
+| Read-only Validation | measurement_required |
+| Application Read Check | measurement_required |
+| Promotion Approval | measurement_required |
+| Write Probe | measurement_required |
+| Traffic Failover | measurement_required |
+
+```text
+RTO 4시간 Target ≠ Σ Verified Database Stage Duration
+```
+
+정확한 시간을 발명하지 않는다. Full DR Drill 전 `target_not_verified`를 유지한다.
+
+### 8.66 Data DR Cost Boundary
+
+비용 Concern: Base Backup Storage · WAL Storage · Storage Request · Data Transfer · Encryption Key Service · EC2 Database Runtime · EBS Storage · EBS Snapshot · Warm Standby Compute · Monitoring · Log Retention · Restore Drill · Cross-region Copy · Managed Database.
+
+```text
+status: measurement_required
+```
+
+사용자 승인 Guardrail(§4.6과 일치): 월 DR 고정비 목표 50,000원 이하 · Hard Cap 100,000원. Incident/Drill Burst Cost는 고정비와 분리한다. 정확한 Vendor 가격은 기록하지 않는다.
+
+### 8.67 Drill Policy Candidate
+
+사용자 승인 Input(§4.6)을 유지한다: Monthly Restore Check · Quarterly Full DR Drill.
+
+- **Monthly Restore Check** 후보 범위: Backup 발견 · Manifest/Integrity · Decryption 가능 · 제한된 Restore · PostgreSQL Startup · 기본 Read Check.
+- **Quarterly Full DR Drill** 후보 범위: Mac Primary 장애 가정 · AWS Runtime Provision · Full PostgreSQL Restore · WAL Replay · Read-only Application · Promotion Approval Simulation · Traffic Failover Simulation · Failback/Re-seed 검증 · RTO/RPO 측정.
+
+실제 Drill이 실행됐다고 주장하지 않는다. Drill Evidence 저장 위치는 `open`이다.
+
 ---
 
 ## 9. Decision
 
-**No architecture option is accepted in Slice 4.**
+**No architecture option is accepted in Slice 5.**
 
-현재 Decision은 `open`이다. Slice 3의 Primary Deployment, Image Architecture,
-Registry 평가는 그대로 Planning 상태로 보존되며 Slice 4에서 Accepted로 승격되지
-않는다. Slice 4는 AWS DR Runtime과 승인 기반 Traffic Failover 대안의 현재 평가만
-추가한다.
+현재 Decision은 `open`이다. Slice 1~4의 평가는 그대로 Planning 상태로 보존되며
+Slice 5에서 Accepted로 승격되지 않는다. Slice 5는 PostgreSQL Business SSOT의
+Backup·Restore·Promotion 대안의 현재 평가만 추가한다.
 
 ```text
-Preserved Slice 3 planning leaders (still open, not accepted):
+Preserved planning leaders (still open, not accepted):
 - Primary Deployment: Docker Compose
 - Image Architecture: Multi-platform OCI Image
-- Registry: AWS ECR if AWS DR is selected
-  Conditional alternative: GHCR when Registry failure-domain independence from AWS is prioritized
-  Deferred: K3s / Kubernetes, Harbor
-
-Slice 4 planning leaders (open, not accepted):
+- Registry: AWS ECR conditional on AWS DR (alt: GHCR)
 - AWS Application DR Runtime: ECS Fargate + Application Load Balancer
 - Traffic Failover: Health Detection + Human-approved Failover
 
-Conditional alternative:
-- EC2 + Docker Compose
+Slice 5 planning leader (open, not accepted):
+- PostgreSQL Data DR: Base Backup + Continuous WAL Archive 기반 Cold Restore
 
-Deferred:
-- EKS
+Conditional alternative:
+- AWS EC2 Warm Physical Standby
+
+Deferred / initially not adopted:
+- Managed PostgreSQL Primary
+- K3s / Kubernetes, Harbor, EKS
 - Fully Automatic Failover
-- Cross-region DR
+- Cross-region DR / Cross-region Backup
+
+Not recommended as canonical path:
+- Logical Dump-only / Incident-time Manual Rebuild
 
 Initial candidate prohibition:
-- Automatic Failback
+- Automatic (Traffic and Database) Failback
 
-AWS DR Runtime Decision: open
-Traffic Failover Decision: open
+PostgreSQL Data DR Decision: open
 ```
 
 이 문구는 Considered Option 평가이며 Accepted Decision이 아니다. 다음 표현을
-사용하지 않는다: "We will use ECS Fargate", "ECR을 채택한다", "Cloudflare Load
-Balancing을 사용한다", "자동 전환을 구성한다", "ALB가 운영 중이다", "DR 환경이
-준비됐다", "RTO 4시간을 달성했다", "Failover가 검증됐다".
+사용하지 않는다: "S3를 채택한다", "pg_basebackup을 운영한다", "WAL Archive가
+동작 중이다", "EC2 Standby가 존재한다", "RDS를 사용한다", "RPO 15분을 달성했다",
+"RTO 4시간을 달성했다", "Restore가 검증됐다", "Promotion이 구현됐다".
 
 These planning evaluations require later RPL-42 decision approval.
 
@@ -1525,6 +2023,24 @@ No decision has been accepted in this section. 아래는 Slice 4 Planning Leader
 
 이 Rationale은 후속 RPL-42 Slice의 검증과 독립 Review 전까지 Decision이 아니다.
 
+### Slice 5 Rationale (No decision accepted)
+
+- **PostgreSQL Native PITR가 Business SSOT와 RPO/RTO Driver에 가장 직접적이다.** Base
+  Backup + Continuous WAL Archive는 특정 시점 복구와 Off-host 보존을 제공해 Cold
+  Standby 비용 Driver와 정렬된다. 다만 RPO는 Archive Lag, RTO는 Restore/Replay
+  시간에 의존해 `measurement_required`다.
+- **Warm Physical Standby는 RPO/RTO를 줄일 수 있으나 상시 비용과 1인 운영 복잡도를
+  올린다.** Cold Restore Drill이 RTO를 못 맞추거나 더 강한 RPO가 필요할 때 우월할
+  수 있어 conditionally_viable로 둔다.
+- **Managed Primary는 승인된 초기 미채택 제약과 Primary Architecture 변경 부담으로
+  deferred다.** 영구 거부가 아니다.
+- **Dump-only는 PITR 부재와 RPO 달성 곤란으로 Canonical DR로 부적합**하며 보조
+  Export 용도로만 유지한다.
+- **Promotion과 Failback은 Fencing·Validation·Timeline 관리 없이는 Split-brain을
+  만든다.** 그래서 Promotion Invariant와 Automatic Failback 금지 후보를 유지한다.
+
+이 Slice 5 Rationale도 Full Restore/Failover/Failback Drill 전까지 Decision이 아니다.
+
 ---
 
 ## 11. Consequences
@@ -1553,6 +2069,28 @@ No decision has been accepted in this section. 아래는 Planning Leader가 채�
 - AWS에 여러 Service를 배치해도 Logical Service Boundary를 통합하지 않는다.
 - Runtime, Infrastructure, Cloudflare 구성, RTO/RPO 달성을 주장하지 않는다.
 
+### Slice 5 Consequences (No decision accepted)
+
+채택 시 긍정 후보:
+
+- PITR로 특정 시점 복구와 Restore Drill 기반 RTO/RPO 측정이 가능해진다.
+- Off-host 암호화 Backup과 Storage Failure Domain 분리로 Primary 상실이 유일한
+  복구 경로를 제거하지 않는다.
+- Promotion Invariant·Writer Authority·Timeline 관리로 Split-brain 위험이 감소한다.
+
+채택 시 부담 후보:
+
+- Base Backup·WAL Archive·Catalog·Encryption Key 운영 표면이 늘어난다.
+- Restore/Replay 시간이 Database Size와 WAL 양에 민감하다.
+- Warm Standby를 병행하면 상시 비용과 Slot/Lag 관리 부담이 증가한다.
+- Failback은 Re-seed 또는 조건부 pg_rewind가 필요할 수 있다.
+
+하지 않는 것:
+
+- PostgreSQL은 Business SSOT, Redis는 Business SSOT 아님을 유지한다(ADR-0013).
+- 같은 PostgreSQL Cluster 사용도 Logical Ownership을 통합하지 않는다.
+- Backup 존재, WAL Archive 동작, Restore 성공, RPO/RTO 달성을 주장하지 않는다.
+
 ---
 
 ## 12. Human Authority Impact
@@ -1578,6 +2116,30 @@ Failover/Failback Action의 승인 경계를 논의하기 위한 Architecture Ca
 
 현재 Approval Owner는 박성환이며 24/7 SLA가 아니다. Future delegated operator와
 automated system은 Owner 후보로만 기록하고 이번 Slice에서 위임하지 않는다.
+
+### Database Authority Matrix (Slice 5)
+
+기존 Human Authority Matrix를 보존하면서 Database Action의 승인 경계를 추가한다.
+
+| Action | Automated Signal | Human Decision Required | Evidence | Owner |
+|---|---|---|---|---|
+| Backup Policy 승인 | 없음 | 예 | Retention/Encryption 정책 | 박성환 |
+| Backup Delete 승인 | 없음 | 예 | Retention/Lock 상태, 삭제 사유 | 박성환 |
+| Restore 시작 | Incident Signal | 예 | Incident 선언, Fencing 착수 | 박성환 |
+| Base Backup 선택 | Catalog 조회 | 예 | Manifest/Integrity | 박성환 |
+| Restore Target 선택 | 없음 | 예 | Target Evidence(§8.50) | 박성환 |
+| WAL Gap 예외 처리 | Gap 탐지 | 예 | Gap 범위, 영향 평가 | 박성환 |
+| Database Read-only 승인 | Recovery 종료 | 예 | Read-only Validation | 박성환 |
+| Promotion 승인 | Validation 통과 | 예 | Fencing + Validation Evidence | 박성환 |
+| Write Credential 활성화 | 없음 | 예 | Writer Authority Record | 박성환 |
+| Database Writer Authority 변경 | 없음 | 예 | Audit Evidence | 박성환 |
+| Failback 시작 | Primary 복구 Signal | 예 | Primary Version/Extension 확인 | 박성환 |
+| Re-seed 승인 | 없음 | 예 | Re-seed 방식/Evidence | 박성환 |
+| Old Primary 폐기 | 없음 | 예 | Timeline/Divergence 판단 | 박성환 |
+| Incident Database Close | 없음 | 예 | Audit Evidence 보존 | 박성환 |
+
+현재 Human Approval Owner는 박성환이며 24/7 SLA가 아니다. Future delegated operator와
+automated system은 Owner 후보로만 기록한다.
 
 Comment 10144는 Target Input Authority다. Architecture Option Approval, Repository
 Merge, Runtime Action Approval 또는 Write Enable Approval로 확대 해석하지 않는다.
@@ -1640,6 +2202,44 @@ Database Backup도 Application Image를 대체하지 않는다.
 - AWS DR Runtime, ECR, ALB가 같은 Region에 있으면 Region 장애에 결합될 수 있어
   Registry Failure Domain 분리(§8.8, §8.32)와 함께 검토한다.
 
+### Slice 5 State Class Recovery Matrix
+
+| State Class | Canonical Owner | Backup Required | Restore Required | Rebuild Allowed | Promotion Impact |
+|---|---|---|---|---|---|
+| PostgreSQL Business Data | 해당 Product/Service | 예 | 예 | 아니오(SSOT) | Promotion 대상 |
+| PostgreSQL Roles / Grants | 해당 Product/Service | 예 | 예 | 부분(재적용) | Write 권한 전제 |
+| PostgreSQL Extensions | 해당 Product/Service | 참조 필요 | 설치 필요 | 예(재설치) | 호환 전제 |
+| PostgreSQL Configuration | Operations | 예(별도) | 예 | 예(재구성) | 기동 전제 |
+| Migration Metadata | 해당 Product/Service | 예(DB 내) | 예 | 아니오 | Compatibility 전제 |
+| Uploaded Asset / Local Business File | 존재 시 해당 Product | runtime_unverified | 조건부 | 조건부 | 낮음 |
+| Redis Session / Cache | 해당 Runtime | 아니오 | 아니오 | 예(재생성) | 없음(SSOT 아님) |
+| Container Image | Product build/release owner | Registry 보존 | Digest Pull | 재빌드 후보 | Runtime 전제 |
+| Secrets / Credentials | Credential별 owner | 별도 Source | 별도 확보 | rotate 후보 | 접근 전제 |
+| Deployment Metadata | 구현 Repo/Operations | 조건부 | 조건부 | 예 | 낮음 |
+| Backup / WAL | Business Data owner + Operations | 자신이 Backup | 자신이 Restore 근거 | 아니오 | Restore 근거 |
+| Audit / DR Evidence | DR Drill owner | 예(보존) | 참조 | 아니오 | 승인 근거 |
+| Projection / Derived Data | Producer/Consumer | 아니오(재파생) | 아니오 | 예(재빌드) | Source 이후 |
+| NATS State | 현재 Runtime 아님 | not_applicable | not_applicable | deferred | not_applicable |
+
+- PostgreSQL Business Data는 반드시 복구한다.
+- Redis는 Business SSOT가 아니므로 일반적으로 재생성 후보다.
+- Container Image는 Registry에서 Digest로, Secret은 별도 Secret Source에서 확보한다.
+- NATS는 현재 Runtime이 아니므로 이번 Recovery Scope에서 `not_applicable`/`deferred`다.
+- Uploaded Asset은 실제 존재 여부와 Ownership이 `runtime_unverified`다.
+
+### Slice 5 Stateful Recovery Order
+
+최소 후보 순서: 1) Incident/Authority Evidence 2) Secret and Configuration 3) Backup
+Catalog 4) PostgreSQL Base Backup/WAL 5) PostgreSQL Read-only Validation 6) Uploaded
+Business Asset 7) Application Runtime 8) Redis Rebuild 9) Projection Rebuild 10) Write
+Enable 11) Traffic Failover 12) Audit Closure.
+
+```text
+Application Runtime 시작 ≠ Stateful Recovery 완료
+Redis Ready ≠ Business Data Ready
+Projection Ready ≠ Source of Truth Ready
+```
+
 ---
 
 ## 14. Shared Core and Extension Impact
@@ -1654,10 +2254,13 @@ No decision has been accepted in this section.
 
 ## 15. Contract Impact
 
-Pending later RPL-42 writer slice.
 No decision has been accepted in this section.
 
-Slice 1은 Contract 의미, Field, Validation 또는 Human Gate를 변경하지 않는다.
+- Slice 1~5는 Contract 의미, Field, Validation 또는 Human Gate를 변경하지 않는다.
+- Backup/Restore/Promotion은 Runtime·Data 복구 Concern이며 Token/Event/API Contract를
+  변경하지 않는다.
+- Writer Authority와 Fencing은 Data 계층 Invariant이며 기존 Contract Field를 추가하거나
+  수정하지 않는다.
 
 ---
 
@@ -1722,6 +2325,30 @@ Canonical Evidence로 사용하지 않는 항목:
 - UI Component ID
 - 검증되지 않은 구두 운영 상태
 
+### Slice 5 Data DR Verification Candidates
+
+각 상태는 `not_run` 또는 `verification_required`다.
+
+- **Backup**: Base Backup 생성 · Manifest 검증 · Encryption · Off-host Storage ·
+  Retention · Deletion Protection · Missing Base Backup · Corrupt Base Backup.
+- **WAL**: Archive 정상 · Archive Failure · Archive Lag · Missing Segment · Duplicate
+  Segment · Timeline Change · Storage Full · Network Loss.
+- **Restore**: Empty Runtime Restore · Specific Timestamp PITR · Latest Consistent
+  Point · Missing WAL Failure · Wrong Version Failure · Missing Extension Failure ·
+  Wrong Timeline Failure · Read-only Startup · Business Read Validation.
+- **Promotion**: Primary Fenced · Primary Not Fenced · Promotion 승인 없음 · Promotion
+  후 Timeline · Old Primary Reappearance · Write Credential Activation · Controlled
+  Write Probe.
+- **Failback**: Re-seed · pg_rewind 조건부 가능성 · Old Primary Data 폐기 · Primary
+  Read-only · AWS Write Freeze · Writer Authority Transfer · Traffic Failback.
+- **Negative**: Backup 없음 · WAL Gap · Decryption 실패 · Restore Target 불명확 ·
+  Schema Version 불일치 · Extension 불일치 · Operator Approval 없음 · Fencing
+  Evidence 없음 · Primary 재접속 가능 · RPO 초과 · RTO 초과. 각 경우 Promotion/Write가
+  거부되고 Manual Review로 진행되어야 한다.
+
+Drill Policy(§8.67)의 Monthly Restore Check와 Quarterly Full DR Drill은 승인된 목표로
+유지되며 실제 실행 여부는 `not_run`이다.
+
 ---
 
 ## 18. Migration and Rollback
@@ -1769,6 +2396,25 @@ Traffic switch ≠ Write authority transfer
 Automatic failback = prohibited (initial candidate)
 ```
 
+### Slice 5 Database Recovery / Rollback Candidate Order
+
+- Database 복구 방향은 Restore Order(§8.52)와 Promotion Invariant(§8.54)를 따른다.
+- Database Rollback은 Application Rollback과 구분한다. Application Digest Rollback이
+  Database Migration Rollback을 의미하지 않는다.
+- Failback 방향은 Failback/Re-seed Boundary(§8.57)를 따르며 Automatic Database
+  Failback을 금지한다.
+- Restore Target 오선택에 대비해 다른 Recovery Point로 재복구할 수 있도록 Backup/WAL을
+  보존한다(§8.60 Retention).
+
+```text
+Recovery Target Reached ≠ Data Consistency Verified
+Promotion ≠ Reversible without new restore
+```
+
+---
+
+## 19. Implementation Notes
+
 - Product Repository별 Dockerfile 존재 여부와 대상 revision을 조사해야 한다.
 - ARM64/AMD64 Native Dependency와 platform별 test 결과를 조사해야 한다.
 - 실제 PostgreSQL Version, Size와 WAL 생성률을 측정해야 한다.
@@ -1796,6 +2442,22 @@ Automatic failback = prohibited (initial candidate)
 - Cloudflare Tunnel/Load Balancing의 실제 운영 여부와 Health Endpoint의
   Liveness/Readiness/Write Readiness 분리를 확인해야 한다.
 - Terraform State의 저장, 암호화, Locking, 접근·복구 경계를 확인해야 한다.
+- 실제 PostgreSQL Major/Minor Version, Extension·Shared Library Inventory, Locale/
+  Encoding/Collation을 조사해야 한다.
+- Database Size와 WAL 생성률을 측정하고 Base Backup 주기·WAL Retention을 산정해야 한다.
+- Base Backup·WAL Archive의 Off-host Storage, Encryption Key 관리, Immutability(예:
+  Object Lock/Versioning) 후보를 검증해야 한다.
+- Archive Lag/Gap 탐지와 Missing/Duplicate/Partial Segment 처리 방식을 검증해야 한다.
+- Restore용 AWS PostgreSQL Runtime(EC2 등), Version/Extension 설치 순서, Read-only
+  기동 방식을 검증해야 한다.
+- pg_verifybackup 또는 동등 무결성 검증과 실제 Restore Drill로 복구 가능성을 확인해야
+  한다.
+- Promotion Interface, Write Credential 활성화/폐기, Writer Authority 기록 위치를
+  정해야 한다.
+- Failback Re-seed 방식(New Base Backup/Physical Copy/조건부 pg_rewind 등)과 pg_rewind
+  전제(`wal_log_hints` 또는 checksum)를 검증해야 한다.
+- Monthly Restore Check와 Quarterly Full DR Drill의 Evidence 저장 위치·Owner를 정해야
+  한다.
 
 ```text
 Implementation note
@@ -1837,6 +2499,14 @@ Implementation Notes는 실행 코드나 운영 구성의 Source of Truth가 아
 - Cross-region DR는 `deferred`, Automatic Failover는 초기 `not_recommended`,
   Automatic Failback은 초기 후보에서 금지 상태다.
 - AWS DR Runtime 후보의 RTO 4시간 달성 여부는 Full DR Drill 전 `target_not_verified`다.
+- 실제 PostgreSQL Host·Version·Extension Inventory가 미검증이고 Database Size와 WAL
+  Rate가 미측정이다.
+- Base Backup과 WAL Archive 존재 여부가 미확인이며 Archive Gap 탐지·Backup Encryption·
+  Restore Runtime이 미구현이다.
+- Promotion Procedure와 Failback Re-seed 방식(조건부 pg_rewind 포함)이 미결정이다.
+- Warm Standby Cost와 Cross-region Backup(`deferred`)이 미측정·미결정이다.
+- Full Restore/Failover/Failback Drill이 `not_run`이라 RPO 15분·RTO 4시간은
+  `target_not_verified`다.
 
 ---
 
@@ -1901,6 +2571,51 @@ DB 정책과 Drill 주기는 Open Question으로 되돌리지 않는다.
 - Operator 부재 시 Escalation은 어떻게 하는가?
 - Drill Evidence의 저장 위치와 Owner는 무엇인가?
 
+### PostgreSQL Runtime (Slice 5)
+
+- 실제 PostgreSQL Version은 무엇인가?
+- Database Size와 WAL Rate는 얼마인가?
+- Extension과 Shared Library는 무엇인가?
+- Tablespace 또는 Local Path 의존이 있는가?
+- Roles/Grants/Configuration은 어떻게 보존할 것인가?
+
+### Backup (Slice 5)
+
+- Base Backup 방식은 무엇인가?
+- Off-host Storage는 무엇인가?
+- Backup Frequency와 Retention은 얼마인가?
+- WAL Archive 지연 허용치는 어떻게 측정할 것인가?
+- Backup Encryption Key는 어디에서 관리하는가?
+- Immutability가 필요한가?
+
+### Restore (Slice 5)
+
+- AWS PostgreSQL Runtime은 EC2인가?
+- Restore용 Image 또는 AMI는 어떻게 관리하는가?
+- PITR Target을 어떤 Evidence로 선택하는가?
+- Read-only Validation은 어떤 방식인가?
+- Extension 설치 순서는 무엇인가?
+
+### Promotion (Slice 5)
+
+- Primary Fencing은 기술적으로 무엇인가?
+- Writer Authority는 어디에 기록하는가?
+- Write Credential을 어떻게 활성화·폐기하는가?
+- Promotion Interface는 무엇인가?
+
+### Database Failback (Slice 5)
+
+- Mac Primary를 어떻게 Re-seed하는가?
+- pg_rewind 조건을 충족할 수 있는가?
+- DR Write를 언제 Freeze하는가?
+- Failback Maintenance Window가 필요한가?
+
+### Data DR Verification (Slice 5)
+
+- Cold Restore로 4시간 RTO가 가능한가?
+- WAL Archive로 15분 RPO가 가능한가?
+- Monthly Check와 Quarterly Drill Evidence는 어디에 보존하는가?
+
 ---
 
 ## 22. Related Records
@@ -1949,6 +2664,11 @@ DB 정책과 Drill 주기는 Open Question으로 되돌리지 않는다.
 - Cloudflare official documentation (Slice 4): Tunnel, Load Balancing, Health
   Monitors, Pools
 - Terraform official documentation (Slice 4): Terraform State
+- PostgreSQL official documentation (Slice 5): Continuous Archiving and PITR,
+  pg_basebackup, pg_verifybackup, Log-Shipping/Streaming Replication, Replication
+  Slots, pg_rewind, Hot Standby, SQL Dump
+- AWS official documentation (Slice 5): S3 Object Lock, S3 Default Encryption, EBS
+  Snapshots, RDS Point-in-time Recovery, RDS Multi-AZ, AWS Backup
 
 ### Affected Documents
 
@@ -1983,6 +2703,7 @@ Existing ADR Supersession: none
 | 2026-08-04 | open | open | not_applicable | not_applicable | Slice 2에서 Verified Fact, Target, Candidate와 Runtime-unverified 상태를 분리 | RPL-42 / Comment 10144 |
 | 2026-08-04 | open | open | not_applicable | not_applicable | Slice 3에서 Primary Deployment, Image와 Registry 대안을 비교 | RPL-42 / Comment 10144 |
 | 2026-08-05 | open | open | not_applicable | not_applicable | Slice 4에서 AWS DR Runtime과 승인 기반 Traffic Failover 대안을 비교 | RPL-42 / Comment 10144 |
+| 2026-08-05 | open | open | not_applicable | not_applicable | Slice 5에서 PostgreSQL Backup/Restore/Promotion과 RPO/RTO 검증 경계를 비교 | RPL-42 / Comment 10144 |
 
 이 History는 Architecture Option Approval이 아니다.
 
@@ -2006,8 +2727,9 @@ Existing ADR Supersession: none
 
 - [x] Write Enable과 Fencing을 Decision Scope에 포함했다.
 - [x] Fencing·Write Enable·Traffic Failover·Read-only·Failback Invariant를 정의했다.
-- [x] 실제 Secret, Credential, Host, IP와 Account ID를 기록하지 않았다.
-- [x] Slice 4에서 AWS/Cloudflare Failure Domain 결합 위험을 검토했다.
+- [x] Slice 5에서 Promotion Invariant·Writer Authority·Backup Storage Failure Domain을 정의했다.
+- [x] 실제 Secret, Credential, Host, IP, Account ID, Bucket을 기록하지 않았다.
+- [x] Slice 4~5에서 AWS/Cloudflare/Backup Storage Failure Domain 결합 위험을 검토했다.
 
 ### Traceability
 
@@ -2031,7 +2753,7 @@ Existing ADR Supersession: none
 
 ```text
 decision_status: open
-No architecture option is accepted in Slice 4.
+No architecture option is accepted in Slice 5.
 ```
 
 ### Constraints
@@ -2042,13 +2764,14 @@ Front Matter와 Section 7의 Constraints를 적용한다.
 
 ```text
 Evidence Boundary, Decision Input State, and
-Slice 3~4 Considered Option evaluations only
-(Primary Deployment / Image / Registry / AWS DR Runtime / Traffic Failover)
+Slice 3~5 Considered Option evaluations only
+(Primary Deployment / Image / Registry / AWS DR Runtime / Traffic Failover /
+PostgreSQL Backup·Restore·Promotion)
 ```
 
 ### Required Follow-up
 
-- ADR-0016 Slice 5 - PostgreSQL Backup, Restore, Promotion and RTO/RPO Matrix
+- ADR-0016 Slice 6 - Integrated Recovery Topology, Drill and Decision Readiness
 - 후속 Slice의 대안 비교와 독립 Review
 - ADR Index와 DEC-066 연결은 별도 Slice
 
