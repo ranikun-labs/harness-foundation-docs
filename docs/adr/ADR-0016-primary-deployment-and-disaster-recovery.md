@@ -436,6 +436,22 @@ Vendor 문서는 PostgreSQL/AWS Capability, 지원 Configuration, Recovery·Repl
 방식, 서비스 책임 경계, 제한사항만 증명한다. 현재 Backup·WAL Archive·S3 Bucket·RDS
 존재, Restore 성공, 15분 RPO 또는 4시간 RTO 달성, Ranikun Labs 채택을 증명하지 않는다.
 
+### 4.10 Slice 6 Official Capability Evidence
+
+Accessed date: `2026-08-05`
+
+| Source | Capability Evidence | Not Evidence Of |
+|---|---|---|
+| [AWS Well-Architected Reliability Pillar](https://docs.aws.amazon.com/wellarchitected/latest/reliability-pillar/welcome.html) | Recovery objective 정의, 주기적 Data Recovery, DR 구현 Test와 Game Day 필요성 | 현재 Recovery Objective 달성 또는 Drill 실행 |
+| [AWS Defined Recovery Strategies](https://docs.aws.amazon.com/wellarchitected/latest/framework/rel_planning_for_recovery_disaster_recovery.html) | Backup/Restore, Pilot Light, Warm Standby, Multi-site 간 RTO/RPO·비용·복잡도 Trade-off와 IaC 사용 | Candidate A~D 채택 또는 비용 충족 |
+| [AWS Disaster Recovery Options](https://docs.aws.amazon.com/whitepapers/latest/disaster-recovery-workloads-on-aws/disaster-recovery-options-in-the-cloud.html) | Backup/Restore는 낮은 비용·복잡도와 높은 복구시간, Warm Standby는 축소된 기능 환경을 상시 유지하며 DR 전략을 정기 평가·시험해야 함 | AWS DR Runtime 존재 또는 Full Drill 성공 |
+| [Terraform Dependency Graph](https://developer.hashicorp.com/terraform/internals/graph) | Dependency 완료 후 독립 Node를 병렬 처리하는 Graph 실행 모델 | RPL-42 Infrastructure 재현 또는 안전한 Writer 활성화 |
+| [Terraform Plan](https://developer.hashicorp.com/terraform/cli/commands/plan) | Configuration과 State를 비교한 변경 Preview 및 저장 Plan 적용 | Terraform State, Provider, Plan 또는 Apply 실행 |
+
+Slice 6은 기존 Slice 3~5 공식 Source와 위 Source를 통합 Capability Evidence로만
+사용한다. 공식 문서도 Adoption, Runtime, 비용, 복구 성공 또는 RTO/RPO 달성 Evidence를
+대체하지 않는다.
+
 ---
 
 ## 5. Problem Statement
@@ -1944,43 +1960,683 @@ status: measurement_required
 
 실제 Drill이 실행됐다고 주장하지 않는다. Drill Evidence 저장 위치는 `open`이다.
 
+### 8.68 Integrated Recovery Problem
+
+Mac mini Primary 전체가 사용할 수 없을 때, 어떤 Artifact·Authority·Runtime·Database·
+Traffic 순서로 AWS DR 환경을 준비하고 검증해야 하며, 어떤 Evidence가 부족하면 Write
+또는 Traffic 전환을 중단해야 하는가?
+
+이 질문은 동일 승인 Release Image, Off-host Backup와 WAL, Primary Fencing, Database
+Restore, Read-only Validation, Writer Authority, Application Readiness, Human Approval,
+Traffic Failover, Failback/Re-seed, RTO/RPO 측정, 비용과 1인 운영 제약을 하나의 복구
+흐름으로 연결한다. Logical Service와 Data Ownership은 ADR-0012~0015를 유지하며 물리
+배치가 논리 소유권을 합치지 않는다.
+
+### 8.69 Integrated Candidate Topologies
+
+#### Candidate A — Cold Managed Application DR
+
+- Primary 후보: Mac mini + Docker Compose.
+- Artifact 후보: 동일 승인 Multi-platform OCI Image와 Digest.
+- Registry 후보: AWS DR 조건부 ECR, GHCR 대안.
+- AWS Application 후보: ECS Fargate + ALB.
+- AWS Database 후보: Application과 분리된 EC2/EBS PostgreSQL Cold Restore Runtime.
+- Backup 후보: Primary 밖의 암호화 Object Storage에 Base Backup + WAL.
+- Recovery 후보: Fencing → Restore → Read-only Validation → Human Promotion Approval.
+- Traffic 후보: Cloudflare Detection + Human Approval.
+- Failback 후보: DR Write Freeze → Primary Re-seed → Read-only Validation → Human Approval.
+
+평가: `planning_leader` integrated candidate. Accepted가 아니며 Database EC2 Runtime도
+`open`이고 `runtime_unverified`다.
+
+#### Candidate B — Compose-aligned Cold DR
+
+- Primary와 AWS Application 후보: 각각 Mac mini + Docker Compose, EC2 + Docker
+  Compose.
+- Database 후보: Application Host와 합치지 않는 독립 Runtime.
+- Data/Traffic 후보: Base Backup + WAL과 Human-approved Failover.
+- 장점 후보: Primary와 Runtime 모델 유사, Bootstrap·Debugging 단순화 가능.
+- 위험: OS·Docker·Compose 운영 책임, Host Failure Coupling, Application/Database를 한
+  EC2에 합칠 유혹, Cold Provision 시간.
+
+평가: `conditionally_viable` integrated candidate.
+
+#### Candidate C — Warm Data DR
+
+- AWS Application 후보: Fargate 또는 EC2.
+- AWS Database 후보: Warm Physical Standby.
+- Backup 후보: Base Backup + WAL Archive를 Standby와 병행.
+- Traffic 후보: Human-approved Failover.
+
+평가: Cold Restore가 RTO/RPO Target을 충족하지 못한다는 Drill Evidence가 있을 때의
+`conditional` candidate. 지속 복제, WAL 보존, Standby 운영과 비용 Evidence가 필요하다.
+
+#### Deferred Candidate D — Managed Primary
+
+- Managed PostgreSQL Primary와 AWS 중심 Application Runtime 후보.
+- 평가: `deferred` / initially not adopted. Primary Architecture 변경, Migration, 비용과
+  운영 경계에 별도 Decision이 필요하다.
+
+### 8.70 Integrated Topology Matrix
+
+| Criterion | Candidate A | Candidate B | Candidate C | Candidate D |
+|---|---|---|---|---|
+| User RTO Target | `target_not_verified` | `target_not_verified` | `target_not_verified` | `target_not_verified` |
+| PostgreSQL RPO Target | `target_not_verified` | `target_not_verified` | `target_not_verified` | `target_not_verified` |
+| Fixed Cost | `measurement_required` | `measurement_required` | `high` | `measurement_required` |
+| Incident Burst Cost | `measurement_required` | `measurement_required` | `medium` | `measurement_required` |
+| One-person Operation | `acceptable` | `weak` | `weak` | `acceptable` |
+| Primary/DR Artifact Reuse | `strong` | `strong` | `acceptable` | `acceptable` |
+| Application Runtime Consistency | `acceptable` | `strong` | `acceptable` | `weak` |
+| Database Recovery Speed | `measurement_required` | `measurement_required` | `strong` | `measurement_required` |
+| Backup Dependency | `high` | `high` | `high` | `high` |
+| Continuous Replication Dependency | `low` | `low` | `high` | `medium` |
+| Host OS Responsibility | `medium` | `high` | `high` | `low` |
+| Container Runtime Responsibility | `low` | `high` | `medium` | `low` |
+| Kubernetes Dependency | `low` | `low` | `low` | `low` |
+| Registry Failure Domain | `verification_required` | `verification_required` | `verification_required` | `verification_required` |
+| Backup Failure Domain | `verification_required` | `verification_required` | `verification_required` | `verification_required` |
+| AWS Region Coupling | `high` | `high` | `high` | `high` |
+| Cloudflare Coupling | `high` | `high` | `high` | `high` |
+| Split-brain Risk | `medium` | `medium` | `high` | `medium` |
+| Fencing Complexity | `high` | `high` | `high` | `high` |
+| Read-only Validation | `verification_required` | `verification_required` | `verification_required` | `verification_required` |
+| Promotion Complexity | `high` | `high` | `high` | `medium` |
+| Failback Complexity | `high` | `high` | `high` | `high` |
+| Re-seed Requirement | `high` | `high` | `high` | `verification_required` |
+| Drill Complexity | `high` | `high` | `high` | `high` |
+| Observability | `runtime_unverified` | `runtime_unverified` | `runtime_unverified` | `runtime_unverified` |
+| Auditability | `verification_required` | `verification_required` | `verification_required` | `verification_required` |
+| Terraform Reproducibility | `verification_required` | `verification_required` | `verification_required` | `verification_required` |
+| Current Evidence | `runtime_unverified` | `runtime_unverified` | `runtime_unverified` | `runtime_unverified` |
+| Blocking Verification | `blocked_by_evidence` | `blocked_by_evidence` | `blocked_by_evidence` | `blocked_by_evidence` |
+| Decision Readiness | `planning_leader` | `conditionally_viable` | `conditionally_viable` | `deferred` |
+
+평가값은 상대적 Architecture Candidate 평가다. `strong`도 Runtime 성공이나 Target
+달성을 의미하지 않는다.
+
+### 8.71 End-to-end Recovery Dependency Graph
+
+```text
+Incident Detection
+→ Operator Acknowledgement
+→ Failure Classification
+→ Primary Fencing
+→ Backup/WAL Validation
+→ Database Runtime Provision
+→ Base Backup Restore
+→ WAL Replay
+→ Database Read-only Validation
+→ Database Promotion Approval
+→ Application Runtime Start
+→ Application Read-only Validation
+→ Write Enable Approval
+→ Controlled Write Probe
+→ Traffic Failover Approval
+→ DR Active
+```
+
+| Stage | Inputs | Required Evidence | Owner | Blocks | State |
+|---|---|---|---|---|---|
+| Incident Detection | Health·Operator Signal | Timestamped Detection | Automated System observation | Acknowledgement | `runtime_unverified` |
+| Operator Acknowledgement | Detection | Operator Ack | 박성환 | Classification | `not_run` |
+| Failure Classification | Correlated Signals | Failure Class와 영향 | 박성환 | Fencing | `verification_required` |
+| Primary Fencing | Classification | Host·Network·Credential 격리 Evidence | 박성환 | Writer transfer | `verification_required` |
+| Backup/WAL Validation | Catalog·Manifest·WAL | Integrity, Gap, decryptability | 박성환 | Restore | `runtime_unverified` |
+| Database Runtime Provision | IaC·Version Inventory | Runtime Identity, Version, Extension | 박성환 | Base Restore | `planning_candidate` |
+| Base Backup Restore | Selected Backup | Restore Log, Manifest match | 박성환 | WAL Replay | `not_run` |
+| WAL Replay | Required WAL range | Gap-free Replay, Timeline | 박성환 | DB Validation | `not_run` |
+| Database Read-only Validation | Restored Cluster | Read-only, Schema, Critical Read | 박성환 | Promotion | `not_run` |
+| Database Promotion Approval | Fencing+Validation | Approval Record | 박성환 | Writer state | `verification_required` |
+| Application Runtime Start | Approved Digest·Config·Secret | Runtime/Readiness Evidence | 박성환 | App Validation | `runtime_unverified` |
+| Application Read-only Validation | App+DB read-only | Business Read, Schema Compatibility | 박성환 | Write Approval | `not_run` |
+| Write Enable Approval | Authority Record inputs | Single Writer Evidence와 Approval | 박성환 | Write Probe | `verification_required` |
+| Controlled Write Probe | Approved DR Writer | Write·Readback·Audit Result | 박성환 | Traffic Approval | `not_run` |
+| Traffic Failover Approval | All prior Evidence | Target, Rollback, Human Approval | 박성환 | DR Active | `verification_required` |
+| DR Active | Traffic switched | User Recovery Confirmation | 박성환 | Incident operation | `blocked_by_evidence` |
+
+```text
+Application Runtime은 Database Validation을 건너뛰지 않는다.
+Traffic Failover는 Writer Authority 이전을 대체하지 않는다.
+Health Check는 Fencing을 대체하지 않는다.
+Restore 완료는 Promotion 승인을 대체하지 않는다.
+```
+
+### 8.72 RTO Critical Path Candidate
+
+| Stage | Duration | Parallelizable | Blocking Dependency | Evidence Required | Drill Measurement Required |
+|---|---|---|---|---|---:|
+| 1. Detection | `unknown / measurement_required` | No | Incident 발생 | Detection timestamp | Yes |
+| 2. Operator Acknowledgement | `unknown / measurement_required` | No | Detection | Ack timestamp | Yes |
+| 3. Classification | `unknown / measurement_required` | Partially | Ack | Correlated failure evidence | Yes |
+| 4. Fencing | `unknown / measurement_required` | Partially | Classification | Fencing evidence | Yes |
+| 5. AWS Runtime Preparation | `unknown / measurement_required` | Yes | Incident declaration | IaC/runtime evidence | Yes |
+| 6. Backup Download | `unknown / measurement_required` | Partially | Backup selection | Object integrity | Yes |
+| 7. Base Restore | `unknown / measurement_required` | No | Runtime+download | Restore log | Yes |
+| 8. WAL Replay | `unknown / measurement_required` | No | Base Restore | WAL continuity·timeline | Yes |
+| 9. Database Validation | `unknown / measurement_required` | No | Replay | DB read evidence | Yes |
+| 10. Promotion Approval | `unknown / measurement_required` | No | Fencing+validation | Human approval | Yes |
+| 11. Application Startup | `unknown / measurement_required` | No | Database ready | Digest/config/readiness | Yes |
+| 12. Application Validation | `unknown / measurement_required` | No | Startup | Business read evidence | Yes |
+| 13. Write Probe | `unknown / measurement_required` | No | Write approval | Write/readback result | Yes |
+| 14. Traffic Switch | `unknown / measurement_required` | No | Probe+approval | Traffic audit | Yes |
+
+RTO 4시간은 위 Stage의 Drill 측정 전 `target_not_verified`다. 정확한 시간이나 병렬화
+효과를 발명하지 않는다.
+
+### 8.73 Parallelization Boundary
+
+병렬 준비 후보: AWS Network Runtime 준비 · Image Pull · Backup Catalog 확인 · Secret/
+Configuration 확인 · Operator Evidence 준비 · Application Task Definition 준비.
+
+직렬 Gate: Fencing 이전 Write Enable 금지 · Base Restore 이후 WAL Replay · Database
+Validation 이후 Promotion · Promotion 이후 Controlled Write · Write Approval 이후 Traffic
+Failover.
+
+```text
+Parallel Preparation ≠ Parallel Writer Activation
+```
+
+Terraform Dependency Graph의 병렬 실행 Capability도 Writer Authority Gate를 자동으로
+만족시키지 않는다.
+
+### 8.74 Abort / Stop Conditions
+
+| Condition | Automatic Stop | Human Review | Allowed Fallback | Write Allowed |
+|---|---:|---:|---|---:|
+| Primary Fencing 불확실 | Yes | Required | Maintenance, 추가 격리 | No |
+| Backup Manifest 불일치 | Yes | Required | 다른 검증 Backup | No |
+| WAL Gap | Yes | Required | 이전 Recovery Point 재선택 | No |
+| Restore Target 불명확 | Yes | Required | Target Evidence 재수집 | No |
+| PostgreSQL Version 불일치 | Yes | Required | 호환 Runtime 재구성 | No |
+| Extension 누락 | Yes | Required | Extension 설치·재복구 | No |
+| Schema/Migration 불일치 | Yes | Required | 승인 Digest/Schema 재선택 | No |
+| Database Read Validation 실패 | Yes | Required | 재복구 또는 Maintenance | No |
+| Business Read Validation 실패 | Yes | Required | 재복구 또는 Partial Maintenance | No |
+| Secret/Configuration 불일치 | Yes | Required | Version 재선택 | No |
+| Image Digest 불일치 | Yes | Required | 승인 Digest 재확보 | No |
+| Controlled Write 실패 | Yes | Required | DR Write Freeze·조사 | No |
+| Human Approval 없음 | Yes | Required | Maintenance | No |
+| Writer Authority 불명확 | Yes | Required | Authority 재구성 | No |
+| Cloudflare Target만 Healthy이고 Database Evidence 없음 | Yes | Required | Maintenance/Manual Review | No |
+| Operator가 상황을 확정할 수 없음 | Yes | Required | Maintenance/지원 안내 | No |
+
+Unknown 상태에서는 Write를 금지하고 Traffic은 Maintenance 또는 Manual Review 후보로
+제한한다. Unknown Evidence를 소비해 Candidate를 승격하거나 Architecture Decision을
+승인하지 않는다.
+
+### 8.75 Maintenance / Degraded Mode Candidates
+
+| Mode | Purpose | Writer Authority | Runtime State |
+|---|---|---|---|
+| Full Maintenance | 불확실한 복구 중 모든 Business 처리 중단 | Not granted | `runtime_unverified` |
+| Read-only Service | 검증된 Read만 제한 제공 | Not granted | `runtime_unverified` |
+| Partial Product Availability | 복구된 무상태 기능만 제한 제공 | Scope-specific, open | `runtime_unverified` |
+| Static Status Page | Recovery 상태와 안내 제공 | Not applicable | `runtime_unverified` |
+| Manual Resume / Support Guidance | Operator 승인 후 재개 경로 안내 | Not granted | `runtime_unverified` |
+| Retry-after Response | 일시적 재시도 신호 | Not granted | `runtime_unverified` |
+
+```text
+Partial Availability ≠ DR Complete
+Read-only Service ≠ Writer Authority Granted
+```
+
+사용자 UX와 제공 Mode는 Slice 6에서 채택하지 않는다.
+
+### 8.76 Integrated Failure Domain Map
+
+| Failure Domain | Primary Impact | DR Impact | Shared Coupling | Mitigation Candidate |
+|---|---|---|---|---|
+| Mac mini Host | Primary 전체 중단 | 직접 영향 없음 후보 | Primary App+DB 결합 가능 | Off-host Artifact/Backup |
+| Local Power | Primary 중단 | 직접 영향 없음 후보 | Router·Host 동시 중단 | AWS DR, 외부 Detection |
+| Local Network | Traffic/Archive 중단 | 최신 WAL Gap 가능 | Tunnel·Backup 전송 | Lag 관찰, Manual Review |
+| Router | Primary 접근 중단 | Fencing 불확실 가능 | Local Network | 독립 Fencing Evidence |
+| Cloudflare Account | Traffic Control 상실 | DR 전환 불가 | Primary/DR 공통 Provider | Break-glass·Account Review |
+| Cloudflare Network | Public Traffic 영향 | DR도 영향 | 단일 Edge Provider | Maintenance, 대안은 open |
+| AWS Account | DR 전체 영향 | DR 불가 | ECR·ECS·ALB·EC2·S3·IAM | IAM/Account Boundary |
+| AWS Region | DR 전체 영향 | DR 불가 | ECR+ECS+ALB+EC2+EBS | Cross-region `deferred` |
+| VPC | DR 통신 중단 | App/DB 접근 불가 | ALB·ECS·EC2 | Terraform·Network Drill |
+| ALB | Application ingress 중단 | Traffic 수용 불가 | ECS Target | Health+Fallback 설계 |
+| ECS/Fargate | DR App 중단 | Candidate A 영향 | ECR·IAM·VPC | EC2 alternative |
+| EC2 | DB 또는 Compose DR 중단 | Candidate A/B/C 영향 | Host OS·EBS | App/DB Host 분리 |
+| EBS | PostgreSQL Storage 영향 | Restore/DB 중단 | EC2 AZ/Region | Backup 재복구 |
+| ECR | Image Pull 중단 | ECS/EC2 Start 지연 | AWS Account/Region/IAM | GHCR alternative, digest export |
+| GHCR | Image Pull 중단 | Alternative 경로 중단 | GitHub Account/Network | ECR conditional |
+| S3/Object Storage | Backup/WAL 접근 중단 | Restore 불가 | Region·IAM·Key | Retention·복제는 open |
+| IAM | AWS 작업 중단 | Provision/Pull/Restore 불가 | AWS 전체 Control Plane | 최소권한·break-glass |
+| Encryption Key | Backup Decrypt 불가 | Restore 불가 | Backup와 Key 결합 위험 | 분리 보관·복구 시험 |
+| DNS | 사용자 경로 중단 | Traffic Switch 지연 | Cloudflare/Registrar | 상태 페이지·Manual Review |
+| Operator | 승인/판단 중단 | RTO 초과 가능 | 단일 인물 Authority | Future delegated operator |
+| Repository/CI | Build/IaC 접근 중단 | Bootstrap 지연 | Image/Config/Plan | 승인 Digest·Artifact 보존 |
+| Registry Credential | Pull 중단 | Runtime Start 불가 | Registry/IAM | Versioned break-glass |
+| Backup Credential | Backup/WAL 접근 중단 | Restore 불가 | Object Store/IAM | 분리 Owner·복구 시험 |
+
+ECR+ECS+ALB의 같은 Region 결합, Cloudflare 단일 Provider 결합, 단일 Operator 의존,
+Backup Data와 Decryption Key 결합을 Decision 전 검증한다. Primary와 Registry, Primary와
+유일 Backup은 같은 Host에 두지 않는다. Application과 PostgreSQL을 같은 EC2에 합치면
+Host Failure Domain이 다시 결합되므로 초기 후보에서 분리한다. Cross-region은
+`deferred`다.
+
+### 8.77 Trust / Authority Boundary
+
+| Authority | Current Owner | Future Candidate | Automated System Boundary |
+|---|---|---|---|
+| Architecture Decision Authority | 박성환 | Future delegated reviewer | Evidence collection only |
+| Incident Declaration Authority | 박성환 | Future delegated operator | Detection only |
+| Primary Fencing Authority | 박성환 | Future delegated operator | Non-destructive validation only |
+| Backup Selection Authority | 박성환 | Future delegated operator | Catalog/Integrity evidence only |
+| Restore Target Authority | 박성환 | Future delegated operator | Candidate calculation only |
+| Database Promotion Authority | 박성환 | Future delegated operator | Never initial owner |
+| Application Write Enable Authority | 박성환 | Future delegated operator | Never initial owner |
+| Traffic Failover Authority | 박성환 | Future delegated operator | Health observation only |
+| Failback Authority | 박성환 | Future delegated operator | Preparation only |
+| Incident Close Authority | 박성환 | Future delegated operator | Evidence collection only |
+
+Automated System 후보 범위는 Detection, Evidence Collection, Health Observation,
+Runtime Preparation과 Non-destructive Validation까지다. Database Writer Promotion,
+Write Authority Transfer, Traffic Failover Final Approval, Automatic Failback과 Incident
+Close를 초기 Candidate에서 소유하지 않는다.
+
+### 8.78 Integrated Human Authority Matrix
+
+기존 §12 Human Authority Matrix와 Database Authority Matrix를 삭제하지 않고 다음
+End-to-end Projection으로 연결한다.
+
+| Action | Automated Signal | Human Decision | Required Evidence | Owner | Audit Required |
+|---|---|---|---|---|---:|
+| Incident Declare | Health/Operator Signal | Required | Detection·Ack | 박성환 | Yes |
+| Primary Unavailable 판정 | Correlated Signals | Required | Failure Classification | 박성환 | Yes |
+| Primary Fencing | Isolation observation | Required | Fencing Reference | 박성환 | Yes |
+| Backup 선택 | Catalog/Integrity | Required | Manifest·Decrypt·WAL Range | 박성환 | Yes |
+| Restore Target 선택 | Candidate boundary | Required | Business/WAL boundary | 박성환 | Yes |
+| Database Restore 시작 | Runtime readiness | Required | Incident·Backup·Target | 박성환 | Yes |
+| Database Read-only 승인 | DB validation | Required | Version·Extension·Schema·Read | 박성환 | Yes |
+| Database Promotion 승인 | Validation passed | Required | Fencing+Restore+Timeline | 박성환 | Yes |
+| Application Read-only 승인 | App readiness | Required | Digest·Config·Business Read | 박성환 | Yes |
+| Write Credential 활성화 | None | Required | Writer Authority Record | 박성환 | Yes |
+| Controlled Write Probe 승인 | Write readiness | Required | Single Writer·Rollback Target | 박성환 | Yes |
+| Traffic Failover 승인 | Target Health | Required | Probe+Traffic Gate | 박성환 | Yes |
+| Failback 시작 | Primary recovery signal | Required | Incident/DR Authority | 박성환 | Yes |
+| Primary Re-seed | Re-seed progress | Required | Source Timeline·Method | 박성환 | Yes |
+| DR Write Freeze | None | Required | Freeze·Credential Evidence | 박성환 | Yes |
+| Primary Promotion | Validation passed | Required | DR fenced+Primary read-only | 박성환 | Yes |
+| Traffic Failback 승인 | Primary readiness | Required | Write Probe+Rollback Target | 박성환 | Yes |
+| Incident Close | Evidence completeness | Required | Final Authority·Timeline·Findings | 박성환 | Yes |
+
+### 8.79 Integrated Writer Authority Record Candidate
+
+| Field | Purpose |
+|---|---|
+| `incident_id` | Incident 상관관계 |
+| `authority_state` | Single Writer 상태 |
+| `active_environment` | 현재 활성 환경 참조 |
+| `database_identity_reference` | Database Runtime Identity 참조 |
+| `timeline_reference` | PostgreSQL Timeline 참조 |
+| `application_release_digest` | 승인 Release Digest |
+| `configuration_version_reference` | Configuration Version 참조 |
+| `secret_version_reference` | Secret Version 참조 |
+| `fencing_evidence_reference` | Primary/DR Fencing Evidence 참조 |
+| `restore_evidence_reference` | Backup·WAL·Restore Evidence 참조 |
+| `validation_evidence_reference` | DB/App Validation 참조 |
+| `approved_by` | Human Approver |
+| `approved_at` | Approval Timestamp |
+| `superseded_authority_reference` | 직전 Authority Record 참조 |
+| `failback_state` | Failback 진행 상태 |
+
+이는 Architecture Candidate이며 구현된 Schema가 아니다. 실제 Secret, Host, IP,
+Domain, Account ID를 기록하지 않는다.
+
+State 후보: `primary_authoritative` · `authority_unknown` · `primary_fenced` ·
+`dr_read_only` · `dr_promotion_pending` · `dr_authoritative` · `failback_pending` ·
+`dr_write_frozen` · `primary_read_only` · `primary_promotion_pending` ·
+`primary_authoritative_restored` · `incident_closed`.
+
+### 8.80 Write Authority Transition Matrix
+
+| From | To | Required Evidence | Human Approval | Forbidden When |
+|---|---|---|---:|---|
+| `primary_authoritative` | `authority_unknown` | Incident declaration | Yes | Incident 근거 없음 |
+| `authority_unknown` | `primary_fenced` | Primary Fencing Evidence | Yes | 격리 불확실 |
+| `primary_fenced` | `dr_read_only` | Restore+Read-only Startup | Yes | Backup/WAL/Version 불일치 |
+| `dr_read_only` | `dr_promotion_pending` | DB·Business Read Validation | Yes | Validation 실패 |
+| `dr_promotion_pending` | `dr_authoritative` | Fencing+Promotion+Credential | Yes | 다른 Writer 가능 |
+| `dr_authoritative` | `failback_pending` | Primary 복구 계획 | Yes | Incident 안정화 전 |
+| `failback_pending` | `dr_write_frozen` | Re-seed 완료 준비 | Yes | DR Write 지속 |
+| `dr_write_frozen` | `primary_read_only` | Primary Re-seed+DR Fence | Yes | Timeline 불명확 |
+| `primary_read_only` | `primary_promotion_pending` | Primary Read Validation | Yes | Schema/Business Read 실패 |
+| `primary_promotion_pending` | `primary_authoritative_restored` | Single Writer+Write Probe | Yes | DR Writer 가능 |
+| `primary_authoritative_restored` | `incident_closed` | Traffic Failback+Evidence 보존 | Yes | 미해결 Finding |
+
+동시에 두 `authoritative` Writer 상태가 존재해서는 안 된다. 상태 전이 Record가
+불완전하면 `authority_unknown`으로 취급하고 Write를 금지한다.
+
+### 8.81 Failover Timeline Candidate
+
+| Point | Event | Audit Evidence Candidate |
+|---|---|---|
+| T0 | Detection | Detection timestamp/source |
+| T1 | Operator Acknowledgement | Ack record |
+| T2 | Primary Fenced | Fencing reference |
+| T3 | Backup Selected | Backup/manifest reference |
+| T4 | Database Runtime Ready | Runtime identity/version |
+| T5 | Base Restore Complete | Restore log |
+| T6 | WAL Replay Complete | WAL range/timeline |
+| T7 | Database Validation Complete | Read-only validation |
+| T8 | Promotion Approved | Human approval |
+| T9 | Application Read-only Ready | Digest/readiness/business read |
+| T10 | Write Probe Passed | Write/readback evidence |
+| T11 | Traffic Switched | Traffic approval/change reference |
+| T12 | User Recovery Confirmed | User-facing validation |
+
+RTO 측정 후보는 `T12 - T0`다. 각 Timestamp는 Audit Evidence 후보이며 Full Drill 전
+검증된 RTO 값이 아니다.
+
+### 8.82 RPO Evidence Candidate
+
+- Last Committed Business Event Time
+- Last Required WAL Generation Time
+- Last Archived WAL Completion Time
+- Last Recoverable WAL Sequence
+- Restore Target Time
+- Restored Business Event Time
+- Missing Segment Check
+- Timeline Reference
+- Drill-measured Data Loss Window
+
+```text
+Last Archived Time ≠ Verified Business Recovery Point
+
+RPO candidate measurement
+= Incident Data Boundary - Verified Restored Business Boundary
+```
+
+Incident Data Boundary와 Business Event의 정확한 계산·상관 방식은 `open`이고 Drill
+Evidence가 필요하다.
+
+### 8.83 Integrated Drill Matrix
+
+| Drill | Scope | Destructive | Production Traffic | Measures RTO | Measures RPO | Frequency Candidate |
+|---|---|---:|---:|---:|---:|---|
+| Backup Presence Check | Catalog·Base·WAL 존재 | No | No | No | No | Monthly Restore Check |
+| Backup Integrity Check | Manifest·Decrypt·Gap | No | No | No | Partially | Monthly Restore Check |
+| Limited Restore Check | 제한 Restore·Startup·Read | Isolated only | No | Partially | Partially | Monthly Restore Check |
+| Full Database Restore Drill | Full Base+WAL+Validation | Isolated only | No | Yes | Yes | Quarterly Full DR Drill |
+| Application Read-only Drill | Digest·Config·Business Read | No | No | Yes | No | Quarterly Full DR Drill |
+| Traffic Failover Simulation | Health·Approval·Synthetic switch | Approval required | Open | Yes | No | Quarterly Full DR Drill |
+| Writer Authority Transfer Simulation | Fencing·Promotion·Record | Approval required | No | Yes | No | Quarterly Full DR Drill |
+| Full Failback/Re-seed Drill | Freeze·Re-seed·Validation·return | Isolated only | Open | Yes | Partially | Quarterly/Event-driven |
+| Security Credential Loss Drill | Registry/Backup/Key access loss | No real destruction | No | Partially | Partially | Event-driven Drill |
+| Operator Unavailable Tabletop | Escalation·Maintenance decision | No | No | Partially | No | Before Major Architecture Change |
+
+Monthly/Quarterly는 승인 Input으로 유지한다. 나머지 Frequency는 Candidate이며 Backup,
+Runtime 또는 Major Architecture 변경 후 Event-driven Drill을 검토한다.
+
+### 8.84 Monthly Restore Check Scope
+
+최소 후보: Backup Catalog 발견 · Base Backup 존재 · Manifest/Integrity 확인 ·
+Decryption 가능 · Required WAL 범위 확인 · 제한된 Restore · PostgreSQL Startup · Schema
+Version 확인 · Critical Read Query · Evidence 기록.
+
+Monthly Check만으로 Full Traffic Failover, Writer Promotion, Full RTO, Full RPO와
+Failback은 검증되지 않는다.
+
+### 8.85 Quarterly Full DR Drill Scope
+
+최소 후보: Primary Host Loss 가정 · Detection · Operator Acknowledgement · Fencing
+Simulation 또는 승인된 실제 격리 · AWS Runtime Provision · Image Pull · Full PostgreSQL
+Restore · WAL Replay · Database Read-only Validation · Application Read-only Startup ·
+Promotion Approval Simulation · Controlled Write · Traffic Failover Simulation · RTO 측정 ·
+RPO 측정 · Failback/Re-seed · Incident Close Evidence.
+
+실제 Production Traffic 사용 여부는 `open`이며 별도 승인 없이는 사용하지 않는다.
+
+### 8.86 Drill Safety Boundary
+
+금지 또는 별도 승인이 필요한 행위: 실제 Production Writer 중복 생성 · Production
+Credential 무승인 폐기 · 실제 Traffic 무승인 전환 · Backup Retention 삭제 · 실제
+Encryption Key 폐기 · Production Database Promotion · Production Data Directory 덮어쓰기 ·
+실제 DNS/Cloudflare 무승인 변경.
+
+Drill Mode 후보: Isolated Sandbox · Dedicated AWS DR Environment · Read-only Restore ·
+Synthetic Traffic · Controlled Maintenance Window. Slice 6에서 하나를 채택하지 않는다.
+
+### 8.87 Drill Evidence Schema Candidate
+
+| Field | Purpose |
+|---|---|
+| `drill_id`, `drill_type` | Drill 식별과 유형 |
+| `started_at`, `completed_at` | 전체 측정 경계 |
+| `scope` | 포함·제외 범위 |
+| `source_backup_reference` | Source Backup 참조 |
+| `restore_target_reference` | 복구 목표 참조 |
+| `application_release_digest` | 실행 Artifact Digest |
+| `database_version_reference` | PostgreSQL Version 참조 |
+| `extension_inventory_reference` | Extension Inventory 참조 |
+| `rto_measurement`, `rpo_measurement` | 측정 결과와 단위 |
+| `stage_measurements` | Critical Path 단계별 결과 |
+| `failed_stage` | 실패 단계 |
+| `findings` | 발견 사항 |
+| `remediation_owner` | 후속 조치 Owner |
+| `next_due` | 다음 점검 후보일 |
+| `approved_by` | 승인자 |
+| `evidence_location_reference` | Evidence Store 참조 |
+
+이는 Architecture Candidate이며 실제 Evidence Store는 `open`이다.
+
+### 8.88 Decision Readiness Matrix
+
+| Area | Current State | Evidence Available | Blocking Evidence | Decision Ready |
+|---|---|---|---|---|
+| Primary Runtime | `runtime_unverified` | Planning comparison | Host/runtime inventory | `blocked_by_runtime_discovery` |
+| Image Architecture | `planning_leader` | Official capability | Product build/test | `partially` |
+| Registry | `planning_leader` | Official capability | Account/ownership/cost | `partially` |
+| AWS Application Runtime | `planning_leader` | Official capability | Fargate/EC2 prototype | `blocked_by_runtime_discovery` |
+| Traffic Failover | `approved_target` | Human direction/invariant | Current traffic state | `partially` |
+| Primary Fencing | `verification_required` | Invariant | Mechanism/proof | `no` |
+| Read-only Mode | `runtime_unverified` | Validation requirement | Implementation/prototype | `no` |
+| PostgreSQL Backup | `runtime_unverified` | Official capability | Design/prototype | `no` |
+| WAL Archive | `runtime_unverified` | Official capability | Gap/lag evidence | `no` |
+| Restore Runtime | `open` | EC2 candidate | Runtime selection/drill | `no` |
+| Promotion | `verification_required` | Invariant | Procedure/drill | `blocked_by_drill` |
+| Writer Authority | `planning_candidate` | State/record candidate | Storage/control design | `blocked_by_security_design` |
+| Failback/Re-seed | `verification_required` | Boundary/candidate order | Full drill | `blocked_by_drill` |
+| Cloudflare | `runtime_unverified` | Official capability | Account/config discovery | `blocked_by_runtime_discovery` |
+| IAM | `runtime_unverified` | Role boundary candidate | Account/IAM design | `blocked_by_security_design` |
+| Secret Management | `runtime_unverified` | Version reference candidate | Storage/rotation/recovery | `blocked_by_security_design` |
+| Terraform | `planning_candidate` | Official capability | State/provider/spike | `partially` |
+| Monitoring | `runtime_unverified` | Signal requirements | Runtime observability | `no` |
+| Cost | `measurement_required` | Approved guardrail | Resource/usage estimate | `blocked_by_cost_measurement` |
+| Monthly Drill | `approved_target / not_run` | Scope defined | Restore evidence | `blocked_by_drill` |
+| Quarterly Drill | `approved_target / not_run` | Scope defined | Full DR evidence | `blocked_by_drill` |
+| RTO | `target_not_verified` | 4-hour target | Stage/full drill measurement | `blocked_by_drill` |
+| RPO | `target_not_verified` | 15-minute target | WAL/business boundary measurement | `blocked_by_drill` |
+
+### 8.89 Verified and Unverified Boundary
+
+Architecture Level에서 확인된 것: User-approved Cost/RTO/RPO Target · Human-approved
+Failover 방향 · Existing ADR Preservation · Planning Leader 후보 · Failure Domain과
+Invariant · 필요한 Test/Drill 종류 · Authority Boundary.
+
+아직 확인되지 않은 것: 실제 Mac mini Hardware · 실제 Docker/Compose Runtime · 실제
+PostgreSQL Host/Version · Database Size · WAL Rate · Backup 존재 · WAL Archive 존재 · AWS
+Account/IAM · ECS/Fargate 호환성 · EC2 Bootstrap · ALB Health · Cloudflare 실제 구성 ·
+Fencing 구현 · Read-only 구현 · Restore 성공 · Promotion 성공 · Cost · RTO/RPO.
+
+### 8.90 Decision Blockers
+
+| # | Blocker | Classification |
+|---:|---|---|
+| 1 | Runtime Inventory | `runtime_discovery_required` |
+| 2 | PostgreSQL Version/Extension Inventory | `runtime_discovery_required` |
+| 3 | Database Size/WAL Measurement | `measurement_required` |
+| 4 | Backup/Archive Design | `architecture_decision_required` |
+| 5 | Restore Runtime 선택 | `architecture_decision_required` |
+| 6 | Fencing Mechanism | `architecture_decision_required` |
+| 7 | Read-only Mechanism | `architecture_decision_required` |
+| 8 | Writer Authority Storage/Control | `architecture_decision_required` |
+| 9 | AWS Account/IAM Boundary | `runtime_discovery_required` |
+| 10 | Cloudflare Current State | `runtime_discovery_required` |
+| 11 | Image Compatibility | `implementation_required` |
+| 12 | Cost Estimate | `measurement_required` |
+| 13 | Monthly Restore Evidence | `drill_required` |
+| 14 | Quarterly Full DR Drill Evidence | `drill_required` |
+| 15 | RTO/RPO Measurement | `measurement_required` |
+| 16 | Security Review | `independent_review_required` |
+| 17 | Independent ADR Review | `independent_review_required` |
+| 18 | User Final Approval | `human_approval_required` |
+
+### 8.91 Pre-decision Allowed and Prohibited Work
+
+ADR이 `open`이어도 허용 가능한 후보: Runtime Inventory · Cost Estimate · AWS Account/
+IAM Discovery · Cloudflare State Discovery · PostgreSQL Inventory · Isolated Backup
+Prototype · Isolated Restore Drill · Image Compatibility Test · Terraform Spike · Read-only
+Mechanism Spike · Fencing Design · Evidence Schema Design. 실제 Production 변경은 별도
+Jira와 승인에 의해서만 가능하다.
+
+Final Decision 전 금지: Production Primary 변경 · Production Database Migration · RDS
+Primary 전환 · Automatic Failover/Failback 활성화 · Cloudflare Traffic 정책 변경 ·
+Production Credential 폐기 · Production Backup Retention 삭제 · Writer Promotion 자동화 ·
+Accepted ADR 표현 · RTO/RPO 달성 표현 · RPL-42 완료 전환.
+
+### 8.92 Integrated Decision Candidate Summary
+
+```text
+Current integrated planning candidate:
+- Mac mini Primary: Docker Compose
+- Artifact: Multi-platform OCI Image
+- Registry: ECR conditional, GHCR alternative
+- AWS Application DR: ECS Fargate + ALB
+- AWS Database DR: Cold Base Backup + WAL Restore on separate PostgreSQL Runtime candidate
+- Traffic: Health Detection + Human Approval
+- Write: Fencing + Read-only Validation + Human Promotion Approval
+- Failback: Re-seed + Human Approval
+- Drill: Monthly Restore Check + Quarterly Full DR Drill
+- IaC: Terraform planning candidate
+- Kubernetes: deferred
+- Automatic Failover: deferred / not recommended initially
+- Automatic Failback: prohibited initial candidate
+- Managed PostgreSQL Primary: deferred
+
+Decision state: open
+Decision readiness: not_ready_without_runtime_discovery_and_drill
+```
+
+### 8.93 Integrated Alternatives Summary
+
+| Alternative | State | Boundary |
+|---|---|---|
+| EC2 + Docker Compose Application DR | conditional alternative | Fargate 호환성·Compose 동등성 Evidence |
+| Warm Physical Standby | conditional alternative | Cold Restore가 Target 실패 시 |
+| GHCR Registry Independence | conditional alternative | AWS Failure Domain 분리 필요 시 |
+| Managed PostgreSQL Primary | deferred | Primary Migration Decision 필요 |
+| EKS | deferred | ADR-0015 Trigger 필요 |
+| Fully Manual Failover | not recommended initially | Detection 지연·절차 편차 |
+| Fully Automatic Failover | not recommended initially | Fencing·Split-brain Evidence 부족 |
+| DNS-only Switch | not recommended as sole mechanism | Writer Authority/Readiness 미보장 |
+| Dump-only Recovery | not recommended as sole mechanism | PITR/RPO 불충분 |
+
+### 8.94 Integrated Consequence Candidates
+
+현재 통합 후보를 나중에 채택할 경우의 긍정 후보: 평상시 Compute 비용 제한 가능성 ·
+동일 OCI Artifact 재사용 · Managed Application Runtime · Human-approved Write/Traffic ·
+PostgreSQL Native PITR · 명확한 Authority Evidence · Drill 가능한 단계 분리.
+
+부정 후보: 복구 절차가 길고 복잡함 · 1인 Operator 의존 · Cold Restore 시간 불확실 ·
+여러 AWS/Cloudflare/IAM 구성 필요 · Database Runtime 별도 운영 · Manual Approval로 RTO
+초과 가능 · Failback/Re-seed 복잡성 · Cost 측정 필요 · Cross-region 부재.
+
+### 8.95 Architecture Decision Readiness Gate
+
+| Gate | Required Evidence | Current State |
+|---|---|---|
+| A — Document Completeness | All matrices/invariants/alternatives, ADR 보존, Truthfulness | `complete` |
+| B — Runtime Discovery | Host, Runtime, PostgreSQL, Backup, Cloudflare, AWS/IAM | `not_started` |
+| C — Feasibility | Image Build, Fargate/EC2 Start, Restore, Read-only, Fencing, Promotion | `not_started` |
+| D — Measurement | Cost, Stage Durations, WAL Lag, Restore Time, RTO/RPO | `not_started` |
+| E — Drill | Monthly Restore, Quarterly Full DR, Failback/Re-seed | `not_started` |
+| F — Governance | Independent Review, Human Decision, DEC-066, ADR Index, Decision Log, PR Merge Gate | `blocked` |
+
+Gate A의 `complete`는 Slice 6 문서 요구 충족 후보이며 Architecture Decision 승인이나
+Runtime Evidence를 뜻하지 않는다. Gate F는 B~E와 독립 Review 전 진행할 수 없다.
+
+### 8.96 Follow-up Jira Candidates
+
+| # | Candidate | Architecture / Runtime Boundary |
+|---:|---|---|
+| 1 | Runtime Inventory and Evidence | Discovery only |
+| 2 | Container Image and Compose Baseline | Product runtime implementation |
+| 3 | AWS Account / IAM / Network Foundation | Security architecture 후 implementation |
+| 4 | Registry and Release Digest | Artifact governance 후 implementation |
+| 5 | PostgreSQL Backup / WAL Prototype | Isolated data prototype |
+| 6 | PostgreSQL Restore Drill | Isolated drill/evidence |
+| 7 | AWS Application DR Prototype | Non-production runtime prototype |
+| 8 | Fencing and Writer Authority | Authority design 후 control implementation |
+| 9 | Read-only Application Mode | Product behavior implementation |
+| 10 | Cloudflare Failover Prototype | Non-production traffic prototype |
+| 11 | Terraform Foundation | State/security decision 후 IaC implementation |
+| 12 | Observability and Audit Evidence | Evidence architecture 후 runtime implementation |
+| 13 | Full DR Drill | Integrated verification |
+| 14 | Failback/Re-seed Drill | Isolated destructive-boundary verification |
+
+이번 Slice는 Jira를 생성하지 않고 Architecture와 Runtime 구현을 분리한 후보만 기록한다.
+
+### 8.97 Portfolio / Governance Projection Candidate
+
+RPL-31 Landscape와 RPL-33 Catalog에 향후 반영할 후보: Primary Runtime Placement · DR
+Runtime Candidate · Backup Storage Boundary · Writer Authority · Traffic Failover Boundary ·
+Drill Ownership. Architecture Accepted 이후 Projection Update가 필요하며 현재 Catalog와
+Confluence는 수정하지 않는다.
+
 ---
 
 ## 9. Decision
 
-**No architecture option is accepted in Slice 5.**
+**No architecture option is accepted in Slice 6.**
 
-현재 Decision은 `open`이다. Slice 1~4의 평가는 그대로 Planning 상태로 보존되며
-Slice 5에서 Accepted로 승격되지 않는다. Slice 5는 PostgreSQL Business SSOT의
-Backup·Restore·Promotion 대안의 현재 평가만 추가한다.
+현재 Decision은 `open`이다. Slice 1~5의 평가는 Planning 상태로 보존되며 Slice 6은
+이를 End-to-end Recovery Candidate, Drill과 Decision Readiness Gate로 연결할 뿐
+Accepted로 승격하지 않는다.
 
 ```text
-Preserved planning leaders (still open, not accepted):
-- Primary Deployment: Docker Compose
-- Image Architecture: Multi-platform OCI Image
-- Registry: AWS ECR conditional on AWS DR (alt: GHCR)
-- AWS Application DR Runtime: ECS Fargate + Application Load Balancer
-- Traffic Failover: Health Detection + Human-approved Failover
+Current integrated planning candidate (open, not accepted):
+- Mac mini Docker Compose Primary
+- Multi-platform OCI Image
+- ECR conditional / GHCR alternative
+- ECS Fargate + ALB Application DR
+- Cold Base Backup + WAL PostgreSQL Recovery on a separate runtime candidate
+- Health Detection + Human Approval
+- Primary Fencing before Write
+- Read-only Validation before Promotion
+- Manual Failback with Re-seed
+- Monthly Restore Check
+- Quarterly Full DR Drill
+- Terraform planning candidate
 
-Slice 5 planning leader (open, not accepted):
-- PostgreSQL Data DR: Base Backup + Continuous WAL Archive 기반 Cold Restore
+Conditional alternatives:
+- EC2 + Docker Compose
+- Warm Physical Standby
+- GHCR
 
-Conditional alternative:
-- AWS EC2 Warm Physical Standby
-
-Deferred / initially not adopted:
+Deferred:
+- EKS
 - Managed PostgreSQL Primary
-- K3s / Kubernetes, Harbor, EKS
+- Cross-region DR
 - Fully Automatic Failover
-- Cross-region DR / Cross-region Backup
 
-Not recommended as canonical path:
-- Logical Dump-only / Incident-time Manual Rebuild
+Initial prohibition candidate:
+- Automatic Failback
 
-Initial candidate prohibition:
-- Automatic (Traffic and Database) Failback
+Decision readiness: not_ready
+Blocking reasons:
+- runtime discovery
+- cost measurement
+- restore drill
+- full DR drill
+- fencing/read-only design
+- independent review
+- user approval
 
-PostgreSQL Data DR Decision: open
+decision_status: open
 ```
 
 이 문구는 Considered Option 평가이며 Accepted Decision이 아니다. 다음 표현을
@@ -1988,7 +2644,7 @@ PostgreSQL Data DR Decision: open
 동작 중이다", "EC2 Standby가 존재한다", "RDS를 사용한다", "RPO 15분을 달성했다",
 "RTO 4시간을 달성했다", "Restore가 검증됐다", "Promotion이 구현됐다".
 
-These planning evaluations require later RPL-42 decision approval.
+These planning evaluations require later RPL-42 independent review and user decision approval.
 
 ### Ownership
 
@@ -2041,6 +2697,21 @@ No decision has been accepted in this section. 아래는 Slice 4 Planning Leader
 
 이 Slice 5 Rationale도 Full Restore/Failover/Failback Drill 전까지 Decision이 아니다.
 
+### Slice 6 Rationale (No decision accepted)
+
+- Candidate A는 동일 OCI Artifact, Managed Application Runtime과 Cold Data Restore를
+  연결해 현재 비용·1인 운영 Driver에 가장 잘 맞는 통합 `planning_leader`다.
+- Candidate B는 Compose 동등성을 얻는 대신 Host OS와 Container Runtime 책임을 늘린다.
+- Candidate C는 Cold Restore가 목표를 못 맞출 때 Recovery Speed를 위해 비용·복잡도·
+  Continuous Replication 의존을 수용하는 조건부 후보다.
+- Health, Runtime 준비와 Evidence 수집은 병렬화할 수 있지만 Writer Authority 전이는
+  Fencing·Validation·Human Approval을 따라 직렬이어야 한다.
+- Document Completeness만으로 Runtime Feasibility, Cost 또는 RTO/RPO를 증명할 수 없으므로
+  Decision Readiness는 `not_ready`다.
+
+이 Slice 6 Rationale도 Architecture Option 채택 근거가 아니라 독립 Review 전 비교
+Projection이다.
+
 ---
 
 ## 11. Consequences
@@ -2090,6 +2761,16 @@ No decision has been accepted in this section. 아래는 Planning Leader가 채�
 - PostgreSQL은 Business SSOT, Redis는 Business SSOT 아님을 유지한다(ADR-0013).
 - 같은 PostgreSQL Cluster 사용도 Logical Ownership을 통합하지 않는다.
 - Backup 존재, WAL Archive 동작, Restore 성공, RPO/RTO 달성을 주장하지 않는다.
+
+### Slice 6 Consequences (No decision accepted)
+
+채택 시 긍정 후보: 평상시 Compute 비용 제한 가능성 · 동일 OCI Artifact 재사용 ·
+Managed Application Runtime · Human-approved Write/Traffic · PostgreSQL Native PITR ·
+명확한 Authority Evidence · Drill 가능한 단계 분리.
+
+채택 시 부담 후보: 긴 복구 Critical Path · 1인 Operator 의존 · Cold Restore 시간
+불확실 · AWS/Cloudflare/IAM 운영 표면 · 별도 Database Runtime · Approval 지연 ·
+Failback/Re-seed 복잡성 · Cost 측정 필요 · Cross-region 부재.
 
 ---
 
@@ -2349,6 +3030,26 @@ Canonical Evidence로 사용하지 않는 항목:
 Drill Policy(§8.67)의 Monthly Restore Check와 Quarterly Full DR Drill은 승인된 목표로
 유지되며 실제 실행 여부는 `not_run`이다.
 
+### Slice 6 Integrated Recovery Verification Candidates
+
+각 상태는 `not_run`, `runtime_unverified` 또는 `verification_required`다.
+
+- **Topology**: Candidate A/B/C Application·Database Host 분리 · 승인 Digest 재사용 ·
+  Registry/Backup Failure Domain 분리.
+- **Dependency**: Fencing 없는 Writer 전이 거부 · Database Validation 전 Application
+  Write 거부 · Write Probe 전 Traffic Switch 거부.
+- **Abort**: Manifest 불일치 · WAL Gap · Version/Extension/Schema 불일치 · Secret/Config/
+  Digest 불일치 · Approval 부재에서 Write/Traffic Stop.
+- **Authority**: Writer Authority Record 전이 · Dual-authoritative State 거부 · Failback
+  중 DR Write Freeze.
+- **Drill**: Monthly Restore Check · Quarterly Full DR Drill · RTO Stage Timestamp · RPO
+  Business Boundary · Evidence Schema 보존.
+
+```text
+Document completeness ≠ runtime feasibility
+Partial availability ≠ DR complete
+```
+
 ---
 
 ## 18. Migration and Rollback
@@ -2458,6 +3159,14 @@ Promotion ≠ Reversible without new restore
   전제(`wal_log_hints` 또는 checksum)를 검증해야 한다.
 - Monthly Restore Check와 Quarterly Full DR Drill의 Evidence 저장 위치·Owner를 정해야
   한다.
+- Integrated Writer Authority Record의 저장·동시성 제어·감사 보존 방식을 정해야 한다.
+- Maintenance, Read-only와 Partial Availability의 Product UX와 Write 차단 방식을
+  검증해야 한다.
+- Critical Path 각 Stage와 Failover Timeline T0~T12를 Drill에서 측정해야 한다.
+- RPO의 Incident Data Boundary와 Verified Restored Business Boundary 상관 방식을
+  검증해야 한다.
+- Candidate A의 별도 PostgreSQL Runtime, Candidate B의 App/DB Host 분리, Candidate C의
+  지속 복제 비용과 운영 부담을 비교해야 한다.
 
 ```text
 Implementation note
@@ -2507,6 +3216,11 @@ Implementation Notes는 실행 코드나 운영 구성의 Source of Truth가 아
 - Warm Standby Cost와 Cross-region Backup(`deferred`)이 미측정·미결정이다.
 - Full Restore/Failover/Failback Drill이 `not_run`이라 RPO 15분·RTO 4시간은
   `target_not_verified`다.
+- Integrated Candidate A~D 모두 Runtime Inventory, Cost, Fencing, Read-only와 Drill
+  Evidence가 부족해 Decision Readiness는 `not_ready`다.
+- Operator 단일 인물 의존과 Cloudflare/AWS 단일 Provider 결합은 해소되지 않았다.
+- Slice 5에서 `## 19. Implementation Notes` 구조 Header 누락이 복구됐고 현재 Canonical
+  Tip의 26개 주요 Section 구조는 정상이다. Runtime Architecture 의미 변경은 없다.
 
 ---
 
@@ -2669,6 +3383,9 @@ DB 정책과 Drill 주기는 Open Question으로 되돌리지 않는다.
   Slots, pg_rewind, Hot Standby, SQL Dump
 - AWS official documentation (Slice 5): S3 Object Lock, S3 Default Encryption, EBS
   Snapshots, RDS Point-in-time Recovery, RDS Multi-AZ, AWS Backup
+- AWS official documentation (Slice 6): Well-Architected Reliability Pillar, Defined
+  Recovery Strategies, Disaster Recovery Options in the Cloud
+- Terraform official documentation (Slice 6): Dependency Graph, Plan
 
 ### Affected Documents
 
@@ -2704,6 +3421,7 @@ Existing ADR Supersession: none
 | 2026-08-04 | open | open | not_applicable | not_applicable | Slice 3에서 Primary Deployment, Image와 Registry 대안을 비교 | RPL-42 / Comment 10144 |
 | 2026-08-05 | open | open | not_applicable | not_applicable | Slice 4에서 AWS DR Runtime과 승인 기반 Traffic Failover 대안을 비교 | RPL-42 / Comment 10144 |
 | 2026-08-05 | open | open | not_applicable | not_applicable | Slice 5에서 PostgreSQL Backup/Restore/Promotion과 RPO/RTO 검증 경계를 비교 | RPL-42 / Comment 10144 |
+| 2026-08-05 | open | open | not_applicable | not_applicable | Slice 6에서 통합 복구 흐름, Drill과 Decision Readiness 조건을 연결 | RPL-42 / Comment 10144 |
 
 이 History는 Architecture Option Approval이 아니다.
 
@@ -2722,6 +3440,7 @@ Existing ADR Supersession: none
 - [x] AWS DR Runtime과 Traffic Failover의 실질적 대안을 비교했다.
 - [x] 선택 이유(Planning Leader)를 Driver와 연결했다.
 - [x] Slice 3·Slice 4 모두 Architecture Option을 채택하지 않았다.
+- [x] Slice 6에서 Candidate A~D를 통합 비교하고 Accepted Decision과 분리했다.
 
 ### Safety
 
@@ -2730,6 +3449,7 @@ Existing ADR Supersession: none
 - [x] Slice 5에서 Promotion Invariant·Writer Authority·Backup Storage Failure Domain을 정의했다.
 - [x] 실제 Secret, Credential, Host, IP, Account ID, Bucket을 기록하지 않았다.
 - [x] Slice 4~5에서 AWS/Cloudflare/Backup Storage Failure Domain 결합 위험을 검토했다.
+- [x] Slice 6에서 Abort, Writer Authority 전이와 Drill Safety Boundary를 정의했다.
 
 ### Traceability
 
@@ -2744,6 +3464,8 @@ Existing ADR Supersession: none
 - [x] Planning Candidate와 Adoption을 분리했다.
 - [x] Repository Module과 Production Deployment를 분리했다.
 - [x] Runtime 구현 상태를 `not_started`로 기록했다.
+- [x] Decision Readiness를 `not_ready`로 유지하고 RTO/RPO를 `target_not_verified`로
+  기록했다.
 
 ---
 
@@ -2753,7 +3475,7 @@ Existing ADR Supersession: none
 
 ```text
 decision_status: open
-No architecture option is accepted in Slice 5.
+No architecture option is accepted in Slice 6.
 ```
 
 ### Constraints
@@ -2764,15 +3486,15 @@ Front Matter와 Section 7의 Constraints를 적용한다.
 
 ```text
 Evidence Boundary, Decision Input State, and
-Slice 3~5 Considered Option evaluations only
+Slice 3~6 Considered Option evaluations only
 (Primary Deployment / Image / Registry / AWS DR Runtime / Traffic Failover /
-PostgreSQL Backup·Restore·Promotion)
+PostgreSQL Backup·Restore·Promotion / Integrated Recovery / Drill / Decision Readiness)
 ```
 
 ### Required Follow-up
 
-- ADR-0016 Slice 6 - Integrated Recovery Topology, Drill and Decision Readiness
-- 후속 Slice의 대안 비교와 독립 Review
+- ADR-0016 Slice 7 - Independent Full Review and User Decision Preparation
+- 통합 Candidate의 독립 Review와 사용자 Decision 준비
 - ADR Index와 DEC-066 연결은 별도 Slice
 
 ### Review and Approval
