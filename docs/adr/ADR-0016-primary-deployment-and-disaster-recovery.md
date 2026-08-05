@@ -218,9 +218,13 @@ Jira Mac mini M4 input
 |---|---|
 | `verified_fact` | Stable Source 또는 직접 검증으로 확인된 사실 |
 | `approved_target` | 권한 있는 사용자가 승인한 목표이며 달성 Evidence는 별도인 상태 |
+| `planning_leader` | 현재 Driver 비교에서 선두인 후보이며 Decision 승인 전 상태 |
 | `planning_candidate` | 후속 비교·검수 대상이며 아직 채택되지 않은 후보 |
+| `conditionally_viable` | 명시된 조건과 검증을 충족하면 선택 가능한 후보 |
 | `open` | Architecture 선택이 아직 결정되지 않은 상태 |
 | `deferred` | Trigger 또는 선행 Evidence 전까지 결정을 미룬 상태 |
+| `not_recommended` | 현재 Driver 기준 우선순위가 낮지만 영구 배제하지 않은 상태 |
+| `verification_required` | 판단 또는 승인 전에 지정 Evidence가 필요한 상태 |
 | `not_implemented` | 해당 기능이나 Runtime이 구현되지 않았음이 확인된 상태 |
 | `runtime_unverified` | 실행 여부를 판단할 Runtime Evidence가 확보되지 않은 상태 |
 | `target_not_verified` | 승인 목표가 Drill 또는 측정으로 달성 검증되지 않은 상태 |
@@ -232,6 +236,11 @@ approved_target ≠ achieved
 planning_candidate ≠ adopted
 runtime_unverified ≠ not_running
 deferred ≠ rejected
+
+planning_leader
+≠ selected
+≠ adopted
+≠ implementation approved
 ```
 
 ### 4.4 Existing Decision Preservation
@@ -379,6 +388,29 @@ runtime_unverified
 `runtime_unverified`는 확인 Evidence가 없다는 의미다. 대상이 존재하지 않거나
 실행되지 않는다고 판정하지 않는다.
 
+### 4.8 Slice 3 Official Capability Evidence
+
+Accessed date: `2026-08-04`
+
+| Source | Capability Evidence | Not Evidence Of |
+|---|---|---|
+| [Docker Multi-platform Builds](https://docs.docker.com/build/building/multi-platform/) | Manifest list, platform variant, Buildx와 build strategy | Product image compatibility 또는 build 성공 |
+| [Docker Compose Services](https://docs.docker.com/reference/compose-file/services/) | Healthcheck, dependency, resource, restart와 runtime configuration | 현재 Compose 운영 |
+| [Docker Compose Secrets](https://docs.docker.com/compose/how-tos/use-secrets/) | Service별 secret file 주입 | Secret 원본 보호 또는 현재 구성 |
+| [Docker Image Pull by Digest](https://docs.docker.com/reference/cli/docker/image/pull/) | Immutable digest pull | Rollback 검증 완료 |
+| [Docker Compose in Production](https://docs.docker.com/compose/how-tos/production/) | Single-server production override와 recreate 방식 | Host HA 또는 Ranikun Labs 채택 |
+| [GitHub Container Registry](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry) | OCI/Docker artifact와 token authentication | GHCR package 존재 |
+| [GitHub Packages Permissions](https://docs.github.com/en/packages/learn-github-packages/about-permissions-for-github-packages) | Package role과 repository permission model | 현재 Organization ownership |
+| [Amazon ECR Image Push](https://docs.aws.amazon.com/AmazonECR/latest/userguide/image-push.html) | OCI image와 multi-architecture manifest push | ECR repository 존재 |
+| [Amazon ECR Lifecycle Policies](https://docs.aws.amazon.com/AmazonECR/latest/userguide/LifecyclePolicies.html) | Image expiration/archive rule과 preview | Rollback digest 보존 정책 설정 |
+| [Amazon ECR Private Registry Replication](https://docs.aws.amazon.com/AmazonECR/latest/userguide/replication.html) | Cross-region/cross-account replication capability | DR Region 요구 또는 복제 구성 |
+| [Harbor Repository and Artifact Documentation](https://goharbor.io/docs/2.14.0/working-with-projects/working-with-images/repositories/) | OCI artifact, digest와 image index 관리 | Harbor instance 존재 |
+| [Harbor Installation Prerequisites](https://goharbor.io/docs/2.14.0/install-config/installation-prereqs/) | 설치 자원과 자체 운영 prerequisite | 1인 운영 적합성 또는 HA 완료 |
+
+Vendor 문서는 제품 Capability, 지원 Configuration, 지원 Architecture와 운영상
+제약만 증명한다. 현재 Runtime 구성, 비용 상한 충족, Product Image 호환 또는
+장애 복구 검증을 증명하지 않는다.
+
 ---
 
 ## 5. Problem Statement
@@ -439,6 +471,9 @@ Driver는 해결책 이름이나 기술 채택 선언이 아니다.
 - System Catalog와 Confluence를 Canonical Decision으로 사용하지 않는다.
 - Kubernetes 재검토는 ADR-0015 Trigger를 따른다.
 - Runtime 구현은 별도 Jira와 구현 Repository가 소유한다.
+- Harbor를 Mac mini Primary와 동일 Failure Domain에 배치하지 않는다.
+- Primary Runtime Host 상실이 유일한 승인 복구 Image의 상실로 이어지지 않아야
+  한다.
 
 #### Approved Operational Constraints
 
@@ -476,34 +511,468 @@ Preference, Assumption과 Known Limitation은 Hard Constraint와 혼합하지 �
 
 ## 8. Considered Options
 
-Pending later RPL-42 writer slice.
-No decision has been accepted in this section.
+### 8.1 Primary Deployment Problem
 
-Compose, Image Architecture, Registry, AWS Runtime, Data DR, Traffic 전환과
-Infrastructure 관리 대안은 후속 Slice에서 실질적으로 비교한다.
+단일 Mac mini에서 여러 Product·Shared Service 후보를 운영하면서 재시작,
+Health Check, 설정 주입, Resource 제한, Rollback과 AWS DR Artifact 재사용을
+어떤 배포 방식으로 일관되게 제공할 것인가?
+
+### 8.2 Primary Deployment Evaluation Matrix
+
+| Criterion | Native Host Process | Docker Compose | K3s / Kubernetes | VM Appliance |
+|---|---|---|---|---|
+| Process Supervision | acceptable, supervisor 의존 | strong | strong | acceptable, guest OS 의존 |
+| Restart Policy | acceptable | strong | strong | acceptable |
+| Health Check | weak, service별 편차 | strong | strong | weak |
+| Readiness 표현 | weak | acceptable | strong | weak |
+| Dependency Ordering | weak | acceptable | strong | weak |
+| Configuration Injection | weak, host drift | strong | strong | weak, image 결합 |
+| Secret Injection | weak, host별 절차 | acceptable | strong | weak |
+| Resource Limit | weak | acceptable | strong | acceptable |
+| Resource Isolation | weak | acceptable | strong | strong |
+| Log Collection | acceptable | acceptable | strong | acceptable |
+| Observability Integration | acceptable | acceptable | strong | acceptable |
+| Deployment Reproducibility | weak | strong | strong | acceptable |
+| Immutable Artifact 사용 | weak | strong | strong | acceptable, OS 결합 |
+| Rollback | weak | strong candidate | strong | acceptable, coarse-grained |
+| Host Reboot Recovery | acceptable, supervisor 검증 필요 | acceptable, test required | strong | acceptable |
+| Mac mini 적합성 | strong for single app | acceptable, verification_required | high overhead | medium |
+| AWS DR Artifact 재사용 | weak | strong | medium, local/cloud 차이 | weak |
+| Operational Complexity | medium | low | high | medium |
+| Upgrade Complexity | medium | medium | high | high |
+| Storage / Network Complexity | low but implicit | medium | high | medium |
+| 1인 운영 적합성 | acceptable for one app | strong candidate | weak | weak |
+| Failure Domain | single host | single host | single node면 동일 | host image와 결합 |
+| ADR-0015 Kubernetes Trigger | not_applicable | trigger evidence not_found | trigger evidence not_found | not_applicable |
+
+#### Native Host Process
+
+**Advantages**
+
+- 초기 도구 수가 적다.
+- Host Resource 접근이 직접적이다.
+- 단일 Application에는 단순할 수 있다.
+
+**Disadvantages and risks**
+
+- Service별 Runtime, 언어 Version과 OS Package가 drift할 수 있다.
+- Process Supervisor 품질에 재시작과 Host reboot 복구가 의존한다.
+- Health와 Readiness 의미가 Service마다 달라질 수 있다.
+- Rollback이 Binary·JAR·설정 교체 절차에 의존한다.
+- AWS DR Runtime과 Artifact 모델이 달라질 수 있다.
+- Secret, Environment와 Deployment Evidence가 Host별로 달라질 수 있다.
+
+```text
+planning assessment: not_recommended
+```
+
+실제 Service가 하나이고 Container 도입 비용이 더 크다는 Evidence가 생기면
+재평가할 수 있다. 이 평가는 최종 비채택이 아니다.
+
+#### Docker Compose
+
+**Advantages**
+
+- OCI Image로 Application Runtime을 고정할 수 있다.
+- Service별 Health Check, Restart Policy, Environment와 Secret Injection을
+  구조화할 수 있다.
+- Resource Limit과 Host reboot 복구 절차의 후보를 제공한다.
+- Digest 기반 Image 선택과 Rollback을 설계할 수 있다.
+- Mac mini와 AWS DR에서 동일 Image를 재사용할 수 있다.
+- Kubernetes보다 운영 복잡도가 낮아 1인 운영 Driver에 상대적으로 적합하다.
+
+**Disadvantages and risks**
+
+- Host 자체 HA와 Multi-host Scheduling을 제공하지 않는다.
+- 단일 Host Failure를 해결하지 않는다.
+- Storage와 Network Failure는 별도 설계가 필요하다.
+- Secret 원본 보호를 자동 해결하지 않는다.
+- Compose File과 운영 Override의 Version 관리가 필요하다.
+- Stateful Service 복구와 Image Build·Registry·Promotion은 별도 Concern이다.
+
+```text
+planning assessment: planning_leader
+adoption state: open
+```
+
+**Verification required**
+
+- 실제 Docker Engine / Compose Version
+- Product Image Build
+- Service Health / Readiness
+- Resource 사용량
+- Host Reboot Test
+- Digest Rollback Test
+
+낮은 운영 복잡도, 동일 Artifact 재사용, 재현 가능한 Rollback 후보와
+Kubernetes Trigger 미충족이 현재 Driver상 선두인 이유다.
+
+#### K3s / Kubernetes
+
+ADR-0015 Trigger:
+
+- 복수 물리 Node
+- Service Replica
+- 자동 수평 확장
+- Zero-downtime Deployment 요구
+- 다수 운영자
+- Compose 또는 단일 Host 운영의 측정된 병목
+
+```text
+trigger evidence: not_found
+planning state: deferred
+```
+
+Control Plane, upgrade, CNI/DNS, Ingress, Storage Class/Persistent Volume,
+backup, certificate, secret, observability와 Node lifecycle 운영이 필요하다.
+Local K3s와 AWS EKS의 운영·Network·Storage 차이도 별도 검증 대상이다.
+
+서비스 개수 증가만으로 Kubernetes Trigger가 충족되지 않는다. `deferred`는
+영구 배제 또는 불필요 판정이 아니다.
+
+#### VM Appliance
+
+**Advantages**
+
+- 전체 Environment Snapshot과 Host 수준 격리를 제공할 수 있다.
+- 긴급 Bare-metal Host 복구 Image 후보가 될 수 있다.
+
+**Disadvantages and risks**
+
+- Application Artifact와 OS Artifact가 결합된다.
+- Patch, Security Update와 큰 Image 배포 책임이 생긴다.
+- AWS Runtime 이식성과 Service별 독립 Rollback이 약하다.
+- Compose/OCI와 병행하면 Artifact가 중복된다.
+
+```text
+planning assessment: not_recommended
+```
+
+전체 Host Image는 Application Deployment보다 별도 Host Recovery Procedure
+후보로 재검토할 수 있다.
+
+### 8.3 Primary Deployment Planning Result
+
+```text
+Current planning leader: Docker Compose
+
+Reason:
+- single-host operation
+- one-person operational capacity
+- reproducible OCI artifact
+- digest-based rollback candidate
+- AWS DR image reuse
+- Kubernetes triggers not verified
+
+Decision state: open
+
+Blocking verification:
+- actual Mac mini runtime
+- Docker Engine / Compose compatibility
+- product container build
+- health/readiness behavior
+- stateful volume boundary
+- host reboot and rollback test
+```
+
+이 결과는 Considered Option 평가이며 Decision이 아니다.
+
+### 8.4 Image Architecture Problem
+
+Mac mini Primary와 AWS DR Runtime이 동일 Source Revision과 동일 Release
+Identity를 사용하면서 ARM64·AMD64 차이를 안전하게 처리할 Image Architecture는
+무엇인가?
+
+Mac mini M4는 Jira Baseline이며 실제 Runtime Hardware는 `runtime_unverified`다.
+
+### 8.5 Image Architecture Matrix
+
+| Criterion | ARM64-only | AMD64-only | Multi-platform OCI Image |
+|---|---|---|---|
+| Mac mini Compatibility | conditionally_viable | emulation 가능성 | strong candidate after verification |
+| AWS Fargate Compatibility | verification_required | verification_required | verification_required |
+| AWS EC2 Choice | ARM instance 중심 | broad x86 choice | broad ARM/x86 choice |
+| Graviton 사용 가능성 | strong | not_applicable | strong |
+| Emergency x86 Runtime | weak | strong | strong |
+| Local Build Speed | strong if ARM verified | weak if emulated | medium |
+| Emulation Requirement | low | high candidate | medium, build strategy 의존 |
+| Native Dependency Risk | high until verified | medium until verified | high, 양쪽 검증 필요 |
+| Build Complexity | low | low | high |
+| CI Complexity | low | low | high |
+| Test Matrix | one platform | one platform | ARM64 + AMD64 |
+| Image Size | one platform | one platform | manifest 전체 저장량 증가 |
+| Release Identity | platform-specific | platform-specific | one manifest reference candidate |
+| Manifest List | not_applicable | not_applicable | strong |
+| Per-platform Digest | strong | strong | required |
+| Immutable Deployment | strong with digest | strong with digest | strong with manifest/platform digest |
+| Rollback | acceptable if retained | acceptable if retained | acceptable if all digests retained |
+| Security Scan | one platform | one platform | platform별 required |
+| SBOM / Provenance | one platform | one platform | platform별 required |
+| Current Evidence | unknown | unknown | unknown |
+
+#### ARM64-only
+
+Apple Silicon Primary 및 Graviton AWS Runtime과 일치하고 emulation을 줄일 수 있는
+비용·성능 후보다. 반면 x86-only Native Dependency, 일부 Vendor Image·Agent와
+Emergency AMD64 Runtime 선택을 제한할 수 있다.
+
+```text
+planning assessment: conditionally_viable
+verification: verification_required
+```
+
+실제 Mac Architecture와 모든 Dependency 검증 전 Planning Leader가 아니다.
+
+#### AMD64-only
+
+AWS와 Vendor Image, x86 전용 Dependency 및 Emergency EC2 선택 폭이 넓을 수
+있다. 반면 Apple Silicon에서 emulation, Local Build/Run 성능 저하와 Primary/DR
+Architecture 불일치가 생길 수 있고 ARM64 비용·성능 선택을 잃는다.
+
+```text
+planning assessment: conditionally_viable
+verification: verification_required
+```
+
+Mac Primary에 부적합할 가능성을 검증해야 하지만 최종 배제하지 않는다.
+
+#### Multi-platform OCI Image
+
+**Advantages**
+
+- 하나의 Release Tag 또는 Manifest Reference로 ARM64/AMD64 variant를 연결한다.
+- ARM64 Mac과 ARM64/AMD64 AWS 선택 및 Emergency Runtime 폭을 보존한다.
+- 동일 Source Revision 기반 Release와 Platform별 Digest를 추적할 수 있다.
+- Primary와 DR의 Artifact 모델을 통일할 수 있다.
+
+**Disadvantages and risks**
+
+- Build 시간과 Platform별 Test Matrix가 증가한다.
+- Native Dependency Build가 Platform별로 실패할 수 있다.
+- Manifest와 Child Digest를 함께 관리해야 한다.
+- 같은 Tag여도 Platform Blob은 서로 다르다.
+- Security Scan과 SBOM을 Platform별로 확인해야 한다.
+- CI 장애 시 Emergency Build 절차가 필요하다.
+
+```text
+planning assessment: planning_leader
+adoption state: open
+```
+
+**Verification required**
+
+- Product Repository별 Dockerfile
+- Base Image Multi-architecture 지원
+- JNI / Native Library와 OS Package
+- ARM64 Test와 AMD64 Test
+- Manifest Inspection
+- Per-platform Digest 기록
+- Rollback Rehearsal
+- Emergency Build Path
+
+### 8.6 Release Identity Boundary
+
+최종 채택 전 Candidate Requirement:
+
+| Field | Candidate meaning |
+|---|---|
+| `source_revision` | Build 입력 Source Commit |
+| `release_version` | 사람이 추적하는 Release Identity |
+| `image_tag` | 가변 alias일 수 있는 Registry Reference |
+| `manifest_digest` | Multi-platform manifest의 immutable identity |
+| `platform` | `os/architecture` target |
+| `platform_digest` | 실제 실행되는 Platform manifest/blob identity |
+| `built_at` | Build 시각 |
+| `build_evidence` | 재현 가능한 Build 기록 |
+| `security_scan_state` | Platform별 scan 상태 |
+| `promotion_state` | Candidate/approved promotion 상태 |
+| `rollback_candidate` | 보존된 이전 승인 digest 여부 |
+
+- Mutable Tag만으로 Production Release를 식별하지 않는다.
+- Deployment Evidence는 Digest를 기록해야 한다.
+- Manifest Digest와 Platform-specific Digest를 구분한다.
+- Rollback 대상 Digest는 Registry Retention에서 보존돼야 한다.
+- Same tag는 same binary를 의미하지 않는다.
+- Image 존재는 Runtime 검증 완료를 의미하지 않는다.
+
+실제 Tag Convention과 Registry Policy는 아직 `open`이다.
+
+### 8.7 Registry Problem
+
+Primary Host 전체를 잃어도 승인된 Application Image를 검증 가능한 Digest로
+가져와 AWS DR Runtime을 복구할 수 있도록 Registry를 어떤 Failure Domain과
+권한 경계에 배치할 것인가?
+
+### 8.8 Registry Matrix
+
+| Criterion | ECR | GHCR | Harbor | No Registry |
+|---|---|---|---|---|
+| Primary Host Failure Independence | strong | strong | independent host면 acceptable | weak, build env 의존 |
+| AWS DR Integration | strong candidate | acceptable, external pull | acceptable, network 필요 | weak |
+| AWS IAM Integration | strong | weak | weak | not_applicable |
+| GitHub Integration | acceptable | strong | acceptable | build source만 의존 |
+| Multi-platform Manifest | strong | strong | strong | weak |
+| Digest Pull | strong | strong | strong | weak |
+| Authentication | IAM/token | token | local project/account | ad-hoc |
+| Read / Push Role Separation | strong | strong | acceptable | weak |
+| Public / Private Pull | private strong, public 별도 | both | configurable | not_applicable |
+| Retention | lifecycle rule | verification_required | self-managed | weak |
+| Lifecycle Policy | strong | verification_required | self-managed | not_applicable |
+| Replication | cross-region/account candidate | unknown | self-managed | not_applicable |
+| Cross-region Availability | configurable | vendor failure domain | HA/replication required | weak |
+| Availability Coupling | AWS Region/account | GitHub | own infrastructure | build environment |
+| Backup Requirement | policy/replication decision | export/retention decision | high | artifact archive required |
+| Upgrade Requirement | low, managed | low, managed | high | build toolchain 유지 |
+| Security Patch Responsibility | managed service boundary | managed service boundary | operator | build environment owner |
+| Operational Complexity | low | low | high | high during recovery |
+| Vendor Lock-in | AWS | GitHub | self-hosted stack | build tooling |
+| Cost Predictability | measurement_required | measurement_required | measurement_required | measurement_required |
+| One-person Operation | strong candidate | strong candidate | weak | weak |
+| Cost Cap Compatibility | measurement_required | measurement_required | measurement_required | measurement_required |
+| Current Runtime Evidence | runtime_unverified | runtime_unverified | runtime_unverified | runtime_unverified |
+
+Region, usage, retention과 replication이 확정되지 않았으므로 정확한 비용을
+기록하지 않는다.
+
+#### AWS ECR
+
+**Advantages**
+
+- ECS/Fargate와 IAM 기반 연결 후보이며 OCI multi-architecture manifest와 digest
+  pull을 지원한다.
+- Lifecycle Policy, Account/Region 권한 분리와 cross-region/cross-account
+  replication 후보가 있다.
+- AWS DR Runtime과 운영 경계를 통합할 수 있다.
+
+**Disadvantages and risks**
+
+- AWS Account/Region에 종속되고 DR Region 장애와 Registry Failure Domain이
+  결합될 수 있다.
+- Replication 비용·정책과 IAM/Network 접근 설정이 필요하다.
+- Lifecycle 오설정으로 Rollback Image를 삭제할 수 있다.
+- Primary Mac의 pull credential과 Vendor Lock-in을 관리해야 한다.
+
+```text
+planning assessment: planning_leader if AWS DR is selected
+adoption state: open
+```
+
+Required evidence: AWS account access, `ap-northeast-2` service availability, IAM
+ownership, cost estimate, retention policy, rollback digest retention과 cross-region
+requirement.
+
+#### GHCR
+
+Source Repository/Package 연결, GitHub Actions build 후보, OCI multi-platform
+artifact와 digest pull을 제공하고 AWS Region과 다른 Failure Domain을 제공할 수
+있다. Public/Private distribution 선택도 가능하다.
+
+PAT/GitHub Token, Package visibility와 Repository 권한, Organization/Personal
+ownership을 구분해야 한다. AWS Runtime은 External Registry Network에 의존하고
+GitHub 장애가 DR pull에 영향을 줄 수 있으며 AWS IAM과 직접 통합되지 않는다.
+
+```text
+planning assessment: planning_candidate
+preferred when: registry independence from AWS is a stronger driver
+```
+
+ECR과 GHCR의 우열은 Driver 우선순위에 따라 달라진다.
+
+#### Harbor
+
+Self-hosted OCI Registry로 Repository/Project, digest와 image index를 직접 통제할
+수 있다. 반면 설치, upgrade, backup, HA, TLS, storage, security patch와 Registry
+자체 DR을 운영해야 한다. 별도 Host와 Database/Storage가 필요할 수 있어 1인
+운영 부담이 높다.
+
+```text
+Hard Constraint:
+Harbor를 Mac mini Primary와 동일 Failure Domain에 배치하지 않는다.
+
+planning assessment: deferred
+
+re-evaluation trigger:
+- independent registry infrastructure required
+- vendor-hosted registry prohibited
+- operational capacity for HA and backup available
+```
+
+`deferred`는 Harbor의 영구 거부가 아니다.
+
+#### No Registry
+
+장애 시 Source에서 다시 Build하거나 Local tar를 수동 전달하면 승인 Digest와
+Provenance가 약해진다. Build Environment 상실, Dependency Download 실패,
+복구시간 증가, 동일 Binary 재현 실패와 Rollback Artifact 부족 위험이 있다.
+
+```text
+planning assessment: not_recommended
+```
+
+Local Export Artifact는 긴급 보조 경로가 될 수 있으나 Canonical Registry를
+대체하지 않는다.
+
+### 8.9 Registry Failure Domain Rule
+
+```text
+Primary Runtime Host failure
+must not automatically remove
+the only approved recovery image.
+```
+
+- Registry는 Mac mini Primary와 독립된 Failure Domain이어야 한다.
+- Build/Push 권한과 Pull 권한을 분리한다.
+- DR Runtime은 Read-only Pull 권한을 사용한다.
+- Lifecycle Policy가 Rollback Digest를 실수로 삭제하지 않도록 보호한다.
+- Registry Credential 상실에 대한 Break-glass 절차가 필요하다.
+- Registry 장애 시 이전 승인 Image를 가져올 보조 전략이 필요하다.
+- Image Retention/Backup은 Database Backup과 별도 Concern이다.
+
+### 8.10 Candidate Relationship
+
+```text
+Docker Compose planning leader
+→ OCI Image required
+
+Multi-platform OCI Image planning leader
+→ Registry must preserve manifest and platform digests
+
+AWS ECR conditional planning leader
+→ integration benefit if AWS DR is selected
+```
+
+- Compose 선택은 ECR 선택을 강제하지 않는다.
+- Multi-platform 선택은 Fargate 선택을 강제하지 않는다.
+- AWS DR 선택은 Registry를 반드시 AWS에 두도록 강제하지 않는다.
 
 ---
 
 ## 9. Decision
 
-**No architecture option is accepted in Slice 2.**
+**No architecture option is accepted in Slice 3.**
 
-현재 Decision은 `open`이다. Slice 2는 Verified Fact, Approved Target,
-Planning Candidate와 Runtime-unverified 상태를 분리한다.
+현재 Decision은 `open`이다. Slice 3는 Primary Deployment, Image Architecture와
+Registry 대안의 현재 평가만 기록한다.
 
-| Technology | State |
-|---|---|
-| Docker Compose | `planning_candidate` |
-| Multi-platform Image | `planning_candidate` |
-| ECR | `planning_candidate` |
-| ECS Fargate + ALB | `planning_candidate` |
-| Cold Restore | `planning_candidate` |
-| S3 Backup/WAL | `planning_candidate` |
-| Cloudflare Approval-gated Failover | `planning_candidate` |
-| Terraform | `planning_candidate` |
-| Kubernetes / EKS / Helm / Harbor | `deferred` |
+```text
+Current planning leaders:
+- Primary Deployment: Docker Compose
+- Image Architecture: Multi-platform OCI Image
+- Registry: AWS ECR if AWS DR is selected
 
-이 표는 비교할 상태만 정의하며 Architecture 선택을 승인하지 않는다.
+Conditional alternative:
+- GHCR when Registry failure-domain independence from AWS is prioritized
+
+Deferred:
+- K3s / Kubernetes
+- Harbor
+
+Primary Deployment Decision: open
+Image Architecture Decision: open
+Registry Decision: open
+```
+
+These planning evaluations require later RPL-42 decision approval.
 
 ### Ownership
 
@@ -580,6 +1049,10 @@ Merge, Runtime Action Approval 또는 Write Enable Approval로 확대 해석하�
 같은 Host 또는 같은 Database Cluster에 배치하더라도 Logical Owner와 Migration
 Owner는 통합되지 않는다.
 
+Container Image와 Registry는 Local Runtime과 별도 Failure Domain을 갖는 복구
+Artifact Concern이다. Image Retention은 PostgreSQL Backup 보존을 대체하지 않고,
+Database Backup도 Application Image를 대체하지 않는다.
+
 ---
 
 ## 14. Shared Core and Extension Impact
@@ -639,10 +1112,34 @@ Canonical Evidence로 사용하지 않는 항목:
 
 ## 18. Migration and Rollback
 
-Pending later RPL-42 writer slice.
-No decision has been accepted in this section.
+최종 절차가 아닌 Candidate Architecture Requirement다.
 
-Slice 1에는 Runtime Migration, Data Restore 또는 Rollback 실행이 없다.
+### Migration Candidate Requirements
+
+- 현재 Native Process 존재 여부 조사
+- Product별 Container Build
+- ARM64 / AMD64 Test
+- Registry Push
+- Digest Promotion
+- Compose Candidate Deployment
+- Health / Readiness 확인
+- Host Reboot Test
+
+### Rollback Candidate Requirements
+
+- 이전 Manifest Digest 보존
+- 이전 Platform Digest 보존
+- Config / Secret Version 호환
+- Database Migration Compatibility
+- Compose 또는 후속 Runtime에서 이전 Digest 재기동
+- Rollback 후 Health와 Business Check
+
+```text
+Application rollback
+≠ Database rollback
+```
+
+Database Migration Rollback은 별도 구현 Decision이 필요할 수 있다.
 
 ---
 
@@ -657,6 +1154,12 @@ Slice 1에는 Runtime Migration, Data Restore 또는 Rollback 실행이 없다.
 - ECR/GHCR 비교 전 Authentication Owner를 확인해야 한다.
 - Terraform State의 저장, 암호화, 접근과 복구 Boundary를 확인해야 한다.
 - Secret Inventory와 Primary Host 상실 시 Revocation 절차가 필요하다.
+- Compose 후보의 Health와 Readiness 의미를 Product별로 검증해야 한다.
+- Registry의 Build/Push와 Read-only Pull Identity Owner를 분리해야 한다.
+- Manifest Digest와 Platform Digest를 Deployment Evidence에 함께 기록할 수 있는지
+  검증해야 한다.
+- Lifecycle/Retention 정책이 최소 Rollback Image를 보존하는지 검증해야 한다.
+- Local Export Artifact는 Registry 장애 보조 경로로만 검토해야 한다.
 
 ```text
 Implementation note
@@ -684,6 +1187,12 @@ Implementation Notes는 실행 코드나 운영 구성의 Source of Truth가 아
   않는다.
 - Dockerfile이 해당 snapshot에서 발견되지 않았지만 다른 결정 대상 revision의
   부재까지 증명하지 않는다.
+- Compose는 Host 자체 HA 또는 Stateful Recovery를 제공하지 않는다.
+- Multi-platform Build는 Product별 Native Dependency와 Test Evidence가 없다.
+- ECR, GHCR와 Harbor의 현재 Repository/Runtime Evidence가 없다.
+- Registry 비용은 Region, usage, retention과 replication 전까지
+  `measurement_required`다.
+- Digest 기반 Rollback은 아직 rehearsal Evidence가 없다.
 
 ---
 
@@ -692,37 +1201,30 @@ Implementation Notes는 실행 코드나 운영 구성의 Source of Truth가 아
 Comment 10144에서 승인된 비용, RTO/RPO, Failover, Write, 응답시간, 초기 Managed
 DB 정책과 Drill 주기는 Open Question으로 되돌리지 않는다.
 
-### Runtime Discovery
+### Primary
 
-- 실제 Primary Host Specification은 무엇인가?
-- 어떤 서비스가 실제 운영 중인가?
-- Docker/Compose가 현재 사용되는가?
-- PostgreSQL과 Redis는 어디에 위치하는가?
-- 실제 DB Size와 WAL 생성량은 얼마인가?
-- Uploaded Asset 또는 Local File Business Data가 존재하는가?
+- 실제 Mac mini Hardware와 OS는 무엇인가?
+- Docker Engine과 Compose를 설치·운영할 수 있는가?
+- 현재 Service별 Memory / CPU 요구량은 얼마인가?
+- Stateful Volume은 어디에 배치되는가?
+- Host Reboot 후 자동 복구 요구는 무엇인가?
 
-### Existing Operations
+### Image
 
-- 현재 Backup은 존재하는가?
-- 마지막 Restore 성공 Evidence는 있는가?
-- 현재 Monitoring과 Alert Owner는 누구인가?
-- Cloudflare Tunnel과 Load Balancing은 실제 구성돼 있는가?
-- Domain과 DNS의 Canonical Owner는 누구인가?
+- 각 Product에 Dockerfile이 존재하는가?
+- Base Image가 ARM64와 AMD64를 지원하는가?
+- Native Dependency가 있는가?
+- Platform별 Test는 어디에서 실행할 것인가?
+- Emergency Build는 어떤 환경에서 수행하는가?
 
-### AWS / Registry
+### Registry
 
-- AWS Account와 IAM 접근은 준비됐는가?
-- `ap-northeast-2` 사용 제약은 없는가?
-- ECR과 GHCR 중 Failure Domain 우선순위는 무엇인가?
-- NAT Gateway 또는 VPC Endpoint 비용이 Cost cap 안에 들어오는가?
-
-### Verification
-
-- Cold Standby로 4시간 RTO Target을 충족할 수 있는가?
-- WAL Archive로 15분 RPO Target을 충족할 수 있는가?
-- Multi-platform Image가 모든 Product에서 동작하는가?
-- Operator 부재 시 Escalation은 어떻게 하는가?
-- Full Failback Drill 범위는 어디까지인가?
+- AWS Account와 IAM Owner는 누구인가?
+- ECR과 GHCR 중 AWS 독립 Failure Domain이 더 중요한가?
+- Registry 고정비와 Network 비용이 Cost cap에 포함되는가?
+- Retention 기간과 최소 Rollback Digest 수는 얼마인가?
+- Cross-region Replication이 필요한가?
+- Break-glass Pull Credential은 어떻게 보관하는가?
 
 ---
 
@@ -759,6 +1261,14 @@ DB 정책과 Drill 주기는 Open Question으로 되돌리지 않는다.
 - `aixion1506/harness-foundation-docs@034bb175ce45c571d84292c701989d830f2bf8c3`
 - `care-log/carelog-be@1b16a14a4a2b924dd84301e100752d029c03679b`
 
+### External Capability Evidence
+
+- Docker official documentation: Multi-platform, Compose Services, Secrets,
+  Digest Pull, Production
+- GitHub official documentation: Container Registry, Packages Permissions
+- AWS official documentation: ECR Push, Lifecycle Policies, Private Replication
+- Harbor official documentation: Repositories, Installation Prerequisites
+
 ### Affected Documents
 
 - `docs/adr/README.md`
@@ -790,6 +1300,7 @@ Existing ADR Supersession: none
 |---|---|---|---|---|---|---|
 | 2026-08-03 | not_applicable | open | not_applicable | not_applicable | Slice 1에서 Evidence Boundary와 Target Input을 기록 | RPL-42 / Comment 10144 |
 | 2026-08-04 | open | open | not_applicable | not_applicable | Slice 2에서 Verified Fact, Target, Candidate와 Runtime-unverified 상태를 분리 | RPL-42 / Comment 10144 |
+| 2026-08-04 | open | open | not_applicable | not_applicable | Slice 3에서 Primary Deployment, Image와 Registry 대안을 비교 | RPL-42 / Comment 10144 |
 
 이 History는 Architecture Option Approval이 아니다.
 
@@ -807,7 +1318,7 @@ Existing ADR Supersession: none
 
 - [ ] 실질적인 대안을 비교했다.
 - [ ] 선택 이유를 Driver와 연결했다.
-- [x] Slice 2에서 Architecture Option을 채택하지 않았다.
+- [x] Slice 3에서 Architecture Option을 채택하지 않았다.
 
 ### Safety
 
@@ -837,7 +1348,7 @@ Existing ADR Supersession: none
 
 ```text
 decision_status: open
-No architecture option is accepted in Slice 2.
+No architecture option is accepted in Slice 3.
 ```
 
 ### Constraints
@@ -852,7 +1363,7 @@ Evidence Boundary and Decision Input State only
 
 ### Required Follow-up
 
-- ADR-0016 Slice 3 - Primary Deployment, Image Architecture and Registry Matrix
+- ADR-0016 Slice 4 - AWS DR Runtime and Approval-gated Traffic Failover Matrix
 - 후속 Slice의 대안 비교와 독립 Review
 - ADR Index와 DEC-066 연결은 별도 Slice
 
