@@ -55,7 +55,7 @@ replacement_decision_refs: []
 > ```
 >
 > RPL-42 Comment 10144의 사용자 입력은 Architecture Target과 Decision Driver를
-> 고정한다. Docker Compose, ECR, ECS Fargate, S3 또는 Cloudflare Load Balancing의
+> 고정한다. Docker Compose, ECR/GHCR, ECS Fargate/EC2, S3 또는 Cloudflare Load Balancing의
 > 채택이나 Runtime 운영을 증명하지 않는다.
 
 ---
@@ -65,8 +65,8 @@ replacement_decision_refs: []
 이 ADR은 Mac mini Primary와 AWS DR 사이에서 Ranikun Labs 서비스의 배포·복구
 경계를 결정하기 위한 Architecture Record다. 현재 `decision_status`는 `open`이다.
 RPL-42 Comment 10144로 비용, RTO, RPO, Failover, Write Policy와 운영 대응 목표가
-승인 입력으로 고정됐지만, 이를 달성할 기술은 이 ADR의 대안 비교, Correction HEAD의
-독립 재검수와 사용자 결정 이후에만 결정한다. 실제 Runtime, Infrastructure와 운영
+승인 입력으로 고정됐지만, 이를 달성할 기술은 이 ADR의 대안 비교, Candidate Reframe
+HEAD의 독립 재검수와 사용자 결정 이후에만 결정한다. 실제 Runtime, Infrastructure와 운영
 상태는 검증되지 않았다.
 
 ```text
@@ -96,6 +96,8 @@ Draft 작성은 Architecture 승인이 아니다.
 
 ```text
 decision_status: open
+Architecture Option Accepted: No
+Production Adoption: not approved
 ```
 
 Decision Input Lock은 Technology Adoption이 아니다.
@@ -336,7 +338,7 @@ RPL-42 Comment 10144의 입력을 Technology 선택과 분리해 기록한다.
 | 24/7 SLA | `approved_target` | 현재 없음 | Product SLA와 혼합하지 않음 |
 | AWS Region | `planning_candidate` | `ap-northeast-2` | AWS Account, 데이터 위치와 서비스 가용성 확인 필요 |
 | Managed DB Primary | `approved_target` | 초기 미채택 | Data DR 대안 비교에서 제약으로 사용 |
-| Standby | `planning_candidate` | Cold Standby initial candidate | Provision·Restore 시간 측정 필요 |
+| Standby | `planning_candidate` | Cold Restore와 Warm Physical Standby 비교 | 비용·복구·운영 부담 측정 필요 |
 | Drill | `approved_target` | 월간 Restore Check + 분기 Full DR Drill | Evidence 보존 절차 필요 |
 | Approval Owner | `approved_target` | 박성환 | Failover·Write·Failback Authority 구체화 필요 |
 
@@ -452,6 +454,39 @@ Slice 6은 기존 Slice 3~5 공식 Source와 위 Source를 통합 Capability Evi
 사용한다. 공식 문서도 Adoption, Runtime, 비용, 복구 성공 또는 RTO/RPO 달성 Evidence를
 대체하지 않는다.
 
+### 4.11 Candidate Reframe Official Capability Evidence
+
+Accessed date: `2026-08-05`
+
+| Source | Capability Evidence | Not Evidence Of |
+|---|---|---|
+| [Amazon EC2](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/concepts.html) | Virtual Server, Security Group, EBS와 탄력적 기동 | EC2 또는 Compose Runtime 존재 |
+| [EC2 User Data](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/user-data.html) | Launch-time Bootstrap, 기본 1회 실행과 기동 시간 증가 가능성 | Bootstrap 성공 또는 RTO 달성 |
+| [IAM Roles for EC2](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/iam-roles-for-amazon-ec2.html) | 장기 AWS Credential 배포 없이 Instance Profile 임시 Credential 사용 | 현재 IAM Role 존재 |
+| [Amazon EBS](https://docs.aws.amazon.com/ebs/latest/userguide/what-is-ebs.html) | EC2용 Persistent Block Storage와 Snapshot | Standby Disk 존재 또는 Backup 충분성 |
+| [Fargate Task Networking](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/fargate-task-networking.html) | Task별 ENI와 외부 Registry용 Internet/NAT 또는 ECR VPC Endpoint 경로 | Network 또는 Pull 성공 |
+| [ECS Private Registry Authentication](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/private-auth.html) | Non-AWS Private Registry Credential을 Secrets Manager와 Task Execution Role로 전달 | GHCR Pull 성공 또는 단순성 |
+| [Amazon ECR Authentication](https://docs.aws.amazon.com/AmazonECR/latest/userguide/registry_auth.html) | IAM Principal 기반 Authorization Token 또는 Credential Helper | ECR Repository 또는 Pull 성공 |
+| [Amazon ECR with ECS](https://docs.aws.amazon.com/AmazonECR/latest/userguide/ECR_on_ECS.html) | ECS/Fargate Task Execution Role의 ECR Image Pull 권한 | ECR이 모든 Runtime에 필수 |
+| [Amazon ECR Pricing](https://aws.amazon.com/ecr/pricing/) | Storage와 Data Transfer 기반 Billing 구조 | 비용 Guardrail 충족 |
+| [Application Load Balancer Pricing](https://aws.amazon.com/elasticloadbalancing/pricing/) | 실행 시간과 사용량 단위의 Billing 구조 | 실제 고정비 또는 Guardrail 충족 |
+| [GitHub Container Registry](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry) | OCI Image, GitHub Actions `GITHUB_TOKEN`, Private Pull PAT, Digest Pull | GHCR Package 또는 Credential 존재 |
+| [GitHub Packages Billing](https://docs.github.com/en/billing/concepts/product-billing/github-packages) | Plan·Visibility·Storage·Transfer에 따른 Billing 측정 항목 | GHCR 비용 우위 또는 Guardrail 충족 |
+| [Docker Compose in Production](https://docs.docker.com/compose/how-tos/production/) | Single-server Production Override와 변경 재적용 | Host HA 또는 EC2 적합성 검증 |
+| [Docker Compose Profiles](https://docs.docker.com/compose/how-tos/profiles/) | 선택 Service의 Profile 기반 기동 | DR Override 적합성 또는 구성 완료 |
+| [Docker Image Pull by Digest](https://docs.docker.com/reference/cli/docker/image/pull/) | Tag 대신 immutable Digest로 동일 Image Pinning | 해당 Digest의 Runtime 호환성 |
+
+PostgreSQL Streaming Replication, Hot Standby, Replication Slot, Promotion,
+Continuous Archiving/PITR, `pg_basebackup`, `pg_rewind`와 Timeline 근거는 §4.9를
+재사용한다. Warm Standby는 활성화 시간을 줄일 수 있지만 비동기 Replication Lag,
+동일 Major Version, Disk/WAL Retention, Monitoring, Promotion과 Timeline 운영을 추가한다.
+
+Cloudflare Tunnel은 Origin에서 Edge로 연결하는 Capability이며 EC2 Gateway를 Origin으로
+둘 수 있는 후보를 뒷받침한다. Cloudflare Load Balancing의 Monitor/Pool/Steering은
+복수 Origin Health Routing 후보지만 Authoritative Fencing이나 Writer Authority를
+증명하지 않는다. 위 공식 문서는 Candidate Reframe의 Capability Evidence일 뿐 실제
+Account, Resource, 비용, 복구 시간, RTO/RPO 또는 채택을 증명하지 않는다.
+
 ---
 
 ## 5. Problem Statement
@@ -529,9 +564,11 @@ Driver는 해결책 이름이나 기술 채택 선언이 아니다.
 
 - `runtime_unverified`: Primary 후보 Hardware가 Mac mini M4다.
 - `planning_candidate`: AWS 서울 Region을 사용할 수 있다.
-- `planning_candidate`: Cold Standby로 승인된 RTO/RPO 목표를 충족할 수 있다.
+- `planning_candidate`: Warm Physical Standby+독립 PITR로 승인된 RTO/RPO 목표를
+  검증할 수 있다.
 - `planning_candidate`: Product별 Multi-platform Image를 만들 수 있다.
-- `planning_candidate`: Managed container runtime 후보가 현재 Application과 호환된다.
+- `planning_candidate`: EC2 Compose 후보가 현재 Application과 호환되고 Fargate보다
+  1인 운영 절차가 단순할 수 있다.
 - `planning_candidate`: WAL Archive로 15분 RPO Target을 검증할 수 있다.
 
 Assumption은 Constraint나 Fact로 승격하지 않는다.
@@ -539,7 +576,8 @@ Assumption은 Constraint나 Fact로 승격하지 않는다.
 #### Known Limitations
 
 - 1인 운영이므로 Operator 부재 시 RTO Target을 초과할 수 있다.
-- Cold Standby 후보는 실제 Provision과 Restore 시간에 민감하다.
+- Warm Standby 후보는 비용·Network·Lag·Slot/Disk 운영에, Cold PITR 대안은
+  Provision과 Restore 시간에 민감하다.
 - 비용 상한은 AWS Resource와 Traffic이 확정되기 전까지 추정 Target이다.
 - 실제 DB 크기와 WAL 양이 없어 복구시간을 계산할 수 없다.
 - Production Traffic Evidence가 없다.
@@ -865,7 +903,7 @@ Primary Host 전체를 잃어도 승인된 Application Image를 검증 가능한
 | Backup Requirement | policy/replication decision | export/retention decision | high | artifact archive required |
 | Upgrade Requirement | low, managed | low, managed | high | build toolchain 유지 |
 | Security Patch Responsibility | managed service boundary | managed service boundary | operator | build environment owner |
-| Operational Complexity | low | low | high | high during recovery |
+| Operational Complexity | low within AWS, IAM/Region 관리 필요 | low within GitHub, pull credential 관리 필요 | high | high during recovery |
 | Vendor Lock-in | AWS | GitHub | self-hosted stack | build tooling |
 | Cost Predictability | measurement_required | measurement_required | measurement_required | measurement_required |
 | One-person Operation | strong candidate | strong candidate | weak | weak |
@@ -894,7 +932,7 @@ Region, usage, retention과 replication이 확정되지 않았으므로 정확�
 - Primary Mac의 pull credential과 Vendor Lock-in을 관리해야 한다.
 
 ```text
-planning assessment: planning_leader if AWS DR is selected
+planning assessment: conditional alternative, especially for ECS/Fargate
 adoption state: open
 ```
 
@@ -913,11 +951,15 @@ ownership을 구분해야 한다. AWS Runtime은 External Registry Network에 �
 GitHub 장애가 DR pull에 영향을 줄 수 있으며 AWS IAM과 직접 통합되지 않는다.
 
 ```text
-planning assessment: planning_candidate
-preferred when: registry independence from AWS is a stronger driver
+planning assessment: first_validation_target for EC2 Compose candidate
+preferred when: GitHub build/release 연계와 AWS Region 독립 Failure Domain이 더 강한 driver
 ```
 
-ECR과 GHCR의 우열은 Driver 우선순위에 따라 달라진다.
+EC2에서 Private GHCR를 Pull하려면 최소 권한 PAT와 Rotation·Break-glass 보관이 필요하다.
+Fargate에서 외부 Private Registry를 쓰면 Secrets Manager와 Task Execution Role 경계가
+추가된다. ECR은 ECS/Fargate에서 IAM 통합 이점이 크지만 Registry 필요성이 ECR 필수성을
+뜻하지 않는다. Dual-publish는 Registry 장애 대응을 늘리지만 Retention·Permission·
+Release Promotion을 두 벌 운영하므로 초기 1인 운영 경로로 권장하지 않는다.
 
 #### Harbor
 
@@ -953,6 +995,32 @@ planning assessment: not_recommended
 Local Export Artifact는 긴급 보조 경로가 될 수 있으나 Canonical Registry를
 대체하지 않는다.
 
+#### 8.8.1 ECR vs GHCR Reframe Matrix
+
+| Criterion | ECR | GHCR | Dual-publish | Incident-time Build |
+|---|---|---|---|---|
+| GitHub Actions Build | AWS Credential/OIDC 설계 | `GITHUB_TOKEN` 강점 | 두 Publish Gate | Build Dependency 전부 필요 |
+| ECS IAM Integration | strong | External Secret 필요 | ECR 경로 strong | weak |
+| EC2 Pull Authentication | Instance Role+ECR Token | 최소 권한 PAT | 두 Credential | Build Credential |
+| Private Image / Digest | supported / supported | supported / supported | supported | 이전 검증 Digest 보장 불가 |
+| Multi-platform Manifest | supported | supported | 두 Registry 정합성 필요 | Incident Build 시간 증가 |
+| Storage / Transfer Cost | `measurement_required` | `measurement_required` | 양쪽 측정 | Incident 비용/시간 측정 |
+| Lifecycle / Retention | AWS Policy | GitHub Package Policy 검증 | 두 정책 | Artifact Retention 없음 |
+| Permission / Credential | IAM 중심 | Package 권한+PAT | 두 Control Plane | Build/Source 권한 집중 |
+| AWS Region / GitHub Coupling | AWS Region/Account | GitHub/External Network | 둘 다 | Source+Dependency Network |
+| Registry Failure Domain | AWS DR와 결합 가능 | AWS와 분리 가능 | 복수 경로 | Registry 장애 회피 대신 Build 실패 위험 |
+| MSA Image 증가 | Repository/IAM 증가 | Package/Permission 증가 | 둘 다 증가 | Build 시간 선형 증가 가능 |
+| 1인 운영 | Fargate 시 강점 | EC2+GitHub 흐름 시 강점 후보 | 초기 과다 | not recommended |
+| Break-glass Pull | IAM/Token Runbook | PAT/Export Runbook | 두 Runbook | 재빌드 Runbook |
+| Current Evidence | `runtime_unverified` | `runtime_unverified` | `runtime_unverified` | `runtime_unverified` |
+| Measurement Required | Storage/Transfer/Lifecycle | Storage/Bandwidth/Auth | Promotion/Retention 일치 | Build/RTO/Dependency |
+| Planning State | conditional alternative | first validation target | deferred | not recommended |
+
+Git Tag/Release는 Source Version, Release Note, Commit Reference와 Build Trigger를 소유한다.
+Container Registry는 실행 OCI Artifact, Manifest/Platform Digest, Pull, Rollback,
+Retention과 Permission을 소유한다. 따라서 Registry는 필요하지만 ECR일 필요는 없고,
+Incident-time Rebuild는 이전 검증 Artifact 재사용을 대체하지 않는다.
+
 ### 8.9 Registry Failure Domain Rule
 
 ```text
@@ -978,13 +1046,19 @@ Docker Compose planning leader
 Multi-platform OCI Image planning leader
 → Registry must preserve manifest and platform digests
 
-AWS ECR conditional planning leader
-→ integration benefit if AWS DR is selected
+GHCR first validation target
+→ GitHub build/release와 EC2 Compose 경로 단순성 검증
+
+ECR conditional alternative
+→ ECS/Fargate 선택 시 IAM integration benefit 검증
 ```
 
 - Compose 선택은 ECR 선택을 강제하지 않는다.
 - Multi-platform 선택은 Fargate 선택을 강제하지 않는다.
 - AWS DR 선택은 Registry를 반드시 AWS에 두도록 강제하지 않는다.
+- Git Tag는 Source/Release Identity와 Build Trigger를 소유하지만 실행 가능한 OCI
+  Artifact, Manifest/Platform Digest, Pull, Rollback과 Retention을 소유하지 않는다.
+- Incident-time Rebuild는 이전에 검증한 Artifact 재사용이 아니다.
 
 ### 8.11 Slice 4 Official Capability Evidence
 
@@ -1053,7 +1127,7 @@ PostgreSQL Backup/Restore 상세 = Slice 5
 | Rollback | strong, digest/task revision | strong, digest | strong | weak |
 | Terraform 재현성 | strong | acceptable | acceptable | weak |
 | Incident Complexity | medium | medium-high | high | high |
-| One-person Operation | strong candidate | conditionally_viable | weak | weak |
+| One-person Operation | conditional; Host 부담↓, ECS 객체↑ | first validation target; Host 부담↑, 모델 수↓ 가능 | weak | weak |
 | RTO 4시간 가능성 | measurement_required | measurement_required | measurement_required | unknown |
 | Cost Cap 적합성 | measurement_required | measurement_required | measurement_required | measurement_required |
 | Current Runtime Evidence | runtime_unverified | runtime_unverified | runtime_unverified | runtime_unverified |
@@ -1061,6 +1135,37 @@ PostgreSQL Backup/Restore 상세 = Slice 5
 | Failure Domain | AWS Region/Account | AWS Region/AZ/Host | AWS Region/Account | build env/operator |
 
 단순 점수가 아닌 후보별 설명은 8.14~8.17에서 상술한다.
+
+#### 8.13.1 One-person Operations Application Reframe Matrix
+
+| Criterion | Fargate + ALB | EC2 + Compose | Fargate without persistent ALB candidate | Manual EC2 Build |
+|---|---|---|---|---|
+| Primary Runtime 유사성 | medium | strong | medium | weak |
+| Configuration Drift | Compose→Task/Service 변환 | Compose/Override 재사용 후보 | Task/Service+임시 ingress | high |
+| Host OS / Docker 관리 | AWS | operator | AWS | operator/ad-hoc |
+| ECS/IAM 관리 | Service·Task·Task/Execution Role | Instance Role 중심 | 동일+ingress 별도 | ad-hoc 위험 |
+| ALB 필요성 | 안정적 진입점 후보 | optional | 영구 생략 가능성만 `deferred` | optional |
+| Health Check | Container+Target Group | Compose+Gateway/Tunnel | Container+별도 ingress | 편차 큼 |
+| Cloudflare Tunnel 직접 연결 | ALB Origin 후보 | EC2 Gateway 직접 Origin 후보 | Task 주소 수명/등록 검증 필요 | 수동 변경 위험 |
+| Multi-service Compose | 별도 Task 정의 필요 | strong | 별도 Task 정의 필요 | 수동 |
+| Service별 독립 Scale | strong | weak | strong | weak |
+| Incident Startup | Pull+Task+Target 측정 | Boot+Bootstrap+Pull 측정 | Task+ingress 측정 | unknown |
+| Cold State | Task 0, ALB 별도 | stopped/incident provision | Task 0+incident ingress | 가능, 반복성 낮음 |
+| Fixed / Burst Cost | ALB 고정+Task burst 측정 | EBS 등 고정+Instance burst 측정 | ingress 생성비 측정 | RTO 손실 비용 포함 측정 |
+| Debug / Break-glass | ECS/CloudWatch, Task Exec 별도 | SSH/Console+Docker | ECS/CloudWatch | 수동 |
+| Native Dependency | Fargate 호환성 검증 | Host 선택 폭 | Fargate 호환성 검증 | Host 선택 폭 |
+| Image / Registry | Digest; ECR 강점, GHCR Secret | Digest; ECR Role 또는 GHCR PAT | 동일 Fargate 경계 | 재빌드 유혹 |
+| Secret / Environment | ECS Secret/Task Definition | Secret Source/Compose Override | ECS Secret/Task Definition | ad-hoc 위험 |
+| Logs / Rollback | Log Group+Task Revision/Digest | Host Log+Compose/Digest | Log Group+Task Revision/Digest | 약함 |
+| Terraform 재현성 | strong candidate | strong candidate | ingress까지 검증 | weak |
+| 1인 운영 | Host 책임 감소, Control Plane 객체 증가 | Host 책임 증가, Runtime 모델 단순화 가능 | ingress Runbook 추가 | weak |
+| Current Evidence | `runtime_unverified` | `runtime_unverified` | `runtime_unverified` | `runtime_unverified` |
+| Verification | Task/IAM/ALB/Cost | Bootstrap/Patch/Tunnel/Cost | 주소 안정성/ingress/Cost | RTO/오류율 |
+
+현재 Logical Service 수만으로 Fargate가 자동으로 단순해지지는 않는다. Emergency
+Cold DR, Multi-replica·독립 Scale Evidence 부재, Primary Compose라는 조건에서는
+EC2 Compose가 Host 책임을 받는 대신 Compose/Task 이중 모델과 ALB/Target Group을
+줄일 가능성이 있어 first validation target으로 앞선다.
 
 ### 8.14 ECS Fargate + ALB Analysis
 
@@ -1090,7 +1195,7 @@ PostgreSQL Backup/Restore 상세 = Slice 5
 - 비용 상한은 측정이 필요하고, Fargate가 RTO 4시간을 자동 보장하지 않는다.
 
 ```text
-planning assessment: planning_leader
+planning assessment: conditional alternative
 condition: AWS Application DR Runtime을 관리형 Container 방식으로 운영할 경우
 adoption state: open
 ```
@@ -1125,11 +1230,12 @@ ECS Fargate를 최종 채택하지 않는다.
 - EC2 Automatic Instance Recovery는 System Status Check 실패만 대상이며 App/OS-level 실패나 Host 상실 전체를 대체하지 않는다.
 
 ```text
-planning assessment: conditionally_viable
+planning assessment: first_validation_target
 adoption state: open
 ```
 
-**Preferred when**: Compose 동등성이 최우선 · Fargate 호환성 미검증 · 낮은 빈도의 Cold DR · 운영자가 EC2 Bootstrap을 감당 가능.
+**Preferred when**: Compose 동등성이 최우선 · Emergency Cold DR · Multi-replica/독립
+Scale Evidence 없음 · 운영자가 EC2 Bootstrap/Patch를 감당 가능.
 
 ECS Fargate보다 무조건 열등하다고 판단하지 않는다.
 
@@ -1167,8 +1273,9 @@ planning assessment: not_recommended
 ### 8.18 AWS Runtime Planning Result
 
 ```text
-Current planning leader: ECS Fargate + Application Load Balancer
-Conditional alternative: EC2 + Docker Compose
+Current planning leader / first validation target: EC2 + Docker Compose
+Entry first validation: Cloudflare Tunnel direct to EC2 Gateway, ALB initially omitted
+Conditional alternative: ECS Fargate + Application Load Balancer
 Deferred: EKS
 Not recommended as canonical path: No Predefined AWS Runtime
 Decision state: open
@@ -1176,7 +1283,26 @@ Decision state: open
 
 **Blocking verification**: Actual Application Image Compatibility · AWS Account/IAM · Region · VPC/Security Group · Image Pull · Task/Instance Startup · ALB Health · Secret/Configuration · Read-only Startup · Cost Estimate · Full DR Drill.
 
-Planning Leader는 Accepted Decision이 아니다.
+Planning Leader는 Accepted Decision이 아니다. ALB는 Fargate 후보에는
+`required_for_fargate_candidate`, EC2 Compose 후보에는
+`optional_for_ec2_compose_candidate`이며 통합 Runtime 선택 전 상태는
+`deferred_until_runtime_choice`다.
+
+#### 8.18.1 ALB Necessity Assessment
+
+| Option | Value | Boundary | Planning State |
+|---|---|---|---|
+| Always-on ALB | 안정적 L7 Entry, Target Group, Health, Multi-AZ/Replica 분배 | 평상시 고정비와 ECS/Target Group 운영 | conditional for persistent Fargate |
+| Incident-created ALB | 평상시 ALB 비용을 줄일 가능성 | 생성·DNS/Cloudflare 연결·Target Healthy가 RTO 경로 | conditional, measurement_required |
+| EC2 + Cloudflare Tunnel, no ALB | 단일 Gateway Origin과 Primary 유사 Entry | 단일 Host, Tunnel Bootstrap·Origin 전환 검증 필요 | first validation target |
+| Fargate + ALB | Task IP 변화에 대한 안정적 Entry와 Replica 분배 | ECS/IAM/ALB/Target Group 구성 필요 | retained alternative |
+| Fargate without persistent ALB | 평상시 ALB 생략 가능성 | 공식 ingress, 주소 수명, Health와 Human Runbook 타당성 미확정 | deferred question |
+
+ALB는 HTTP/S Load Balancing, Target Group Health Check, Multi-AZ Target, TLS Termination과
+Replica Distribution을 제공한다. 단일 EC2 Cold DR, Spring Cloud Gateway, Cloudflare
+Tunnel direct Origin, Human-approved Traffic이라는 초기 조건에서는 필수가 아니다.
+단, Fargate 또는 Multi-replica/Multi-AZ가 선택되면 다시 우선 후보가 된다. ALB Health나
+Cloudflare Monitor는 Observation이며 Fencing 또는 Database Write Impossibility가 아니다.
 
 ### 8.19 Traffic Failover Problem
 
@@ -1527,7 +1653,10 @@ RTO Target ≠ Sum of verified stage durations
 
 ### 8.36 Cost Boundary
 
-비용 Concern 후보: ALB 고정비 · Fargate Task 실행비 · EC2 Instance/EBS · NAT Gateway · Data Transfer · ECR/GHCR Storage · Cloudflare Load Balancing · Logging · Monitoring · Backup Storage · Terraform State Backend.
+비용 Concern 후보: Warm EC2 Compute · Warm EBS · Replication Transfer · Incident-time EC2
+Application · ALB 고정비 · Fargate Task · NAT Gateway · ECR Storage/Transfer · GHCR
+Storage/Bandwidth · S3 Backup/WAL · Cloudflare Load Balancing · Logging/Monitoring · Terraform
+State Backend · Drill Burst.
 
 ```text
 status: measurement_required
@@ -1592,6 +1721,38 @@ RTO 4h / RPO 15m = target (not achieved)
 
 각 대안의 근거는 8.39~8.42에서 상술한다.
 
+#### 8.38.1 One-person Operations Database Reframe Matrix
+
+| Criterion | Cold Restore | Warm Physical Standby | Warm Standby + PITR Backup | Managed Primary |
+|---|---|---|---|---|
+| 평상시 비용 | Object Storage 중심 | Compute+EBS+Network | Standby+Backup Storage | Managed 상시 비용 |
+| RPO/RTO 가능성 | Archive/Restore 속도 의존 | Replication Lag/Promotion 의존 | Replication+독립 Restore 선택지 | Managed 기능 의존 |
+| Base Backup / WAL Archive | required / required | 초기 Base 필요, Archive 없으면 PITR 부재 | required / required | managed boundary |
+| Streaming / Network | 불필요 / Archive 전송 | required / 단절 시 Lag | required+Archive / 둘 다 관측 | managed |
+| Slot/WAL/Disk | Archive 보존 | Slot·Retained WAL·Standby Disk | 동일+Backup Retention | managed |
+| Version/Extension | Restore Runtime 일치 | Primary/Standby 일치 | 둘 다 필요 | Vendor 지원 범위 |
+| Read-only / Promotion | Restore 후 검증/승격 | Standby Query/승격 | Standby Query/승격+PITR 대체 | managed boundary |
+| Timeline / Failback | 새 Timeline, Re-seed | Promotion 분기, Re-seed/조건부 rewind | 동일 | 별도 Migration 경계 |
+| 잘못된 삭제·손상 전파 | PITR Target으로 회피 후보 | Standby에 전파 가능 | PITR Backup으로 회피 후보 | Backup/PITR 의존 |
+| Fencing | required | required | required | required at architecture boundary |
+| Monitoring | Archive Gap | Lag/Slot/Disk | Archive+Lag+Slot+Disk | managed+operator |
+| Restore Drill | required | Standby 장애 대비 required | required | required |
+| 1인 운영 | 절차 길지만 상시 운영 낮음 | 상시 운영 높음 | 가장 높은 운영 표면이나 복구 선택지 | Primary 변경 부담 |
+| Current Evidence / Cost | `runtime_unverified` / `measurement_required` | 동일 | 동일 | 동일 |
+| Verification | Size/WAL/Restore | Network/Lag/Promotion | 앞의 두 경로와 독립 Backup | Migration/Cost/Compatibility |
+| Planning State | retained alternative | incomplete alone | first validation target | deferred |
+
+```text
+Warm Standby != Backup
+Streaming Replication != PITR
+RPO 15 minutes != upload WAL once every 15 minutes
+```
+
+RPO Target은 Continuous 또는 bounded-delay WAL Archive, Archive Gap/Lag, Warm Standby
+Replication Lag와 복원된 Business Event Boundary로 검증한다. Standby는 Primary의 삭제나
+손상도 Replay할 수 있으므로 Base Backup, Continuous WAL Archive, Restore Point,
+Integrity Verification과 Restore Drill을 별도 유지한다.
+
 ### 8.39 Cold Base Backup + WAL Analysis
 
 **Candidate 장점**
@@ -1618,7 +1779,7 @@ RTO 4h / RPO 15m = target (not achieved)
 - Full Drill 전 RTO/RPO를 검증할 수 없다.
 
 ```text
-planning assessment: planning_leader for initial data DR
+planning assessment: retained alternative for low fixed cost
 adoption state: open
 ```
 
@@ -1648,11 +1809,13 @@ Cold Restore를 최종 채택하지 않는다.
 - 1인 운영 복잡도가 증가하고 Cost Guardrail을 초과할 수 있다.
 
 ```text
-planning assessment: conditionally_viable
+planning assessment: first_validation_target only with independent PITR backup
 adoption state: open
 ```
 
-**Preferred when**: Cold Restore Drill이 4시간 RTO를 충족하지 못함 · 더 강한 RPO 필요 · 상시 비용과 운영 복잡도 감당 가능 · Stable Network와 Monitoring 확보.
+**Preferred when**: Database Recovery Speed가 Application보다 우선 · Cold Restore 시간이
+unknown이거나 RTO를 위협 · 상시 비용이 Guardrail 안에 있음 · Replication 운영과
+Monitoring/Drill 가능 · Base Backup/WAL PITR를 별도 유지.
 
 Warm Standby가 반드시 더 안전하다고 단정하지 않는다.
 
@@ -1689,8 +1852,8 @@ planning assessment: not_recommended as canonical DR
 ### 8.43 Recovery Planning Result
 
 ```text
-Current planning leader: Base Backup + Continuous WAL Archive 기반 Cold Restore
-Conditional alternative: AWS EC2 Warm Physical Standby
+Current planning leader / first validation target: AWS EC2 Warm Physical Standby + independent Base Backup / Continuous WAL PITR
+Conditional alternative: Base Backup + Continuous WAL Archive 기반 Cold Restore
 Deferred / initially not adopted: Managed PostgreSQL Primary
 Not recommended as canonical recovery: Logical Dump-only / Incident-time Manual Rebuild
 Decision state: open
@@ -1698,7 +1861,9 @@ Decision state: open
 
 **Blocking verification**: Actual PostgreSQL Version · Extension Inventory · Database Size · WAL Rate · Backup Duration · Archive Lag · Restore Time · Replay Time · Cost · Full Restore Drill · Failover Drill · Failback Drill.
 
-Planning Leader는 Accepted Decision이 아니다.
+Planning Leader는 Accepted Decision이 아니다. Warm Compute, EBS, Replication Network,
+Patch, Lag, Slot/WAL Retention, Disk Full, Rebuild, Promotion과 Timeline 운영은 모두
+`measurement_required` 또는 `verification_required`다.
 
 ### 8.44 Backup Artifact Model
 
@@ -2115,7 +2280,7 @@ Traffic Failover, Failback/Re-seed, RTO/RPO 측정, 비용과 1인 운영 제약
 
 ### 8.69 Integrated Candidate Topologies
 
-#### Candidate A — Cold Managed Application DR
+#### Candidate A — Existing Managed Application Cold DR
 
 - Primary 후보: Mac mini + Docker Compose.
 - Artifact 후보: 동일 승인 Multi-platform OCI Image와 Digest.
@@ -2129,32 +2294,49 @@ Traffic Failover, Failback/Re-seed, RTO/RPO 측정, 비용과 1인 운영 제약
 - Failback 후보: Initial Re-seed/Read-only Validation → DR Write Freeze → Cutover Boundary →
   Final Catch-up/Boundary Validation → Human Promotion Approval.
 
-평가: `planning_leader` integrated candidate. Accepted가 아니며 Database EC2 Runtime도
-`open`이고 `runtime_unverified`다.
+평가: 기존 통합 후보이며 현재는 `retained_alternative`. Accepted가 아니며 Database EC2
+Runtime도 `open`이고 `runtime_unverified`다.
 
-#### Candidate B — Compose-aligned Cold DR
+#### Candidate B — Compose-aligned Application + Warm Database DR
 
 - Primary와 AWS Application 후보: 각각 Mac mini + Docker Compose, EC2 + Docker
   Compose.
-- Database 후보: Application Host와 합치지 않는 독립 Runtime.
-- Data/Traffic 후보: Base Backup + WAL과 Human-approved Failover.
-- 장점 후보: Primary와 Runtime 모델 유사, Bootstrap·Debugging 단순화 가능.
-- 위험: OS·Docker·Compose 운영 책임, Host Failure Coupling, Application/Database를 한
-  EC2에 합칠 유혹, Cold Provision 시간.
+- Application Compute는 stopped 또는 Incident-time Provision 후보이며 Cloudflare Tunnel을
+  EC2 Gateway에 직접 연결하고 ALB는 초기 생략 후보로 둔다.
+- Database 후보: Application Host와 분리한 별도 EC2 Warm Physical Standby.
+- Backup 후보: Standby와 별도로 Off-host Object Storage에 Base Backup + Continuous WAL.
+- Registry 후보: GHCR first validation, ECR alternative.
+- Data/Traffic 후보: Fencing 후 Human-approved Promotion/Write/Traffic.
+- 장점 후보: Primary Runtime 유사성, Database 활성화 시간 단축 가능성, AWS Application
+  평상시 Compute 최소화.
+- 위험: Host OS/Docker/PostgreSQL Patch, Replication Lag/Slot/Disk, GHCR Pull Credential,
+  Tunnel Bootstrap, Warm Compute/EBS 비용, 단일 App Host.
 
-평가: `conditionally_viable` integrated candidate.
+평가: 현재 사용자 조건에 가장 맞는 `planning_leader / first_validation_target`.
+Accepted가 아니며 비용·Network·Bootstrap·Promotion·Drill Evidence가 필요하다.
 
-#### Candidate C — Warm Data DR
+#### Candidate C — Fargate Application + Warm Database
 
-- AWS Application 후보: Fargate 또는 EC2.
+- AWS Application 후보: Fargate + ALB.
 - AWS Database 후보: Warm Physical Standby.
 - Backup 후보: Base Backup + WAL Archive를 Standby와 병행.
+- Registry 후보: ECR/GHCR 비교.
 - Traffic 후보: Human-approved Failover.
 
-평가: Cold Restore가 RTO/RPO Target을 충족하지 못한다는 Drill Evidence가 있을 때의
-`conditional` candidate. 지속 복제, WAL 보존, Standby 운영과 비용 Evidence가 필요하다.
+평가: Application Host 운영 부담보다 ECS Control Plane과 ALB가 단순하다는 Spike 결과가
+있을 때의 `conditional` hybrid candidate.
 
-#### Deferred Candidate D — Managed Primary
+#### Candidate D — EC2 Compose + Cold Database Restore
+
+- AWS Application 후보: EC2 + Docker Compose.
+- Database 후보: 별도 Runtime에 Cold Base Backup + WAL Restore.
+- Registry 후보: GHCR/ECR 비교.
+- Traffic 후보: Human-approved Failover.
+
+평가: Compose 동등성과 낮은 평상시 Database Compute 비용을 우선할 때의
+`conditional` candidate. Database Restore 시간이 Critical Path를 위협할 수 있다.
+
+#### Deferred Candidate — Managed Primary
 
 - Managed PostgreSQL Primary와 AWS 중심 Application Runtime 후보.
 - 평가: `deferred` / initially not adopted. Primary Architecture 변경, Migration, 비용과
@@ -2166,16 +2348,16 @@ Traffic Failover, Failback/Re-seed, RTO/RPO 측정, 비용과 1인 운영 제약
 |---|---|---|---|---|
 | User RTO Target | `target_not_verified` | `target_not_verified` | `target_not_verified` | `target_not_verified` |
 | PostgreSQL RPO Target | `target_not_verified` | `target_not_verified` | `target_not_verified` | `target_not_verified` |
-| Fixed Cost | `measurement_required` | `measurement_required` | `high` | `measurement_required` |
+| Fixed Cost | `measurement_required` | `measurement_required` | `measurement_required` | `measurement_required` |
 | Incident Burst Cost | `measurement_required` | `measurement_required` | `medium` | `measurement_required` |
-| One-person Operation | `acceptable` | `weak` | `weak` | `acceptable` |
+| One-person Operation | `acceptable` | `strong candidate` | `conditional` | `acceptable` |
 | Primary/DR Artifact Reuse | `strong` | `strong` | `acceptable` | `acceptable` |
-| Application Runtime Consistency | `acceptable` | `strong` | `acceptable` | `weak` |
-| Database Recovery Speed | `measurement_required` | `measurement_required` | `strong` | `measurement_required` |
+| Application Runtime Consistency | `acceptable` | `strong` | `acceptable` | `strong` |
+| Database Recovery Speed | `measurement_required` | `strong candidate` | `strong candidate` | `measurement_required` |
 | Backup Dependency | `high` | `high` | `high` | `high` |
-| Continuous Replication Dependency | `low` | `low` | `high` | `medium` |
-| Host OS Responsibility | `medium` | `high` | `high` | `low` |
-| Container Runtime Responsibility | `low` | `high` | `medium` | `low` |
+| Continuous Replication Dependency | `low` | `high` | `high` | `low` |
+| Host OS Responsibility | `medium` | `high` | `medium` | `high` |
+| Container Runtime Responsibility | `low` | `high` | `medium` | `high` |
 | Kubernetes Dependency | `low` | `low` | `low` | `low` |
 | Registry Failure Domain | `verification_required` | `verification_required` | `verification_required` | `verification_required` |
 | Backup Failure Domain | `verification_required` | `verification_required` | `verification_required` | `verification_required` |
@@ -2193,10 +2375,77 @@ Traffic Failover, Failback/Re-seed, RTO/RPO 측정, 비용과 1인 운영 제약
 | Terraform Reproducibility | `verification_required` | `verification_required` | `verification_required` | `verification_required` |
 | Current Evidence | `runtime_unverified` | `runtime_unverified` | `runtime_unverified` | `runtime_unverified` |
 | Blocking Verification | `blocked_by_evidence` | `blocked_by_evidence` | `blocked_by_evidence` | `blocked_by_evidence` |
-| Decision Readiness | `planning_leader` | `conditionally_viable` | `conditionally_viable` | `deferred` |
+| Decision Readiness | `retained_alternative` | `planning_leader` | `conditionally_viable` | `conditionally_viable` |
 
 평가값은 상대적 Architecture Candidate 평가다. `strong`도 Runtime 성공이나 Target
 달성을 의미하지 않는다.
+
+#### 8.70.1 Final Integrated Topology Comparison
+
+| Criterion | Topology 1 — Fargate/Cold/ECR | Topology 2 — EC2 Compose/Warm/GHCR | Topology 3 — Fargate/Warm/Measured Registry |
+|---|---|---|---|
+| Fixed Cost | ALB·Backup·Monitoring 측정 | Warm EC2/EBS·Backup·Monitoring 측정 | ALB+Warm DB 측정 |
+| Application Recovery | Task/ALB 기동 측정 | Bootstrap/Compose/Tunnel 측정 | Task/ALB 기동 측정 |
+| Database Recovery | Restore/Replay가 Critical Path | Lag 정상 시 Promotion 단축 가능 | Lag 정상 시 Promotion 단축 가능 |
+| Primary Runtime Similarity / Drift | medium / Task 정의 Drift | strong / Host 차이 | medium / Task 정의 Drift |
+| Control Planes / Managed Components | ECS+ALB+IAM+Cloudflare | EC2+IAM+Cloudflare+PostgreSQL | ECS+ALB+EC2 DB+IAM+Cloudflare |
+| Host Responsibility | DB Restore Host | App Host+DB Host | DB Host |
+| Registry / ALB | ECR first / ALB | GHCR first, ECR alt / no ALB initially | measured / ALB |
+| Cloudflare Dependency | Human-approved route to ALB | Human-approved route to EC2 Tunnel | Human-approved route to ALB |
+| App/DB Failure Domain | separate | separate EC2 mandatory | separate |
+| RTO / RPO Potential | Restore time unknown / archive lag | Promotion candidate / replication+archive lag | Promotion candidate / replication+archive lag |
+| Backup Safety | Base+WAL | Standby와 독립 Base+WAL | Standby와 독립 Base+WAL |
+| Promotion / Failback | high / final-sync | high / final-sync+standby timeline | high / final-sync+standby timeline |
+| One-person / MSA | Host↓, ECS 객체↑ | Runtime 모델↓, Host 책임↑ | 가장 넓은 운영 표면 |
+| Terraform Complexity | ECS/ALB/DB Restore | App EC2+DB EC2+Tunnel | ECS/ALB+DB EC2 |
+| Current Evidence | `runtime_unverified` | `runtime_unverified` | `runtime_unverified` |
+| Verification Work | Fargate/ALB+Cold Restore | EC2 Bootstrap+Tunnel+Replication+PITR | Fargate/ALB+Replication+PITR |
+| Decision Risk | Cold Restore가 RTO 위협 | Warm 비용/운영과 단일 App Host | 관리 표면과 고정비 최대 가능성 |
+| Planning Result | retained alternative | planning leader / first validation | retained hybrid alternative |
+
+#### 8.70.2 MSA Management Point Analysis
+
+현재 Logical Service 후보는 Spring Cloud Gateway, Carelog Core, Finance Harness, Dev
+Harness, Shared Identity, Shared AI와 향후 Shared Commerce/Audit Consumer다. 이 목록은
+실제 동시 Runtime·Traffic·독립 Scale Evidence가 아니다.
+
+- Registry는 Service별 Image Naming, Release/Platform Digest, Rollback, Retention,
+  Permission과 CI Publish를 표준화한다. Registry는 필요하지만 ECR일 필요는 없다.
+- Fargate는 Host OS/Docker Daemon, 일부 Scheduling·Restart·Scale을 줄인다. 대신
+  Service별 Task Definition, ECS Service, Task/Execution Role, Network/Security Group,
+  ALB/Target Group, Health, Log Group, Secret과 Deployment Definition을 늘린다.
+- EC2 Compose는 Primary와 유사한 Compose/Override, Local Network, 단일 Host Debug를
+  제공한다. 대신 Host Patch, Docker/Compose Version, Bootstrap, Instance Security,
+  Disk/Monitoring과 Single-host Failure를 운영한다.
+- 현재 Scale과 Emergency DR 조건에서는 Service 수만으로 Fargate를 우선하지 않는다.
+  Multi-replica, Service별 독립 Scale, Zero-downtime Deployment 또는 Host 운영 부담이
+  측정되면 Fargate를 재평가한다.
+
+#### 8.70.3 Candidate Reframe Verdict and Re-evaluation Triggers
+
+```text
+Candidate Reframe Verdict: ADOPT_REVISED_PLANNING_LEADER
+Application: EC2 + Docker Compose first validation
+Database: separate EC2 Warm Physical Standby + independent Base Backup/WAL PITR first validation
+Registry: GHCR first validation / ECR alternative
+Entry: Cloudflare Tunnel direct to EC2 Gateway first validation
+ALB: deferred until Fargate or multi-replica requirement
+Traffic: automated health detection + human approval
+Failback: automatic prohibited
+Decision state: open
+Decision readiness: direction_reframed_pending_independent_review
+```
+
+- EC2 Compose → Fargate: Multi-replica 지속 운영, Service별 독립 Scale, Host Patch 부담,
+  Zero-downtime 배포, Bootstrap이 RTO 위협, Host 장애 증가, Fargate Spike 우위.
+- Warm Standby → Cold Restore: Guardrail 초과, Replication 운영 부담, Network 불안정,
+  Cold Restore Drill의 충분한 RTO, RPO 요구 완화.
+- GHCR → ECR: ECS/Fargate 선택, IAM 통합 요구, GHCR Credential 부담, External Pull
+  장애, 측정된 ECR Lifecycle/비용 우위.
+- ALB 도입: Fargate, Multi-AZ/Replica, AWS 내부 Health Routing, Direct Tunnel 검증 실패.
+
+위 판정은 Planning Leader 우선순위만 바꾼다. Production Adoption, Resource 존재,
+비용 Guardrail 충족 또는 RTO/RPO 달성을 뜻하지 않는다.
 
 ### 8.71 End-to-end Recovery Dependency Graph
 
@@ -2206,9 +2455,8 @@ Incident Detection
 → Failure Classification
 → Primary Fencing
 → Backup/WAL Validation
-→ Database Runtime Provision
-→ Base Backup Restore
-→ WAL Replay
+→ Warm Standby Catch-up Validation
+  OR Cold Database Runtime Provision → Base Backup Restore → WAL Replay
 → Database Read-only Validation
 → Application Runtime Start
 → Application Read-only Validation
@@ -2227,10 +2475,11 @@ Incident Detection
 | Operator Acknowledgement | Detection | Operator Ack | 박성환 | Classification | `not_run` |
 | Failure Classification | Correlated Signals | Failure Class와 영향 | 박성환 | Fencing | `verification_required` |
 | Primary Fencing | Classification | Authoritative Mechanism 또는 독립 Write-impossibility Proof | 박성환 | Writer transfer | `verification_required` |
-| Backup/WAL Validation | Catalog·Manifest·WAL | Integrity, Gap, decryptability | 박성환 | Restore | `runtime_unverified` |
-| Database Runtime Provision | IaC·Version Inventory | Runtime Identity, Version, Extension | 박성환 | Base Restore | `planning_candidate` |
-| Base Backup Restore | Selected Backup | Restore Log, Manifest match | 박성환 | WAL Replay | `not_run` |
-| WAL Replay | Required WAL range | Gap-free Replay, Timeline | 박성환 | DB Validation | `not_run` |
+| Backup/WAL Validation | Catalog·Manifest·WAL | Integrity, Gap, decryptability | 박성환 | Standby/PITR safety | `runtime_unverified` |
+| Warm Standby Catch-up Validation | Streaming/Archive/Version Inventory | Lag, final received/replayed boundary, Timeline | 박성환 | DB Validation | `not_run` |
+| Cold Database Runtime Provision (alternative) | IaC·Version Inventory | Runtime Identity, Version, Extension | 박성환 | Base Restore | `planning_candidate` |
+| Base Backup Restore (alternative) | Selected Backup | Restore Log, Manifest match | 박성환 | WAL Replay | `not_run` |
+| WAL Replay (alternative) | Required WAL range | Gap-free Replay, Timeline | 박성환 | DB Validation | `not_run` |
 | Database Read-only Validation | Restored Cluster | Recovery-safe Read-only, Schema, Critical Read | 박성환 | App Start | `not_run` |
 | Application Runtime Start | DB Read-only Validation+Digest·Config·Secret | 강제 Read-only Runtime Evidence | 박성환 | App Validation | `runtime_unverified` |
 | Application Read-only Validation | App+DB read-only | Query, Business Read, Schema Compatibility | 박성환 | Promotion Approval | `not_run` |
@@ -2265,11 +2514,11 @@ Restore 완료는 Promotion 승인을 대체하지 않는다.
 | 2. Operator Acknowledgement | `unknown / measurement_required` | No | Detection | Ack timestamp | Yes |
 | 3. Classification | `unknown / measurement_required` | Partially | Ack | Correlated failure evidence | Yes |
 | 4. Fencing | `unknown / measurement_required` | Partially | Classification | Authoritative mechanism/proof evidence | Yes |
-| 5. AWS Runtime Preparation | `unknown / measurement_required` | Yes | Incident declaration | IaC/runtime evidence | Yes |
-| 6. Backup Download | `unknown / measurement_required` | Partially | Backup selection | Object integrity | Yes |
-| 7. Base Restore | `unknown / measurement_required` | No | Runtime+download | Restore log | Yes |
-| 8. WAL Replay | `unknown / measurement_required` | No | Base Restore | WAL continuity·timeline | Yes |
-| 9. Database Validation | `unknown / measurement_required` | No | Replay | DB read evidence | Yes |
+| 5. Application Runtime Preparation | `unknown / measurement_required` | Yes | Incident declaration | EC2 Bootstrap/Image/Tunnel evidence | Yes |
+| 6. Warm Standby Catch-up Validation | `unknown / measurement_required` | Partially | Fencing+replication evidence | Lag/received/replayed boundary | Yes |
+| 7. Cold PITR Fallback Preparation | `unknown / measurement_required` | Yes | Standby 불가 또는 PITR 선택 | Backup integrity/runtime evidence | Yes |
+| 8. Cold Base Restore/WAL Replay (alternative) | `unknown / measurement_required` | No | Fallback 선택 | Restore/WAL continuity/timeline | Yes |
+| 9. Database Validation | `unknown / measurement_required` | No | Standby catch-up 또는 Replay | DB read evidence | Yes |
 | 10. Application Startup | `unknown / measurement_required` | No | DB read-only validation | Digest/config/forced read-only | Yes |
 | 11. Application Validation | `unknown / measurement_required` | No | Startup | Query/business read evidence | Yes |
 | 12. Promotion Approval | `unknown / measurement_required` | No | Fencing+DB/App validation | Human approval | Yes |
@@ -2282,11 +2531,12 @@ RTO 4시간은 위 Stage의 Drill 측정 전 `target_not_verified`다. 정확한
 
 ### 8.73 Parallelization Boundary
 
-병렬 준비 후보: AWS Network Runtime 준비 · Image Pull · Backup Catalog 확인 · Secret/
-Configuration 확인 · Operator Evidence 준비 · Application Task Definition 준비.
+병렬 준비 후보: EC2 Application Bootstrap · Image Pull · Warm Standby Lag/Timeline 확인 ·
+Backup Catalog 확인 · Secret/Configuration 확인 · Operator Evidence 준비 · Fargate/ALB
+대안 Definition 준비.
 
 직렬 Gate: Authoritative Fencing 또는 독립 Write-impossibility Proof 이전 Write Enable 금지 ·
-Base Restore 이후 WAL Replay · Database Read-only Validation 이후 Application 강제 Read-only
+Warm Standby Catch-up 또는 Cold Base Restore 이후 WAL Replay · Database Read-only Validation 이후 Application 강제 Read-only
 Validation · Application Read-only Validation 이후 Promotion Approval/실행 · Writer Authority
 Record 이후 Application Write Approval · Controlled Write 이후 Traffic Failover.
 
@@ -2618,14 +2868,14 @@ Synthetic Traffic · Controlled Maintenance Window. Slice 6에서 하나를 채�
 |---|---|---|---|---|
 | Primary Runtime | `runtime_unverified` | Planning comparison | Host/runtime inventory | `blocked_by_runtime_discovery` |
 | Image Architecture | `planning_leader` | Official capability | Product build/test | `partially` |
-| Registry | `planning_leader` | Official capability | Account/ownership/cost | `partially` |
-| AWS Application Runtime | `planning_leader` | Official capability | Fargate/EC2 prototype | `blocked_by_runtime_discovery` |
+| Registry | `planning_leader / GHCR first validation` | Official capability | Account/ownership/auth/cost | `partially` |
+| AWS Application Runtime | `planning_leader / EC2 Compose first validation` | Official capability | EC2/Fargate prototype | `blocked_by_runtime_discovery` |
 | Traffic Failover | `approved_target` | Human direction/invariant | Current traffic state | `partially` |
 | Primary Fencing | `verification_required` | Invariant | Mechanism/proof | `no` |
 | Read-only Mode | `runtime_unverified` | Validation requirement | Implementation/prototype | `no` |
 | PostgreSQL Backup | `runtime_unverified` | Official capability | Design/prototype | `no` |
 | WAL Archive | `runtime_unverified` | Official capability | Gap/lag evidence | `no` |
-| Restore Runtime | `open` | EC2 candidate | Runtime selection/drill | `no` |
+| Restore Runtime | `planning_leader / warm standby first validation` | Official capability | inventory/network/cost/drill | `no` |
 | Promotion | `verification_required` | Invariant | Procedure/drill | `blocked_by_drill` |
 | Writer Authority | `planning_candidate` | State/record candidate | Storage/control design | `blocked_by_security_design` |
 | Failback/Re-seed | `verification_required` | Boundary/candidate order | Full drill | `blocked_by_drill` |
@@ -2648,7 +2898,8 @@ Invariant · 필요한 Test/Drill 종류 · Authority Boundary.
 
 아직 확인되지 않은 것: 실제 Mac mini Hardware · 실제 Docker/Compose Runtime · 실제
 PostgreSQL Host/Version · Database Size · WAL Rate · Backup 존재 · WAL Archive 존재 · AWS
-Account/IAM · ECS/Fargate 호환성 · EC2 Bootstrap · ALB Health · Cloudflare 실제 구성 ·
+Account/IAM · EC2 Compose Bootstrap · GHCR Private Pull · Warm Standby Network/Lag ·
+Fargate/ALB 대안 호환성 · Cloudflare 실제 구성 ·
 Fencing 구현 · Read-only 구현 · Restore 성공 · Promotion 성공 · Cost · RTO/RPO.
 
 ### 8.90 Decision Blockers
@@ -2658,8 +2909,8 @@ Fencing 구현 · Read-only 구현 · Restore 성공 · Promotion 성공 · Cost
 | 1 | Runtime Inventory | `runtime_discovery_required` |
 | 2 | PostgreSQL Version/Extension Inventory | `runtime_discovery_required` |
 | 3 | Database Size/WAL Measurement | `measurement_required` |
-| 4 | Backup/Archive Design | `architecture_decision_required` |
-| 5 | Restore Runtime 선택 | `architecture_decision_required` |
+| 4 | Backup/Archive Prototype | `implementation_required` |
+| 5 | Warm Standby/Cold Restore 비용·복구 비교 | `measurement_required` |
 | 6 | Authoritative Fencing Mechanism과 독립 Proof 기준 | `architecture_decision_required` |
 | 7 | Read-only Mechanism | `architecture_decision_required` |
 | 8 | Writer Authority Storage/Control과 Failback Final Sync Gate | `architecture_decision_required` |
@@ -2693,9 +2944,11 @@ Accepted ADR 표현 · RTO/RPO 달성 표현 · RPL-42 완료 전환.
 Current integrated planning candidate:
 - Mac mini Primary: Docker Compose
 - Artifact: Multi-platform OCI Image
-- Registry: ECR conditional, GHCR alternative
-- AWS Application DR: ECS Fargate + ALB
-- AWS Database DR: Cold Base Backup + WAL Restore on separate PostgreSQL Runtime candidate
+- Registry: GHCR first validation, ECR alternative
+- AWS Application DR: EC2 + Docker Compose first validation, separate from Database Host
+- AWS Entry: Cloudflare Tunnel direct to EC2 Gateway first validation, ALB initially omitted
+- AWS Database DR: separate EC2 Warm Physical Standby first validation
+- Data Safety: independent Base Backup + Continuous WAL Archive/PITR retained
 - Traffic: Health Detection + Human Approval
 - Write: Fencing + Read-only Validation + Human Promotion Approval
 - Failback: Re-seed + Human Approval
@@ -2707,16 +2960,17 @@ Current integrated planning candidate:
 - Managed PostgreSQL Primary: deferred
 
 Decision state: open
-Decision readiness: not_ready_without_runtime_discovery_and_drill
+Decision readiness: direction_reframed_pending_independent_review
 ```
 
 ### 8.93 Integrated Alternatives Summary
 
 | Alternative | State | Boundary |
 |---|---|---|
-| EC2 + Docker Compose Application DR | conditional alternative | Fargate 호환성·Compose 동등성 Evidence |
-| Warm Physical Standby | conditional alternative | Cold Restore가 Target 실패 시 |
-| GHCR Registry Independence | conditional alternative | AWS Failure Domain 분리 필요 시 |
+| ECS Fargate + ALB Application DR | conditional alternative | Managed Runtime/Scale/ALB Spike 우위 시 |
+| Cold Base Backup + WAL Restore | conditional alternative | Warm 비용·운영 부담 또는 Network가 부적합할 때 |
+| ECR | conditional alternative | ECS/Fargate/IAM 통합이 우선일 때 |
+| Incident-created ALB | conditional alternative | Direct Tunnel 또는 persistent ALB가 부적합할 때 |
 | Managed PostgreSQL Primary | deferred | Primary Migration Decision 필요 |
 | EKS | deferred | ADR-0015 Trigger 필요 |
 | Fully Manual Failover | not recommended initially | Detection 지연·절차 편차 |
@@ -2726,13 +2980,15 @@ Decision readiness: not_ready_without_runtime_discovery_and_drill
 
 ### 8.94 Integrated Consequence Candidates
 
-현재 통합 후보를 나중에 채택할 경우의 긍정 후보: 평상시 Compute 비용 제한 가능성 ·
-동일 OCI Artifact 재사용 · Managed Application Runtime · Human-approved Write/Traffic ·
-PostgreSQL Native PITR · 명확한 Authority Evidence · Drill 가능한 단계 분리.
+현재 통합 후보를 나중에 채택할 경우의 긍정 후보: Primary/DR Compose 모델 유사성 ·
+평상시 Application Compute 제한 가능성 · 동일 OCI Artifact 재사용 · Database Promotion
+시간 단축 가능성 · Human-approved Write/Traffic · Standby와 독립된 PostgreSQL PITR ·
+명확한 Authority Evidence · Drill 가능한 단계 분리.
 
-부정 후보: 복구 절차가 길고 복잡함 · 1인 Operator 의존 · Cold Restore 시간 불확실 ·
-여러 AWS/Cloudflare/IAM 구성 필요 · Database Runtime 별도 운영 · Manual Approval로 RTO
-초과 가능 · Failback/Re-seed 복잡성 · Cost 측정 필요 · Cross-region 부재.
+부정 후보: Warm EC2/EBS 상시 비용 · Host OS/Docker/PostgreSQL Patch · Replication
+Network/Lag/Slot/Disk 운영 · GHCR Private Pull Credential · 단일 Application Host ·
+1인 Operator 의존 · Manual Approval로 RTO 초과 가능 · Failback/Re-seed 복잡성 ·
+Cost 측정 필요 · Cross-region 부재.
 
 ### 8.95 Architecture Decision Readiness Gate
 
@@ -2780,7 +3036,7 @@ Confluence는 수정하지 않는다.
 
 ## 9. Decision
 
-**No architecture option is accepted in Slice 6.**
+**No architecture option is accepted in the Candidate Reframe.**
 
 현재 Decision은 `open`이다. 기존 단계별 평가는 Planning 상태로 보존되며 통합 분석은
 이를 End-to-end Recovery Candidate, Drill과 Decision Readiness Gate로 연결할 뿐
@@ -2790,9 +3046,11 @@ Accepted로 승격하지 않는다.
 Current integrated planning candidate (open, not accepted):
 - Mac mini Docker Compose Primary
 - Multi-platform OCI Image
-- ECR conditional / GHCR alternative
-- ECS Fargate + ALB Application DR
-- Cold Base Backup + WAL PostgreSQL Recovery on a separate runtime candidate
+- GHCR first validation / ECR alternative
+- EC2 + Docker Compose Application DR first validation
+- Cloudflare Tunnel direct to EC2 Gateway first validation; ALB initially omitted
+- Separate EC2 Warm Physical Standby first validation
+- Base Backup + Continuous WAL Archive/PITR independent of Standby
 - Health Detection + Human Approval
 - Primary Fencing before Write
 - Read-only Validation before Promotion
@@ -2802,9 +3060,10 @@ Current integrated planning candidate (open, not accepted):
 - Terraform planning candidate
 
 Conditional alternatives:
-- EC2 + Docker Compose
-- Warm Physical Standby
-- GHCR
+- ECS Fargate + ALB
+- Cold Base Backup + WAL Restore
+- ECR
+- Incident-created ALB
 
 Deferred:
 - EKS
@@ -2815,11 +3074,12 @@ Deferred:
 Initial prohibition candidate:
 - Automatic Failback
 
-Decision readiness: not_ready
+Decision readiness: direction_reframed_pending_independent_review
 Blocking reasons:
 - runtime discovery
 - cost measurement
-- restore drill
+- replication/network feasibility
+- restore and promotion drill
 - full DR drill
 - fencing/read-only design
 - independent review
@@ -2833,7 +3093,7 @@ decision_status: open
 동작 중이다", "EC2 Standby가 존재한다", "RDS를 사용한다", "RPO 15분을 달성했다",
 "RTO 4시간을 달성했다", "Restore가 검증됐다", "Promotion이 구현됐다".
 
-These planning evaluations require detached independent re-review of the correction HEAD and
+These planning evaluations require detached independent re-review of the Candidate Reframe HEAD and
 user decision approval.
 
 ### Ownership
@@ -2850,34 +3110,38 @@ user decision approval.
 
 ## 10. Rationale
 
-No decision has been accepted in this section. 아래는 Slice 4 Planning Leader가
+No decision has been accepted in this section. 아래는 Candidate Reframe Planning Leader가
 현재 Driver에서 앞선 이유이며 채택 근거가 아니다.
 
-- **관리형 Container가 1인 운영 Driver에 부합한다.** ECS Fargate는 Host OS와
-  Container Runtime Patch를 AWS 책임으로 두어 Incident 시 Host Provisioning 단계를
-  줄일 수 있다. 이는 Slice 3의 Docker Compose Planning Leader와 동일 OCI Image를
-  재사용한다는 전제와 모순되지 않는다.
-- **Cold Standby와 비용 Driver를 함께 만족할 후보다.** `desiredCount 0`으로 Task를
-  Idle에 둘 수 있으나 ALB 등 고정비가 남을 수 있어 비용은 `measurement_required`다.
-- **EC2 + Compose는 Compose 동등성이 최우선이거나 Fargate 호환성이 미검증일 때
-  우월할 수 있어** conditionally_viable로 보존한다.
+- **EC2 Compose는 Emergency DR와 Primary Runtime 유사성을 함께 검증하는 가장 작은
+  Application Spike다.** Host Patch 책임은 늘지만 Task Definition, ECS Service, ALB와
+  Target Group을 초기 경로에서 줄일 가능성이 있다. Bootstrap/운영 부담이 더 크다는
+  Evidence가 나오면 Fargate + ALB로 재평가한다.
+- **ALB는 Fargate에는 강한 기본 Entry지만 단일 EC2에는 필수가 아니다.** Cloudflare
+  Tunnel direct to Gateway를 먼저 검증하고 Fargate/Multi-replica/Direct Tunnel 실패 시
+  ALB를 재평가한다.
+- **Warm Physical Standby는 Database Recovery Speed 우선 조건과 정렬될 가능성이
+  크다.** 그러나 Backup이 아니므로 Base Backup+Continuous WAL PITR를 독립 유지하며,
+  상시 비용·Lag·Slot·Disk·Patch·Network 운영은 `measurement_required`다.
+- **GHCR는 GitHub Build/Release와 EC2 Pull 경로를 먼저 검증한다.** Private PAT 관리가
+  부담이거나 Fargate/ECS를 선택하면 ECR IAM 통합을 재평가한다.
 - **오탐과 Split-brain 위험이 자동 전환의 속도 이점을 상회한다.** 그래서 Traffic은
   Detection은 자동화하되 Write Enable과 Traffic Switch는 사람 승인을 요구하는
   방식이 현재 앞선다.
 - **RTO 4시간은 단계별 측정 전까지 Runtime 선택으로 보장되지 않는다.** Runtime
   후보 선택은 RTO 달성 주장과 분리된다.
 
-이 Rationale은 후속 RPL-42 Slice의 검증과 독립 Review 전까지 Decision이 아니다.
+이 Rationale은 후속 Evidence와 Detached Independent Review 전까지 Decision이 아니다.
 
 ### Slice 5 Rationale (No decision accepted)
 
 - **PostgreSQL Native PITR가 Business SSOT와 RPO/RTO Driver에 가장 직접적이다.** Base
-  Backup + Continuous WAL Archive는 특정 시점 복구와 Off-host 보존을 제공해 Cold
-  Standby 비용 Driver와 정렬된다. 다만 RPO는 Archive Lag, RTO는 Restore/Replay
+  Backup + Continuous WAL Archive는 Warm Standby와 독립된 PITR 안전망이다. RPO는
+  Archive/Replication Lag와 Business Boundary, RTO는 Promotion 또는 Restore/Replay
   시간에 의존해 `measurement_required`다.
-- **Warm Physical Standby는 RPO/RTO를 줄일 수 있으나 상시 비용과 1인 운영 복잡도를
-  올린다.** Cold Restore Drill이 RTO를 못 맞추거나 더 강한 RPO가 필요할 때 우월할
-  수 있어 conditionally_viable로 둔다.
+- **Warm Physical Standby는 Database Recovery Speed가 우선인 현재 조건에서 first
+  validation target이다.** 상시 비용과 1인 운영 복잡도가 Guardrail을 넘거나 Network/
+  Replication 운영이 부적합하면 Cold Restore로 되돌린다.
 - **Managed Primary는 승인된 초기 미채택 제약과 Primary Architecture 변경 부담으로
   deferred다.** 영구 거부가 아니다.
 - **Dump-only는 PITR 부재와 RPO 달성 곤란으로 Canonical DR로 부적합**하며 보조
@@ -2889,15 +3153,16 @@ No decision has been accepted in this section. 아래는 Slice 4 Planning Leader
 
 ### Slice 6 Rationale (No decision accepted)
 
-- Candidate A는 동일 OCI Artifact, Managed Application Runtime과 Cold Data Restore를
-  연결해 현재 비용·1인 운영 Driver에 가장 잘 맞는 통합 `planning_leader`다.
-- Candidate B는 Compose 동등성을 얻는 대신 Host OS와 Container Runtime 책임을 늘린다.
-- Candidate C는 Cold Restore가 목표를 못 맞출 때 Recovery Speed를 위해 비용·복잡도·
-  Continuous Replication 의존을 수용하는 조건부 후보다.
+- Candidate B는 Compose 동등성과 Warm Database 활성화 가능성을 연결해 현재 사용자
+  조건에서 `planning_leader`다. Host와 Replication 운영 부담 때문에 검증이 필수다.
+- Candidate A는 Fargate/ALB의 관리형 Application 장점과 낮은 Database 고정비를 가진
+  대안으로 보존한다.
+- Candidate C는 Fargate 운영 Spike가 우세하면서 Database Recovery Speed가 필요할 때의
+  Hybrid 대안이고, Candidate D는 Warm 비용/운영이 부적합할 때의 Compose+Cold 대안이다.
 - Health, Runtime 준비와 Evidence 수집은 병렬화할 수 있지만 Writer Authority 전이는
   Fencing·Validation·Human Approval을 따라 직렬이어야 한다.
 - Document Completeness만으로 Runtime Feasibility, Cost 또는 RTO/RPO를 증명할 수 없으므로
-  Decision Readiness는 `not_ready`다.
+  Decision Readiness는 `direction_reframed_pending_independent_review`다.
 
 이 Slice 6 Rationale도 Architecture Option 채택 근거가 아니라 독립 Review 전 비교
 Projection이다.
@@ -2915,13 +3180,15 @@ No decision has been accepted in this section. 아래는 Planning Leader가 채�
 - Incident 절차가 Fencing → Restore → Read-only → Consistency → Write Enable →
   Traffic 순서로 구조화되어 Split-brain 위험이 감소한다.
 - Human Approval Gate로 오탐 기반 자동 전환을 방지한다.
-- Terraform 재현으로 Cold Standby Provisioning을 반복 가능하게 만들 수 있다.
+- Terraform 재현으로 EC2 Application과 별도 Warm Standby 경계를 반복 검증할 수 있다.
 
 ### 채택 시 부담 후보
 
-- ECS/ALB/IAM/VPC/Security Group과 Cloudflare, Secret Store 운영 표면이 늘어난다.
-- Fargate와 Local Compose 사이 Configuration Drift 관리가 필요하다.
-- ALB 등 고정비와 Incident/Drill Burst 비용이 발생할 수 있다.
+- Application/Database EC2 Host Patch, Docker/PostgreSQL Runtime, IAM/VPC/Security Group,
+  Cloudflare와 Secret Store 운영 표면이 늘어난다.
+- Warm Standby의 Compute/EBS, Replication Lag/Slot/Disk와 Timeline을 상시 관리해야 한다.
+- GHCR Private Pull Credential과 외부 Registry Dependency를 관리해야 한다.
+- 단일 EC2 Application Host 장애와 Incident-time Bootstrap 실패가 RTO를 위협할 수 있다.
 - Operator 부재 시 Human Approval 의존이 RTO를 초과시킬 수 있다.
 
 ### 하지 않는 것
@@ -2954,12 +3221,12 @@ No decision has been accepted in this section. 아래는 Planning Leader가 채�
 
 ### Slice 6 Consequences (No decision accepted)
 
-채택 시 긍정 후보: 평상시 Compute 비용 제한 가능성 · 동일 OCI Artifact 재사용 ·
-Managed Application Runtime · Human-approved Write/Traffic · PostgreSQL Native PITR ·
-명확한 Authority Evidence · Drill 가능한 단계 분리.
+채택 시 긍정 후보: Primary/DR Compose 유사성 · 평상시 Application Compute 제한 가능성 ·
+동일 OCI Artifact 재사용 · Warm Database 활성화 단축 가능성 · Human-approved
+Write/Traffic · Standby와 독립된 PostgreSQL Native PITR · 명확한 Authority Evidence.
 
-채택 시 부담 후보: 긴 복구 Critical Path · 1인 Operator 의존 · Cold Restore 시간
-불확실 · AWS/Cloudflare/IAM 운영 표면 · 별도 Database Runtime · Approval 지연 ·
+채택 시 부담 후보: Warm EC2/EBS 상시 비용 · Application/Database Host 운영 ·
+Replication Network/Lag/Slot/Disk · GHCR Credential · 1인 Operator 의존 · Approval 지연 ·
 Failback/Re-seed 복잡성 · Cost 측정 필요 · Cross-region 부재.
 
 ---
@@ -2976,7 +3243,7 @@ Failover/Failback Action의 승인 경계를 논의하기 위한 Architecture Ca
 | Primary Unavailable 판정 | Health/Tunnel/DB Signal | 예 | 복수 Signal 상관, Operator 확인 | 박성환 |
 | Primary Fencing 승인 | Mechanism/Observation Signal | 예 | Authoritative Mechanism 또는 독립 Write-impossibility Proof | 박성환 |
 | DR Runtime Start | 조건부 Trigger 가능 | 예(초기) | Runtime State, Image Digest | 박성환 |
-| Database Restore 시작 | 없음 | 예 | Backup/WAL Reference (Slice 5) | 박성환 |
+| Standby Catch-up 또는 Cold Restore 시작 | 없음 | 예 | Lag/Timeline 또는 Backup/WAL Reference | 박성환 |
 | Database Read-only 승인 | Runtime Health | 예 | Recovery-safe Read-only, Schema Check | 박성환 |
 | Application Read-only 승인 | Application Readiness | 예 | 강제 Read-only, Query, Critical Business Read | 박성환 |
 | Database Promotion 승인 | DB/App Validation | 예 | Fencing+Restore+DB/App Read-only Evidence | 박성환 |
@@ -3108,7 +3375,8 @@ Database Backup도 Application Image를 대체하지 않는다.
 ### Slice 5 Stateful Recovery Order
 
 최소 후보 순서: 1) Incident/Authoritative Fencing Evidence 2) Secret and Configuration 3)
-Backup Catalog 4) PostgreSQL Base Backup/WAL 5) PostgreSQL Read-only Validation 6) Uploaded
+Warm Standby Lag/Timeline 및 Backup Catalog 4) Standby Catch-up 또는 Cold PostgreSQL Base
+Backup/WAL Fallback 5) PostgreSQL Read-only Validation 6) Uploaded
 Business Asset 7) Application Runtime 강제 Read-only 8) Application Query/Critical Business
 Read 9) Database Promotion Approval/실행 10) Writer Authority Record 11) Redis/Projection
 Rebuild 12) Application Write Approval 13) Controlled Write Probe 14) Traffic Failover 15)
@@ -3169,9 +3437,9 @@ No decision has been accepted in this section. 아래는 Slice 4 Architecture �
 
 ### Runtime
 
-- Fargate Task Start · EC2 Bootstrap · Image Pull by Digest · ARM64/AMD64
-  Compatibility · ALB Target Healthy · Read-only Boot · Secret Injection · Config
-  Injection · Rollback.
+- EC2 Compose Bootstrap · GHCR Private Pull by Digest · Cloudflare Tunnel to EC2 Gateway ·
+  ARM64/AMD64 Compatibility · Read-only Boot · Secret/Config Injection · Rollback · Fargate
+  Task/ALB 동일 Image 대안 비교.
 
 ### Failover
 
@@ -3242,7 +3510,7 @@ Drill Policy(§8.67)의 Monthly Restore Check와 Quarterly Full DR Drill은 승�
 각 상태는 `not_run`, `runtime_unverified` 또는 `verification_required`다.
 
 - **Topology**: Candidate A/B/C Application·Database Host 분리 · 승인 Digest 재사용 ·
-  Registry/Backup Failure Domain 분리.
+  Candidate D 포함 Registry/Backup Failure Domain 분리 · Warm Standby와 Backup 분리.
 - **Dependency**: Authoritative Fencing 없는 Writer 전이 거부 · Database Validation 전
   Application Start 거부 · Application Read-only Validation 전 Promotion 거부 · Promotion/
   Authority Record 전 Application Write 거부 · Write Probe 전 Traffic Switch 거부.
@@ -3376,8 +3644,24 @@ Promotion ≠ Reversible without new restore
 - Critical Path 각 Stage와 Failover Timeline T0~T12를 Drill에서 측정해야 한다.
 - RPO의 Incident Data Boundary와 Verified Restored Business Boundary 상관 방식을
   검증해야 한다.
-- Candidate A의 별도 PostgreSQL Runtime, Candidate B의 App/DB Host 분리, Candidate C의
-  지속 복제 비용과 운영 부담을 비교해야 한다.
+- Candidate A의 Cold Restore Critical Path, Candidate B의 App/DB Host 분리와 Warm
+  Replication 운영, Candidate C의 Fargate+Warm 관리 표면, Candidate D의 Compose+Cold
+  비용/복구 Trade-off를 비교해야 한다.
+
+Candidate Reframe 이후 Evidence 우선순위:
+
+1. PostgreSQL Version/Extension/Size/WAL Inventory
+2. Warm Standby 최소 Instance/EBS Cost Model
+3. Replication Lag와 Network Feasibility
+4. Base Backup/WAL Archive Prototype
+5. GHCR Private Pull from EC2
+6. EC2 Compose Bootstrap
+7. Cloudflare Tunnel to EC2 Gateway
+8. Fargate + ALB 동일 Image Compatibility
+9. EC2 Compose vs Fargate Operational Comparison
+10. Warm Standby Promotion Drill
+11. Final-sync Failback Drill
+12. Production Adoption Gate
 
 ```text
 Implementation note
@@ -3394,8 +3678,8 @@ Implementation Notes는 실행 코드나 운영 구성의 Source of Truth가 아
 ## 20. Known Limitations
 
 - 1인 운영이므로 Operator 부재 시 RTO Target을 초과할 수 있다.
-- Cold Standby 후보는 실제 Infrastructure Provision과 Data Restore 시간에
-  민감하다.
+- Warm Standby 후보는 상시 비용·Network·Lag·Slot/Disk·Patch 운영에 민감하고,
+  Cold PITR 대안은 Infrastructure Provision과 Data Restore 시간에 민감하다.
 - 비용 목표는 AWS Resource, Network와 Traffic 구성 전까지 검증되지 않는다.
 - 실제 PostgreSQL 크기와 WAL 생성량이 없어 Restore 시간을 계산할 수 없다.
 - Production Deployment와 Traffic Evidence가 없다.
@@ -3413,8 +3697,8 @@ Implementation Notes는 실행 코드나 운영 구성의 Source of Truth가 아
 - Digest 기반 Rollback은 아직 rehearsal Evidence가 없다.
 - 1인 Operator 의존이며 24/7 SLA가 없어 Operator 부재 시 RTO를 초과할 수 있다.
 - 실제 AWS Account·IAM과 Cloudflare Load Balancing 구성이 미검증이다.
-- 실제 DB 크기와 Restore 시간, ALB/Fargate 비용, Cold Standby Provision 시간이
-  미측정이다.
+- 실제 DB 크기와 Restore 시간, Replication Lag, Warm EC2/EBS, ALB/Fargate와
+  Incident EC2 Bootstrap 비용·시간이 미측정이다.
 - Authoritative Fencing Mechanism/독립 Proof 기준과 Read-only 구현 방식이 미결정이다.
 - Cross-region DR는 `deferred`, Automatic Failover는 초기 `not_recommended`,
   Automatic Failback은 초기 후보에서 금지 상태다.
@@ -3425,11 +3709,11 @@ Implementation Notes는 실행 코드나 운영 구성의 Source of Truth가 아
   Restore Runtime이 미구현이다.
 - Promotion Procedure와 Failback Re-seed/Final Synchronization 방식(조건부 pg_rewind 포함)이
   미결정이다.
-- Warm Standby Cost와 Cross-region Backup(`deferred`)이 미측정·미결정이다.
+- Warm Standby Cost/Network/운영 부담과 Cross-region Backup(`deferred`)이 미측정·미결정이다.
 - Full Restore/Failover/Failback Drill이 `not_run`이라 RPO 15분·RTO 4시간은
   `target_not_verified`다.
 - Integrated Candidate A~D 모두 Runtime Inventory, Cost, Fencing, Read-only와 Drill
-  Evidence가 부족해 Decision Readiness는 `not_ready`다.
+  Evidence가 부족해 Decision Readiness는 `direction_reframed_pending_independent_review`다.
 - Operator 단일 인물 의존과 Cloudflare/AWS 단일 Provider 결합은 해소되지 않았다.
 - Slice 5에서 `## 19. Implementation Notes` 구조 Header 누락이 복구됐고 현재 Canonical
   Tip의 26개 주요 Section 구조는 정상이다. Runtime Architecture 의미 변경은 없다.
@@ -3460,7 +3744,9 @@ DB 정책과 Drill 주기는 Open Question으로 되돌리지 않는다.
 ### Registry
 
 - AWS Account와 IAM Owner는 누구인가?
-- ECR과 GHCR 중 AWS 독립 Failure Domain이 더 중요한가?
+- EC2에서 Private GHCR Read Credential을 어떻게 최소 권한·Rotation·Break-glass로
+  관리할 것인가?
+- GHCR Pull Spike와 ECR IAM Pull Spike 중 1인 운영 절차가 실제로 더 단순한가?
 - Registry 고정비와 Network 비용이 Cost cap에 포함되는가?
 - Retention 기간과 최소 Rollback Digest 수는 얼마인가?
 - Cross-region Replication이 필요한가?
@@ -3468,9 +3754,11 @@ DB 정책과 Drill 주기는 Open Question으로 되돌리지 않는다.
 
 ### AWS Runtime
 
-- Fargate와 EC2 중 실제 Application 호환성이 높은가?
-- `desiredCount 0` 또는 equivalent Cold 상태가 비용 목표에 맞는가?
-- ALB를 상시 유지할 것인가, Incident 때 생성할 것인가?
+- EC2 Compose Bootstrap과 Fargate Task 중 실제 Application 호환성·기동·운영 절차가
+  더 단순한가?
+- stopped/Incident-created EC2 Application 상태가 비용 목표와 RTO에 맞는가?
+- Cloudflare Tunnel direct to EC2 Gateway가 ALB 없이 검증되는가?
+- Fargate 대안을 선택할 때 ALB를 상시 유지할 것인가, Incident 때 생성할 것인가?
 - NAT Gateway 없이 필요한 접근을 구성할 수 있는가?
 - ECR과 GHCR 중 Failure Domain 우선순위는 무엇인가?
 - Terraform State를 어디에 둘 것인가?
@@ -3497,7 +3785,7 @@ DB 정책과 Drill 주기는 Open Question으로 되돌리지 않는다.
 
 ### Verification
 
-- 4시간 RTO를 Cold Standby로 달성 가능한가?
+- Warm Standby Promotion 경로와 Cold PITR Fallback 중 4시간 RTO를 달성 가능한가?
 - Operator 부재 시 Escalation은 어떻게 하는가?
 - Drill Evidence의 저장 위치와 Owner는 무엇인가?
 
@@ -3520,7 +3808,7 @@ DB 정책과 Drill 주기는 Open Question으로 되돌리지 않는다.
 
 ### Restore (Slice 5)
 
-- AWS PostgreSQL Runtime은 EC2인가?
+- 별도 EC2 Warm Standby의 Version/Extension/EBS/Network 후보가 타당한가?
 - Restore용 Image 또는 AMI는 어떻게 관리하는가?
 - PITR Target을 어떤 Evidence로 선택하는가?
 - Read-only Validation은 어떤 방식인가?
@@ -3544,8 +3832,8 @@ DB 정책과 Drill 주기는 Open Question으로 되돌리지 않는다.
 
 ### Data DR Verification (Slice 5)
 
-- Cold Restore로 4시간 RTO가 가능한가?
-- WAL Archive로 15분 RPO가 가능한가?
+- Warm Standby Promotion과 Cold Restore Fallback 각각 4시간 RTO가 가능한가?
+- Replication Lag, Archive Lag/Gap과 Business Boundary로 15분 RPO가 가능한가?
 - Monthly Check와 Quarterly Drill Evidence는 어디에 보존하는가?
 
 ---
@@ -3604,6 +3892,12 @@ DB 정책과 Drill 주기는 Open Question으로 되돌리지 않는다.
 - AWS official documentation (Slice 6): Well-Architected Reliability Pillar, Defined
   Recovery Strategies, Disaster Recovery Options in the Cloud
 - Terraform official documentation (Slice 6): Dependency Graph, Plan
+- AWS official documentation (Candidate Reframe): EC2, User Data, EC2 IAM Role, EBS,
+  ECR Authentication, ECR with ECS, ECR Billing Structure, ECS Private Registry Authentication
+- GitHub official documentation (Candidate Reframe): Container Registry Authentication,
+  Package Permissions, Package Billing Structure
+- Docker official documentation (Candidate Reframe): Compose Production, Digest Pull,
+  Multi-platform Image
 
 ### Affected Documents
 
@@ -3640,6 +3934,7 @@ Existing ADR Supersession: none
 | 2026-08-05 | open | open | not_applicable | not_applicable | Slice 4에서 AWS DR Runtime과 승인 기반 Traffic Failover 대안을 비교 | RPL-42 / Comment 10144 |
 | 2026-08-05 | open | open | not_applicable | not_applicable | Slice 5에서 PostgreSQL Backup/Restore/Promotion과 RPO/RTO 검증 경계를 비교 | RPL-42 / Comment 10144 |
 | 2026-08-05 | open | open | not_applicable | not_applicable | Slice 6에서 통합 복구 흐름, Drill과 Decision Readiness 조건을 연결 | RPL-42 / Comment 10144 |
+| 2026-08-05 | open | open | not_applicable | not_applicable | 1인 운영 조건으로 EC2 Compose·Warm Standby+PITR·GHCR 우선 검증 방향을 재비교 | RPL-42 Human-provided Planning Input |
 
 이 History는 Architecture Option Approval이 아니다.
 
@@ -3682,7 +3977,8 @@ Existing ADR Supersession: none
 - [x] Planning Candidate와 Adoption을 분리했다.
 - [x] Repository Module과 Production Deployment를 분리했다.
 - [x] Runtime 구현 상태를 `not_started`로 기록했다.
-- [x] Decision Readiness를 `not_ready`로 유지하고 RTO/RPO를 `target_not_verified`로
+- [x] Decision Readiness를 `direction_reframed_pending_independent_review`로 기록하고
+  RTO/RPO를 `target_not_verified`로
   기록했다.
 
 ---
@@ -3693,7 +3989,7 @@ Existing ADR Supersession: none
 
 ```text
 decision_status: open
-No architecture option is accepted in Slice 6.
+No architecture option is accepted in the Candidate Reframe.
 ```
 
 ### Constraints
@@ -3704,15 +4000,15 @@ Front Matter와 Section 7의 Constraints를 적용한다.
 
 ```text
 Evidence Boundary, Decision Input State, and
-Slice 3~6 Considered Option evaluations only
+Slice 3~6 and Candidate Reframe Considered Option evaluations only
 (Primary Deployment / Image / Registry / AWS DR Runtime / Traffic Failover /
 PostgreSQL Backup·Restore·Promotion / Integrated Recovery / Drill / Decision Readiness)
 ```
 
 ### Required Follow-up
 
-- Correction HEAD의 Detached Independent Re-review
-- 재검수 통과 후 사용자 Architecture Direction Decision 준비
+- Candidate Reframe HEAD의 Detached Independent Re-review
+- 독립 재검수 통과 후 사용자 Architecture Direction Decision 준비
 - ADR Index와 DEC-066 연결은 Architecture 승인 이후 별도 Governance 작업
 
 ### Review and Approval
