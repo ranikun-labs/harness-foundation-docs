@@ -1157,40 +1157,40 @@ data_groups:
     display_name: User Identity
     logical_owner: { kind: ref, ref: system.shared-identity }
     current_store: { status: current, system_ref: system.carelog, technology: postgresql, description: 현재 Carelog DB/Auth 영역 }
-    target_store: { status: gate_dependent, system_ref: system.shared-identity, blocked_by: [], description: 독립 여부는 Gate 이후 결정 }
+    target_store: { status: planned, system_ref: system.shared-identity, blocked_by: [RPL-54, RPL-55], description: ranikun-labs/platform-services platform-core/identity 소유 Target이며 Repository와 Store는 not_implemented }
     write_authority: { system_refs: [system.carelog], participant_scope: null, note: 현재 Carelog Auth; 향후 Identity }
     read_consumers: { system_refs: [system.carelog], participant_scopes: [] }
     sharing_method: [token, api]
-    migration: { state: logical_separation_in_progress, evidence: null }
-    follow_up: { state: gate_dependent, description: 독립 Shared Identity Store 여부 결정, related_jira: [] }
+    migration: { state: physical_extraction_not_started, evidence: null }
+    follow_up: { state: planned_not_started, description: RPL-54 Identity extraction과 RPL-55 Carelog cutover에서 Store·Migration Evidence 확정, related_jira: [RPL-54, RPL-55] }
     constraints: [현재 Store가 Carelog DB/Auth 영역이어도 Logical Owner는 Shared Identity logical boundary일 수 있다, 독립 Store 이전 완료로 표현하지 않는다]
-    source_refs: [src.system-landscape]
+    source_refs: [src.system-landscape, src.adr-0017, src.decision-dec-067, src.jira-rpl-52]
 
   - id: data.oauth-account-link
     display_name: OAuth Account Link
     logical_owner: { kind: ref, ref: system.shared-identity }
     current_store: { status: current, system_ref: system.carelog, technology: postgresql, description: 현재 Carelog DB/Auth 영역 }
-    target_store: { status: gate_dependent, system_ref: system.shared-identity, blocked_by: [], description: Gate 이후 미정 }
+    target_store: { status: planned, system_ref: system.shared-identity, blocked_by: [RPL-54, RPL-55], description: ranikun-labs/platform-services platform-core/identity 소유 Target이며 Repository와 Store는 not_implemented }
     write_authority: { system_refs: [system.carelog], participant_scope: null, note: 현재 Carelog Auth }
     read_consumers: { system_refs: [system.carelog], participant_scopes: [] }
     sharing_method: [api, token_flow]
-    migration: { state: logical_separation_in_progress, evidence: null }
-    follow_up: { state: gate_dependent, description: 독립 Shared Identity Store 결정, related_jira: [] }
+    migration: { state: physical_extraction_not_started, evidence: null }
+    follow_up: { state: planned_not_started, description: RPL-54 Identity extraction과 RPL-55 Carelog cutover에서 Store·Migration Evidence 확정, related_jira: [RPL-54, RPL-55] }
     constraints: [독립 Store 이전 완료로 표현하지 않는다]
-    source_refs: [src.system-landscape]
+    source_refs: [src.system-landscape, src.adr-0017, src.decision-dec-067, src.jira-rpl-52]
 
   - id: data.product-client
     display_name: Product Client
     logical_owner: { kind: ref, ref: system.shared-identity }
     current_store: { status: current, system_ref: system.carelog, technology: postgresql, description: Carelog PostgreSQL Product Client Registry — V6 }
-    target_store: { status: gate_dependent, system_ref: system.shared-identity, blocked_by: [], description: Gate 이후 미정 }
+    target_store: { status: planned, system_ref: system.shared-identity, blocked_by: [RPL-54, RPL-55], description: ranikun-labs/platform-services platform-core/identity 소유 Target이며 Repository와 Store는 not_implemented }
     write_authority: { system_refs: [system.carelog], participant_scope: null, note: 현재 Carelog Auth/Identity implementation boundary }
     read_consumers: { system_refs: [system.carelog], participant_scopes: [] }
     sharing_method: [registry_lookup]
-    migration: { state: complete, evidence: V6 / RPL-16 }
-    follow_up: { state: pending, description: OAuth State Product Client Binding 구현, related_jira: [RPL-27] }
-    constraints: [RPL-27은 Registry Migration이 아니다, V6 migration은 완료됐다]
-    source_refs: [src.system-landscape, src.oauth-state-product-client-binding-contract]
+    migration: { state: physical_extraction_not_started, evidence: V6 / RPL-16은 현재 Carelog 내부 Registry Migration Evidence }
+    follow_up: { state: deferred_by_sequence, description: RPL-55 G4 완료 뒤 기존 RPL-27을 platform-core/identity Reality로 재타기팅, related_jira: [RPL-54, RPL-55, RPL-27] }
+    constraints: [RPL-27은 Registry Migration이 아니다, V6 Carelog 내부 migration은 완료됐지만 Shared Identity physical extraction은 not_started]
+    source_refs: [src.system-landscape, src.oauth-state-product-client-binding-contract, src.adr-0017, src.decision-dec-067, src.jira-rpl-52]
 
   - id: data.carelog-customer
     display_name: Carelog Customer
@@ -1438,16 +1438,16 @@ architecture_gates:
     status: deferred
     adoption_decision: not_decided
     deferral_policy: accepted_with_constraints
-    current_state: OAuth 이후 제품 Completion Redirect 정책 미확정이며 path-only returnTo 계약은 RPL-27 구현 대상
+    current_state: OAuth 이후 제품 Completion Redirect 정책은 미확정이며 기존 RPL-27은 RPL-55 G4 완료 뒤 platform-core/identity Reality로 재타기팅하는 구현 대상
     why_deferred: Backend Callback topology와 Session Handoff 방식이 미확정이고 제품별 Web/Mobile 완료 경로가 다름
     required_evidence: [제품별 완료 Route, path-only returnTo 검증, Redirect Replay 방지, 허용 Origin과 Client Context 검증]
-    adoption_triggers: [Callback topology 결정, Web/Mobile Session Handoff 결정, 제품 Client별 완료 경로 계약 승인]
+    adoption_triggers: [RPL-55 Carelog cutover와 regression 완료, Callback topology 결정, Web/Mobile Session Handoff 결정, 제품 Client별 완료 경로 계약 승인]
     owner: { kind: scope, scope: identity_and_gateway_owners }
     blocked_work: [Completion Redirect Endpoint, Product Client별 Redirect Policy, Error Redirect Contract]
     related_jira: [RPL-27, RPL-28]
     related_decisions: []
-    constraints: [임의 외부 URL Redirect 금지, Access Token과 Refresh Token을 URL에 직접 포함하지 않음, Product Client Snapshot과 returnTo 검증 이후에만 Redirect]
-    source_refs: [src.system-landscape, src.oauth-state-product-client-binding-contract]
+    constraints: [RPL-27을 RPL-54 또는 RPL-55보다 먼저 구현하지 않음, 임의 외부 URL Redirect 금지, Access Token과 Refresh Token을 URL에 직접 포함하지 않음, Product Client Snapshot과 returnTo 검증 이후에만 Redirect]
+    source_refs: [src.system-landscape, src.oauth-state-product-client-binding-contract, src.adr-0017, src.decision-dec-067]
 
   - id: gate.web-mobile-session-handoff
     display_name: Web/Mobile Session handoff

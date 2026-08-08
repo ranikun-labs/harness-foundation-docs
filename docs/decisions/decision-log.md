@@ -200,12 +200,8 @@ docs/product/v1-completion-criteria.md
 
 ```text
 supersedes: []
-superseded_by:
-- DEC-067 (Shared Identity physicalization 미승인과 시점 deferral 범위만)
+superseded_by: []
 ```
-
-Identity·Commerce 독립 논리 경계, Commerce deferral, V1 독립성과 물리화 Trigger
-원칙은 계속 유효하다.
 
 ---
 
