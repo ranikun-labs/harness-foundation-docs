@@ -3709,7 +3709,8 @@ RPL-42
 **Implementation status:** not_started
 **Runtime support status:** not_supported
 **Product release status:** not_released
-**Repository status:** planned / not_created
+**Repository status:** created / empty
+**Repository visibility:** public (observed fact; policy not_decided)
 **Decision owner:** 박성환
 **Reviewed at:** 2026-08-08
 
@@ -3719,7 +3720,7 @@ Finance Harness가 Carelog에 이어 공통 Gateway와 Identity의 두 번째 �
 Consumer가 됐으므로, 다음 Target을 제약과 함께 승인한다.
 
 ```text
-ranikun-labs/platform-services             planned / not_created
+ranikun-labs/platform-services             repository created / empty
 ├── gateway-app                            independent SCG / WebFlux process
 └── platform-core                          independent Spring MVC process
     ├── identity                           ACTIVE target
@@ -3728,9 +3729,9 @@ ranikun-labs/platform-services             planned / not_created
 ```
 
 ```text
+Repository container exists / empty
 Gateway + Identity physicalization accepted
 ≠ all Shared Platform MSA extraction
-≠ Repository created
 ≠ Runtime implemented, supported, deployed or released
 ```
 
@@ -3809,7 +3810,7 @@ DEC-059
 
 ### Constraints
 
-- `platform-services` Repository 생성, Spring/Gradle scaffold와 Runtime 구현은 후속 Jira다.
+- empty `platform-services` 초기화, Spring/Gradle scaffold와 Runtime 구현은 후속 Jira다.
 - Gateway와 Identity만 승인하며 Commerce, Audit, NATS와 Shared AI 구현을 승인하지 않는다.
 - Product는 Identity Table을 직접 수정하지 않고 stable account/principal contract를 소비한다.
 - Gateway와 `platform-core`를 하나의 Spring Boot Application으로 합치지 않는다.

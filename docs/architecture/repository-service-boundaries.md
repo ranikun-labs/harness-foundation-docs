@@ -86,8 +86,8 @@ source_inputs: []
 ```
 
 현재 Gateway와 Auth/OAuth/Identity 관련 구현 Host는
-`ranikun-labs/carelog-be`다. `ranikun-labs/platform-services`는
-`planned / not_created` Target이며 독립 Shared Runtime은 아직 없다.
+`ranikun-labs/carelog-be`다. `ranikun-labs/platform-services` Repository container는
+`created / empty` Target이며 Application과 독립 Shared Runtime은 아직 없다.
 
 ### 3.2 목표 아키텍처
 
@@ -649,7 +649,8 @@ Finance 장애와 배포가 다음에 직접 영향을 주지 않아야 한다.
 
 **명칭 주의 (`DEC-059`, `DEC-067`):** 이 서비스의 canonical 논리 서비스명은
 `Shared Identity`다. 기존 `identity-platform` 후보는 `DEC-067`로 부분 대체됐으며,
-물리 Target은 planned `ranikun-labs/platform-services`의 `platform-core/identity`다.
+물리 Target은 created / empty `ranikun-labs/platform-services`의
+`platform-core/identity`이며 구현은 `not_started`다.
 
 #### 역할
 
@@ -698,8 +699,9 @@ Shared Commerce
 Shared Identity의 독립 논리 경계는 채택한다.
 
 Finance Harness가 두 번째 실제 Product Consumer가 됨에 따라 물리 분리 Trigger는
-충족됐고 `ADR-0017`이 Target Repository와 Process를 승인했다. Repository와 Runtime은
-아직 생성·구현되지 않았으며 RPL-54 전에는 추출 완료를 주장하지 않는다.
+충족됐고 `ADR-0017`이 Target Repository와 Process를 승인했다. Repository container는
+created / empty지만 Application과 Runtime은 구현되지 않았으며 RPL-54 전에는 추출
+완료를 주장하지 않는다.
 
 Shared Identity 구현은 V1 또는 V2 Local Invocation PoC의 선결 조건이 아니다.
 
@@ -938,7 +940,7 @@ Target Repository and Deployment Units
 ├── Finance Harness Server
 ├── Dev Harness Cloud Server
 ├── AI Runtime Server
-└── ranikun-labs/platform-services           planned / not_created
+└── ranikun-labs/platform-services           repository created / empty
     ├── gateway-app                          independent SCG / WebFlux process
     └── platform-core                        independent Spring MVC process
         ├── identity                         ACTIVE target
@@ -1366,7 +1368,7 @@ modules/
 ### 13.3 Shared Java Platform Target (`ranikun-labs/platform-services`)
 
 ```text
-platform-services                    planned / not_created
+platform-services                    repository created / empty
 ├── gateway-app                      Spring Cloud Gateway / WebFlux process
 └── platform-core                    Spring MVC process
     ├── identity                     ACTIVE target
@@ -1565,7 +1567,9 @@ RPL-52 Foundation approval
 
 ### Carelog — 현재 상태 (Phase 아님)
 
-Carelog는 위 Phase 1-5 물리화 타임라인의 대상이 아니다. Phase 1-5는 아직 존재하지 않는 것을 미래에 만드는 순서인 반면, Carelog는 이미 존재하고 운영 중인 Product Service이기 때문이다.
+Carelog는 위 Phase 1-5 물리화 타임라인의 대상이 아니다. Phase 1-5는 아직 구현되지
+않은 목표 Capability를 활성화하는 순서인 반면, Carelog는 이미 존재하고 운영 중인
+Product Service이기 때문이다.
 
 ```text
 Carelog
@@ -1618,7 +1622,7 @@ Shared Gateway·Identity 물리 분리
 29. Cross-service Foreign Key와 OLTP Cross-service JOIN을 금지한다.
 30. `platform-core`의 Identity·Commerce·Audit는 같은 Process에서도 Module과 Schema 경계를 유지한다.
 31. Audit는 현재 미구현 Module 후보이며 future NATS consumer 추출에는 별도 Trigger와 Decision이 필요하다.
-32. 인증 논리 서비스의 canonical 명칭은 `Shared Identity`고 planned physical location은 `ranikun-labs/platform-services`의 `platform-core/identity`다 (`DEC-059`, `DEC-067`).
+32. 인증 논리 서비스의 canonical 명칭은 `Shared Identity`고 created / empty Repository의 planned implementation location은 `ranikun-labs/platform-services`의 `platform-core/identity`다 (`DEC-059`, `DEC-067`).
 33. Carelog는 기존 Product Service로 이 지도에 등록되며(§7.7), 그 Auth Phase A 현재 상태는 oh-my-ai V1/V2/V3 Phase 1-5 물리화 타임라인과 분리해 기록한다 (`DEC-059`).
 
 ---
@@ -1630,7 +1634,7 @@ Shared Gateway·Identity 물리 분리
 1. 각 Repository의 최종 상품명과 Organization 이름
 2. `oh-my-ai-control-plane`의 최종 기술 스택
 3. 기존 Auth Server의 정확한 재사용 범위
-4. `platform-services` 생성, 실제 구현·Deployment 시점과 운영 세부
+4. empty `platform-services` 초기화·scaffold, 실제 구현·Deployment 시점과 운영 세부
 5. Billing Provider
 6. Commerce Module의 활성화 시점
 7. Finance Service의 초기 Cloud Infrastructure

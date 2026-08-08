@@ -126,7 +126,7 @@ Project 분리는 별도 운영 병목과 권한 경계가 확인되기 전에�
 | `ranikun-labs/react-product-foundation` | 공통 React Product Foundation |
 | `ranikun-labs/oh-my-ai` | Dev Harness Local Runtime |
 | `ranikun-labs/harness-foundation-docs` | Ranikun Labs Platform Foundation Canonical 문서 |
-| `ranikun-labs/platform-services` | Shared Gateway·Identity Target; `planned / not_created`, RPL-52 Runtime 없음 |
+| `ranikun-labs/platform-services` | Shared Gateway·Identity Target; Repository `created / empty`, 현재 visibility `public`(관찰 사실, 정책 미결정), Application·Runtime 없음 |
 | `No Repository / Confluence-only` | Repository 변경 없는 Portfolio Projection 작업 |
 
 Registry 값은 Jira Admin 적용 전에 Repository 존재·이름을 다시 확인한다.

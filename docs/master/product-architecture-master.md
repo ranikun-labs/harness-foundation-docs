@@ -1347,7 +1347,7 @@ finance-harness
 = Finance Product Backend / Runtime
 
 ranikun-labs/platform-services
-= Shared Java Platform Target (planned / not_created)
+= Shared Java Platform Target (repository created / empty; implementation not_started)
   - gateway-app: independent SCG / WebFlux process
   - platform-core: independent Spring MVC process
     - identity ACTIVE target
@@ -1658,7 +1658,8 @@ identity-platform (§23의 역사적 후보)
 = DEC-067로 후보 상태가 부분 대체됨
 
 ranikun-labs/platform-services
-= planned / not_created Shared Java Platform Target
+= repository created / empty Shared Java Platform Target
+= implementation not_started / runtime not_supported
 = gateway-app과 platform-core는 서로 독립 Process
 = platform-core/identity만 ACTIVE target
 

@@ -9,7 +9,7 @@
 - Product released: No
 - Decision record: `DEC-059` (terminology and Carelog registration), `DEC-067` / `ADR-0017` (Gateway·Identity physicalization approved; implementation not started)
 - Term scope: "Backend Service Foundation" (this directory) is distinct from `oh-my-ai`'s "Shared Platform" (`DEC-005`, `docs/architecture/shared-core-and-extensions.md`), which remains the AI harness product family's domain-neutral Contract boundary. See `docs/architecture/backend-service-foundation/README.md` §2.
-- Repository-map note: `Shared Identity` is the canonical logical service name (per `DEC-059`). `DEC-067` replaces the `identity-platform` candidate with planned `ranikun-labs/platform-services`, locating Identity at `platform-core/identity`. The Repository is not created and the Runtime is not implemented. `Carelog` remains the current implementation host until RPL-55 cutover evidence.
+- Repository-map note: `Shared Identity` is the canonical logical service name (per `DEC-059`). `DEC-067` replaces the `identity-platform` candidate with `ranikun-labs/platform-services`, locating Identity at `platform-core/identity`. The Repository container is created and empty; the Application and Runtime are not implemented. `Carelog` remains the current implementation host until RPL-55 cutover evidence.
 
 ## 1. Purpose
 
@@ -89,7 +89,7 @@ each logical service currently exists as an independent runtime.
 Target physical topology (`ADR-0017` / `DEC-067`):
 
 ```text
-ranikun-labs/platform-services          planned / not_created
+ranikun-labs/platform-services          repository created / empty
 ├── gateway-app                         independent SCG / WebFlux process
 └── platform-core                       independent Spring MVC process
     ├── identity                        ACTIVE target

@@ -417,9 +417,12 @@ systems:
     workstream: Platform Foundation
     logical_boundary_status: established
     primary_repository:
-      status: planned
+      status: confirmed
       repository: ranikun-labs/platform-services
       module: gateway-app
+      repository_lifecycle: created_empty
+      visibility: public
+      visibility_policy: not_decided
     current_implementation_hosts:
       - repository: ranikun-labs/carelog-be
         module: carelog-gateway
@@ -429,12 +432,17 @@ systems:
       description: ranikun-labs/carelog-be의 carelog-gateway Module이 존재하는 현재 외부 Ingress와 Edge 보안 경계
     target_runtime_deployment:
       status: not_implemented
+      implementation_status: not_started
+      runtime_support_status: not_supported
+      deployment_status: not_deployed
       repository: ranikun-labs/platform-services
       module: gateway-app
       process: independent_spring_cloud_gateway_webflux
-      description: RPL-53 behavior-preserving extraction Target이며 Repository와 Runtime은 아직 없음
+      description: Repository container는 created / empty이고 RPL-53 behavior-preserving extraction과 Runtime은 아직 시작되지 않음
     lifecycle: physicalization_planned
-    release: null
+    release:
+      released: false
+      artifact_status: not_released
     verification:
       production_deployment: verification_required
     core_responsibilities:
@@ -458,9 +466,12 @@ systems:
     workstream: Platform Foundation
     logical_boundary_status: in_progress
     primary_repository:
-      status: planned
+      status: confirmed
       repository: ranikun-labs/platform-services
       module: platform-core/identity
+      repository_lifecycle: created_empty
+      visibility: public
+      visibility_policy: not_decided
     current_implementation_hosts:
       - repository: ranikun-labs/carelog-be
         module: auth-oauth
@@ -471,12 +482,17 @@ systems:
       description: 현재 Carelog 내부 논리 경계이며 독립 Runtime은 아님
     target_runtime_deployment:
       status: not_implemented
+      implementation_status: not_started
+      runtime_support_status: not_supported
+      deployment_status: not_deployed
       repository: ranikun-labs/platform-services
       module: platform-core/identity
       process: platform_core_spring_mvc
-      description: RPL-54 behavior-preserving extraction Target이며 Repository와 Runtime은 아직 없음
+      description: Repository container는 created / empty이고 RPL-54 behavior-preserving extraction과 Runtime은 아직 시작되지 않음
     lifecycle: physicalization_planned
-    release: null
+    release:
+      released: false
+      artifact_status: not_released
     verification:
       production_deployment: verification_required
     core_responsibilities:
@@ -1414,7 +1430,7 @@ architecture_gates:
     blocked_work: [RPL-53 Gateway extraction, RPL-54 Identity extraction, RPL-55 Carelog cutover와 regression, Schema Migration Ownership, Token/JWKS Contract, 배포·관측·장애복구 기준]
     related_jira: [RPL-52, RPL-53, RPL-54, RPL-55, RPL-24, RPL-27, RPL-28]
     related_decisions: [DEC-064, DEC-067]
-    constraints: [platform-services는 planned / not_created, 현재 구현 Host는 RPL-55 전까지 ranikun-labs/carelog-be, 제품별 Authorization은 제품 소유, 일반 제품 요청마다 Shared Identity를 동기 호출하지 않음, 가능한 경우 Gateway 또는 Product Backend가 Token을 로컬 검증, RPL-27은 G4 뒤 기존 Ticket을 재타기팅]
+    constraints: [platform-services Repository container는 created / empty이고 Application·Runtime 구현은 not_started, 현재 구현 Host는 RPL-55 전까지 ranikun-labs/carelog-be, 제품별 Authorization은 제품 소유, 일반 제품 요청마다 Shared Identity를 동기 호출하지 않음, 가능한 경우 Gateway 또는 Product Backend가 Token을 로컬 검증, RPL-27은 G4 뒤 기존 Ticket을 재타기팅]
     source_refs: [src.system-landscape, src.oauth-state-product-client-binding-contract, src.adr-0015, src.decision-dec-064, src.adr-0017, src.decision-dec-067, src.jira-rpl-52]
 
   - id: gate.oauth-backend-callback-topology

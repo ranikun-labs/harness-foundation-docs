@@ -125,7 +125,8 @@ Shared Platform
 Repository Responsibility Boundary를 요약한다.
 
 `ADR-0017` / `DEC-067`이 승인한 `platform-services` Target만 예외적으로 확정한다.
-Target Repository는 `planned / not_created`이며 구현·Runtime·배포·출시를 의미하지 않는다.
+Target Repository container는 `created / empty`다. Application 구현은 `not_started`,
+Runtime·배포·출시는 각각 `not_supported / not_deployed / not_released`다.
 
 목표 경계:
 
@@ -140,7 +141,7 @@ finance-harness
 = Finance Product Backend / Runtime 후보
 
 ranikun-labs/platform-services
-= Shared Java Platform Target (planned / not_created)
+= Shared Java Platform Target (repository created / empty; implementation not_started)
   - gateway-app: independent SCG / WebFlux process
   - platform-core: independent Spring MVC process
     - identity ACTIVE target

@@ -20,7 +20,7 @@ runtime_support_status: not_supported
 product_release_status: not_released
 constraints:
   - "승인 범위는 Gateway와 Identity 물리화뿐이며 Shared Platform 전체의 일괄 Microservice 분리가 아니다"
-  - "platform-services Repository는 planned / not_created이며 이 ADR로 생성되지 않는다"
+  - "platform-services Repository container는 created / empty이며 Application·Runtime 구현은 시작되지 않았다"
   - "RPL-53·RPL-54는 현재 동작을 보존하는 추출이고 RPL-55 검증 전 Cutover 완료를 주장하지 않는다"
   - "Commerce·Audit·Shared AI 구현과 NATS Runtime은 승인하지 않는다"
   - "구현·Runtime 지원·배포·출시 완료를 Architecture 승인과 분리한다"
@@ -68,8 +68,9 @@ replacement_decision_refs:
 > **상태 경고**
 >
 > ```text
+> Repository container created / empty
 > Architecture physicalization accepted_with_constraints
-> ≠ platform-services Repository created
+> ≠ Gateway or Identity application implemented
 > ≠ Gateway extracted
 > ≠ Identity extracted
 > ≠ Carelog cut over
@@ -83,11 +84,12 @@ Finance Harness가 Carelog에 이어 공통 Ingress와 Authentication을 실제�
 두 번째 Product Consumer가 됐다. 이에 따라 Shared Gateway와 Shared Identity의
 물리화를 제약과 함께 승인한다.
 
-목표 GitHub Repository는 아직 존재하지 않는
-`ranikun-labs/platform-services`이며 상태는 `planned / not_created`다.
+목표 GitHub Repository는 `ranikun-labs/platform-services`다. Repository container는
+`created / empty`이고 현재 visibility는 GitHub에서 관찰된 `public`이다. 이는 visibility
+정책 채택이 아니며 Application·Runtime 구현은 시작되지 않았다.
 
 ```text
-platform-services                         planned / not_created
+platform-services                         repository created / empty
 ├── gateway-app                           independent process
 │   └── Spring Boot
 │       + Spring Cloud Gateway
@@ -116,7 +118,9 @@ decision_status: accepted_with_constraints
 implementation_status: not_started
 runtime_support_status: not_supported
 product_release_status: not_released
-repository_status: planned / not_created
+repository_status: created / empty
+repository_visibility: public (observed fact)
+visibility_policy: not_decided
 ```
 
 ### Scope In
@@ -131,7 +135,7 @@ repository_status: planned / not_created
 
 ### Scope Out
 
-- `platform-services` 또는 다른 Repository 생성
+- `platform-services` 삭제·재생성 또는 visibility 정책 결정
 - Spring Boot·Gradle·Docker·Deployment Scaffold
 - Gateway, Auth, OAuth 또는 Identity 코드 이동
 - RPL-4 또는 RPL-27 기능 구현
@@ -215,7 +219,8 @@ merged baseline
 ```text
 GitHub Organization: ranikun-labs
 Target Repository:   ranikun-labs/platform-services
-Repository State:    planned / not_created
+Repository State:    created / empty
+Observed Visibility: public (policy not_decided)
 ```
 
 `harness-foundation-docs`는 Architecture Decision의 Canonical Owner다.
@@ -435,7 +440,7 @@ Gateway
 
 | Deferred scope | Follow-up owner / trigger |
 |---|---|
-| `platform-services` Repository 생성과 scaffold | RPL-53/G2 시작 전 별도 승인된 implementation workflow |
+| empty `platform-services` 초기화와 scaffold | RPL-53/G2의 별도 승인된 implementation workflow |
 | Gateway extraction | RPL-53 |
 | Identity extraction | RPL-54 |
 | Carelog cutover and rollback evidence | RPL-55 |
@@ -453,7 +458,7 @@ ADR-0012  Identity / Commerce logical boundary; Identity deferral only partially
 ADR-0013  Deployment and data ownership; selected physicalization and Audit wording partially superseded
 ADR-0014  Shared Services naming; platform-core process concretization added
 ADR-0015  Communication invariants preserved; Identity extraction prohibition partially superseded
-DEC-059   identity-platform candidate replaced by planned platform-services target
+DEC-059   identity-platform candidate replaced by created / empty platform-services target; implementation not_started
 DEC-067   Decision Log projection of this ADR
 RPL-52    G1 Architecture approval
 RPL-53    G2 Gateway extraction
