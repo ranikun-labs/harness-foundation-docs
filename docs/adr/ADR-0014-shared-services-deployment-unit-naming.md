@@ -35,14 +35,26 @@ evidence_refs:
   - "DEC-058"
   - "DEC-059"
 supersedes: []
-superseded_by: []
-superseded_scope: []
-remaining_valid_scope: []
+superseded_by:
+  - ADR-0017
+superseded_scope:
+  - "Shared Services Deployment Unit을 구체 Repository·Process 미승인 후보로만 둔 범위"
+remaining_valid_scope:
+  - "Shared Platform 논리 경계와 Shared Services 물리 배포 명칭 구분"
+  - "Identity·Commerce·Audit Module·Data·Migration Ownership 분리"
+  - "Decision·implementation·runtime·release 상태 분리"
 replacement_decision_refs:
   - "DEC-060"
+  - "ADR-0017"
+  - "DEC-067"
 ---
 
 # ADR-0014: Identity·Commerce·Audit 공동 배포 후보를 Shared Services Deployment Unit으로 구분한다
+
+> **Partial supersession:** Shared Services Deployment Unit의 구체 물리 구성을
+> 승인하지 않은 범위는 [ADR-0017](./ADR-0017-shared-platform-gateway-identity-physicalization.md)로
+> 부분 대체됐다. `platform-core`는 one-process modular monolith로 구체화됐고,
+> `gateway-app`은 같은 Repository의 별도 Process다. 명칭과 Module Ownership 결정은 유지한다.
 
 ## 1. Decision Summary
 

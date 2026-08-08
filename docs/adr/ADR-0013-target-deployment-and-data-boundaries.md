@@ -28,17 +28,23 @@ evidence_refs: []
 supersedes: []
 superseded_by:
   - ADR-0014
+  - ADR-0017
 superseded_scope:
   - "Shared Platform Server 명칭 범위"
   - "Shared Platform Server에서 파생된 물리 그룹과 Database 예시 표현"
+  - "Gateway와 Identity 범위의 Repository·Process physicalization 미승인"
+  - "Audit를 별도 Process로 분리할 수 없다는 영구 금지 해석"
 remaining_valid_scope:
   - "Target Deployment Unit 구성"
   - "Identity·Commerce·Audit의 Module·Data·Schema·Migration Ownership 분리"
   - "PostgreSQL 목표 배치 원칙과 Cross-service FK / OLTP Cross-service JOIN 금지"
-  - "V1 Local Core 독립성과 실제 물리 구현 미승인 상태"
+  - "V1 Local Core 독립성"
+  - "Commerce와 Audit의 현재 구현·Runtime 미승인 상태"
 replacement_decision_refs:
   - ADR-0014
   - DEC-060
+  - ADR-0017
+  - DEC-067
 ---
 
 # ADR-0013: 목표 Deployment Unit과 PostgreSQL 데이터 소유권 경계를 정의한다
@@ -48,6 +54,12 @@ replacement_decision_refs:
 > **Partial supersession:** `Shared Platform Server` 명칭과 그 물리 그룹 파생 표현은
 > [ADR-0014](./ADR-0014-shared-services-deployment-unit-naming.md)로 부분 대체됐다.
 > 이 ADR의 Target Topology와 Data Ownership 결정은 계속 유효하다.
+>
+> **Additional partial supersession:** Gateway와 Identity에 한한 물리화 미승인 범위와
+> Audit 별도 Process를 영구 금지하는 해석은
+> [ADR-0017](./ADR-0017-shared-platform-gateway-identity-physicalization.md)로 대체됐다.
+> Data·Schema·Migration Ownership, no cross-service DB/FK/JOIN, Commerce deferral과
+> Audit의 현재 미구현 상태는 계속 유효하다.
 
 ADR-0012가 확정한 Shared Identity와 Shared Commerce의 논리 경계를 유지하면서,
 장기 목표 Deployment Unit과 PostgreSQL 데이터 소유권 경계를 정의한다.

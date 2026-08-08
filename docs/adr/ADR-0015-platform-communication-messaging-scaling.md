@@ -41,13 +41,26 @@ evidence_refs:
   - "RPL-14"
   - "care-log/carelog-be PR #37"
 supersedes: []
-superseded_by: []
-superseded_scope: []
-remaining_valid_scope: []
-replacement_decision_refs: []
+superseded_by:
+  - ADR-0017
+superseded_scope:
+  - "Shared Identity physical extraction 미승인 범위"
+remaining_valid_scope:
+  - "HTTP/JSON과 Direct internal call 기본값"
+  - "Gateway ingress와 trusted authentication context 경계"
+  - "NATS·gRPC·Kafka·Kubernetes 도입 Trigger"
+  - "Shared AI와 Product 책임 경계"
+replacement_decision_refs:
+  - ADR-0017
+  - DEC-067
 ---
 
 # ADR-0015: 공통 플랫폼 통신·메시징·확장 기준을 정의한다
+
+> **Partial supersession:** Shared Identity physical extraction 미승인 범위만
+> [ADR-0017](./ADR-0017-shared-platform-gateway-identity-physicalization.md)로 대체됐다.
+> HTTP/JSON, Direct internal call, Gateway ingress, Identity 호출 제한, NATS Trigger와
+> Shared AI/Product 경계는 계속 유효하다.
 
 > 이 ADR은 Backend Service Foundation의 공통 선택을 제약과 함께 승인한
 > Architecture Decision이다.
