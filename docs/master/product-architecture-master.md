@@ -3,7 +3,7 @@ title: Product Architecture Master
 status: draft
 implementation_status: mixed
 owner: product
-last_reviewed: 2026-07-14
+last_reviewed: 2026-08-08
 supersedes: []
 superseded_by: []
 related_adrs:
@@ -17,6 +17,11 @@ related_adrs:
   - ADR-0008
   - ADR-0009
   - ADR-0010
+  - ADR-0012
+  - ADR-0013
+  - ADR-0014
+  - ADR-0015
+  - ADR-0017
 source_inputs: []
 ---
 
@@ -1317,11 +1322,13 @@ Commercial Platform
 └── Offline Grace
 ```
 
-Shared Identity 물리 분리는 목표 경계다.
+Shared Identity 물리 분리는 `ADR-0017` / `DEC-067`에 따라 승인된 목표 경계다.
 
 Local Invocation PoC의 선결 조건은 아니다.
 
-Canonical 논리 서비스명은 `Shared Identity`다 (`DEC-059`). `identity-platform`은 §23 목표 Repository 지도상의 후보 명칭이며, 실제 Repository 이름은 물리 분리 결정 시 별도로 확정한다.
+Canonical 논리 서비스명은 `Shared Identity`다 (`DEC-059`). 기존
+`identity-platform` 후보는 `DEC-067`로 부분 대체됐고, 물리 Target은 아직 존재하지
+않는 `ranikun-labs/platform-services`의 `platform-core/identity`다.
 
 ---
 
@@ -1339,14 +1346,19 @@ oh-my-ai-control-plane
 finance-harness
 = Finance Product Backend / Runtime
 
-identity-platform
-= 공통 인증·인가 경계
+ranikun-labs/platform-services
+= Shared Java Platform Target (planned / not_created)
+  - gateway-app: independent SCG / WebFlux process
+  - platform-core: independent Spring MVC process
+    - identity ACTIVE target
+    - commerce DEFERRED
+    - audit DEFERRED
 
 finance-harness-docs
 = Finance Lens / PolicyGuard / Fixture
 
-harness-private-docs
-= Product Planning / Architecture / ADR / Roadmap
+ranikun-labs/harness-foundation-docs
+= Ranikun Labs Platform Foundation / ADR / Governance
 
 carelog
 = 기존 Product Service (Auth Phase A 논리 분리 단계)
@@ -1642,9 +1654,13 @@ Backend Service Foundation
 Shared Identity
 = 인증 논리 서비스의 canonical 명칭
 
-identity-platform (§23 기존 목표 Repository)
-= 확정 명칭이 아니라 후보 Repository 명칭
-= 실제 Repository 이름은 물리 분리 결정 시 별도 확정
+identity-platform (§23의 역사적 후보)
+= DEC-067로 후보 상태가 부분 대체됨
+
+ranikun-labs/platform-services
+= planned / not_created Shared Java Platform Target
+= gateway-app과 platform-core는 서로 독립 Process
+= platform-core/identity만 ACTIVE target
 
 Finance Harness (Backend Service Foundation)
 ↔ finance-harness (§23 기존 목표 Repository)
@@ -1653,11 +1669,13 @@ Finance Harness (Backend Service Foundation)
 
 Carelog
 = 기존 Product Service. §7.7(repository-service-boundaries.md)에 등록됨.
-  현재 Auth Phase A 논리 분리 단계, Shared Identity 물리 분리 미착수.
+  현재 Gateway·Auth/OAuth/Identity 구현 Host이며 RPL-53~55는 planned / not_started.
   oh-my-ai V1/V2/V3 Phase 1-6 타임라인(§26)과는 무관한 별도 현재 상태.
 ```
 
-이 절은 §22-23의 기존 Accepted 내용을 변경하지 않으며, `DEC-059`로 확정된 용어·Repository 지도 관계만 기록한다. `DEC-059`은 명칭 확정과 Carelog 등록만 accepted 상태이며, Carelog의 Shared Identity 물리 분리·구현 완료·Runtime 지원을 의미하지 않는다.
+이 절은 `DEC-059`의 용어와 Carelog 등록을 유지하고 `DEC-067`의 제한적 물리화
+결정을 투영한다. Architecture 승인은 Repository 생성, Shared Identity 물리 분리 완료,
+Runtime 지원 또는 Product 출시를 의미하지 않는다.
 
 ---
 

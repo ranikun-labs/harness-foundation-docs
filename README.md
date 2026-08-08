@@ -1,9 +1,9 @@
 ---
-title: Harness Private Docs
+title: Ranikun Labs Platform Foundation
 status: draft
 implementation_status: not_verifiable
 owner: product
-last_reviewed: 2026-07-15
+last_reviewed: 2026-08-08
 supersedes: []
 superseded_by: []
 source_inputs:
@@ -18,11 +18,13 @@ source_inputs:
   - docs/decisions/decision-log.md
 ---
 
-# Harness Private Docs
+# Ranikun Labs Platform Foundation
 
 ## 1. Repository Purpose
 
-`harness-private-docs`는 `oh-my-ai` 제품군의 Durable Product Source of Truth를 관리하는 private planning repository다.
+`ranikun-labs/harness-foundation-docs`는 Ranikun Labs의 Platform Foundation
+Architecture·Decision·공통 Contract와 Governance를 관리하는 canonical Repository다.
+Repository 이름은 이번 결정에서 변경하지 않는다.
 
 이 Repository는 다음을 관리한다.
 
@@ -122,8 +124,8 @@ Shared Platform
 이 절은 canonical Product·Architecture 문서의
 Repository Responsibility Boundary를 요약한다.
 
-새 Repository 생성·이름·배포 단위를 확정하지 않으며,
-실제 현재 Repository 존재 여부나 구현 상태를 검증하지 않는다.
+`ADR-0017` / `DEC-067`이 승인한 `platform-services` Target만 예외적으로 확정한다.
+Target Repository는 `planned / not_created`이며 구현·Runtime·배포·출시를 의미하지 않는다.
 
 목표 경계:
 
@@ -137,15 +139,23 @@ oh-my-ai-control-plane
 finance-harness
 = Finance Product Backend / Runtime 후보
 
-identity-platform
-= 공통 인증·인가 논리 경계 후보
+ranikun-labs/platform-services
+= Shared Java Platform Target (planned / not_created)
+  - gateway-app: independent SCG / WebFlux process
+  - platform-core: independent Spring MVC process
+    - identity ACTIVE target
+    - commerce DEFERRED
+    - audit DEFERRED
 
 finance-harness-docs
 = Finance Lens / PolicyGuard / Fixture Source of Truth
 
-harness-private-docs
-= Product Planning / Architecture / Decision Source of Truth
+ranikun-labs/harness-foundation-docs
+= Ranikun Labs Platform Foundation canonical documents
 ```
+
+Shared AI는 `platform-services` 밖의 future independent Python Runtime이며
+현재 `deferred / not_started / not_supported`다.
 
 Repository 이름은 변경될 수 있다.
 

@@ -3,7 +3,7 @@ title: Backend Service Foundation — Architecture Index
 status: draft
 implementation_status: not_verifiable
 owner: architecture
-last_reviewed: 2026-07-26
+last_reviewed: 2026-08-08
 supersedes: []
 superseded_by: []
 source_inputs:
@@ -15,6 +15,7 @@ source_inputs:
 related_decisions:
   - DEC-059
   - DEC-064
+  - DEC-067
 ---
 
 # Backend Service Foundation — Architecture
@@ -26,6 +27,10 @@ related_decisions:
 이 디렉터리의 공통 통신·메시징·확장 선택은 `ADR-0015` / `DEC-064`에서
 `accepted_with_constraints`로 승인됐다. 이 Decision 상태는 실제 구현·배포 또는
 Runtime 지원이 존재함을 의미하지 않는다.
+
+`ADR-0017` / `DEC-067`은 Shared Gateway와 Shared Identity의 물리화를 승인하지만,
+`ranikun-labs/platform-services`는 `planned / not_created`이고 구현·Runtime 지원·출시는
+각각 `not_started / not_supported / not_released`다.
 
 ```text
 docs/architecture/backend-service-foundation/
@@ -64,9 +69,9 @@ docs/architecture/backend-service-foundation/
 
 | 본 디렉터리 용어 | `repository-service-boundaries.md` 대상 | 상태 |
 |---|---|---|
-| Shared Identity | `identity-platform` (§7.4) — 후보 Repository 명칭 | Canonical 논리 서비스명은 `Shared Identity`로 확정. 실제 Repository 이름은 물리 분리 시 확정 |
+| Shared Identity | `ranikun-labs/platform-services`의 `platform-core/identity` (§7.4) | `DEC-067`의 planned Target. Repository와 Runtime은 아직 없음 |
 | Finance Harness | `finance-harness` (§7.3) | 책임 범위 일치. 본 디렉터리는 그 물리 구현(DB·통신·정합성) 정책을 보강 |
-| Carelog | `§7.7` (신규 등록) | 기존 Product Service. 현재 Auth Phase A 논리 분리 단계, Shared Identity 물리 분리 미착수 |
+| Carelog | `§7.7` (기존 Product Service) | 현재 Gateway·Auth/OAuth/Identity 구현 Host. RPL-53~55 추출·Cutover는 planned / not_started |
 
 ---
 
@@ -97,8 +102,9 @@ Product released: No
 ```
 
 `DEC-059`는 명칭·Repository 지도 등록을, `DEC-064`는 공통 통신·메시징·확장
-선택을 승인한다. 두 Decision의 승인이나 Merge는 위 5개 문서의 구현 완료 또는
-Runtime 지원 Evidence가 아니다. 구현 Evidence 없이 각 상태를 올리지 않는다.
+선택을, `DEC-067`은 Gateway·Identity physicalization Target을 승인한다. Decision의
+승인이나 Merge는 위 5개 문서 또는 Target Runtime의 구현 완료나 Runtime 지원
+Evidence가 아니다. 구현 Evidence 없이 각 상태를 올리지 않는다.
 
 ---
 
@@ -111,5 +117,6 @@ docs/architecture/shared-core-and-extensions.md
 docs/contracts/backend-service-foundation/README.md
 docs/master/product-architecture-master.md
 docs/adr/ADR-0015-platform-communication-messaging-scaling.md
-docs/decisions/decision-log.md (DEC-005, DEC-059, DEC-064)
+docs/adr/ADR-0017-shared-platform-gateway-identity-physicalization.md
+docs/decisions/decision-log.md (DEC-005, DEC-059, DEC-064, DEC-067)
 ```
