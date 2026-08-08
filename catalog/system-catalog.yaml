@@ -1422,7 +1422,7 @@ architecture_gates:
     status: approved_not_started
     adoption_decision: accepted_with_constraints
     deferral_policy: partially_superseded_by_dec_067
-    current_state: Gateway와 Shared Identity의 physicalization은 승인됐지만 현재 구현 Host는 ranikun-labs/carelog-be이며 platform-services Repository와 독립 Runtime은 없음
+    current_state: platform-services exists=true / repository=created_empty이며 현재 구현 Host는 ranikun-labs/carelog-be다. Gateway와 Identity implementation은 not_started / not_implemented이고 Runtime은 not_supported / not_deployed이며 release=false / not_released다
     why_deferred: Carelog 단일 Consumer 시점의 유예는 합리적이었으나 Finance Harness가 두 번째 실제 Product Consumer가 되어 Gateway·Identity 범위 Trigger를 충족함
     required_evidence: [둘 이상의 실제 제품 소비, 독립 배포 필요성, 독립 Schema Ownership, 장애 격리 필요성, Identity 부하와 운영 책임의 독립성]
     adoption_triggers: [복수 제품의 실제 인증 소비, 독립 Release Cadence, 독립 장애 격리, 별도 데이터 Migration과 Ownership 확정]
