@@ -1173,7 +1173,7 @@ data_groups:
     display_name: User Identity
     logical_owner: { kind: ref, ref: system.shared-identity }
     current_store: { status: current, system_ref: system.carelog, technology: postgresql, description: 현재 Carelog DB/Auth 영역 }
-    target_store: { status: planned, system_ref: system.shared-identity, blocked_by: [RPL-54, RPL-55], description: ranikun-labs/platform-services platform-core/identity 소유 Target이며 Repository와 Store는 not_implemented }
+    target_store: { status: planned, system_ref: system.shared-identity, blocked_by: [RPL-54, RPL-55], description: ranikun-labs/platform-services Repository container는 created / empty이며 platform-core/identity 소유 Target Store는 planned이고 Store implementation은 not_started / not_implemented }
     write_authority: { system_refs: [system.carelog], participant_scope: null, note: 현재 Carelog Auth; 향후 Identity }
     read_consumers: { system_refs: [system.carelog], participant_scopes: [] }
     sharing_method: [token, api]
@@ -1186,7 +1186,7 @@ data_groups:
     display_name: OAuth Account Link
     logical_owner: { kind: ref, ref: system.shared-identity }
     current_store: { status: current, system_ref: system.carelog, technology: postgresql, description: 현재 Carelog DB/Auth 영역 }
-    target_store: { status: planned, system_ref: system.shared-identity, blocked_by: [RPL-54, RPL-55], description: ranikun-labs/platform-services platform-core/identity 소유 Target이며 Repository와 Store는 not_implemented }
+    target_store: { status: planned, system_ref: system.shared-identity, blocked_by: [RPL-54, RPL-55], description: ranikun-labs/platform-services Repository container는 created / empty이며 platform-core/identity 소유 Target Store는 planned이고 Store implementation은 not_started / not_implemented }
     write_authority: { system_refs: [system.carelog], participant_scope: null, note: 현재 Carelog Auth }
     read_consumers: { system_refs: [system.carelog], participant_scopes: [] }
     sharing_method: [api, token_flow]
@@ -1199,7 +1199,7 @@ data_groups:
     display_name: Product Client
     logical_owner: { kind: ref, ref: system.shared-identity }
     current_store: { status: current, system_ref: system.carelog, technology: postgresql, description: Carelog PostgreSQL Product Client Registry — V6 }
-    target_store: { status: planned, system_ref: system.shared-identity, blocked_by: [RPL-54, RPL-55], description: ranikun-labs/platform-services platform-core/identity 소유 Target이며 Repository와 Store는 not_implemented }
+    target_store: { status: planned, system_ref: system.shared-identity, blocked_by: [RPL-54, RPL-55], description: ranikun-labs/platform-services Repository container는 created / empty이며 platform-core/identity 소유 Target Store는 planned이고 Store implementation은 not_started / not_implemented }
     write_authority: { system_refs: [system.carelog], participant_scope: null, note: 현재 Carelog Auth/Identity implementation boundary }
     read_consumers: { system_refs: [system.carelog], participant_scopes: [] }
     sharing_method: [registry_lookup]
