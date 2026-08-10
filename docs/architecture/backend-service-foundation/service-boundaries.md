@@ -7,9 +7,9 @@
 - Implementation completed: No
 - Runtime supported: No
 - Product released: No
-- Decision record: `DEC-059` (terminology and Carelog registration); separate ADR required for physical service extraction
+- Decision record: `DEC-059` (terminology and Carelog registration), `DEC-067` / `ADR-0017` (Gateway·Identity physicalization approved; implementation not started)
 - Term scope: "Backend Service Foundation" (this directory) is distinct from `oh-my-ai`'s "Shared Platform" (`DEC-005`, `docs/architecture/shared-core-and-extensions.md`), which remains the AI harness product family's domain-neutral Contract boundary. See `docs/architecture/backend-service-foundation/README.md` §2.
-- Repository-map note: `Shared Identity` is the canonical logical service name (per `DEC-059`); `identity-platform` is a candidate repository name in `docs/architecture/repository-service-boundaries.md` §7.4, to be finalized at physical separation. `Finance Harness` corresponds to the existing `finance-harness` target repository (§7.3). `Carelog` is registered in that document's target repository map (§7.7) as an existing Product Service currently in Auth Phase A logical separation.
+- Repository-map note: `Shared Identity` is the canonical logical service name (per `DEC-059`). `DEC-067` replaces the `identity-platform` candidate with `ranikun-labs/platform-services`, locating Identity at `platform-core/identity`. The Repository container is created and empty; the Application and Runtime are not implemented. `Carelog` remains the current implementation host until RPL-55 cutover evidence.
 
 ## 1. Purpose
 
@@ -35,6 +35,8 @@ This document does not define concrete table DDL, Java packages, API paths, mess
 7. Physical service extraction and logical module separation are different states and must be recorded separately.
 8. Decision accepted, implementation completed, runtime supported, fixture passed, and product released are separate statuses.
 9. Shared AI owns product-neutral execution mechanisms, while each Product Service owns its prompts, workflow, domain policy, tools, validation, and business effects.
+10. A `platform-core` module must not use another module's internal entity or repository, modify another module's table, or share a mutable entity.
+11. Module interaction uses an explicit public API, contract, or event and preserves future independent extraction.
 
 ## 3. Target service map
 
@@ -83,6 +85,21 @@ Shared AI
 
 The Gateway is not a Portfolio Product Service. This target map does not assert that
 each logical service currently exists as an independent runtime.
+
+Target physical topology (`ADR-0017` / `DEC-067`):
+
+```text
+ranikun-labs/platform-services          repository created / empty
+├── gateway-app                         independent SCG / WebFlux process
+└── platform-core                       independent Spring MVC process
+    ├── identity                        ACTIVE target
+    ├── commerce                        DEFERRED
+    └── audit                           DEFERRED
+```
+
+`gateway-app` and `platform-core` must not be combined into one Spring Boot
+application. Shared AI remains outside this repository as a deferred future Python
+runtime.
 
 The Dev Harness boundary preserves `DEC-003`, `DEC-004`, and `DEC-043`: V2 is a
 personal managed workflow, while team Workspace and Organization governance remain
@@ -284,7 +301,8 @@ Unversioned event payload
 
 ## 10. Transitional state
 
-Logical separation inside Carelog may precede physical Shared Identity extraction.
+Logical separation inside Carelog precedes the approved but not-started physical Shared
+Identity extraction.
 
 During transition:
 
@@ -294,7 +312,10 @@ During transition:
 - compatibility identifiers must be marked transitional;
 - a transitional token claim must not become a permanent cross-product contract by accident.
 
-The physical extraction plan belongs in a dedicated ADR and service migration documents.
+The physical extraction sequence is RPL-52 → RPL-53 → RPL-54 → RPL-55 under
+`ADR-0017`. RPL-27 is retargeted only after G4, followed by RPL-50. Copying code or
+starting a process is not migration completion; behavior, data, security, cutover and
+rollback evidence belong in the implementation repositories.
 
 ## 11. Documents required in each MSA repository
 

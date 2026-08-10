@@ -3,7 +3,7 @@ title: Decision Log
 status: draft
 implementation_status: partial
 owner: core
-last_reviewed: 2026-08-06
+last_reviewed: 2026-08-08
 supersedes: []
 superseded_by: []
 related_adrs:
@@ -16,6 +16,8 @@ related_adrs:
   - ADR-0013
   - ADR-0014
   - ADR-0015
+  - ADR-0016
+  - ADR-0017
 source_inputs:
   - docs/roadmap/product-roadmap.md
   - docs/architecture/shared-core-and-extensions.md
@@ -2763,8 +2765,12 @@ docs/decisions/decision-log.md
 
 ```text
 supersedes: []
-superseded_by: []
+superseded_by:
+- DEC-067 (Shared Identity physicalization 미승인과 시점 deferral 범위만)
 ```
+
+Identity·Commerce 독립 논리 경계, Commerce deferral, V1 독립성과 물리화 Trigger
+원칙은 계속 유효하다.
 
 ---
 
@@ -2869,10 +2875,14 @@ docs/decisions/decision-log.md
 
 ```text
 supersedes: []
-superseded_by: [DEC-060 (Shared Platform Server 명칭 및 물리 그룹 파생 명칭 범위만)]
+superseded_by:
+- DEC-060 (Shared Platform Server 명칭 및 물리 그룹 파생 명칭 범위만)
+- DEC-067 (Gateway·Identity physicalization 미승인과 Audit 영구 비분리 해석 범위만)
 ```
 
 ADR-0012와 DEC-057의 논리 경계를 유지하며 이를 supersede하지 않는다.
+Module·Data·Schema·Migration Ownership, no cross-service DB/FK/JOIN, Commerce
+deferral과 Audit의 현재 미구현 상태는 계속 유효하다.
 
 ---
 
@@ -3124,8 +3134,12 @@ DEC-005
 
 ```text
 supersedes: []
-superseded_by: []
+superseded_by:
+- DEC-067 (`identity-platform` 후보 Repository를 planned `ranikun-labs/platform-services` Target으로 확정한 범위만)
 ```
+
+Backend Service Foundation 명칭, Shared Identity canonical 논리 서비스명,
+Carelog 등록과 Current/Target 구분은 계속 유효하다.
 
 ---
 
@@ -3267,8 +3281,12 @@ DEC-059
 
 ```text
 supersedes: []
-superseded_by: []
+superseded_by:
+- DEC-067 (Shared Services Deployment Unit을 구체 Repository·Process 미승인 후보로만 둔 범위)
 ```
+
+Shared Platform 논리 경계와 물리 배포 명칭 구분, Module·Data·Migration Ownership,
+구현·Runtime·Release 상태 분리는 계속 유효하다.
 
 ---
 
@@ -3347,8 +3365,12 @@ clarifies:
 - DEC-060 Shared Services Deployment Unit 명칭
 
 supersedes: []
-superseded_by: []
+superseded_by:
+- DEC-067 (Shared Identity physical extraction 미승인 범위만)
 ```
+
+HTTP/JSON, Direct internal call, Gateway ingress, Identity 호출 제한, NATS Trigger,
+Shared AI/Product 경계와 gRPC·Kafka·Kubernetes deferral은 계속 유효하다.
 
 ### Affected Documents
 
@@ -3673,6 +3695,186 @@ ADR-0013
 ADR-0015
 ADR-0016
 RPL-42
+```
+
+---
+
+## DEC-067 — Shared Gateway와 Shared Identity의 물리화를 승인한다
+
+**Status:** accepted_with_constraints
+**Owner:** architecture
+**Decision type:** architecture
+**Decision scope:** shared-platform / gateway / identity / physicalization
+**Decision date:** 2026-08-08
+**Implementation status:** not_started
+**Runtime support status:** not_supported
+**Product release status:** not_released
+**Repository status:** created / empty
+**Repository visibility:** public (observed fact; policy not_decided)
+**Decision owner:** 박성환
+**Reviewed at:** 2026-08-08
+
+### Decision
+
+Finance Harness가 Carelog에 이어 공통 Gateway와 Identity의 두 번째 실제 Product
+Consumer가 됐으므로, 다음 Target을 제약과 함께 승인한다.
+
+```text
+ranikun-labs/platform-services             repository created / empty
+├── gateway-app                            independent SCG / WebFlux process
+└── platform-core                          independent Spring MVC process
+    ├── identity                           ACTIVE target
+    ├── commerce                           DEFERRED
+    └── audit                              DEFERRED
+```
+
+```text
+Repository container exists / empty
+Gateway + Identity physicalization accepted
+≠ all Shared Platform MSA extraction
+≠ Runtime implemented, supported, deployed or released
+```
+
+### Trigger and Rationale
+
+Carelog 단일 Consumer 시점에는 논리 경계 우선과 물리화 유예가 합리적이었다.
+현재 Finance를 Carelog-owned Gateway/Auth에 연결하면 Ownership Inversion이 생기고,
+Finance에 복사하면 Security·Runtime Contract Drift가 생긴다. 두 번째 실제 Consumer,
+공통 Ingress/Auth 필요와 성숙한 Logical Boundary가 Gateway·Identity 범위의
+Physicalization Trigger를 충족한다.
+
+### Process and Module Boundary
+
+- `gateway-app`과 `platform-core`는 같은 Repository의 독립 Spring Boot Process다.
+- `gateway-app`은 Edge Security와 Routing을 소유하고 Product Business Logic을 갖지 않는다.
+- `platform-core`는 one-process modular monolith로 시작할 수 있다.
+- Module 간 Entity 공유, Repository 직접 접근, 타 Table 직접 수정과 Shared mutable
+  Entity를 금지한다.
+- Identity·Commerce·Audit는 Data·Schema·Migration Owner와 Public Contract를 분리한다.
+- Commerce와 Audit의 구현은 Deferred다.
+- Audit의 future NATS consumer boundary는 구현 승인이 아니다.
+- Shared AI는 `platform-services` 밖의 future independent Python Runtime이며 Deferred다.
+
+### Migration Sequence
+
+```text
+RPL-52 Foundation approval
+→ RPL-53 Gateway behavior-preserving extraction
+→ RPL-54 Identity behavior-preserving extraction
+→ RPL-55 Carelog cutover / regression
+→ existing RPL-27 retarget to new platform-core/identity reality
+→ RPL-50 Finance Backend Core
+→ Finance Shared Gateway / Identity E2E
+```
+
+RPL-4 / Gateway PR #34의 pending 기능 delta는 merged baseline이나 physical extraction과
+구분한다. RPL-53에서 해당 기능을 중복 구현하지 않는다. Copy나 Process 기동만으로
+Migration 완료를 선언하지 않으며, Contract·Data·Security Regression과 Consumer
+Cutover Evidence가 필요하다.
+
+### Cutover and Rollback
+
+- RPL-55 전까지 `ranikun-labs/carelog-be`가 Current Implementation Host다.
+- Cutover는 Consumer Routing·Config·Data Owner 전환과 Carelog Regression 뒤 승인한다.
+- Identity Data dual-writer를 허용하지 않는다.
+- Process별 rollback, Token·Session·OAuth State compatibility와 쓰기 권한을 검증한다.
+- RPL-52 Merge만으로 Traffic, Runtime 또는 Data Owner가 바뀌지 않는다.
+
+### Partial Supersession
+
+```text
+ADR-0012 / DEC-057
+  superseded: Shared Identity physicalization 미승인·시점 deferral
+  preserved:  Identity·Commerce 논리 경계, Commerce deferral, V1 독립성
+
+ADR-0013 / DEC-058
+  superseded: Gateway·Identity physicalization 미승인,
+              Audit가 영구적으로 별도 Process가 될 수 없다는 해석
+  preserved:  Module·Data·Schema·Migration Ownership, no cross-service DB/FK/JOIN,
+              Commerce deferral, Audit current not_implemented state
+
+ADR-0014 / DEC-060
+  superseded: Shared Services Deployment Unit을 구체 Process 미승인 후보로만 둔 범위
+  preserved:  명칭 구분, Module Ownership, status separation
+
+ADR-0015 / DEC-064
+  superseded: Shared Identity physical extraction 미승인 범위
+  preserved:  HTTP/JSON, Direct internal call, Gateway ingress, Identity call limits,
+              NATS trigger, Shared AI/Product boundary, deferred technologies
+
+DEC-059
+  superseded: identity-platform 후보 Repository
+  replacement: planned ranikun-labs/platform-services target
+  preserved: Backend Service Foundation 명칭, Shared Identity 논리명, Carelog 등록
+```
+
+### Constraints
+
+- empty `platform-services` 초기화, Spring/Gradle scaffold와 Runtime 구현은 후속 Jira다.
+- Gateway와 Identity만 승인하며 Commerce, Audit, NATS와 Shared AI 구현을 승인하지 않는다.
+- Product는 Identity Table을 직접 수정하지 않고 stable account/principal contract를 소비한다.
+- Gateway와 `platform-core`를 하나의 Spring Boot Application으로 합치지 않는다.
+- Current, Target, implementation, runtime support, deployment와 release 상태를 혼합하지 않는다.
+
+### Consequences
+
+- Finance가 Carelog Product Lifecycle에 종속되지 않고 공통 Edge/Auth를 소비할 Target이 생긴다.
+- 후속 G2/G3/G4가 Repository·Process·Module·Data·Migration 경계를 추측하지 않는다.
+- 하나의 Repository와 하나의 Process를 동일시하지 않는다.
+- 전체 MSA 선제 분리와 Commerce·Audit·AI의 조기 구현을 피한다.
+
+### Affected Documents
+
+```text
+docs/adr/ADR-0012-shared-identity-commerce-boundary.md
+docs/adr/ADR-0013-target-deployment-and-data-boundaries.md
+docs/adr/ADR-0014-shared-services-deployment-unit-naming.md
+docs/adr/ADR-0015-platform-communication-messaging-scaling.md
+docs/adr/ADR-0017-shared-platform-gateway-identity-physicalization.md
+docs/adr/README.md
+docs/architecture/repository-service-boundaries.md
+docs/architecture/backend-service-foundation/README.md
+docs/architecture/backend-service-foundation/service-boundaries.md
+docs/master/product-architecture-master.md
+docs/governance/portfolio-work-management-governance.md
+catalog/system-catalog.yaml
+README.md
+docs/decisions/decision-log.md
+```
+
+### Supersession
+
+```text
+partial_supersedes:
+- DEC-057 Shared Identity physicalization deferral only
+- DEC-058 Gateway·Identity physicalization prohibition and permanent Audit non-extraction interpretation only
+- DEC-059 identity-platform repository candidate only
+- DEC-060 concrete repository/process nonapproval only
+- DEC-064 Shared Identity physical extraction prohibition only
+
+superseded_by: []
+```
+
+### References
+
+```text
+ADR-0012
+ADR-0013
+ADR-0014
+ADR-0015
+ADR-0017
+DEC-057
+DEC-058
+DEC-059
+DEC-060
+DEC-064
+RPL-4
+RPL-27
+RPL-50
+RPL-52
+RPL-53
+RPL-54
+RPL-55
 ```
 
 ---

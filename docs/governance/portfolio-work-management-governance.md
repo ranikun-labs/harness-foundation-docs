@@ -24,6 +24,7 @@ related_decisions:
   - DEC-059
   - DEC-064
   - DEC-065
+  - DEC-067
 source_inputs:
   - source-inputs/ranikun-platform-enterprise-work-management-governance.md
   - source-inputs/ranikun-platform-ai-session-prompt-pack.md
@@ -113,21 +114,27 @@ Project 분리는 별도 운영 병목과 권한 경계가 확인되기 전에�
 
 ### 3.3 Primary Repository Registry
 
-2026-07-29 GitHub 조회와 승인된 Foundation 문서를 기준으로 초기값은 다음과
+2026-08-08 GitHub 조회와 승인된 Foundation 문서를 기준으로 현재 값은 다음과
 같다.
 
 | 값 | 용도 |
 |---|---|
-| `care-log/carelog-be` | Carelog Backend와 Gateway의 현재 구현 Host |
-| `aixion1506/finance-harness-fe` | Finance Harness Frontend |
-| `aixion1506/finance-harness-docs` | Finance Product 정책·문서 |
-| `aixion1506/oh-my-ai` | Dev Harness Local Runtime |
-| `aixion1506/harness-foundation-docs` | Platform Foundation Canonical 문서 |
+| `ranikun-labs/carelog-be` | Carelog Backend와 Gateway·Auth/OAuth/Identity의 현재 구현 Host |
+| `ranikun-labs/carelog-fe` | Carelog Frontend |
+| `ranikun-labs/finance-harness-fe` | Finance Harness Frontend |
+| `ranikun-labs/finance-harness-docs` | Finance Product 정책·문서 |
+| `ranikun-labs/react-product-foundation` | 공통 React Product Foundation |
+| `ranikun-labs/oh-my-ai` | Dev Harness Local Runtime |
+| `ranikun-labs/harness-foundation-docs` | Ranikun Labs Platform Foundation Canonical 문서 |
+| `ranikun-labs/platform-services` | Shared Gateway·Identity Target; Repository `created / empty`, 현재 visibility `public`(관찰 사실, 정책 미결정), Application·Runtime 없음 |
 | `No Repository / Confluence-only` | Repository 변경 없는 Portfolio Projection 작업 |
 
 Registry 값은 Jira Admin 적용 전에 Repository 존재·이름을 다시 확인한다.
-`aixion1506/carelog-be`가 별도로 존재하더라도 Product Client Registry의
-승인된 Primary Repository 값은 `care-log/carelog-be`를 사용한다.
+Owner migration 전 namespace는 historical provenance에서만 보존한다. 현재
+Canonical Registry는 `ranikun-labs/*`를 사용한다. `platform-services`는 Repository
+container가 `created / empty`이지만, 그 존재만으로 Primary implementation Repository로
+선택하지 않는다. Gateway·Identity extraction은 `not_started`고 Current Implementation
+Host는 `ranikun-labs/carelog-be`다.
 
 ### 3.4 Area 초기값
 
@@ -414,7 +421,7 @@ Task 시작
 | Issue | `RPL-16` |
 | Workstream | Shared Identity |
 | Component | Backend |
-| Primary Repository | `care-log/carelog-be` |
+| Primary Repository | `ranikun-labs/carelog-be` |
 | Area | Auth / Identity |
 | Logical Owner | Shared Identity |
 | Current Implementation Host | Carelog Backend |
@@ -422,7 +429,9 @@ Task 시작
 Logical Owner와 Current Implementation Host를 혼합하지 않는다.
 따라서 Shared Identity 코드가 현재 Carelog Backend에 있더라도 Issue의
 Workstream은 Shared Identity이고 Primary Repository는 실제 변경이 일어나는
-`care-log/carelog-be`가 될 수 있다.
+`ranikun-labs/carelog-be`가 될 수 있다. RPL-54의 구현 Target은 현재 `created / empty`인
+`ranikun-labs/platform-services`지만, RPL-55 Cutover 전까지 Current Implementation
+Host가 바뀌었다고 간주하지 않는다.
 
 ## 13. 과설계 방지선
 

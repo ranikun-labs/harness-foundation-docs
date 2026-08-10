@@ -24,13 +24,24 @@ affected_docs:
   - docs/architecture/repository-service-boundaries.md
 evidence_refs: []
 supersedes: []
-superseded_by: []
-superseded_scope: []
-remaining_valid_scope: []
-replacement_decision_refs: []
+superseded_by:
+  - ADR-0017
+superseded_scope:
+  - "Shared Identity의 물리 Server·Repository·Database·Deployment 미승인과 시점 deferral"
+remaining_valid_scope:
+  - "Shared Identity와 Shared Commerce의 독립 논리 경계"
+  - "Shared Commerce physicalization deferral"
+  - "V1 Local OSS 독립성과 물리화 Trigger 원칙"
+replacement_decision_refs:
+  - ADR-0017
+  - DEC-067
 ---
 
 # ADR-0012: Shared Identity와 Shared Commerce의 논리적 책임 경계를 분리한다
+
+> **Partial supersession:** Shared Identity physicalization의 미승인·시점 유예 범위는
+> [ADR-0017](./ADR-0017-shared-platform-gateway-identity-physicalization.md)로 대체됐다.
+> Identity·Commerce 독립 논리 경계, Commerce deferral과 V1 독립성은 계속 유효하다.
 
 ## 1. Decision Summary
 

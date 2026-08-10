@@ -2,7 +2,7 @@
 title: Repository and Service Boundaries
 status: draft
 owner: product
-last_reviewed: 2026-07-23
+last_reviewed: 2026-08-08
 supersedes: []
 superseded_by: []
 related_adrs:
@@ -11,6 +11,7 @@ related_adrs:
   - ADR-0010
   - ADR-0012
   - ADR-0013
+  - ADR-0017
 source_inputs: []
 ---
 
@@ -81,7 +82,12 @@ source_inputs: []
 - Identity와 Commerce의 동급 관계
 - 제품별 데이터 소유 원칙
 - 각 서버 내부 Modular Monolith 우선 원칙
+- Gateway·Identity physicalization Target과 G1→G4 순서 (`ADR-0017`)
 ```
+
+현재 Gateway와 Auth/OAuth/Identity 관련 구현 Host는
+`ranikun-labs/carelog-be`다. `ranikun-labs/platform-services` Repository container는
+`created / empty` Target이며 Application과 독립 Shared Runtime은 아직 없다.
 
 ### 3.2 목표 아키텍처
 
@@ -121,8 +127,9 @@ Shared Identity와 Shared Commerce는 동급의 독립 논리 경계다.
 
 Repository 이름은 향후 브랜드 결정에 따라 변경할 수 있다.
 
-Identity·Commerce의 물리 Server, Repository, Database, Deployment는
-현재 승인하지 않는다.
+Identity는 `ADR-0017`에 따라 Gateway와 함께 제한적으로 물리화가 승인됐지만
+구현은 `not_started`다. Commerce의 물리 Server, Repository, Database와 Deployment는
+계속 승인하지 않는다.
 
 ### 3.3 핵심 물리화 원칙
 
@@ -640,7 +647,10 @@ Finance 장애와 배포가 다음에 직접 영향을 주지 않아야 한다.
 
 ### 7.4 Shared Identity
 
-**명칭 주의 (`DEC-059`):** 이 서비스의 canonical 논리 서비스명은 `Shared Identity`다. `identity-platform`은 이 목표 Repository 지도상의 후보 명칭이며, 실제 Repository 이름은 물리 분리 결정 시 별도로 확정한다.
+**명칭 주의 (`DEC-059`, `DEC-067`):** 이 서비스의 canonical 논리 서비스명은
+`Shared Identity`다. 기존 `identity-platform` 후보는 `DEC-067`로 부분 대체됐으며,
+물리 Target은 created / empty `ranikun-labs/platform-services`의
+`platform-core/identity`이며 구현은 `not_started`다.
 
 #### 역할
 
@@ -688,9 +698,10 @@ Shared Commerce
 
 Shared Identity의 독립 논리 경계는 채택한다.
 
-별도 Server, Repository, Database와 Deployment는 승인하지 않는다.
-
-실제 복수 소비자와 독립 운영 필요가 확인된 뒤 물리 분리를 검토한다.
+Finance Harness가 두 번째 실제 Product Consumer가 됨에 따라 물리 분리 Trigger는
+충족됐고 `ADR-0017`이 Target Repository와 Process를 승인했다. Repository container는
+created / empty지만 Application과 Runtime은 구현되지 않았으며 RPL-54 전에는 추출
+완료를 주장하지 않는다.
 
 Shared Identity 구현은 V1 또는 V2 Local Invocation PoC의 선결 조건이 아니다.
 
@@ -924,29 +935,32 @@ local_execution_reference
 다음은 장기 목표 Deployment Unit이다.
 
 ```text
-Target Deployment Units
+Target Repository and Deployment Units
 ├── Carelog CRM Server
 ├── Finance Harness Server
 ├── Dev Harness Cloud Server
 ├── AI Runtime Server
-└── Shared Services Deployment Unit
-    ├── Shared Identity Module
-    ├── Shared Commerce Module
-    └── Shared Services Audit Module
+└── ranikun-labs/platform-services           repository created / empty
+    ├── gateway-app                          independent SCG / WebFlux process
+    └── platform-core                        independent Spring MVC process
+        ├── identity                         ACTIVE target
+        ├── commerce                         DEFERRED
+        └── audit                            DEFERRED
 ```
 
 목표 Deployment Unit은 즉시 구현, Repository 생성,
 Database Provisioning 또는 배포 승인을 의미하지 않는다.
 
-Carelog CRM Server는 기존 Product Service이며, 현재 Auth Phase A의
-Carelog 내부 논리 분리 상태다. Shared Identity 물리 분리는 아직 착수하지 않았다.
+Carelog CRM Server는 기존 Product Service이며 현재 Gateway와 Auth/OAuth/Identity의
+Implementation Host다. Shared Gateway·Identity 추출은 RPL-53·RPL-54의
+`planned / not_started` 작업이다.
 
 ### 핵심 규칙
 
 1. Dev Harness V1 Local Core는 Shared Identity·Commerce·Audit·Cloud AI Runtime에 의존하지 않는다.
 2. Dev Harness Cloud는 실제 Cloud 기능 개발 시점까지 구현을 유예한다.
 3. Commerce는 실제 유료화 전까지 구현을 유예할 수 있다.
-4. Audit는 별도 Server가 아니라 Shared Services Deployment Unit 내부 Module이다.
+4. Audit는 현재 미구현 `platform-core` Module 후보이며 별도 Process는 승인되지 않았다. 향후 NATS consumer 추출은 새 Trigger와 Decision이 필요하다.
 5. Identity·Commerce·Audit는 같은 Deployment Unit에서도 코드·데이터·Migration 소유권을 분리한다.
 6. AI Runtime은 Provider 실행·Routing·Retry·Fallback·Token/Cost Metering·Trace를 담당한다.
 7. 제품별 Prompt·Policy·Context Schema·Evaluation은 각 Product Server가 소유한다.
@@ -975,17 +989,20 @@ Product Evaluation
 Domain Decision
 ```
 
-### 9.2 Shared Services Deployment Unit 내부 경계
+### 9.2 platform-services Process와 platform-core Module 경계
 
 ```text
-Shared Services Deployment Unit
-├── Shared Identity Module
-├── Shared Commerce Module
-└── Shared Services Audit Module
+platform-services
+├── gateway-app              independent process
+└── platform-core            independent process
+    ├── identity             ACTIVE target
+    ├── commerce             DEFERRED
+    └── audit                DEFERRED
 ```
 
-한 Deployment Unit이라는 이유로 Module 간 Table 직접 접근이나
-Migration 소유권 공유를 허용하지 않는다.
+하나의 Repository라는 이유로 두 Process를 합치지 않는다. `platform-core`가
+one-process modular monolith로 시작해도 Module 간 Entity 공유, Repository 직접 접근,
+Table 직접 수정이나 Migration 소유권 공유를 허용하지 않는다.
 
 ---
 
@@ -1348,18 +1365,23 @@ modules/
 └── finance-commercial
 ```
 
-### 13.3 Shared Identity 후보 Repository (`identity-platform`)
+### 13.3 Shared Java Platform Target (`ranikun-labs/platform-services`)
 
 ```text
-modules/
-├── identity
-├── authentication
-├── token
-├── device
-└── authorization
+platform-services                    repository created / empty
+├── gateway-app                      Spring Cloud Gateway / WebFlux process
+└── platform-core                    Spring MVC process
+    ├── identity                     ACTIVE target
+    ├── commerce                     DEFERRED
+    └── audit                        DEFERRED
 ```
 
-Module 간에는 명시된 내부 API와 의존 방향을 적용한다.
+`identity`는 Account, External Identity, Auth/OAuth, Token/Principal,
+Product Client Registry, OAuth State와 Identity-owned Persistence를 소유한다.
+Commerce와 Audit 구현은 승인되지 않았다. Shared AI는 이 Repository 밖의 future
+independent Python Runtime이다.
+
+Module 간에는 명시된 Public Contract와 의존 방향을 적용한다.
 
 단순히 Package를 분리한 것만으로 경계가 보장된다고 가정하지 않는다.
 
@@ -1526,26 +1548,28 @@ optional domain-neutral platform capability
 - Review
 - Finance Entitlement
 
-### Phase 5 — 목표 Shared Services Deployment Unit 활성화 검토
+### Phase 5 — Shared Gateway·Identity Physicalization
 
-목표 Deployment Unit은 정의하지만 실제 구현은
-복수 소비자와 운영 요구가 확인된 경우에만 검토한다.
+Finance Harness가 두 번째 실제 Consumer가 되면서 Gateway·Identity 물리화 Trigger는
+충족됐다. 전체 Shared Platform MSA가 아니라 아래 G1→G4만 승인한다.
 
 ```text
-Shared Services Deployment Unit
-├── Shared Identity Module
-├── Shared Commerce Module
-└── Shared Services Audit Module
+RPL-52 Foundation approval
+→ RPL-53 Gateway extraction
+→ RPL-54 Identity extraction
+→ RPL-55 Carelog cutover / regression
 ```
 
-Carelog CRM Server, AI Runtime Server와 각 Module의 활성화 순서는
-실제 Product Requirement에 따라 별도 결정한다.
+그 뒤 기존 RPL-27을 새 Identity Reality로 재타기팅하고 RPL-50 Finance Backend를
+진행한다. Commerce·Audit·Shared AI는 이 순서의 구현 범위가 아니다.
 
 ---
 
 ### Carelog — 현재 상태 (Phase 아님)
 
-Carelog는 위 Phase 1-5 물리화 타임라인의 대상이 아니다. Phase 1-5는 아직 존재하지 않는 것을 미래에 만드는 순서인 반면, Carelog는 이미 존재하고 운영 중인 Product Service이기 때문이다.
+Carelog는 위 Phase 1-5 물리화 타임라인의 대상이 아니다. Phase 1-5는 아직 구현되지
+않은 목표 Capability를 활성화하는 순서인 반면, Carelog는 이미 존재하고 운영 중인
+Product Service이기 때문이다.
 
 ```text
 Carelog
@@ -1554,8 +1578,8 @@ Carelog
 현재 상태
 = Auth Phase A (Carelog 내부 논리 분리)
 
-Shared Identity 물리 분리
-= 미착수
+Shared Gateway·Identity 물리 분리
+= Architecture approved / implementation not_started
 
 이번 등록(DEC-059)
 = 신규 Carelog Repository 또는 Identity Repository 생성을 의미하지 않음
@@ -1587,18 +1611,18 @@ Shared Identity 물리 분리
 18. Finance Lens 원문과 Professional Standards / Human Review 계약은 `finance-harness-docs`에서 관리한다.
 19. Finance 정책 정의는 `finance-harness-docs`, Runtime 집행과 Audit Evidence는 `finance-harness`가 소유한다.
 20. Finance Contract MVP와 Local Finance Experiment는 Development V2 전체 완료에 종속되지 않는다.
-21. 제품 전체 canonical 결정은 `harness-private-docs`에서 관리한다.
+21. Portfolio Foundation canonical 결정은 `ranikun-labs/harness-foundation-docs`에서 관리한다.
 22. Cloud가 생성한 판단은 Candidate이며 자동 Truth가 아니다.
 23. Repository 이름 변경은 가능하지만 책임 경계 변경은 별도 결정이 필요하다.
-24. Identity·Commerce의 물리 Server·Repository·Database·Deployment는 승인되지 않았다.
-25. 물리 분리는 실제 복수 소비자와 운영상 필요가 확인된 뒤 검토한다.
+24. Identity physicalization은 Gateway와 함께 `ADR-0017` 범위에서 승인됐고 Commerce physicalization은 승인되지 않았다.
+25. Gateway·Identity Trigger는 Finance가 두 번째 실제 Consumer가 되면서 충족됐으며 다른 Capability는 각자의 Trigger를 기다린다.
 26. 목표 Deployment Unit은 즉시 구현 승인이 아니다.
 27. V1 Local Core는 Shared Services Deployment Unit과 Cloud AI Runtime 없이 완결한다.
 28. Deployment Unit별 Data Source of Truth와 Migration 소유권을 분리한다.
 29. Cross-service Foreign Key와 OLTP Cross-service JOIN을 금지한다.
-30. Shared Services Deployment Unit의 Identity·Commerce·Audit는 같은 배포물에서도 Module과 Schema 경계를 유지한다.
-31. Audit는 별도 Server로 분리하지 않는다.
-32. 인증 논리 서비스의 canonical 명칭은 `Shared Identity`다. `identity-platform`은 물리 분리 전까지 후보 Repository 명칭이다 (`DEC-059`).
+30. `platform-core`의 Identity·Commerce·Audit는 같은 Process에서도 Module과 Schema 경계를 유지한다.
+31. Audit는 현재 미구현 Module 후보이며 future NATS consumer 추출에는 별도 Trigger와 Decision이 필요하다.
+32. 인증 논리 서비스의 canonical 명칭은 `Shared Identity`고 created / empty Repository의 planned implementation location은 `ranikun-labs/platform-services`의 `platform-core/identity`다 (`DEC-059`, `DEC-067`).
 33. Carelog는 기존 Product Service로 이 지도에 등록되며(§7.7), 그 Auth Phase A 현재 상태는 oh-my-ai V1/V2/V3 Phase 1-5 물리화 타임라인과 분리해 기록한다 (`DEC-059`).
 
 ---
@@ -1610,7 +1634,7 @@ Shared Identity 물리 분리
 1. 각 Repository의 최종 상품명과 Organization 이름
 2. `oh-my-ai-control-plane`의 최종 기술 스택
 3. 기존 Auth Server의 정확한 재사용 범위
-4. Shared Services Deployment Unit의 실제 구현·Repository·Deployment 시점
+4. empty `platform-services` 초기화·scaffold, 실제 구현·Deployment 시점과 운영 세부
 5. Billing Provider
 6. Commerce Module의 활성화 시점
 7. Finance Service의 초기 Cloud Infrastructure
@@ -1620,9 +1644,9 @@ Shared Identity 물리 분리
 11. 각 Repository의 공개·비공개 전환 시점
 12. 정식 SessionBinding Identifier Schema
 13. AI Runtime Server의 실제 구현과 Provider 배치
-14. Carelog CRM Server의 실제 구현 시점
-15. `identity-platform`의 최종 확정 Repository 이름 (canonical 논리 서비스명은 `Shared Identity`로 확정, `DEC-059`)
-16. Carelog의 Shared Identity 물리 분리 시점과 순서 (Auth Phase A 이후 단계)
+14. Carelog Cutover 이후 기존 Gateway·Auth 경로 제거 시점
+15. Audit 독립 Consumer 추출 Trigger 충족 여부
+16. Gateway·Identity의 세부 Cutover Window와 Rollback Runbook
 
 이 항목들은 별도 검토와 ADR 없이 추정해 확정하지 않는다.
 
