@@ -1327,8 +1327,13 @@ Shared Identity 물리 분리는 `ADR-0017` / `DEC-067`에 따라 승인된 목�
 Local Invocation PoC의 선결 조건은 아니다.
 
 Canonical 논리 서비스명은 `Shared Identity`다 (`DEC-059`). 기존
-`identity-platform` 후보는 `DEC-067`로 부분 대체됐고, 물리 Target은 아직 존재하지
-않는 `ranikun-labs/platform-services`의 `platform-core/identity`다.
+`identity-platform` 후보는 `DEC-067`로 부분 대체됐고, 물리 Target은
+`ranikun-labs/platform-services`의 `platform-core/identity`다. Repository container는
+`created / empty`고 visibility `public`은 관찰 사실일 뿐 정책은 `not_decided`다.
+현재 구현 Host는 `ranikun-labs/carelog-be`며 Application implementation은
+`not_started / not_implemented`, Gateway와 Identity extraction은 `not_started`다.
+Runtime은 `not_supported / not_deployed`, release는 `false / not_released`고
+Commerce·Audit·Shared AI는 `deferred`다.
 
 ---
 

@@ -131,8 +131,10 @@ Project 분리는 별도 운영 병목과 권한 경계가 확인되기 전에�
 
 Registry 값은 Jira Admin 적용 전에 Repository 존재·이름을 다시 확인한다.
 Owner migration 전 namespace는 historical provenance에서만 보존한다. 현재
-Canonical Registry는 `ranikun-labs/*`를 사용하며, `platform-services`는 생성 전까지
-Primary implementation Repository로 선택하지 않는다.
+Canonical Registry는 `ranikun-labs/*`를 사용한다. `platform-services`는 Repository
+container가 `created / empty`이지만, 그 존재만으로 Primary implementation Repository로
+선택하지 않는다. Gateway·Identity extraction은 `not_started`고 Current Implementation
+Host는 `ranikun-labs/carelog-be`다.
 
 ### 3.4 Area 초기값
 
@@ -427,7 +429,7 @@ Task 시작
 Logical Owner와 Current Implementation Host를 혼합하지 않는다.
 따라서 Shared Identity 코드가 현재 Carelog Backend에 있더라도 Issue의
 Workstream은 Shared Identity이고 Primary Repository는 실제 변경이 일어나는
-`ranikun-labs/carelog-be`가 될 수 있다. RPL-54의 Target은 생성 이후
+`ranikun-labs/carelog-be`가 될 수 있다. RPL-54의 구현 Target은 현재 `created / empty`인
 `ranikun-labs/platform-services`지만, RPL-55 Cutover 전까지 Current Implementation
 Host가 바뀌었다고 간주하지 않는다.
 
