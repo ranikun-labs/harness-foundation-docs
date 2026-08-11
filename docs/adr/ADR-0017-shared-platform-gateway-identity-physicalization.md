@@ -12,7 +12,7 @@ reviewers:
 approvers:
   - 박성환
 created_at: "2026-08-08"
-reviewed_at: "2026-08-08"
+reviewed_at: "2026-08-12"
 approved_at: "2026-08-08"
 effective_from: "2026-08-08"
 implementation_status: not_started
@@ -23,6 +23,8 @@ constraints:
   - "platform-services Repository container는 created / empty이며 Application·Runtime 구현은 시작되지 않았다"
   - "RPL-53·RPL-54는 현재 동작을 보존하는 추출이고 RPL-55 검증 전 Cutover 완료를 주장하지 않는다"
   - "Commerce·Audit·Shared AI 구현과 NATS Runtime은 승인하지 않는다"
+  - "Near-term에는 PostgreSQL과 Redis physical instance를 각각 하나로 유지하되 Service별 논리 소유권·접근 권한·Migration 경계를 강제한다"
+  - "Finance Domain 개발은 Shared Identity Production Cutover 전체를 기다리지 않으며 Identity Consumer 활성화만 Gate를 따른다"
   - "구현·Runtime 지원·배포·출시 완료를 Architecture 승인과 분리한다"
 affected_docs:
   - docs/adr/README.md
@@ -34,6 +36,7 @@ affected_docs:
   - docs/architecture/repository-service-boundaries.md
   - docs/architecture/backend-service-foundation/README.md
   - docs/architecture/backend-service-foundation/service-boundaries.md
+  - docs/contracts/backend-service-foundation/identity-token-contract.md
   - docs/master/product-architecture-master.md
   - docs/governance/portfolio-work-management-governance.md
   - catalog/system-catalog.yaml
@@ -84,17 +87,21 @@ Finance Harness가 Carelog에 이어 공통 Ingress와 Authentication을 실제�
 두 번째 Product Consumer가 됐다. 이에 따라 Shared Gateway와 Shared Identity의
 물리화를 제약과 함께 승인한다.
 
+```text
+Canonical verdict: APPROVED_FOR_PLATFORM_RUNTIME_FOUNDATION
+```
+
 목표 GitHub Repository는 `ranikun-labs/platform-services`다. Repository container는
 `created / empty`이고 현재 visibility는 GitHub에서 관찰된 `public`이다. 이는 visibility
 정책 채택이 아니며 Application·Runtime 구현은 시작되지 않았다.
 
 ```text
 platform-services                         repository created / empty
-├── gateway-app                           independent process
+├── gateway-app                           independent build / process / deployment
 │   └── Spring Boot
 │       + Spring Cloud Gateway
 │       + WebFlux / Netty
-└── platform-core                         independent process
+└── platform-core                         independent build / process / deployment
     └── Spring Boot + Spring MVC
         + one-process modular monolith
         ├── identity                      ACTIVE target
@@ -128,8 +135,9 @@ visibility_policy: not_decided
 - Shared Gateway와 Shared Identity의 물리화 방향 승인
 - `platform-services` Target Repository와 그 내부 두 Process 경계
 - `platform-core` 내부 Module·Data·Migration Ownership 규칙
+- PostgreSQL·Redis physical instance 유지와 Service별 logical ownership 규칙
 - Current와 Target Topology의 분리
-- RPL-52부터 RPL-50까지의 순서와 후속 구현 소유권
+- G0~G5 Gate와 RPL-27·Finance 병행 가능 범위
 - Behavior-preserving extraction, Cutover와 Rollback 원칙
 - ADR-0012~0015와 DEC-057~060·064의 제한적 부분 대체 범위
 
@@ -142,6 +150,7 @@ visibility_policy: not_decided
 - Carelog Cutover와 Finance Backend 구현
 - Commerce, Audit, NATS 또는 Shared AI 구현
 - Production Runtime·지원·배포·출시 승인
+- PostgreSQL 또는 Redis physical instance 추가
 
 ## 3. Context and Physicalization Trigger
 
@@ -186,15 +195,20 @@ second real Product Consumer
 
 ## 4. Current Topology
 
-현재 구현 Host는 `ranikun-labs/carelog-be`다.
+2026-08-12 사용자 확인 기준 현재 구현 Host는 `ranikun-labs/carelog-be`다. 이 topology
+기록은 Architecture input이며 Production deployment/health Evidence를 대신하지 않는다.
 
 ```text
-ranikun-labs/carelog-be
-├── carelog-gateway
-│   └── Spring Cloud Gateway / WebFlux
-└── carelog-be
+Public Client
+→ Cloudflare / Tunnel
+→ carelog-gateway                       independent deployment unit
+   └── Spring Cloud Gateway / WebFlux
+→ carelog-be                            product backend process
     ├── Auth / OAuth / Identity-related capability
     └── Carelog Product Domain
+
+PostgreSQL physical instance: 1
+Redis physical instance:      1
 ```
 
 현재 상태:
@@ -203,6 +217,8 @@ ranikun-labs/carelog-be
 - RPL-4 / Gateway PR #34의 Public OAuth Route, Rate Limit, Public / Protected Route
   동작은 pending delta이며 merged baseline이 아니다.
 - physical extraction은 아직 시작되지 않았다.
+- Gateway는 현재 독립 Deployment Unit이지만 Auth/OAuth는 `carelog-be` 내부 Module이며
+  독립 Shared Identity Runtime이 아니다.
 - Finance Harness가 Shared Gateway 또는 Shared Identity Runtime을 사용한다는
   Evidence는 없다.
 
@@ -230,7 +246,9 @@ Observed Visibility: public (policy not_decided)
 ### 5.2 Independent Processes
 
 `gateway-app`과 `platform-core`는 같은 Git Repository에 있어도 서로 다른 Spring
-Boot Application이며 독립 Process로 Build·Run·Deploy·Rollback한다.
+Boot Application이며 독립 Process로 Build·Run·Deploy·Rollback한다. 각 Process는
+별도 build task와 artifact, config namespace, health/readiness, deployment definition,
+release version과 rollback target을 가진다.
 
 | Process | Runtime boundary | Primary responsibility | State |
 |---|---|---|---|
@@ -239,6 +257,9 @@ Boot Application이며 독립 Process로 Build·Run·Deploy·Rollback한다.
 
 Gateway에 Product Business Logic을 넣지 않는다. `gateway-app`과
 `platform-core/identity`를 하나의 Spring Boot Application으로 합치지 않는다.
+독립 rollback은 application artifact에 대한 독립성을 뜻한다. Identity schema나
+token contract가 이미 전환된 뒤의 rollback까지 무조건 독립이라는 뜻은 아니며,
+data·token compatibility Gate를 함께 통과해야 한다.
 
 ## 6. platform-core Module and Data Boundary
 
@@ -266,20 +287,31 @@ platform-core
 
 ### 6.1 Identity Ownership
 
-`platform-core/identity`의 Target Ownership 후보:
+`platform-core/identity`의 Target Ownership:
 
-- Account / Identity
+- stable user identity / Account
+- Password Credential
 - External Identity
 - Product Client Registry
-- Auth / OAuth
-- Token / Principal
-- OAuth State와 Redis OAuth State
+- Authentication / OAuth provider integration
+- OAuth State / PKCE와 single-use handoff state
+- Access Token / Refresh Session / Token Session
+- Token signing, rotation, revocation과 stable principal
 - Identity-owned Persistence와 Migration
 
-Carelog의 Customer, Interaction, Timeline, FollowUp, Handoff와 같은 Product
-Domain·Workflow는 이동하지 않는다. 실제 Carelog 코드의 Product 명칭이 이 예시와
-다르더라도 원칙은 동일하다. 제품 Repository는 Identity 소유 Table을 직접 수정하지
-않고 stable account/principal contract를 소비한다.
+다음은 Shared Identity가 소유하지 않는다.
+
+- Carelog Role과 Domain Authorization
+- Finance Domain Authorization
+- Product Membership
+- Subscription, Billing, Payment, Entitlement와 Quota
+- Carelog User/Profile, Organization, Customer, Timeline, Follow-up과 Relation
+- Finance Domain Data
+
+Product Membership·Subscription·Payment·Entitlement는 Shared Commerce의 논리 책임을
+유지하지만 이번 physicalization에서 구현하지 않는다. Product별 Role과 Domain
+Authorization은 각 Product가 소유한다. 제품 Repository는 Identity 소유 Table이나
+Redis keyspace를 직접 사용하지 않고 stable subject/token/API contract를 소비한다.
 
 ### 6.2 Commerce
 
@@ -303,6 +335,33 @@ Product / Identity / Commerce
 이는 future event-consumer boundary다. NATS, Audit Entity·API·DB·Consumer가 현재
 구현됐거나 Runtime 지원된다는 뜻이 아니다. Domain에서
 `auditService.save(...)` 또는 `auditRepository.save(...)`에 직접 결합하지 않는다.
+
+### 6.4 Near-term PostgreSQL and Redis Boundary
+
+Near-term에는 PostgreSQL physical instance 하나와 Redis physical instance 하나를
+유지한다. physical co-location은 logical ownership 통합이나 credential 공유를 뜻하지
+않는다.
+
+| Store | Near-term placement | Required ownership boundary |
+|---|---|---|
+| PostgreSQL | one physical instance / cluster | Carelog, Finance와 Identity는 별도 logical database 또는 schema, DB role, migration history와 write authority를 가진다 |
+| Redis | one physical instance | Service별 key namespace와 ACL user를 분리하고 TTL·eviction·failure policy를 명시한다 |
+
+Identity PostgreSQL은 Account, Credential, ExternalIdentity, ProductClient,
+RefreshSession과 Token/Revocation의 durable source of truth를 소유한다. Redis는 OAuth
+State/PKCE, single-use handoff, session/cache와 revocation projection의 단기 Runtime
+state를 소유할 수 있지만 Business source of truth가 아니다.
+
+금지:
+
+- Cross-service direct table write와 SQL JOIN
+- Cross-service foreign key 또는 shared mutable table
+- Product가 Identity database credential이나 Repository를 사용
+- Product 또는 Gateway가 Identity Redis keyspace 전체를 사용
+
+Gateway가 revocation/blacklist read boundary를 필요로 하면 Identity가 소유하는
+versioned read model 또는 전용 read-only key namespace만 최소 ACL로 소비한다. 이
+transitional read boundary는 Gateway에 revocation write authority를 주지 않는다.
 
 ## 7. Shared AI Boundary
 
@@ -332,50 +391,53 @@ ADR-0015 / DEC-064의 다음 불변조건을 유지한다.
 - Gateway는 외부 위조 Authentication Header를 제거하고 신뢰 가능한 Context만 전달한다.
 - Product는 자기 Domain Authorization을 소유한다.
 - Service 간 데이터 교환은 API, Token Claim, Event 또는 Projection을 사용한다.
+- issuer/audience/JWKS를 검증할 수 없거나 trusted auth context가 불완전하면 protected
+  request는 fail closed한다.
+- login·refresh·revocation 같은 명시적 Identity command만 bounded direct HTTP를
+  사용하고, 일반 Product request는 signed token을 로컬 검증한다.
 - NATS JetStream은 실제 첫 Use Case와 후속 Decision 전까지 미도입 상태다.
 
 ## 9. Migration Sequence and Ownership
 
 ```text
-G1 — RPL-52
-Foundation Physicalization Approval
-        ↓
-G2 — RPL-53
-Carelog Gateway → shared gateway-app
-Behavior-preserving extraction
-        ↓
-G3 — RPL-54
-Carelog Auth / OAuth / Identity → platform-core/identity
-Behavior-preserving extraction
-        ↓
-G4 — RPL-55
-Carelog → Shared Gateway + Shared Identity
-Cutover / Regression
-        ↓
-RPL-27
-new platform-core/identity reality에 기존 Ticket 재타기팅 후 기능 구현
-        ↓
-RPL-50
-Finance Backend Core
-        ↓
-Finance Shared Gateway / Identity E2E
+G0  Canonical Physicalization Approval
+ ↓
+G1  platform-services Runtime Foundation
+ ↓
+G2  Identity and Gateway Contract
+ ↓
+G3  Carelog Auth/OAuth/Identity Extraction
+ ↓
+G4  Gateway + Identity + Carelog Compose/E2E and Cutover Gate
+ ↓
+G5  Finance Shared Identity Consumer Activation
 ```
 
-| Gate | Owner | Completion Evidence | Current state |
+| Gate | Required outcome | Exit evidence | Current state |
 |---|---|---|---|
-| G1 / RPL-52 | Foundation | Accepted ADR·DEC와 정합한 projection merge | in_progress; Runtime 아님 |
-| G2 / RPL-53 | Shared Gateway extraction | Baseline + applicable PR #34 delta 보존, 독립 Process 검증 | planned / not_started |
-| G3 / RPL-54 | Shared Identity extraction | Auth/OAuth/Identity behavior와 data migration 검증 | planned / not_started |
-| G4 / RPL-55 | Carelog cutover | Carelog regression, rollback rehearsal와 old-path retirement evidence | planned / not_started |
-| RPL-27 | Identity behavior enhancement | G4 이후 새 Repository Reality로 기존 Ticket 재타기팅 | deferred_by_sequence |
-| RPL-50 | Finance Backend | Finance-owned backend contract와 Shared Platform E2E | planned_after_G4 |
+| G0 | `platform-services`, `gateway-app`, `platform-core/identity` physicalization과 independent Runtime boundary 승인 | Accepted ADR-0017·DEC-067과 정합한 canonical projection | accepted; Runtime 아님 |
+| G1 | 두 Application의 독립 boot/build/config/deploy/rollback foundation, health/readiness와 Compose skeleton | 두 artifact의 독립 build/boot, health/readiness, config isolation과 rollback target 검증 | planned / not_started |
+| G2 | stable subject, issuer, audience, JWKS/key strategy, auth error, Web/Mobile handoff와 product-neutral Gateway auth context 확정 | versioned contract tests, key/claim compatibility policy, fail-closed failure semantics와 RPL-27 State binding 완료 | planned / not_started |
+| G3 | Account/Credential/OAuth/Token/Session/ProductClient와 schema/migration ownership을 Carelog에서 Identity로 추출 | behavior/data/security regression, exclusive writer, migration/rollback evidence와 Carelog coupling 제거 | planned / not_started |
+| G4 | Gateway + Identity + Carelog login/refresh/revocation/rollback E2E와 production cutover readiness | old/new token coexistence, rollback rehearsal, observability와 no-dual-writer evidence | planned / not_started |
+| G5 | Finance가 product-neutral authentication consumer로 활성화 | Identity DB direct access 없음, local token validation, Finance-owned authorization와 end-to-end evidence | planned / not_started |
 
-RPL-4 / PR #34 기능을 RPL-53에서 새로 중복 구현하지 않는다. G2는 merged baseline과
+Gate와 Jira issue는 같은 단위가 아니다. RPL-52는 G0의 근거다. RPL-53·RPL-54는
+G1~G3 책임을 Gate별로 나눠 수행해야 하며, 한 Ticket에 여러 Gate를 섞어도 Exit
+Evidence를 합치지 않는다. RPL-27의 State/Product Client binding은 G2에서 완료하고
+G3 extraction에 포함한다. RPL-55는 G4 Carelog cutover evidence를 소유한다.
+
+Finance Domain과 Backend Foundation 개발은 G1 이후 병행할 수 있고, G2 contract가
+고정되면 Finance Identity adapter의 contract-test 개발도 병행할 수 있다. 다만 Shared
+Identity Runtime을 실제 Consumer로 활성화하고 production-ready라고 주장하는 것은 G4
+통과 뒤 G5에서만 허용한다.
+
+RPL-4 / PR #34 기능을 RPL-53에서 새로 중복 구현하지 않는다. G3는 merged baseline과
 적용 가능한 pending delta를 구분해 최종 추출 기준을 확정한다.
 
 ## 10. Behavior-preserving Extraction
 
-G2와 G3의 기본 원칙은 위치와 소유권을 바꾸되 관찰 가능한 동작을 의도적으로
+G3의 기본 원칙은 위치와 소유권을 바꾸되 관찰 가능한 동작을 의도적으로
 바꾸지 않는 것이다.
 
 - Route, Public / Protected behavior, JWT 처리와 Rate Limit의 기준을 먼저 고정한다.
@@ -384,9 +446,28 @@ G2와 G3의 기본 원칙은 위치와 소유권을 바꾸되 관찰 가능한 �
 - RPL-4 / PR #34처럼 이미 존재하는 pending delta는 출처와 상태를 보존해 통합한다.
 - Copy나 새 Process 기동만으로 Migration 완료를 선언하지 않는다.
 - Contract, 데이터, 보안 Regression과 Consumer 전환 Evidence가 있어야 Gate를 닫는다.
+- OAuth State/PKCE와 handoff code는 TTL과 atomic single-consume를 보장한다.
+- Refresh rotation은 concurrent reuse를 검출하고, revocation은 idempotent하게 처리한다.
+- network retry에서 at-most-once delivery를 가정하지 않는다. single-consume effect와
+  retry-safe response semantics를 별도로 정의한다.
+- Service 간 distributed transaction, Saga, Outbox 또는 Broker를 선제 도입하지 않는다.
+  실제 cross-service invariant가 생기면 local transaction과 failure recovery contract를
+  먼저 정의한 뒤 별도 Gate로 검토한다.
 
-RPL-27은 duplicate Ticket을 만들지 않고 G4 뒤 기존 Ticket을 새
-`platform-core/identity` Reality에 맞춰 재타기팅한다.
+Extraction classification:
+
+- MOVE_IDENTITY: PlatformAccount, PasswordCredential, ExternalIdentity, Identity
+  repository/service/credential ports, OAuth provider/state/PKCE, RefreshToken/TokenSession,
+  Product Client Registry와 generic access-token issuance
+- MOVE_GATEWAY: carelog-gateway executable/filter/config와 최소 blacklist read boundary
+- STAY_CARELOG: Carelog User/Profile, UserRepository, Organization, Customer, Timeline,
+  Relation과 product-specific authorization
+- TRANSITIONAL: CRMIdentityProjectionPort, LegacyCrmIdentityProjectionAdapter,
+  GatewayHeaderAuthFilter/GatewayUserDetails, organizationId/role/publicId claims,
+  users.account_id/legacy user_id/password mirror와 Carelog-specific Kakao namespace
+
+RPL-27은 duplicate Ticket을 만들지 않고 G2 contract와 현재 Carelog State binding을
+완료한 뒤 G3 extraction input으로 승격한다.
 
 ## 11. Cutover and Rollback
 
@@ -399,6 +480,32 @@ RPL-27은 duplicate Ticket을 만들지 않고 G4 뒤 기존 Ticket을 새
 - Rollback 시 Token·Session·OAuth State compatibility와 쓰기 권한을 먼저 검증한다.
 - 구 경로 제거는 Cutover 관찰 기간과 Rollback Gate가 닫힌 뒤 별도 변경으로 수행한다.
 - RPL-52 Merge만으로 Traffic, Runtime 또는 Data Owner가 바뀌지 않는다.
+
+### 11.1 Mandatory Decision Timing
+
+| Blocker | Latest mandatory Gate | Required decision or evidence |
+|---|---|---|
+| platform-services repository identity | G0 before G1 | `ranikun-labs/platform-services`, `gateway-app`, `platform-core/identity` ownership 승인 |
+| issuer / audience / JWKS | G2 before G3 | exact issuer/audience validation, signing/JWKS rotation, unknown-key failure와 compatibility policy |
+| Web/Mobile session/token handoff | G2 before G3; E2E at G4 | channel별 token exposure, cookie/exchange-code, TTL, replay와 error contract; production evidence는 G4 |
+| Identity schema/migration ownership | G3 entry | schema/role/migration owner, exclusive writer, backfill/reconciliation과 rollback authority |
+| Carelog-specific JWT claim separation | G2 before G3 | stable subject와 product-neutral claim 분리, transitional claim owner/version/retirement window |
+| product-neutral Gateway auth context | G2 before G3 | spoofed header stripping, signed/attested context, versioning, downstream validation과 fail-closed behavior |
+| rollback / old-new token coexistence | G4 before cutover | bounded trust window, key/issuer coexistence, session/revocation compatibility, rollback rehearsal와 old-path retirement gate |
+
+요청한 A/B/C 분류는 다음과 같다.
+
+- A — Runtime Foundation 전: repository identity와 두 Process/Data placement boundary.
+  G0에서 모두 결정됐으므로 G1 blocker는 없다.
+- B — Carelog Auth 코드 이동 전: issuer/audience/JWKS, Web/Mobile handoff contract,
+  schema/migration owner, Carelog claim 분리, product-neutral Gateway context와 RPL-27.
+  G2 exit 및 G3 entry에서 강제한다.
+- C — Production Cutover 전: old/new token·session coexistence, 실제 Web/Mobile E2E,
+  rollback rehearsal, observability와 old-path retirement. G4에서 강제한다.
+
+따라서 G1 Runtime Foundation을 막는 미결정 Blocker는 없다. G1에서는 identity business
+code, production key, data migration과 traffic cutover를 넣지 않는다. G2·G3·G4의
+필수 결정을 앞 Gate로 당겨 증거 없이 우회하는 것도 허용하지 않는다.
 
 ## 12. Partial Supersession Matrix
 
@@ -433,19 +540,18 @@ Gateway
 - Gateway와 Identity의 Security·Runtime Contract를 제품별로 복제하지 않는다.
 - 하나의 Repository 안에서도 reactive edge와 MVC domain runtime을 분리한다.
 - `platform-core`의 초기 운영 단위를 작게 유지하면서 Module별 추출 가능성을 보존한다.
-- G2/G3/G4 구현 Owner가 Repository·Process·Module·Data·Migration 경계를 추측하지 않는다.
+- G1~G5 구현 Owner가 Repository·Process·Module·Data·Migration 경계를 추측하지 않는다.
 - 새 Repository와 Runtime 운영 부담은 후속 Gate에서 실제 Evidence와 함께 발생한다.
 
 ## 14. Deferred and Follow-up Ownership
 
 | Deferred scope | Follow-up owner / trigger |
 |---|---|
-| empty `platform-services` 초기화와 scaffold | RPL-53/G2의 별도 승인된 implementation workflow |
-| Gateway extraction | RPL-53 |
-| Identity extraction | RPL-54 |
-| Carelog cutover and rollback evidence | RPL-55 |
-| OAuth State Product Client Binding enhancement | Existing RPL-27, G4 이후 재타기팅 |
-| Finance Backend Core and shared E2E | RPL-50, G4 이후 |
+| empty `platform-services` Runtime Foundation | G1 implementation workflow; Gateway/Identity business code 제외 |
+| Identity/Gateway Contract와 OAuth State Product Client Binding | G2; existing RPL-27 완료 포함 |
+| Gateway·Identity behavior-preserving extraction | G3; RPL-53·RPL-54 scope를 Gate별로 분리 |
+| Carelog cutover and rollback evidence | G4 / RPL-55 |
+| Finance Backend Domain/Foundation | G1 이후 병행 가능; Identity Consumer activation은 G5 |
 | Commerce | 실제 유료화와 공통 Consumer trigger 후 별도 Decision |
 | Audit activation / independent consumer | 중앙 감사 Use Case와 운영 격리 trigger 후 별도 Decision |
 | NATS Runtime | ADR-0015의 first concrete event/job trigger 후 별도 Decision |
@@ -460,11 +566,11 @@ ADR-0014  Shared Services naming; platform-core process concretization added
 ADR-0015  Communication invariants preserved; Identity extraction prohibition partially superseded
 DEC-059   identity-platform candidate replaced by created / empty platform-services target; implementation not_started
 DEC-067   Decision Log projection of this ADR
-RPL-52    G1 Architecture approval
-RPL-53    G2 Gateway extraction
-RPL-54    G3 Identity extraction
+RPL-52    G0 Architecture approval
+RPL-53    Gateway 관련 G1 Foundation 및 G3 extraction scope
+RPL-54    Identity 관련 G1~G3 scope; Gate evidence 분리
 RPL-55    G4 Carelog cutover/regression
 RPL-4     Existing Gateway behavior delta
-RPL-27    Post-G4 Identity behavior enhancement
-RPL-50    Post-G4 Finance Backend Core
+RPL-27    G2 State/Product Client binding completion; G3 extraction input
+RPL-50    Finance Backend는 병행 가능; Shared Identity activation은 G5
 ```

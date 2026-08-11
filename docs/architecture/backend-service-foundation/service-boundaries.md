@@ -9,7 +9,7 @@
 - Product released: No
 - Decision record: `DEC-059` (terminology and Carelog registration), `DEC-067` / `ADR-0017` (Gateway·Identity physicalization approved; implementation not started)
 - Term scope: "Backend Service Foundation" (this directory) is distinct from `oh-my-ai`'s "Shared Platform" (`DEC-005`, `docs/architecture/shared-core-and-extensions.md`), which remains the AI harness product family's domain-neutral Contract boundary. See `docs/architecture/backend-service-foundation/README.md` §2.
-- Repository-map note: `Shared Identity` is the canonical logical service name (per `DEC-059`). `DEC-067` replaces the `identity-platform` candidate with `ranikun-labs/platform-services`, locating Identity at `platform-core/identity`. The Repository container is created and empty; the Application and Runtime are not implemented. `Carelog` remains the current implementation host until RPL-55 cutover evidence.
+- Repository-map note: `Shared Identity` is the canonical logical service name (per `DEC-059`). `DEC-067` replaces the `identity-platform` candidate with `ranikun-labs/platform-services`, locating Identity at `platform-core/identity`. The Repository container is created and empty; the Application and Runtime are not implemented. `Carelog` remains the current implementation host until G4 / RPL-55 cutover evidence.
 
 ## 1. Purpose
 
@@ -264,13 +264,16 @@ ownership and adoption require a follow-up decision after a real use case.
 | Account authentication | Shared Identity |
 | Password hash | Shared Identity |
 | OAuth provider linkage | Shared Identity |
+| OAuth State / PKCE and Product Client Registry | Shared Identity |
 | Token signing and refresh | Shared Identity |
+| Session and revocation | Shared Identity |
 | Carelog manager profile | Carelog |
 | CRM customer | Carelog |
 | Finance profile | Finance Harness |
 | Finance journal and review | Finance Harness |
 | Product-specific role | Relevant product service |
 | Product-specific consent | Relevant product service |
+| Product membership, subscription, payment, entitlement | Shared Commerce logical boundary; implementation deferred |
 | Product-neutral AI execution mechanism | Shared AI |
 | Product prompt, workflow, policy, tool, validation, and result | Relevant product service |
 | Shared event envelope | Foundation |
@@ -312,10 +315,18 @@ During transition:
 - compatibility identifiers must be marked transitional;
 - a transitional token claim must not become a permanent cross-product contract by accident.
 
-The physical extraction sequence is RPL-52 → RPL-53 → RPL-54 → RPL-55 under
-`ADR-0017`. RPL-27 is retargeted only after G4, followed by RPL-50. Copying code or
-starting a process is not migration completion; behavior, data, security, cutover and
-rollback evidence belong in the implementation repositories.
+The physicalization sequence is G0 canonical approval → G1 Runtime Foundation → G2
+Identity/Gateway Contract → G3 behavior-preserving extraction → G4 Carelog E2E/cutover
+gate → G5 Finance Identity consumer activation under `ADR-0017`. RPL-27 State/Product
+Client binding completes at G2 and becomes G3 extraction input. Finance Domain and
+Backend Foundation work may proceed after G1; only Shared Identity Runtime activation is
+held to G5. Copying code or starting a process is not migration completion; behavior,
+data, security, cutover and rollback evidence belong in the implementation repositories.
+
+Near-term PostgreSQL and Redis may each remain one physical instance. That co-location
+does not permit shared credentials, cross-service SQL, shared mutable tables, or Product
+access to Identity persistence. Each service owns its logical database/schema or Redis
+key namespace, ACL, migrations, write authority and failure policy.
 
 ## 11. Documents required in each MSA repository
 

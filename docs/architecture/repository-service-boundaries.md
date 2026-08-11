@@ -82,12 +82,15 @@ source_inputs: []
 - Identity와 Commerce의 동급 관계
 - 제품별 데이터 소유 원칙
 - 각 서버 내부 Modular Monolith 우선 원칙
-- Gateway·Identity physicalization Target과 G1→G4 순서 (`ADR-0017`)
+- Gateway·Identity physicalization Target과 G0→G5 순서 (`ADR-0017`)
 ```
 
 현재 Gateway와 Auth/OAuth/Identity 관련 구현 Host는
 `ranikun-labs/carelog-be`다. `ranikun-labs/platform-services` Repository container는
 `created / empty` Target이며 Application과 독립 Shared Runtime은 아직 없다.
+2026-08-12 사용자 확인 topology에서 Carelog Gateway는 독립 Deployment Unit이지만
+Auth/OAuth는 `carelog-be` Product Backend 내부 Module이다. PostgreSQL과 Redis physical
+instance는 각각 하나다. 이 기록은 Production Runtime Evidence를 대신하지 않는다.
 
 ### 3.2 목표 아키텍처
 
@@ -661,9 +664,12 @@ Finance 장애와 배포가 다음에 직접 영향을 주지 않아야 한다.
 Shared Identity
 ├── account
 ├── credential
+├── external-identity
 ├── authentication
+├── oauth-state / pkce / product-client
 ├── token
-└── session
+├── refresh-session
+└── revocation
 ```
 
 #### 주요 책임
@@ -673,6 +679,8 @@ Shared Identity
 - Login / Logout과 Authentication
 - Access / Refresh Token
 - Session
+- OAuth State / PKCE와 Product Client Registry
+- Token signing, rotation과 Revocation
 - 안정적인 사용자 식별자
 - 인증 관련 보안 정책
 
@@ -700,8 +708,9 @@ Shared Identity의 독립 논리 경계는 채택한다.
 
 Finance Harness가 두 번째 실제 Product Consumer가 됨에 따라 물리 분리 Trigger는
 충족됐고 `ADR-0017`이 Target Repository와 Process를 승인했다. Repository container는
-created / empty지만 Application과 Runtime은 구현되지 않았으며 RPL-54 전에는 추출
-완료를 주장하지 않는다.
+created / empty지만 Application과 Runtime은 구현되지 않았다. G1 Runtime Foundation은
+즉시 시작할 수 있고, G2 Contract와 G3 extraction Evidence 전에는 Identity 구현 또는
+추출 완료를 주장하지 않는다.
 
 Shared Identity 구현은 V1 또는 V2 Local Invocation PoC의 선결 조건이 아니다.
 
@@ -948,11 +957,11 @@ Target Repository and Deployment Units
         └── audit                            DEFERRED
 ```
 
-목표 Deployment Unit은 즉시 구현, Repository 생성,
-Database Provisioning 또는 배포 승인을 의미하지 않는다.
+이 Target은 G1 Runtime Foundation 구현을 승인하지만 Identity business code,
+Database Migration, Production Traffic 또는 Production Deployment 승인을 의미하지 않는다.
 
 Carelog CRM Server는 기존 Product Service이며 현재 Gateway와 Auth/OAuth/Identity의
-Implementation Host다. Shared Gateway·Identity 추출은 RPL-53·RPL-54의
+Implementation Host다. Shared Gateway·Identity Runtime Foundation과 추출은 G1~G3의
 `planned / not_started` 작업이다.
 
 ### 핵심 규칙
@@ -1004,6 +1013,11 @@ platform-services
 one-process modular monolith로 시작해도 Module 간 Entity 공유, Repository 직접 접근,
 Table 직접 수정이나 Migration 소유권 공유를 허용하지 않는다.
 
+`gateway-app`과 `platform-core`는 build task/artifact, config namespace,
+health/readiness, deployment definition, release version과 rollback target을 분리한다.
+Application rollback 독립성은 schema/token contract 전환 뒤 data compatibility 검증을
+생략할 권한이 아니다.
+
 ---
 
 ## 10. 데이터 소유권
@@ -1044,10 +1058,25 @@ PostgreSQL Physical Cluster
 ```text
 account
 credential
+external identity
+oauth state / pkce
+product client
 authentication session
 access token
 refresh token
+revocation
 ```
+
+### 10.2.1 Near-term Redis 소유권
+
+Near-term에는 Redis physical instance 하나를 유지한다. Shared Identity는 OAuth
+State/PKCE, single-use handoff, session/cache와 revocation projection의 key namespace를
+소유한다. Service별 ACL user, key prefix, TTL, eviction과 failure policy를 분리하며
+Redis는 Business Source of Truth가 아니다.
+
+Gateway의 blacklist/revocation read는 Identity-owned versioned read model 또는 전용
+read-only key namespace로 제한한다. Gateway나 Product에 Identity Redis 전체 접근권한,
+write authority 또는 공용 credential을 주지 않는다.
 
 ### 10.3 Shared Commerce 논리 데이터
 
@@ -1376,8 +1405,9 @@ platform-services                    repository created / empty
     └── audit                        DEFERRED
 ```
 
-`identity`는 Account, External Identity, Auth/OAuth, Token/Principal,
-Product Client Registry, OAuth State와 Identity-owned Persistence를 소유한다.
+`identity`는 stable Account, Credential, External Identity, Auth/OAuth/PKCE,
+Token/Refresh Session/Revocation, Product Client Registry와 Identity-owned Persistence를
+소유한다. Carelog·Finance의 Role/Domain Authorization과 Domain Data는 소유하지 않는다.
 Commerce와 Audit 구현은 승인되지 않았다. Shared AI는 이 Repository 밖의 future
 independent Python Runtime이다.
 
@@ -1551,17 +1581,22 @@ optional domain-neutral platform capability
 ### Phase 5 — Shared Gateway·Identity Physicalization
 
 Finance Harness가 두 번째 실제 Consumer가 되면서 Gateway·Identity 물리화 Trigger는
-충족됐다. 전체 Shared Platform MSA가 아니라 아래 G1→G4만 승인한다.
+충족됐다. 전체 Shared Platform MSA가 아니라 아래 G0→G5만 승인한다.
 
 ```text
-RPL-52 Foundation approval
-→ RPL-53 Gateway extraction
-→ RPL-54 Identity extraction
-→ RPL-55 Carelog cutover / regression
+G0 Canonical Physicalization Approval (RPL-52)
+→ G1 platform-services Runtime Foundation
+→ G2 Identity/Gateway Contract + RPL-27 State binding completion
+→ G3 Carelog Auth/OAuth/Identity extraction
+→ G4 Gateway + Identity + Carelog Compose/E2E and cutover gate (RPL-55)
+→ G5 Finance Shared Identity consumer activation
 ```
 
-그 뒤 기존 RPL-27을 새 Identity Reality로 재타기팅하고 RPL-50 Finance Backend를
-진행한다. Commerce·Audit·Shared AI는 이 순서의 구현 범위가 아니다.
+RPL-53·RPL-54는 G1~G3 scope를 Gate별 Evidence로 나누고 RPL-27은 G2에서 완료해 G3
+input으로 사용한다. Finance Domain/Backend Foundation은 G1 이후, Identity adapter
+contract-test는 G2 이후 병행할 수 있다. G5는 Finance 전체 착수가 아니라 실제 Shared
+Identity Runtime Consumer 활성화 Gate다. Commerce·Audit·Shared AI는 이 순서의 구현
+범위가 아니다.
 
 ---
 
@@ -1624,6 +1659,8 @@ Shared Gateway·Identity 물리 분리
 31. Audit는 현재 미구현 Module 후보이며 future NATS consumer 추출에는 별도 Trigger와 Decision이 필요하다.
 32. 인증 논리 서비스의 canonical 명칭은 `Shared Identity`고 created / empty Repository의 planned implementation location은 `ranikun-labs/platform-services`의 `platform-core/identity`다 (`DEC-059`, `DEC-067`).
 33. Carelog는 기존 Product Service로 이 지도에 등록되며(§7.7), 그 Auth Phase A 현재 상태는 oh-my-ai V1/V2/V3 Phase 1-5 물리화 타임라인과 분리해 기록한다 (`DEC-059`).
+34. Near-term PostgreSQL과 Redis physical instance는 각각 하나를 유지하지만 Service별 logical schema/database 또는 keyspace, credential/ACL, migration과 write authority는 분리한다.
+35. Finance Domain 개발은 G1 이후 병행할 수 있고 G5는 Shared Identity Consumer 활성화만 제한한다.
 
 ---
 
@@ -1634,7 +1671,7 @@ Shared Gateway·Identity 물리 분리
 1. 각 Repository의 최종 상품명과 Organization 이름
 2. `oh-my-ai-control-plane`의 최종 기술 스택
 3. 기존 Auth Server의 정확한 재사용 범위
-4. empty `platform-services` 초기화·scaffold, 실제 구현·Deployment 시점과 운영 세부
+4. `platform-services` Production Deployment 시점, topology와 운영 세부
 5. Billing Provider
 6. Commerce Module의 활성화 시점
 7. Finance Service의 초기 Cloud Infrastructure

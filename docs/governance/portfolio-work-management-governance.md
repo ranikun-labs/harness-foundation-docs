@@ -430,8 +430,11 @@ Logical Owner와 Current Implementation Host를 혼합하지 않는다.
 따라서 Shared Identity 코드가 현재 Carelog Backend에 있더라도 Issue의
 Workstream은 Shared Identity이고 Primary Repository는 실제 변경이 일어나는
 `ranikun-labs/carelog-be`가 될 수 있다. RPL-54의 구현 Target은 현재 `created / empty`인
-`ranikun-labs/platform-services`지만, RPL-55 Cutover 전까지 Current Implementation
-Host가 바뀌었다고 간주하지 않는다.
+`ranikun-labs/platform-services`지만, G4 / RPL-55 Cutover 전까지 Current
+Implementation Host가 바뀌었다고 간주하지 않는다. G1 Runtime Foundation처럼 실제
+변경이 `platform-services`에서 일어나는 Issue는 해당 Repository를 Primary Repository로
+기록한다. RPL-27 State/Product Client binding은 G2에서 현재 Host 기준으로 완료하고 G3
+extraction input으로 승격한다.
 
 ## 13. 과설계 방지선
 

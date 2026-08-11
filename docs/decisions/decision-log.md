@@ -3712,7 +3712,7 @@ RPL-42
 **Repository status:** created / empty
 **Repository visibility:** public (observed fact; policy not_decided)
 **Decision owner:** 박성환
-**Reviewed at:** 2026-08-08
+**Reviewed at:** 2026-08-12
 
 ### Decision
 
@@ -3721,8 +3721,8 @@ Consumer가 됐으므로, 다음 Target을 제약과 함께 승인한다.
 
 ```text
 ranikun-labs/platform-services             repository created / empty
-├── gateway-app                            independent SCG / WebFlux process
-└── platform-core                          independent Spring MVC process
+├── gateway-app                            independent build / SCG / WebFlux process / deployment
+└── platform-core                          independent build / Spring MVC process / deployment
     ├── identity                           ACTIVE target
     ├── commerce                           DEFERRED
     └── audit                              DEFERRED
@@ -3746,6 +3746,8 @@ Physicalization Trigger를 충족한다.
 ### Process and Module Boundary
 
 - `gateway-app`과 `platform-core`는 같은 Repository의 독립 Spring Boot Process다.
+- 두 Process는 build task, artifact, config namespace, health/readiness, deployment,
+  release version과 rollback target을 분리한다.
 - `gateway-app`은 Edge Security와 Routing을 소유하고 Product Business Logic을 갖지 않는다.
 - `platform-core`는 one-process modular monolith로 시작할 수 있다.
 - Module 간 Entity 공유, Repository 직접 접근, 타 Table 직접 수정과 Shared mutable
@@ -3754,30 +3756,65 @@ Physicalization Trigger를 충족한다.
 - Commerce와 Audit의 구현은 Deferred다.
 - Audit의 future NATS consumer boundary는 구현 승인이 아니다.
 - Shared AI는 `platform-services` 밖의 future independent Python Runtime이며 Deferred다.
+- Near-term에는 PostgreSQL과 Redis physical instance를 각각 하나로 유지하되 Service별
+  logical database/schema 또는 key namespace, credential/ACL, migration과 write
+  authority를 분리한다.
+- Product는 Identity PostgreSQL·Redis에 직접 접근하지 않는다. Gateway revocation
+  read는 Identity-owned versioned read model 또는 최소 read-only keyspace로 제한한다.
+
+### Identity and Product Responsibility
+
+- Shared Identity owns stable subject/Account, Credential, ExternalIdentity,
+  Authentication/OAuth/PKCE, ProductClient, Access Token, Refresh Session, Session과
+  Revocation.
+- Carelog·Finance는 Product Role과 Domain Authorization, Profile과 Domain Data를
+  소유한다.
+- Product Membership·Subscription·Payment·Entitlement는 Shared Commerce의 logical
+  responsibility로 유지하지만 이번 physicalization에서 구현하지 않는다.
 
 ### Migration Sequence
 
 ```text
-RPL-52 Foundation approval
-→ RPL-53 Gateway behavior-preserving extraction
-→ RPL-54 Identity behavior-preserving extraction
-→ RPL-55 Carelog cutover / regression
-→ existing RPL-27 retarget to new platform-core/identity reality
-→ RPL-50 Finance Backend Core
-→ Finance Shared Gateway / Identity E2E
+G0 Canonical Physicalization Approval
+→ G1 platform-services Runtime Foundation
+→ G2 Identity/Gateway Contract + RPL-27 State binding completion
+→ G3 Carelog Auth/OAuth/Identity behavior-preserving extraction
+→ G4 Gateway + Identity + Carelog Compose/E2E and Cutover Gate
+→ G5 Finance Shared Identity Consumer Activation
 ```
 
+RPL-52는 G0 근거다. RPL-53·RPL-54는 G1~G3 scope를 Gate별 Exit Evidence로
+분리하고, RPL-55는 G4를 소유한다. Finance Domain/Backend Foundation은 G1 이후,
+Identity adapter contract-test는 G2 이후 병행할 수 있다. G5는 Finance 전체 개발의
+착수 Gate가 아니라 Shared Identity Runtime Consumer 활성화 Gate다.
+
 RPL-4 / Gateway PR #34의 pending 기능 delta는 merged baseline이나 physical extraction과
-구분한다. RPL-53에서 해당 기능을 중복 구현하지 않는다. Copy나 Process 기동만으로
+구분한다. RPL-53에서 해당 기능을 중복 구현하지 않는다. G1의 scaffold나 Process 기동만으로
 Migration 완료를 선언하지 않으며, Contract·Data·Security Regression과 Consumer
 Cutover Evidence가 필요하다.
 
+### Blocker Timing
+
+- G0 before G1: `platform-services` repository와 `gateway-app` / `platform-core/identity`
+  physical ownership.
+- G2 before G3: issuer/audience/JWKS, stable subject/auth error, Web/Mobile handoff,
+  Carelog-specific claim 분리, product-neutral Gateway auth context와 RPL-27 State binding.
+- G3 entry: Identity schema/role/migration owner, exclusive writer와 backfill/rollback authority.
+- G4 before cutover: old/new token and session coexistence, bounded trust window, rollback
+  rehearsal, fail-closed E2E와 observability.
+
+G1 Runtime Foundation을 막는 미결정 Blocker는 없다. G1은 identity business code,
+production key, data migration과 traffic cutover를 포함하지 않는다.
+
 ### Cutover and Rollback
 
-- RPL-55 전까지 `ranikun-labs/carelog-be`가 Current Implementation Host다.
+- G4 / RPL-55 Cutover 전까지 `ranikun-labs/carelog-be`가 Current Implementation Host다.
 - Cutover는 Consumer Routing·Config·Data Owner 전환과 Carelog Regression 뒤 승인한다.
 - Identity Data dual-writer를 허용하지 않는다.
 - Process별 rollback, Token·Session·OAuth State compatibility와 쓰기 권한을 검증한다.
+- OAuth State/PKCE와 handoff code는 atomic single-consume, Refresh rotation은 concurrent
+  reuse detection, revocation은 idempotent semantics를 가져야 한다. network delivery의
+  at-most-once를 가정하지 않는다.
 - RPL-52 Merge만으로 Traffic, Runtime 또는 Data Owner가 바뀌지 않는다.
 
 ### Partial Supersession
@@ -3804,22 +3841,27 @@ ADR-0015 / DEC-064
 
 DEC-059
   superseded: identity-platform 후보 Repository
-  replacement: planned ranikun-labs/platform-services target
+  replacement: created / empty ranikun-labs/platform-services target
   preserved: Backend Service Foundation 명칭, Shared Identity 논리명, Carelog 등록
 ```
 
 ### Constraints
 
-- empty `platform-services` 초기화, Spring/Gradle scaffold와 Runtime 구현은 후속 Jira다.
+- G1 `platform-services` Runtime Foundation은 즉시 착수할 수 있다. Identity business
+  code, production key, data migration과 traffic cutover는 G1 범위가 아니다.
 - Gateway와 Identity만 승인하며 Commerce, Audit, NATS와 Shared AI 구현을 승인하지 않는다.
 - Product는 Identity Table을 직접 수정하지 않고 stable account/principal contract를 소비한다.
+- Cross-service SQL JOIN, shared mutable table, Product의 Identity DB/Redis direct access를
+  금지한다.
 - Gateway와 `platform-core`를 하나의 Spring Boot Application으로 합치지 않는다.
+- PostgreSQL/Redis instance 추가, distributed transaction, Saga/Outbox, Broker,
+  Kubernetes를 이번 결정으로 승인하지 않는다.
 - Current, Target, implementation, runtime support, deployment와 release 상태를 혼합하지 않는다.
 
 ### Consequences
 
 - Finance가 Carelog Product Lifecycle에 종속되지 않고 공통 Edge/Auth를 소비할 Target이 생긴다.
-- 후속 G2/G3/G4가 Repository·Process·Module·Data·Migration 경계를 추측하지 않는다.
+- 후속 G1~G5가 Repository·Process·Module·Data·Migration 경계를 추측하지 않는다.
 - 하나의 Repository와 하나의 Process를 동일시하지 않는다.
 - 전체 MSA 선제 분리와 Commerce·Audit·AI의 조기 구현을 피한다.
 
@@ -3835,6 +3877,7 @@ docs/adr/README.md
 docs/architecture/repository-service-boundaries.md
 docs/architecture/backend-service-foundation/README.md
 docs/architecture/backend-service-foundation/service-boundaries.md
+docs/contracts/backend-service-foundation/identity-token-contract.md
 docs/master/product-architecture-master.md
 docs/governance/portfolio-work-management-governance.md
 catalog/system-catalog.yaml

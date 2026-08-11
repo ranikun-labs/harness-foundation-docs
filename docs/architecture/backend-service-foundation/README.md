@@ -72,7 +72,7 @@ docs/architecture/backend-service-foundation/
 |---|---|---|
 | Shared Identity | `ranikun-labs/platform-services`의 `platform-core/identity` (§7.4) | `DEC-067`의 Target. Repository container는 created / empty이고 Application·Runtime은 아직 없음 |
 | Finance Harness | `finance-harness` (§7.3) | 책임 범위 일치. 본 디렉터리는 그 물리 구현(DB·통신·정합성) 정책을 보강 |
-| Carelog | `§7.7` (기존 Product Service) | 현재 Gateway·Auth/OAuth/Identity 구현 Host. RPL-53~55 추출·Cutover는 planned / not_started |
+| Carelog | `§7.7` (기존 Product Service) | 현재 Gateway·Auth/OAuth/Identity 구현 Host. G1~G4 Runtime Foundation·Contract·추출·Cutover는 planned / not_started |
 
 ---
 

@@ -1335,6 +1335,11 @@ Canonical 논리 서비스명은 `Shared Identity`다 (`DEC-059`). 기존
 Runtime은 `not_supported / not_deployed`, release는 `false / not_released`고
 Commerce·Audit·Shared AI는 `deferred`다.
 
+Near-term에는 PostgreSQL과 Redis physical instance를 각각 하나로 유지한다. 이는
+Carelog·Finance·Identity의 logical database/schema 또는 keyspace, credential/ACL,
+migration과 write authority를 합친다는 뜻이 아니다. Product의 Identity DB/Redis
+direct access, cross-service SQL JOIN과 shared mutable table은 금지한다.
+
 ---
 
 ## 23. Repository와 Service 경계 요약
@@ -1576,7 +1581,7 @@ Self-hosted
 
 1. 최종 Product 및 Organization 이름
 2. V2 Control Plane 최종 기술 스택
-3. Shared Identity 최초 물리 분리 시점
+3. Shared Identity Production Cutover window와 old-path retirement 시점
 4. Billing Provider
 5. Product별 가격
 6. Entitlement의 장기 물리 소유 위치
@@ -1665,7 +1670,7 @@ identity-platform (§23의 역사적 후보)
 ranikun-labs/platform-services
 = repository created / empty Shared Java Platform Target
 = implementation not_started / runtime not_supported
-= gateway-app과 platform-core는 서로 독립 Process
+= gateway-app과 platform-core는 서로 독립 build / config / Process / Deployment / rollback target
 = platform-core/identity만 ACTIVE target
 
 Finance Harness (Backend Service Foundation)
@@ -1675,13 +1680,15 @@ Finance Harness (Backend Service Foundation)
 
 Carelog
 = 기존 Product Service. §7.7(repository-service-boundaries.md)에 등록됨.
-  현재 Gateway·Auth/OAuth/Identity 구현 Host이며 RPL-53~55는 planned / not_started.
+  현재 Gateway·Auth/OAuth/Identity 구현 Host이며 G1~G5는 planned / not_started.
   oh-my-ai V1/V2/V3 Phase 1-6 타임라인(§26)과는 무관한 별도 현재 상태.
 ```
 
 이 절은 `DEC-059`의 용어와 Carelog 등록을 유지하고 `DEC-067`의 제한적 물리화
-결정을 투영한다. Architecture 승인은 Repository 생성, Shared Identity 물리 분리 완료,
-Runtime 지원 또는 Product 출시를 의미하지 않는다.
+결정을 투영한다. G0은 accepted이고 G1 Runtime Foundation은 시작할 수 있지만,
+Architecture 승인은 Shared Identity 물리 분리 완료, Runtime 지원, Production Traffic
+전환 또는 Product 출시를 의미하지 않는다. Finance Domain/Backend Foundation은 G1
+이후 병행할 수 있고 G5는 Shared Identity Consumer 활성화만 제한한다.
 
 ---
 
