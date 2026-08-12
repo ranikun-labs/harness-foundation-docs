@@ -21,6 +21,7 @@ product_release_status: not_released
 constraints:
   - "승인 범위는 Gateway와 Identity 물리화뿐이며 Shared Platform 전체의 일괄 Microservice 분리가 아니다"
   - "platform-services Repository container는 created / empty이며 Application·Runtime 구현은 시작되지 않았다"
+  - "RPL-72 후속 refinement는 G1 inert Runtime Foundation만 허용하며 executable Product behavior는 RPL-53/G2가 소유한다"
   - "RPL-53·RPL-54는 현재 동작을 보존하는 추출이고 RPL-55 검증 전 Cutover 완료를 주장하지 않는다"
   - "Commerce·Audit·Shared AI 구현과 NATS Runtime은 승인하지 않는다"
   - "구현·Runtime 지원·배포·출시 완료를 Architecture 승인과 분리한다"
@@ -40,6 +41,8 @@ affected_docs:
   - README.md
 evidence_refs:
   - RPL-52
+  - RPL-71
+  - RPL-72
   - RPL-53
   - RPL-54
   - RPL-55
@@ -77,6 +80,10 @@ replacement_decision_refs:
 > ≠ Runtime supported or deployed
 > ≠ Product released
 > ```
+
+2026-08-12 `RPL-72`는 위 `RPL-52` 완료 이력을 수정하거나 다시 여는 대신, 이 ADR의
+후속 refinement로 `RPL-71` G1 inert Runtime Foundation 구현 authority만 추가한다.
+이는 구현·Runtime 지원·배포·출시 완료 선언이 아니다.
 
 ## 1. Decision Summary
 
@@ -142,6 +149,43 @@ visibility_policy: not_decided
 - Carelog Cutover와 Finance Backend 구현
 - Commerce, Audit, NATS 또는 Shared AI 구현
 - Production Runtime·지원·배포·출시 승인
+
+### 2.1 RPL-72 Follow-up Refinement — G1 Inert Runtime Foundation
+
+`RPL-52`에서 Spring Boot·Gradle·Docker·Deployment Scaffold를 Scope Out으로 둔 것은
+당시 Architecture projection의 완료 범위다. `RPL-72`는 그 완료 이력을 rewrite하거나
+reopen하지 않고, 다음의 최소 G1 Runtime Foundation만 후속 승인한다.
+
+- `ranikun-labs/platform-services` Repository bootstrap과 Gradle build foundation
+- `gateway-app` 독립 Spring Boot / Spring Cloud Gateway / WebFlux Application
+- `platform-core/identity` 독립 Spring Boot / Spring MVC Application
+- Process별 독립 build task, executable JAR, config namespace, deployment unit과 rollback target
+- 필수 config의 startup fail-fast와 secret 미내장 원칙
+- Process liveness/readiness endpoint와 Compose readiness orchestration
+- Process별 Dockerfile과 Compose runtime skeleton
+- Near-term PostgreSQL physical instance 1개와 Redis physical instance 1개 topology
+
+G1은 반드시 inert foundation이다. 다음 executable Product behavior는 G1에서 금지하고
+`RPL-53` / G2가 소유한다.
+
+- `/api/carelog/**`, `/api/identity/**`, `/api/finance/**`를 포함한 Product route
+- Carelog merged baseline 및 applicable pending delta를 반영하는 route contract
+- Public / Protected route behavior, rate limit과 trusted header/security boundary
+- Carelog Gateway behavior-preserving extraction과 실제 upstream traffic forwarding
+
+다음 Identity business semantics와 data ownership activation은 계속 `RPL-54` / G3가
+소유한다.
+
+- Account, Credential, Authentication, OAuth와 Product Client behavior
+- JWT/JWKS/signing key, Access/Refresh Token, Session과 Revocation semantics
+- Identity API, schema/table/migration과 PostgreSQL/Redis business access
+- Carelog Auth/OAuth/Identity behavior-preserving extraction
+
+G1의 PostgreSQL/Redis 항목은 Compose topology와 격리 가능한 config namespace까지만
+허용한다. Schema, table, migration, ACL, revocation key contract 또는 Source of Truth
+이동을 승인하지 않는다. G1 readiness는 Process가 요청을 받을 수 있다는 신호이며
+Product upstream이나 아직 구현하지 않은 DB/Redis business dependency readiness를
+과장하지 않는다.
 
 ## 3. Context and Physicalization Trigger
 
@@ -239,6 +283,9 @@ Boot Application이며 독립 Process로 Build·Run·Deploy·Rollback한다.
 
 Gateway에 Product Business Logic을 넣지 않는다. `gateway-app`과
 `platform-core/identity`를 하나의 Spring Boot Application으로 합치지 않는다.
+위 표의 Gateway target responsibility는 G2 이후의 최종 책임이다. G1에서는 Gateway
+Application이 독립적으로 build·boot하고 health/readiness를 제공하는 inert host까지만
+허용하며 executable Product route나 security filter를 갖지 않는다.
 
 ## 6. platform-core Module and Data Boundary
 
@@ -337,8 +384,11 @@ ADR-0015 / DEC-064의 다음 불변조건을 유지한다.
 ## 9. Migration Sequence and Ownership
 
 ```text
-G1 — RPL-52
-Foundation Physicalization Approval
+G0 — RPL-52
+Foundation Physicalization Approval (completed history)
+        ↓
+G1 — RPL-71 implementation / RPL-72 authority
+Inert Runtime Foundation
         ↓
 G2 — RPL-53
 Carelog Gateway → shared gateway-app
@@ -363,7 +413,8 @@ Finance Shared Gateway / Identity E2E
 
 | Gate | Owner | Completion Evidence | Current state |
 |---|---|---|---|
-| G1 / RPL-52 | Foundation | Accepted ADR·DEC와 정합한 projection merge | in_progress; Runtime 아님 |
+| G0 / RPL-52 | Foundation Architecture | Accepted ADR·DEC와 정합한 projection merge | completed history; reopen하지 않음 |
+| G1 / RPL-71·RPL-72 | Inert Runtime Foundation | 두 독립 artifact의 build/boot, config fail-fast, process readiness와 Compose topology 검증; Product route 0개 | authorized scope; implementation evidence는 RPL-71이 소유 |
 | G2 / RPL-53 | Shared Gateway extraction | Baseline + applicable PR #34 delta 보존, 독립 Process 검증 | planned / not_started |
 | G3 / RPL-54 | Shared Identity extraction | Auth/OAuth/Identity behavior와 data migration 검증 | planned / not_started |
 | G4 / RPL-55 | Carelog cutover | Carelog regression, rollback rehearsal와 old-path retirement evidence | planned / not_started |
@@ -372,6 +423,9 @@ Finance Shared Gateway / Identity E2E
 
 RPL-4 / PR #34 기능을 RPL-53에서 새로 중복 구현하지 않는다. G2는 merged baseline과
 적용 가능한 pending delta를 구분해 최종 추출 기준을 확정한다.
+
+이 Gate renaming은 `RPL-52` 완료 상태나 당시 승인 내용을 소급 변경하지 않는다.
+`RPL-72`는 그 뒤 발견된 implementation authority gap만 닫는 후속 Decision이다.
 
 ## 10. Behavior-preserving Extraction
 
@@ -440,9 +494,9 @@ Gateway
 
 | Deferred scope | Follow-up owner / trigger |
 |---|---|
-| empty `platform-services` 초기화와 scaffold | RPL-53/G2의 별도 승인된 implementation workflow |
-| Gateway extraction | RPL-53 |
-| Identity extraction | RPL-54 |
+| inert `platform-services` Runtime Foundation | RPL-71 implementation / RPL-72 authority (G1) |
+| Executable Product route와 Gateway extraction | RPL-53 (G2) |
+| Identity business semantics와 extraction | RPL-54 (G3) |
 | Carelog cutover and rollback evidence | RPL-55 |
 | OAuth State Product Client Binding enhancement | Existing RPL-27, G4 이후 재타기팅 |
 | Finance Backend Core and shared E2E | RPL-50, G4 이후 |
@@ -460,9 +514,11 @@ ADR-0014  Shared Services naming; platform-core process concretization added
 ADR-0015  Communication invariants preserved; Identity extraction prohibition partially superseded
 DEC-059   identity-platform candidate replaced by created / empty platform-services target; implementation not_started
 DEC-067   Decision Log projection of this ADR
-RPL-52    G1 Architecture approval
-RPL-53    G2 Gateway extraction
-RPL-54    G3 Identity extraction
+RPL-52    G0 Architecture approval; completed history preserved
+RPL-71    G1 inert Runtime Foundation implementation candidate
+RPL-72    G1 implementation authority follow-up refinement
+RPL-53    G2 executable Gateway behavior and extraction
+RPL-54    G3 Identity business semantics and extraction
 RPL-55    G4 Carelog cutover/regression
 RPL-4     Existing Gateway behavior delta
 RPL-27    Post-G4 Identity behavior enhancement

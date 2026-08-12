@@ -3735,6 +3735,35 @@ Gateway + Identity physicalization accepted
 ≠ Runtime implemented, supported, deployed or released
 ```
 
+### RPL-72 Follow-up Refinement — G1 Inert Runtime Foundation
+
+`RPL-52` 완료 이력과 2026-08-08 Decision을 rewrite하거나 reopen하지 않는다.
+2026-08-12 `RPL-72`는 `RPL-71` 구현의 Canonical authority gap만 다음처럼 보완한다.
+
+- G1은 Repository/Gradle bootstrap, 독립 `gateway-app` WebFlux Process와
+  `platform-core/identity` MVC Process, 별도 executable JAR과 config namespace,
+  startup fail-fast, process health/readiness, Process별 Dockerfile과 Compose skeleton을
+  구현할 수 있다.
+- Near-term Compose topology는 PostgreSQL physical instance 1개와 Redis physical
+  instance 1개만 허용한다. Schema/table/migration, ACL, Identity Redis business key
+  contract와 data ownership activation은 G1이 아니다.
+- G1은 inert foundation이다. `/api/carelog/**`, `/api/identity/**`, `/api/finance/**`
+  Product route, Public/Protected behavior, rate limit, trusted header/security boundary와
+  Carelog Gateway behavior-preserving extraction은 `RPL-53` / G2가 소유한다.
+- Account/Credential/Auth/OAuth, JWT/JWKS/signing key, Token/Session/Revocation,
+  Identity API·Persistence·Migration과 Carelog Identity extraction은 `RPL-54` / G3가
+  소유한다.
+- G1 authority는 구현·Runtime 지원·Production deployment·traffic cutover·release
+  완료의 증거가 아니다. 각 상태는 Repository와 Runtime evidence로 별도 검증한다.
+
+RPL-72 refinement affected documents:
+
+```text
+docs/adr/ADR-0017-shared-platform-gateway-identity-physicalization.md
+docs/decisions/decision-log.md
+docs/architecture/repository-service-boundaries.md
+```
+
 ### Trigger and Rationale
 
 Carelog 단일 Consumer 시점에는 논리 경계 우선과 물리화 유예가 합리적이었다.
@@ -3758,10 +3787,11 @@ Physicalization Trigger를 충족한다.
 ### Migration Sequence
 
 ```text
-RPL-52 Foundation approval
-→ RPL-53 Gateway behavior-preserving extraction
-→ RPL-54 Identity behavior-preserving extraction
-→ RPL-55 Carelog cutover / regression
+RPL-52 G0 Foundation approval (completed history)
+→ RPL-71 implementation / RPL-72 authority: G1 inert Runtime Foundation
+→ RPL-53 G2 executable Gateway behavior and behavior-preserving extraction
+→ RPL-54 G3 Identity business semantics and behavior-preserving extraction
+→ RPL-55 G4 Carelog cutover / regression
 → existing RPL-27 retarget to new platform-core/identity reality
 → RPL-50 Finance Backend Core
 → Finance Shared Gateway / Identity E2E
@@ -3810,7 +3840,8 @@ DEC-059
 
 ### Constraints
 
-- empty `platform-services` 초기화, Spring/Gradle scaffold와 Runtime 구현은 후속 Jira다.
+- `RPL-72`가 허용하는 Spring/Gradle/Docker/Compose 범위는 G1 inert Runtime
+  Foundation뿐이다. Executable Product behavior는 G2 전에는 금지한다.
 - Gateway와 Identity만 승인하며 Commerce, Audit, NATS와 Shared AI 구현을 승인하지 않는다.
 - Product는 Identity Table을 직접 수정하지 않고 stable account/principal contract를 소비한다.
 - Gateway와 `platform-core`를 하나의 Spring Boot Application으로 합치지 않는다.
@@ -3872,6 +3903,8 @@ RPL-4
 RPL-27
 RPL-50
 RPL-52
+RPL-71
+RPL-72
 RPL-53
 RPL-54
 RPL-55
