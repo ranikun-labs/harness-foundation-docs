@@ -82,12 +82,14 @@ source_inputs: []
 - Identity와 Commerce의 동급 관계
 - 제품별 데이터 소유 원칙
 - 각 서버 내부 Modular Monolith 우선 원칙
-- Gateway·Identity physicalization Target과 G1→G4 순서 (`ADR-0017`)
+- Gateway·Identity physicalization Target과 G0→G4 순서 (`ADR-0017`, `RPL-72` refinement)
 ```
 
 현재 Gateway와 Auth/OAuth/Identity 관련 구현 Host는
 `ranikun-labs/carelog-be`다. `ranikun-labs/platform-services` Repository container는
 `created / empty` Target이며 Application과 독립 Shared Runtime은 아직 없다.
+`RPL-72`는 이 Current Reality나 `RPL-52` 완료 이력을 소급 변경하지 않고, 별도
+Repository의 G1 inert Runtime Foundation 구현 authority만 추가한다.
 
 ### 3.2 목표 아키텍처
 
@@ -948,8 +950,9 @@ Target Repository and Deployment Units
         └── audit                            DEFERRED
 ```
 
-목표 Deployment Unit은 즉시 구현, Repository 생성,
-Database Provisioning 또는 배포 승인을 의미하지 않는다.
+목표 Deployment Unit 중 G1 inert Runtime Foundation은 `RPL-72`로 구현할 수 있다.
+이는 executable Product route, Database schema/migration, Production deployment 또는
+traffic cutover 승인을 의미하지 않는다.
 
 Carelog CRM Server는 기존 Product Service이며 현재 Gateway와 Auth/OAuth/Identity의
 Implementation Host다. Shared Gateway·Identity 추출은 RPL-53·RPL-54의
@@ -1004,6 +1007,11 @@ platform-services
 one-process modular monolith로 시작해도 Module 간 Entity 공유, Repository 직접 접근,
 Table 직접 수정이나 Migration 소유권 공유를 허용하지 않는다.
 
+G1에서 `gateway-app`과 `platform-core/identity`는 독립 build task, executable JAR,
+config namespace, Process, health/readiness와 Dockerfile을 가진다. Gateway는 inert
+host로만 기동하며 Product route와 security behavior를 갖지 않는다. Identity도 MVC
+host로만 기동하며 Identity API와 business/persistence semantics를 갖지 않는다.
+
 ---
 
 ## 10. 데이터 소유권
@@ -1011,6 +1019,11 @@ Table 직접 수정이나 Migration 소유권 공유를 허용하지 않는다.
 ### 10.1 PostgreSQL 목표 배치
 
 초기에는 하나의 PostgreSQL 물리 Cluster를 공유할 수 있다.
+
+G1 Compose skeleton은 PostgreSQL physical instance 1개와 Redis physical instance
+1개만 표현할 수 있다. 이는 topology constraint이며 schema/table/migration, Redis ACL,
+business key contract, Product의 Identity data access 또는 Source of Truth 이동을
+승인하지 않는다.
 
 ```text
 PostgreSQL Physical Cluster
@@ -1551,13 +1564,14 @@ optional domain-neutral platform capability
 ### Phase 5 — Shared Gateway·Identity Physicalization
 
 Finance Harness가 두 번째 실제 Consumer가 되면서 Gateway·Identity 물리화 Trigger는
-충족됐다. 전체 Shared Platform MSA가 아니라 아래 G1→G4만 승인한다.
+충족됐다. 전체 Shared Platform MSA가 아니라 아래 G0→G4만 승인한다.
 
 ```text
-RPL-52 Foundation approval
-→ RPL-53 Gateway extraction
-→ RPL-54 Identity extraction
-→ RPL-55 Carelog cutover / regression
+RPL-52 G0 Foundation approval (completed history)
+→ RPL-71 implementation / RPL-72 authority: G1 inert Runtime Foundation
+→ RPL-53 G2 executable Gateway behavior and extraction
+→ RPL-54 G3 Identity business semantics and extraction
+→ RPL-55 G4 Carelog cutover / regression
 ```
 
 그 뒤 기존 RPL-27을 새 Identity Reality로 재타기팅하고 RPL-50 Finance Backend를
@@ -1579,7 +1593,8 @@ Carelog
 = Auth Phase A (Carelog 내부 논리 분리)
 
 Shared Gateway·Identity 물리 분리
-= Architecture approved / implementation not_started
+= G0 Architecture approved / G1 inert foundation authorized
+= G2 Gateway extraction and G3 Identity extraction not_started
 
 이번 등록(DEC-059)
 = 신규 Carelog Repository 또는 Identity Repository 생성을 의미하지 않음
@@ -1616,7 +1631,7 @@ Shared Gateway·Identity 물리 분리
 23. Repository 이름 변경은 가능하지만 책임 경계 변경은 별도 결정이 필요하다.
 24. Identity physicalization은 Gateway와 함께 `ADR-0017` 범위에서 승인됐고 Commerce physicalization은 승인되지 않았다.
 25. Gateway·Identity Trigger는 Finance가 두 번째 실제 Consumer가 되면서 충족됐으며 다른 Capability는 각자의 Trigger를 기다린다.
-26. 목표 Deployment Unit은 즉시 구현 승인이 아니다.
+26. 목표 Deployment Unit 중 G1 inert Runtime Foundation만 `RPL-72`로 구현 승인되며 Product route는 G2, Identity business semantics는 G3가 소유한다.
 27. V1 Local Core는 Shared Services Deployment Unit과 Cloud AI Runtime 없이 완결한다.
 28. Deployment Unit별 Data Source of Truth와 Migration 소유권을 분리한다.
 29. Cross-service Foreign Key와 OLTP Cross-service JOIN을 금지한다.
@@ -1634,7 +1649,7 @@ Shared Gateway·Identity 물리 분리
 1. 각 Repository의 최종 상품명과 Organization 이름
 2. `oh-my-ai-control-plane`의 최종 기술 스택
 3. 기존 Auth Server의 정확한 재사용 범위
-4. empty `platform-services` 초기화·scaffold, 실제 구현·Deployment 시점과 운영 세부
+4. `platform-services` Production Deployment 시점과 운영 세부
 5. Billing Provider
 6. Commerce Module의 활성화 시점
 7. Finance Service의 초기 Cloud Infrastructure
