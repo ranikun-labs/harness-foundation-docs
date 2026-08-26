@@ -1,18 +1,20 @@
 ---
 title: "Shared AI Phase 1을 Platform Core 논리 모듈로 배치한다"
 adr_id: "ADR-0018"
-document_status: in_review
-decision_status: open
+document_status: accepted
+decision_status: accepted
 decision_scope: architecture
 owner: architecture
 authors:
   - codex
-reviewers: []
-approvers: []
+reviewers:
+  - independent architecture review (`RPL103_PLACEMENT_REVIEW_PASS`)
+approvers:
+  - 박성환
 created_at: "2026-08-26"
-reviewed_at: null
-approved_at: null
-effective_from: null
+reviewed_at: "2026-08-26"
+approved_at: "2026-08-26"
+effective_from: "2026-08-26"
 implementation_status: not_started
 runtime_support_status: not_supported
 product_release_status: not_released
@@ -36,6 +38,9 @@ evidence_refs:
   - shared-ai-architecture/ADR-0003
   - shared-ai-architecture/ADR-0004
   - shared-ai-architecture/ADR-0005
+  - shared-ai-architecture/PR-6
+  - harness-foundation-docs/PR-23
+  - RPL103_PLACEMENT_REVIEW_PASS
 supersedes:
   - ADR-0017 (partial; effective only after coordinated acceptance)
 superseded_by: []
@@ -54,13 +59,14 @@ replacement_decision_refs:
 
 # ADR-0018: Shared AI Phase 1을 Platform Core 논리 모듈로 배치한다
 
-> **Review 상태 경고**
+> **Acceptance 상태**
 >
 > ```text
-> Option B selected as the decision proposal
-> + document_status: in_review
-> + decision_status: open
-> != canonical acceptance
+> Option B accepted / effective from 2026-08-26
+> + document_status: accepted
+> + decision_status: accepted
+> + independent review: RPL103_PLACEMENT_REVIEW_PASS
+> Canonical main projection = pending coordinated merge
 > != RPL-103 complete
 > != runtime technology selected
 > != implementation started
@@ -69,8 +75,9 @@ replacement_decision_refs:
 ## 1. Decision Summary
 
 Shared AI Phase 1 placement로 `platform-core`의 same-JVM logical module을 선택한다.
-이 decision proposal은 `shared-ai-architecture` ADR-0005와 coordinated acceptance 된
-후에만 효력을 갖는다.
+이 ADR과 `shared-ai-architecture` ADR-0005는 2026-08-26 coordinated owner acceptance를
+받았다. 어느 한 ADR도 단독으로 Architecture를 변경하지 않았으며, 양쪽 decision이 함께
+accepted 됨으로써 Phase 1 placement가 effective가 됐다.
 
 ```text
 platform-services
@@ -89,20 +96,22 @@ Shared AI의 independent process는 폐기하지 않고 evidence-triggered extra
 ## 2. Status and Effective Condition
 
 ```text
-document_status: in_review
-decision_status: open
+document_status: accepted
+decision_status: accepted
 implementation_status: not_started
 runtime_support_status: not_supported
 product_release_status: not_released
 ```
 
-다음이 모두 충족된 뒤 accepted/effective 상태로 전환할 수 있다.
+다음 acceptance condition이 2026-08-26 충족됐다.
 
-1. Foundation owner가 이 ADR을 승인한다.
-2. Shared AI owner가 coordinated ADR-0005를 승인한다.
-3. 양쪽 ADR의 superseded/non-superseded scope가 일치한다.
+1. Foundation owner가 이 ADR을 승인했다.
+2. Shared AI owner가 coordinated ADR-0005를 승인했다.
+3. Independent review가 `RPL103_PLACEMENT_REVIEW_PASS`를 판정했다.
+4. 양쪽 ADR의 superseded/non-superseded scope가 일치한다.
 
-한쪽 ADR만으로 상대 owner의 canonical decision을 덮어쓰지 않는다.
+한쪽 ADR만으로 상대 owner의 canonical decision을 덮어쓰지 않는다. Canonical `main`
+projection은 coordinated PR #23 / Shared AI PR #6 merge 전까지 완료로 주장하지 않는다.
 
 ## 3. Scope
 
@@ -198,9 +207,9 @@ RPL-97 및 Shared AI ADR-0001~0004의 ownership과 isolation contract는 그대�
 - AI long call, retry, streaming, payload와 executor saturation이 Identity에 영향 가능
 - dependency/classpath compatibility 공동 관리
 
-## 7. Decision Proposal — Option B
+## 7. Decision — Option B
 
-Option B를 Phase 1 placement로 선택한다.
+Option B를 Phase 1 placement로 accepted 한다.
 
 ```text
 :gateway-app                  executable; independent WebFlux process
@@ -338,8 +347,8 @@ architecture 승격과 도구에 맞춘 domain package 왜곡은 승인하지 �
 
 ## 15. Explicit Partial Supersession
 
-이 ADR과 Shared AI ADR-0005가 accepted 되면 ADR-0017 §7의 다음 문구 범위만 부분
-대체한다.
+이 ADR과 Shared AI ADR-0005의 2026-08-26 coordinated acceptance는 ADR-0017 §7의
+다음 문구 범위만 부분 대체한다.
 
 | ADR-0017 existing scope | Replacement |
 |---|---|
@@ -356,8 +365,8 @@ Supersede하지 않는 ADR-0017 scope:
 - G2/G3 behavior-preserving extraction과 G4 cutover sequence
 - implementation/runtime support/product release 상태 분리
 
-ADR-0017 accepted history와 당시 scope는 rewrite하지 않는다. 이 ADR이 accepted 될 때
-후속 decision으로 해당 placement assumption만 대체한다.
+ADR-0017 accepted history와 당시 scope는 rewrite하지 않는다. 이 ADR과 Shared AI
+ADR-0005의 coordinated acceptance가 후속 decision으로 해당 placement assumption만 대체한다.
 
 ## 16. Technology and Implementation Deferred
 
@@ -413,6 +422,7 @@ Negative:
 - [x] Shared AI logical ownership을 변경하지 않는다.
 - [x] same-JVM failure cost와 extraction trigger를 기록했다.
 - [x] Technology selection과 구현을 deferred했다.
-- [ ] Foundation owner approval
-- [ ] Shared AI owner의 coordinated ADR-0005 approval
-- [ ] accepted/effective 상태 전환 기록
+- [x] Foundation owner approval — 박성환, 2026-08-26
+- [x] Shared AI owner의 coordinated ADR-0005 approval
+- [x] Independent review — `RPL103_PLACEMENT_REVIEW_PASS`
+- [x] accepted/effective 상태 전환 기록 — 2026-08-26
