@@ -1391,8 +1391,10 @@ platform-services                    repository created / empty
 
 `identity`는 Account, External Identity, Auth/OAuth, Token/Principal,
 Product Client Registry, OAuth State와 Identity-owned Persistence를 소유한다.
-Commerce와 Audit 구현은 승인되지 않았다. Shared AI는 이 Repository 밖의 future
-independent Python Runtime이다.
+Commerce와 Audit 구현은 승인되지 않았다. 현재 accepted boundary에서 Shared AI는 이
+Repository 밖의 future independent Python Runtime 후보다. RPL-103 Stage A
+`ADR-0018`은 Phase 1을 `platform-core` same-JVM logical module로 배치하는 partial
+supersession을 review 중이며, coordinated owner acceptance 전에는 효력이 없다.
 
 Module 간에는 명시된 Public Contract와 의존 방향을 적용한다.
 

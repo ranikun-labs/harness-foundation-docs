@@ -155,8 +155,11 @@ ranikun-labs/harness-foundation-docs
 = Ranikun Labs Platform Foundation canonical documents
 ```
 
-Shared AI는 `platform-services` 밖의 future independent Python Runtime이며
-현재 `deferred / not_started / not_supported`다.
+현재 accepted boundary에서 Shared AI는 `platform-services` 밖의 future independent Python
+Runtime 후보이며 `deferred / not_started / not_supported`다. RPL-103 Stage A
+[ADR-0018](docs/adr/ADR-0018-shared-ai-platform-core-placement.md)은 Phase 1을
+`platform-core` same-JVM logical module로 배치하는 partial supersession을 review 중이다.
+Foundation과 Shared AI owner의 coordinated acceptance 전에는 현재 boundary가 유지된다.
 
 Repository 이름은 변경될 수 있다.
 
