@@ -227,6 +227,11 @@ The mechanism must be defined by deployment architecture before production relea
 
 A user token and a service identity are separate concerns.
 
+For the single RPL-55 Slice A′ integration, [ADR-0019](../../adr/ADR-0019-rpl-55-slice-a-interim-service-auth.md)
+records one accepted, endpoint-scoped interim service credential. This is a scoped
+instantiation, not a portfolio-wide service-authentication HOW; deployment architecture
+remains the owner of the broader mechanism.
+
 ## 5. Asynchronous event requirements
 
 An event producer must:

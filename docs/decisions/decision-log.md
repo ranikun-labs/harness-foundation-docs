@@ -3912,6 +3912,79 @@ RPL-55
 
 ---
 
+## DEC-068 — RPL-55 Slice A′의 임시 서비스 인증 경계를 기록한다
+
+**Status:** accepted_with_constraints
+**Owner:** architecture
+**Decision type:** architecture
+**Decision scope:** backend-service-foundation / communication / rpl-55-service-auth
+**Decision date:** 2026-08-31
+**Implementation status:** not_started
+**Runtime support status:** not_supported
+**Product release status:** not_released
+**Decision owner:** Foundation Architecture / Backend Service Foundation communication architecture
+**Reviewed at:** 2026-08-31
+
+### Decision
+
+RPL-55 Slice A′에 한해 `platform-identity`가 Carelog Product Backend의
+Carelog-owned CRM Identity projection을 다음 단일 내부 관계로 읽을 수 있다.
+
+```text
+platform-identity
+    → direct internal HTTP
+    → GET /api/v1/internal/identity/claims/{accountId}
+```
+
+인증은 이 관계에만 별도로 namespaced·environment-provisioned된 endpoint-scoped
+대칭형 service credential을 사용한다. 이 credential은 `gateway.internal-secret`와
+분리되고 값도 달라야 하며, Carelog가 authoritative verifier다.
+
+### Scope and Constraints
+
+```text
+organizationId / role / publicId projection read only
+no user impersonation, user identity assertion, writes, unrelated route, or other caller
+missing/invalid authentication is 403, not 404
+```
+
+이 선택은 RPL-55 Slice A′에만 유효한 interim instantiation이다. portfolio-wide
+service-authentication HOW, permanent inter-service standard, Shared AI OD-5,
+또는 다른 caller·direction·route·method·authority의 재사용을 결정하지 않는다.
+
+### Relationship
+
+```text
+owns:     ADR-0019
+preserves:
+- ADR-0015 broader future deployment/service-authentication direction
+- ADR-0017 behavior-preserving Gateway/Identity extraction and cutover intent
+future owner:
+- Deployment Architecture for superseding authentication/transport mechanics
+supersedes: []
+superseded_by: []
+```
+
+### Affected Documents
+
+```text
+docs/adr/ADR-0019-rpl-55-slice-a-interim-service-auth.md
+docs/adr/README.md
+docs/architecture/backend-service-foundation/service-communication-policy.md
+docs/decisions/decision-log.md
+```
+
+### References
+
+```text
+ADR-0015
+ADR-0017
+RPL-55
+RPL55_SLICEA_INTERIM_SERVICE_AUTH_RATIFIED
+```
+
+---
+
 ## DEC-061 — Finance Product Service Policy는 finance-harness-docs가 canonical하게 소유한다
 
 **Status:** accepted
