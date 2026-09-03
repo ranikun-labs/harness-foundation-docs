@@ -3,7 +3,7 @@ title: Backend Service Foundation — Architecture Index
 status: draft
 implementation_status: not_verifiable
 owner: architecture
-last_reviewed: 2026-08-08
+last_reviewed: 2026-09-03
 supersedes: []
 superseded_by: []
 source_inputs:
@@ -29,9 +29,12 @@ related_decisions:
 Runtime 지원이 존재함을 의미하지 않는다.
 
 `ADR-0017` / `DEC-067`은 Shared Gateway와 Shared Identity의 물리화를 승인하지만,
-`ranikun-labs/platform-services` Repository container는 `created / empty`이고
-구현·Runtime 지원·배포·출시는 각각
-`not_started / not_supported / not_deployed / not_released`다.
+`ranikun-labs/platform-services` Repository는 존재한다. Gateway·Identity의
+behavior-preserving extraction/cutover와 production Runtime 지원·배포·출시는
+각각 별도 Evidence가 필요한 상태다. 같은 Repository의
+`platform-core/shared-ai`에는 RPL-107 synchronous OpenAI Slice A가 별도 범위로
+merged되어 있지만, 그 사실은 이 Backend Service Foundation 문서 패키지가
+Shared AI 구현·Product integration·Product release를 소유한다는 뜻이 아니다.
 
 ```text
 docs/architecture/backend-service-foundation/
@@ -70,9 +73,10 @@ docs/architecture/backend-service-foundation/
 
 | 본 디렉터리 용어 | `repository-service-boundaries.md` 대상 | 상태 |
 |---|---|---|
-| Shared Identity | `ranikun-labs/platform-services`의 `platform-core/identity` (§7.4) | `DEC-067`의 Target. Repository container는 created / empty이고 Application·Runtime은 아직 없음 |
+| Shared Identity | `ranikun-labs/platform-services`의 `platform-core/identity` (§7.4) | `DEC-067`의 Target. Repository는 존재하지만 승인된 extraction/cutover와 production Runtime은 완료되지 않음 |
 | Finance Harness | `finance-harness` (§7.3) | 책임 범위 일치. 본 디렉터리는 그 물리 구현(DB·통신·정합성) 정책을 보강 |
 | Carelog | `§7.7` (기존 Product Service) | 현재 Gateway·Auth/OAuth/Identity 구현 Host. RPL-53~55 추출·Cutover는 planned / not_started |
+| Shared AI | `ranikun-labs/platform-services`의 `platform-core/shared-ai` | Phase 1 logical module의 RPL-107 구현은 별도 current projection이 소유하며, Product integration과 release는 아직 주장하지 않음 |
 
 ---
 

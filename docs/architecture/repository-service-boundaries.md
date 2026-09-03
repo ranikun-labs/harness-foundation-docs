@@ -2,7 +2,7 @@
 title: Repository and Service Boundaries
 status: draft
 owner: product
-last_reviewed: 2026-08-08
+last_reviewed: 2026-09-03
 supersedes: []
 superseded_by: []
 related_adrs:
@@ -12,6 +12,7 @@ related_adrs:
   - ADR-0012
   - ADR-0013
   - ADR-0017
+  - ADR-0018
 source_inputs: []
 ---
 
@@ -85,9 +86,13 @@ source_inputs: []
 - Gateway·Identity physicalization Target과 G0→G4 순서 (`ADR-0017`, `RPL-72` refinement)
 ```
 
-현재 Gateway와 Auth/OAuth/Identity 관련 구현 Host는
-`ranikun-labs/carelog-be`다. `ranikun-labs/platform-services` Repository container는
-`created / empty` Target이며 Application과 독립 Shared Runtime은 아직 없다.
+현재 Gateway와 Auth/OAuth/Identity의 Carelog 경로는
+`ranikun-labs/carelog-be`에 남아 있다. `ranikun-labs/platform-services` Repository는
+존재하며 current main에는 `gateway-app`, `platform-core/identity`,
+`platform-core/shared-ai` Module이 있다. Gateway·Identity의 승인된
+behavior-preserving extraction/cutover와 production adoption은 별도 상태로
+기록한다. RPL-107 synchronous OpenAI Slice A는 Shared AI Phase 1 logical module의
+구현 Evidence다.
 `RPL-72`는 이 Current Reality나 `RPL-52` 완료 이력을 소급 변경하지 않고, 별도
 Repository의 G1 inert Runtime Foundation 구현 authority만 추가한다.
 
@@ -112,6 +117,9 @@ Product Ecosystem
 ├── Shared Commerce
 │   └── Product Membership / Subscription / Billing / Payment / Entitlement / Quota
 │
+├── Shared AI
+│   └── Product-neutral model/tool/retrieval execution
+│
 ├── finance-harness-docs
 │   └── Finance Lens / PolicyGuard / Fixture
 │
@@ -130,8 +138,8 @@ Shared Identity와 Shared Commerce는 동급의 독립 논리 경계다.
 Repository 이름은 향후 브랜드 결정에 따라 변경할 수 있다.
 
 Identity는 `ADR-0017`에 따라 Gateway와 함께 제한적으로 물리화가 승인됐지만
-구현은 `not_started`다. Commerce의 물리 Server, Repository, Database와 Deployment는
-계속 승인하지 않는다.
+승인된 extraction/cutover는 `not_started`다. Commerce의 물리 Server, Repository,
+Database와 Deployment는 계속 승인하지 않는다.
 
 ### 3.3 핵심 물리화 원칙
 
@@ -651,8 +659,8 @@ Finance 장애와 배포가 다음에 직접 영향을 주지 않아야 한다.
 
 **명칭 주의 (`DEC-059`, `DEC-067`):** 이 서비스의 canonical 논리 서비스명은
 `Shared Identity`다. 기존 `identity-platform` 후보는 `DEC-067`로 부분 대체됐으며,
-물리 Target은 created / empty `ranikun-labs/platform-services`의
-`platform-core/identity`이며 구현은 `not_started`다.
+물리 Target은 존재하는 `ranikun-labs/platform-services`의
+`platform-core/identity`이며 승인된 extraction/cutover는 `not_started`다.
 
 #### 역할
 
@@ -702,8 +710,8 @@ Shared Identity의 독립 논리 경계는 채택한다.
 
 Finance Harness가 두 번째 실제 Product Consumer가 됨에 따라 물리 분리 Trigger는
 충족됐고 `ADR-0017`이 Target Repository와 Process를 승인했다. Repository container는
-created / empty지만 Application과 Runtime은 구현되지 않았으며 RPL-54 전에는 추출
-완료를 주장하지 않는다.
+존재하며 Platform Core Identity code가 있지만 RPL-54 cutover와 production Runtime은
+완료되지 않았고 RPL-54 전에는 추출 완료를 주장하지 않는다.
 
 Shared Identity 구현은 V1 또는 V2 Local Invocation PoC의 선결 조건이 아니다.
 
@@ -941,11 +949,12 @@ Target Repository and Deployment Units
 ├── Carelog CRM Server
 ├── Finance Harness Server
 ├── Dev Harness Cloud Server
-├── AI Runtime Server
-└── ranikun-labs/platform-services           repository created / empty
+├── AI Runtime Server                   independent extraction option, not Phase 1 default
+└── ranikun-labs/platform-services           repository existing
     ├── gateway-app                          independent SCG / WebFlux process
     └── platform-core                        independent Spring MVC process
         ├── identity                         ACTIVE target
+        ├── shared-ai                        Phase 1 same-JVM logical module; RPL-107 sync Slice A implemented
         ├── commerce                         DEFERRED
         └── audit                            DEFERRED
 ```
@@ -958,9 +967,14 @@ Carelog CRM Server는 기존 Product Service이며 현재 Gateway와 Auth/OAuth/
 Implementation Host다. Shared Gateway·Identity 추출은 RPL-53·RPL-54의
 `planned / not_started` 작업이다.
 
+RPL-107은 `platform-core/shared-ai`의 첫 synchronous OpenAI model execution을
+`platform-services/main`에 구현한 별도 Slice다. 이는 independent AI Runtime
+extraction, Product consumer integration, Streaming 또는 Product release를
+승인하지 않는다.
+
 ### 핵심 규칙
 
-1. Dev Harness V1 Local Core는 Shared Identity·Commerce·Audit·Cloud AI Runtime에 의존하지 않는다.
+1. Dev Harness V1 Local Core는 Shared Identity·Commerce·Audit·Shared AI에 의존하지 않는다.
 2. Dev Harness Cloud는 실제 Cloud 기능 개발 시점까지 구현을 유예한다.
 3. Commerce는 실제 유료화 전까지 구현을 유예할 수 있다.
 4. Audit는 현재 미구현 `platform-core` Module 후보이며 별도 Process는 승인되지 않았다. 향후 NATS consumer 추출은 새 Trigger와 Decision이 필요하다.
@@ -969,9 +983,15 @@ Implementation Host다. Shared Gateway·Identity 추출은 RPL-53·RPL-54의
 7. 제품별 Prompt·Policy·Context Schema·Evaluation은 각 Product Server가 소유한다.
 8. 기존 V2 Personal Managed Workflow와 Workspace·Organization의 V3 배치를 변경하지 않는다.
 
-### 9.1 AI Runtime 책임
+### 9.1 Shared AI / AI Runtime 책임
 
-AI Runtime Server가 소유:
+Shared AI Phase 1은 `platform-core/shared-ai` logical module의 neutral execution
+boundary를 따른다. 현재 implementation/status의 상세는
+[Shared AI source-of-truth map §2.1](https://github.com/ranikun-labs/shared-ai-architecture/blob/0882173ccb1f91ce085f6828e00bfc67090351ba/docs/source-of-truth-map.md#21-current-implementation-projection)가
+소유한다. RPL-107 Slice A는 `IMPLEMENTED`지만 Product Prompt·Workflow·Domain
+Policy·최종 검증과 business effect는 Product가 소유한다.
+
+Shared AI execution boundary가 소유:
 
 ```text
 Provider Execution
@@ -999,6 +1019,7 @@ platform-services
 ├── gateway-app              independent process
 └── platform-core            independent process
     ├── identity             ACTIVE target
+    ├── shared-ai            Phase 1 same-JVM logical module; RPL-107 sync Slice A implemented
     ├── commerce             DEFERRED
     └── audit                DEFERRED
 ```
@@ -1008,9 +1029,10 @@ one-process modular monolith로 시작해도 Module 간 Entity 공유, Repositor
 Table 직접 수정이나 Migration 소유권 공유를 허용하지 않는다.
 
 G1에서 `gateway-app`과 `platform-core/identity`는 독립 build task, executable JAR,
-config namespace, Process, health/readiness와 Dockerfile을 가진다. Gateway는 inert
-host로만 기동하며 Product route와 security behavior를 갖지 않는다. Identity도 MVC
-host로만 기동하며 Identity API와 business/persistence semantics를 갖지 않는다.
+config namespace, Process, health/readiness와 Dockerfile을 가진다. Gateway는 Product
+route와 business policy를 소유하지 않으며, Identity는 Product authorization과
+domain data를 소유하지 않는다. 현재 Platform Core에는 Identity 구현이 있지만
+Carelog cutover와 production adoption은 별도 Evidence가 필요하다.
 
 ---
 
@@ -1381,10 +1403,11 @@ modules/
 ### 13.3 Shared Java Platform Target (`ranikun-labs/platform-services`)
 
 ```text
-platform-services                    repository created / empty
+platform-services                    repository existing
 ├── gateway-app                      Spring Cloud Gateway / WebFlux process
 └── platform-core                    Spring MVC process
     ├── identity                     ACTIVE target
+    ├── shared-ai                    Phase 1 same-JVM logical module; RPL-107 sync Slice A implemented
     ├── commerce                     DEFERRED
     └── audit                        DEFERRED
 ```
@@ -1395,8 +1418,9 @@ Commerce와 Audit 구현은 승인되지 않았다. 이전 boundary는 Shared AI
 밖의 future independent Python Runtime 후보로 기술했다. RPL-103 Stage A `ADR-0018`과
 Shared AI ADR-0005의 2026-08-26 coordinated acceptance는 Phase 1 placement를
 `platform-core` same-JVM logical module로 확정하고 이전 placement assumption만 partial
-supersede했다. Runtime technology는 deferred이며 independent Shared AI Process는
-evidence-triggered extraction option으로 유지된다.
+supersede했다. RPL-107은 그 Module 안의 첫 synchronous OpenAI model execution
+Evidence이며, Runtime technology의 후속 선택, independent Shared AI Process,
+Streaming과 Product release는 각각 별도 Gate를 따른다.
 
 Module 간에는 명시된 Public Contract와 의존 방향을 적용한다.
 
@@ -1635,14 +1659,15 @@ Shared Gateway·Identity 물리 분리
 23. Repository 이름 변경은 가능하지만 책임 경계 변경은 별도 결정이 필요하다.
 24. Identity physicalization은 Gateway와 함께 `ADR-0017` 범위에서 승인됐고 Commerce physicalization은 승인되지 않았다.
 25. Gateway·Identity Trigger는 Finance가 두 번째 실제 Consumer가 되면서 충족됐으며 다른 Capability는 각자의 Trigger를 기다린다.
-26. 목표 Deployment Unit 중 G1 inert Runtime Foundation만 `RPL-72`로 구현 승인되며 Product route는 G2, Identity business semantics는 G3가 소유한다.
-27. V1 Local Core는 Shared Services Deployment Unit과 Cloud AI Runtime 없이 완결한다.
+26. 목표 Deployment Unit 중 G1 inert Runtime Foundation은 `RPL-72`가, Shared AI Phase 1 synchronous OpenAI Slice A는 RPL-107이 각각 별도 범위로 다룬다. Product route는 G2, Identity business semantics는 G3가 소유한다.
+27. V1 Local Core는 Shared Services Deployment Unit과 Shared AI 없이 완결한다. RPL-107 구현은 이 불변조건을 변경하지 않는다.
 28. Deployment Unit별 Data Source of Truth와 Migration 소유권을 분리한다.
 29. Cross-service Foreign Key와 OLTP Cross-service JOIN을 금지한다.
 30. `platform-core`의 Identity·Commerce·Audit는 같은 Process에서도 Module과 Schema 경계를 유지한다.
 31. Audit는 현재 미구현 Module 후보이며 future NATS consumer 추출에는 별도 Trigger와 Decision이 필요하다.
-32. 인증 논리 서비스의 canonical 명칭은 `Shared Identity`고 created / empty Repository의 planned implementation location은 `ranikun-labs/platform-services`의 `platform-core/identity`다 (`DEC-059`, `DEC-067`).
+32. 인증 논리 서비스의 canonical 명칭은 `Shared Identity`고 existing Repository의 planned implementation location은 `ranikun-labs/platform-services`의 `platform-core/identity`다 (`DEC-059`, `DEC-067`).
 33. Carelog는 기존 Product Service로 이 지도에 등록되며(§7.7), 그 Auth Phase A 현재 상태는 oh-my-ai V1/V2/V3 Phase 1-5 물리화 타임라인과 분리해 기록한다 (`DEC-059`).
+34. Shared AI Phase 1의 RPL-107 synchronous OpenAI Slice A는 `platform-core` logical module의 implementation Evidence이며, Streaming, independent Process, Product consumer integration 또는 Product release를 의미하지 않는다.
 
 ---
 

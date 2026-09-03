@@ -3,7 +3,7 @@ title: Product Architecture Master
 status: draft
 implementation_status: mixed
 owner: product
-last_reviewed: 2026-08-08
+last_reviewed: 2026-09-03
 supersedes: []
 superseded_by: []
 related_adrs:
@@ -1329,11 +1329,13 @@ Local Invocation PoC의 선결 조건은 아니다.
 Canonical 논리 서비스명은 `Shared Identity`다 (`DEC-059`). 기존
 `identity-platform` 후보는 `DEC-067`로 부분 대체됐고, 물리 Target은
 `ranikun-labs/platform-services`의 `platform-core/identity`다. Repository container는
-`created / empty`고 visibility `public`은 관찰 사실일 뿐 정책은 `not_decided`다.
-현재 구현 Host는 `ranikun-labs/carelog-be`며 Application implementation은
-`not_started / not_implemented`, Gateway와 Identity extraction은 `not_started`다.
-Runtime은 `not_supported / not_deployed`, release는 `false / not_released`고
-Commerce·Audit·Shared AI는 `deferred`다.
+존재하고 visibility `public`은 관찰 사실일 뿐 정책은 `not_decided`다. Current
+Platform Services main에는 `gateway-app`, `platform-core/identity`,
+`platform-core/shared-ai`가 있다. 현재 Carelog 경로는 여전히
+`ranikun-labs/carelog-be`에 있고 Gateway·Identity의 승인된 extraction/cutover와
+production Runtime·배포·출시는 별도 Evidence가 필요하다. RPL-107 synchronous
+OpenAI Slice A는 `platform-core/shared-ai`의 구현 상태이며, Commerce·Audit와
+full Shared AI Runtime adoption은 `deferred`다.
 
 ---
 
@@ -1352,10 +1354,11 @@ finance-harness
 = Finance Product Backend / Runtime
 
 ranikun-labs/platform-services
-= Shared Java Platform Target (repository created / empty; implementation not_started)
+= Shared Java Platform (repository existing; current main contains Gateway, Identity and Shared AI modules)
   - gateway-app: independent SCG / WebFlux process
   - platform-core: independent Spring MVC process
     - identity ACTIVE target
+    - shared-ai Phase 1 same-JVM logical module; RPL-107 synchronous OpenAI Slice A IMPLEMENTED
     - commerce DEFERRED
     - audit DEFERRED
 
@@ -1663,10 +1666,11 @@ identity-platform (§23의 역사적 후보)
 = DEC-067로 후보 상태가 부분 대체됨
 
 ranikun-labs/platform-services
-= repository created / empty Shared Java Platform Target
-= implementation not_started / runtime not_supported
+= repository existing Shared Java Platform Target
+= gateway/identity extraction and cutover remain separate adoption state
+= platform-core/shared-ai RPL-107 synchronous OpenAI Slice A implemented
 = gateway-app과 platform-core는 서로 독립 Process
-= platform-core/identity만 ACTIVE target
+= platform-core/identity ACTIVE target; platform-core/shared-ai Phase 1 logical module
 
 Finance Harness (Backend Service Foundation)
 ↔ finance-harness (§23 기존 목표 Repository)
@@ -1681,7 +1685,8 @@ Carelog
 
 이 절은 `DEC-059`의 용어와 Carelog 등록을 유지하고 `DEC-067`의 제한적 물리화
 결정을 투영한다. Architecture 승인은 Repository 생성, Shared Identity 물리 분리 완료,
-Runtime 지원 또는 Product 출시를 의미하지 않는다.
+Runtime 지원 또는 Product 출시를 의미하지 않는다. Shared AI RPL-107 구현도 Product
+integration, Streaming, 독립 Process 또는 Product release를 자동으로 의미하지 않는다.
 
 ---
 

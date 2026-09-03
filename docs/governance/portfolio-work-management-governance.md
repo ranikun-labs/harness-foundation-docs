@@ -114,7 +114,7 @@ Project 분리는 별도 운영 병목과 권한 경계가 확인되기 전에�
 
 ### 3.3 Primary Repository Registry
 
-2026-08-08 GitHub 조회와 승인된 Foundation 문서를 기준으로 현재 값은 다음과
+2026-09-03 GitHub 조회와 승인된 Foundation 문서를 기준으로 현재 값은 다음과
 같다.
 
 | 값 | 용도 |
@@ -126,15 +126,17 @@ Project 분리는 별도 운영 병목과 권한 경계가 확인되기 전에�
 | `ranikun-labs/react-product-foundation` | 공통 React Product Foundation |
 | `ranikun-labs/oh-my-ai` | Dev Harness Local Runtime |
 | `ranikun-labs/harness-foundation-docs` | Ranikun Labs Platform Foundation Canonical 문서 |
-| `ranikun-labs/platform-services` | Shared Gateway·Identity Target; Repository `created / empty`, 현재 visibility `public`(관찰 사실, 정책 미결정), Application·Runtime 없음 |
+| `ranikun-labs/platform-services` | Shared Gateway·Identity·Shared AI Target; Repository exists, 현재 visibility `public`(관찰 사실, 정책 미결정), Gateway·Identity cutover와 production adoption은 별도 상태 |
 | `No Repository / Confluence-only` | Repository 변경 없는 Portfolio Projection 작업 |
 
 Registry 값은 Jira Admin 적용 전에 Repository 존재·이름을 다시 확인한다.
 Owner migration 전 namespace는 historical provenance에서만 보존한다. 현재
-Canonical Registry는 `ranikun-labs/*`를 사용한다. `platform-services`는 Repository
-container가 `created / empty`이지만, 그 존재만으로 Primary implementation Repository로
-선택하지 않는다. Gateway·Identity extraction은 `not_started`고 Current Implementation
-Host는 `ranikun-labs/carelog-be`다.
+Canonical Registry는 `ranikun-labs/*`를 사용한다. `platform-services` Repository는
+존재하고 `gateway-app`, `platform-core/identity`, `platform-core/shared-ai`를 포함하지만,
+그 존재만으로 Primary implementation Repository나 production adoption을 자동 확정하지
+않는다. Gateway·Identity의 승인된 extraction/cutover는 별도 상태로 관리하고, Shared AI
+RPL-107 current implementation/status는 Shared AI Architecture의 current projection이
+소유한다. 현재 Carelog 경로는 `ranikun-labs/carelog-be`에 남아 있다.
 
 ### 3.4 Area 초기값
 
@@ -429,7 +431,7 @@ Task 시작
 Logical Owner와 Current Implementation Host를 혼합하지 않는다.
 따라서 Shared Identity 코드가 현재 Carelog Backend에 있더라도 Issue의
 Workstream은 Shared Identity이고 Primary Repository는 실제 변경이 일어나는
-`ranikun-labs/carelog-be`가 될 수 있다. RPL-54의 구현 Target은 현재 `created / empty`인
+`ranikun-labs/carelog-be`가 될 수 있다. RPL-54의 구현 Target은 존재하는
 `ranikun-labs/platform-services`지만, RPL-55 Cutover 전까지 Current Implementation
 Host가 바뀌었다고 간주하지 않는다.
 

@@ -179,6 +179,74 @@ sources:
       release_status: not_released
     purpose: Backend Service Foundation의 데이터·행동 소유권과 Service 경계를 보조한다.
 
+  - id: src.adr-0018
+    kind: repository_document
+    title: Shared AI Phase 1을 Platform Core 논리 모듈로 배치한다
+    authority: canonical
+    location:
+      repository: ranikun-labs/harness-foundation-docs
+      ref: main
+      path: docs/adr/ADR-0018-shared-ai-platform-core-placement.md
+      anchor: null
+    status:
+      document_status: accepted
+      decision_status: accepted
+    purpose: Shared AI Phase 1의 Platform Core placement와 architectural boundary의 근거를 제공한다. Historical implementation status는 current tracker가 아니다.
+
+  - id: src.shared-ai-architecture
+    kind: external_repository_document
+    title: Shared AI current implementation and status projection
+    authority: canonical
+    location:
+      repository: ranikun-labs/shared-ai-architecture
+      ref: main
+      commit: 0882173ccb1f91ce085f6828e00bfc67090351ba
+      path: docs/source-of-truth-map.md
+      anchor: 21-current-implementation-projection
+    status:
+      document_status: draft
+    purpose: Shared AI current implementation/status classification의 단일 projection과 stable anchor를 제공한다. Ownership·placement·provider authority는 accepted ADR가 소유한다.
+
+  - id: src.platform-services-main
+    kind: external_repository_document
+    title: Platform Services current main module state
+    authority: canonical
+    location:
+      repository: ranikun-labs/platform-services
+      ref: main
+      commit: b2cb34825a8b8152e1bb1c45e4ed62d1dd49ae4b
+      path: README.md
+      anchor: null
+    status:
+      document_status: draft
+    purpose: Current platform-services repository와 Gateway·Identity·Shared AI module 상태를 제공한다. RPL-107 exact implementation evidence와는 별개다.
+
+  - id: src.platform-services-rpl-106
+    kind: external_repository_document
+    title: RPL-106 Shared AI neutral foundation merge evidence
+    authority: canonical
+    location:
+      repository: ranikun-labs/platform-services
+      ref: ab016630152e1fea8d3460a356d77a02f80ab58f
+      path: README.md
+      anchor: null
+    status:
+      implementation_status: implemented
+    purpose: RPL-106 neutral foundation의 exact merge evidence만 제공하며 current main이나 Product integration을 의미하지 않는다.
+
+  - id: src.platform-services-rpl-107
+    kind: external_repository_document
+    title: RPL-107 exact implementation merge evidence
+    authority: canonical
+    location:
+      repository: ranikun-labs/platform-services
+      ref: b9cae7967182b0776a2dc64023009f5d96cfc8d4
+      path: README.md
+      anchor: null
+    status:
+      implementation_status: implemented
+    purpose: RPL-107 synchronous OpenAI Slice A의 exact implementation evidence pointer다. Current platform-services main과 Shared AI status projection은 별도로 관리한다.
+
   - id: src.oauth-state-product-client-binding-contract
     kind: external_repository_document
     title: OAuth State Product Client Binding 구현 계약
@@ -420,7 +488,7 @@ systems:
       status: confirmed
       repository: ranikun-labs/platform-services
       module: gateway-app
-      repository_lifecycle: created_empty
+      repository_lifecycle: existing
       visibility: public
       visibility_policy: not_decided
     current_implementation_hosts:
@@ -438,7 +506,7 @@ systems:
       repository: ranikun-labs/platform-services
       module: gateway-app
       process: independent_spring_cloud_gateway_webflux
-      description: Repository container는 created / empty이고 RPL-53 behavior-preserving extraction과 Runtime은 아직 시작되지 않음
+      description: gateway-app module은 current platform-services main에 존재하지만 RPL-53 behavior-preserving extraction의 production Runtime과 Carelog cutover는 완료되지 않음
     lifecycle: physicalization_planned
     release:
       released: false
@@ -459,6 +527,7 @@ systems:
       - src.adr-0015
       - src.adr-0017
       - src.decision-dec-067
+      - src.platform-services-main
 
   - id: system.shared-identity
     display_name: Shared Identity
@@ -469,7 +538,7 @@ systems:
       status: confirmed
       repository: ranikun-labs/platform-services
       module: platform-core/identity
-      repository_lifecycle: created_empty
+      repository_lifecycle: existing
       visibility: public
       visibility_policy: not_decided
     current_implementation_hosts:
@@ -488,7 +557,7 @@ systems:
       repository: ranikun-labs/platform-services
       module: platform-core/identity
       process: platform_core_spring_mvc
-      description: Repository container는 created / empty이고 RPL-54 behavior-preserving extraction과 Runtime은 아직 시작되지 않음
+      description: platform-core/identity module은 current platform-services main에 존재하지만 RPL-54 behavior-preserving extraction의 Carelog cutover와 production Runtime은 완료되지 않음
     lifecycle: physicalization_planned
     release:
       released: false
@@ -512,6 +581,7 @@ systems:
       - src.adr-0015
       - src.adr-0017
       - src.decision-dec-067
+      - src.platform-services-main
 
   - id: system.shared-ai
     display_name: Shared AI
@@ -519,14 +589,33 @@ systems:
     workstream: Platform Foundation
     logical_boundary_status: documented
     primary_repository:
-      status: repository_unconfirmed
-      repository: null
-    current_implementation_hosts: []
+      status: confirmed
+      repository: ranikun-labs/platform-services
+      module: platform-core/shared-ai
+      repository_lifecycle: existing
+      visibility: public
+      visibility_policy: not_decided
+    current_implementation_hosts:
+      - repository: ranikun-labs/platform-services
+        module: platform-core/shared-ai
+        role: rpl_107_synchronous_openai_provider_slice
     runtime_deployment:
+      status: not_deployed
+      scope: phase1_same_jvm_logical_module
+      description: platform-core/shared-ai는 Platform Core Spring MVC process에 hosted된 Phase 1 logical module이며 independent Shared AI deployment는 없음
+    target_runtime_deployment:
       status: not_implemented
-      description: platform-services 외부의 future independent Python Runtime이며 Repository와 Runtime은 아직 없음
-    lifecycle: deferred_future
-    release: null
+      implementation_status: implemented
+      runtime_support_status: not_supported
+      deployment_status: not_deployed
+      repository: ranikun-labs/platform-services
+      module: platform-core/shared-ai
+      process: platform_core_spring_mvc
+      description: RPL-107 synchronous OpenAI Slice A implementation은 존재하지만 full Shared AI Runtime, Product consumer integration과 production release는 구현·확인되지 않음
+    lifecycle: active_in_development
+    release:
+      released: false
+      artifact_status: not_released
     verification:
       production_deployment: verification_required
     core_responsibilities:
@@ -546,6 +635,11 @@ systems:
       - src.system-landscape
       - src.adr-0015
       - src.adr-0017
+      - src.adr-0018
+      - src.shared-ai-architecture
+      - src.platform-services-main
+      - src.platform-services-rpl-106
+      - src.platform-services-rpl-107
 
   - id: system.shared-commerce
     display_name: Shared Commerce
@@ -1173,7 +1267,7 @@ data_groups:
     display_name: User Identity
     logical_owner: { kind: ref, ref: system.shared-identity }
     current_store: { status: current, system_ref: system.carelog, technology: postgresql, description: 현재 Carelog DB/Auth 영역 }
-    target_store: { status: planned, system_ref: system.shared-identity, blocked_by: [RPL-54, RPL-55], description: ranikun-labs/platform-services Repository container는 created / empty이며 platform-core/identity 소유 Target Store는 planned이고 Store implementation은 not_started / not_implemented }
+    target_store: { status: planned, system_ref: system.shared-identity, blocked_by: [RPL-54, RPL-55], description: ranikun-labs/platform-services Repository는 존재하며 platform-core/identity 소유 Target Store는 planned이고 Store implementation은 not_started / not_implemented }
     write_authority: { system_refs: [system.carelog], participant_scope: null, note: 현재 Carelog Auth; 향후 Identity }
     read_consumers: { system_refs: [system.carelog], participant_scopes: [] }
     sharing_method: [token, api]
@@ -1186,7 +1280,7 @@ data_groups:
     display_name: OAuth Account Link
     logical_owner: { kind: ref, ref: system.shared-identity }
     current_store: { status: current, system_ref: system.carelog, technology: postgresql, description: 현재 Carelog DB/Auth 영역 }
-    target_store: { status: planned, system_ref: system.shared-identity, blocked_by: [RPL-54, RPL-55], description: ranikun-labs/platform-services Repository container는 created / empty이며 platform-core/identity 소유 Target Store는 planned이고 Store implementation은 not_started / not_implemented }
+    target_store: { status: planned, system_ref: system.shared-identity, blocked_by: [RPL-54, RPL-55], description: ranikun-labs/platform-services Repository는 존재하며 platform-core/identity 소유 Target Store는 planned이고 Store implementation은 not_started / not_implemented }
     write_authority: { system_refs: [system.carelog], participant_scope: null, note: 현재 Carelog Auth }
     read_consumers: { system_refs: [system.carelog], participant_scopes: [] }
     sharing_method: [api, token_flow]
@@ -1199,7 +1293,7 @@ data_groups:
     display_name: Product Client
     logical_owner: { kind: ref, ref: system.shared-identity }
     current_store: { status: current, system_ref: system.carelog, technology: postgresql, description: Carelog PostgreSQL Product Client Registry — V6 }
-    target_store: { status: planned, system_ref: system.shared-identity, blocked_by: [RPL-54, RPL-55], description: ranikun-labs/platform-services Repository container는 created / empty이며 platform-core/identity 소유 Target Store는 planned이고 Store implementation은 not_started / not_implemented }
+    target_store: { status: planned, system_ref: system.shared-identity, blocked_by: [RPL-54, RPL-55], description: ranikun-labs/platform-services Repository는 존재하며 platform-core/identity 소유 Target Store는 planned이고 Store implementation은 not_started / not_implemented }
     write_authority: { system_refs: [system.carelog], participant_scope: null, note: 현재 Carelog Auth/Identity implementation boundary }
     read_consumers: { system_refs: [system.carelog], participant_scopes: [] }
     sharing_method: [registry_lookup]
@@ -1315,7 +1409,7 @@ data_groups:
   - id: data.ai-execution-metadata
     display_name: AI Execution Metadata
     logical_owner: { kind: ref, ref: system.shared-ai }
-    current_store: { status: not_implemented, system_ref: system.shared-ai, technology: null, description: Runtime 미구현 }
+    current_store: { status: not_implemented, system_ref: system.shared-ai, technology: null, description: RPL-107 per-execution evidence는 존재하지만 durable AI Execution Metadata Store는 미구현 }
     target_store: { status: planned, system_ref: system.shared-ai, blocked_by: [], description: Shared AI Store 후보 }
     write_authority: { system_refs: [system.shared-ai], participant_scope: null, note: Shared AI }
     read_consumers: { system_refs: [system.carelog, system.finance-harness, system.dev-harness-local], participant_scopes: [] }
@@ -1323,12 +1417,12 @@ data_groups:
     migration: { state: planned, evidence: null }
     follow_up: { state: planned, description: Shared AI Runtime 구현, related_jira: [] }
     constraints: [제품 입력과 제품 결과 데이터는 Shared AI 소유가 아니다]
-    source_refs: [src.system-landscape]
+    source_refs: [src.system-landscape, src.shared-ai-architecture, src.platform-services-rpl-107]
 
   - id: data.usage-cost
     display_name: Usage / Cost
     logical_owner: { kind: ref, ref: system.shared-ai }
-    current_store: { status: not_implemented, system_ref: system.shared-ai, technology: null, description: Runtime 미구현 }
+    current_store: { status: not_implemented, system_ref: system.shared-ai, technology: null, description: RPL-107 optional per-execution usage는 존재하지만 aggregated Usage/Cost Store는 미구현 }
     target_store: { status: planned, system_ref: system.shared-ai, blocked_by: [], description: Shared AI Store 후보 }
     write_authority: { system_refs: [system.shared-ai], participant_scope: null, note: Shared AI }
     read_consumers: { system_refs: [system.carelog, system.finance-harness, system.dev-harness-local], participant_scopes: [] }
@@ -1336,7 +1430,7 @@ data_groups:
     migration: { state: planned, evidence: null }
     follow_up: { state: planned, description: Shared AI Runtime 구현, related_jira: [] }
     constraints: [제품 입력과 제품 결과 데이터는 Shared AI 소유가 아니다]
-    source_refs: [src.system-landscape]
+    source_refs: [src.system-landscape, src.shared-ai-architecture, src.platform-services-rpl-107]
 
   - id: data.product-catalog
     display_name: Product Catalog
@@ -1422,7 +1516,7 @@ architecture_gates:
     status: approved_not_started
     adoption_decision: accepted_with_constraints
     deferral_policy: partially_superseded_by_dec_067
-    current_state: platform-services exists=true / repository=created_empty이며 현재 구현 Host는 ranikun-labs/carelog-be다. Gateway와 Identity implementation은 not_started / not_implemented이고 Runtime은 not_supported / not_deployed이며 release=false / not_released다
+    current_state: platform-services exists=true / current main에는 gateway-app, platform-core/identity와 platform-core/shared-ai가 있다. 현재 Carelog 경로는 ranikun-labs/carelog-be이며 Gateway와 Identity의 승인된 extraction/cutover는 not_started다. Runtime은 not_supported / not_deployed이며 release=false / not_released다
     why_deferred: Carelog 단일 Consumer 시점의 유예는 합리적이었으나 Finance Harness가 두 번째 실제 Product Consumer가 되어 Gateway·Identity 범위 Trigger를 충족함
     required_evidence: [둘 이상의 실제 제품 소비, 독립 배포 필요성, 독립 Schema Ownership, 장애 격리 필요성, Identity 부하와 운영 책임의 독립성]
     adoption_triggers: [복수 제품의 실제 인증 소비, 독립 Release Cadence, 독립 장애 격리, 별도 데이터 Migration과 Ownership 확정]
@@ -1430,7 +1524,7 @@ architecture_gates:
     blocked_work: [RPL-53 Gateway extraction, RPL-54 Identity extraction, RPL-55 Carelog cutover와 regression, Schema Migration Ownership, Token/JWKS Contract, 배포·관측·장애복구 기준]
     related_jira: [RPL-52, RPL-53, RPL-54, RPL-55, RPL-24, RPL-27, RPL-28]
     related_decisions: [DEC-064, DEC-067]
-    constraints: [platform-services Repository container는 created / empty이고 Application·Runtime 구현은 not_started, 현재 구현 Host는 RPL-55 전까지 ranikun-labs/carelog-be, 제품별 Authorization은 제품 소유, 일반 제품 요청마다 Shared Identity를 동기 호출하지 않음, 가능한 경우 Gateway 또는 Product Backend가 Token을 로컬 검증, RPL-27은 G4 뒤 기존 Ticket을 재타기팅]
+    constraints: [platform-services Repository는 존재하지만 Gateway·Identity의 승인된 extraction/cutover와 production Runtime은 not_started, 현재 구현 Host는 RPL-55 cutover 전까지 ranikun-labs/carelog-be, 제품별 Authorization은 제품 소유, 일반 제품 요청마다 Shared Identity를 동기 호출하지 않음, 가능한 경우 Gateway 또는 Product Backend가 Token을 로컬 검증, RPL-27은 G4 뒤 기존 Ticket을 재타기팅]
     source_refs: [src.system-landscape, src.oauth-state-product-client-binding-contract, src.adr-0015, src.decision-dec-064, src.adr-0017, src.decision-dec-067, src.jira-rpl-52]
 
   - id: gate.oauth-backend-callback-topology
@@ -1498,20 +1592,20 @@ architecture_gates:
     source_refs: [src.system-landscape, src.oauth-state-product-client-binding-contract, src.adr-0015, src.decision-dec-064]
 
   - id: gate.shared-ai-runtime
-    display_name: Shared AI Runtime implementation
+    display_name: Shared AI full Runtime adoption
     status: deferred
     adoption_decision: not_decided
     deferral_policy: accepted_with_constraints
-    current_state: Shared AI 책임 경계와 문서만 존재하며 독립 Repository·Runtime·실제 소비 제품 연동 없음
-    why_deferred: 반복 Provider-neutral 실행 수요와 Provider Routing·Streaming·Cost·Retry 운영 기준이 미확정
+    current_state: RPL-107 synchronous OpenAI Slice A와 neutral foundation은 platform-services/main에 구현됐지만 full Shared AI Runtime, 독립 Process와 실제 Product consumer 연동은 없음
+    why_deferred: Streaming·cancellation·공통 Cost/Usage·독립 Scale/SLA와 Product integration 기준이 아직 full-runtime Gate를 충족하지 않음
     required_evidence: [둘 이상의 실제 소비 제품, 공통 Provider Routing 수요, Streaming Runtime 수요, 공통 Cost/Usage 관리, 독립 Scale/SLA]
     adoption_triggers: [반복 Provider Integration, 제품별 중복 실행 코드, 독립 Scaling과 장애 격리 요구, Usage/Cost 공통 추적 요구]
     owner: { kind: ref, ref: system.shared-ai }
-    blocked_work: [Shared AI Repository, Provider Adapter Contract, Streaming Contract, Usage/Cost Model, Credential 관리, Product Integration]
+    blocked_work: [Streaming Contract, cancellation terminal semantics, Usage/Cost Model, Credential 운영, Product Integration, independent Process extraction]
     related_jira: [RPL-20]
     related_decisions: [DEC-064]
-    constraints: [제품 Prompt·Domain Policy·Tool·Output Validation은 제품 소유, 제품 입력·결과 데이터는 Shared AI 소유가 아님, Product Client는 Shared AI를 직접 호출하지 않음, Shared AI는 Public Direct Route를 갖지 않음]
-    source_refs: [src.system-landscape, src.adr-0015, src.decision-dec-064]
+    constraints: [RPL-107은 implementation Evidence이며 Product Release가 아님, 제품 Prompt·Domain Policy·Tool·Output Validation은 제품 소유, 제품 입력·결과 데이터는 Shared AI 소유가 아님, Product Client는 Shared AI를 직접 호출하지 않음, Shared AI는 Public Direct Route를 갖지 않음]
+    source_refs: [src.system-landscape, src.adr-0015, src.decision-dec-064, src.adr-0018, src.shared-ai-architecture, src.platform-services-main, src.platform-services-rpl-107]
 
   - id: gate.nats-introduction
     display_name: NATS JetStream introduction

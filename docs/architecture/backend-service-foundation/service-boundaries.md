@@ -7,9 +7,9 @@
 - Implementation completed: No
 - Runtime supported: No
 - Product released: No
-- Decision record: `DEC-059` (terminology and Carelog registration), `DEC-067` / `ADR-0017` (Gateway·Identity physicalization approved; implementation not started)
+- Decision record: `DEC-059` (terminology and Carelog registration), `DEC-067` / `ADR-0017` (Gateway·Identity physicalization approved; extraction/cutover remains incomplete)
 - Term scope: "Backend Service Foundation" (this directory) is distinct from `oh-my-ai`'s "Shared Platform" (`DEC-005`, `docs/architecture/shared-core-and-extensions.md`), which remains the AI harness product family's domain-neutral Contract boundary. See `docs/architecture/backend-service-foundation/README.md` §2.
-- Repository-map note: `Shared Identity` is the canonical logical service name (per `DEC-059`). `DEC-067` replaces the `identity-platform` candidate with `ranikun-labs/platform-services`, locating Identity at `platform-core/identity`. The Repository container is created and empty; the Application and Runtime are not implemented. `Carelog` remains the current implementation host until RPL-55 cutover evidence.
+- Repository-map note: `Shared Identity` is the canonical logical service name (per `DEC-059`). `DEC-067` replaces the `identity-platform` candidate with `ranikun-labs/platform-services`, locating Identity at `platform-core/identity`. The Repository exists; the approved Identity extraction/cutover and production Runtime are not complete. `platform-core/shared-ai` is a separate Phase 1 logical module whose RPL-107 synchronous OpenAI Slice A implementation is tracked by the Shared AI current projection. `Carelog` remains the current Identity implementation host until cutover evidence.
 
 ## 1. Purpose
 
@@ -89,17 +89,19 @@ each logical service currently exists as an independent runtime.
 Target physical topology (`ADR-0017` / `DEC-067`):
 
 ```text
-ranikun-labs/platform-services          repository created / empty
+ranikun-labs/platform-services          repository existing
 ├── gateway-app                         independent SCG / WebFlux process
 └── platform-core                       independent Spring MVC process
     ├── identity                        ACTIVE target
+    ├── shared-ai                       Phase 1 same-JVM logical module; RPL-107 sync Slice A implemented
     ├── commerce                        DEFERRED
     └── audit                           DEFERRED
 ```
 
 `gateway-app` and `platform-core` must not be combined into one Spring Boot
-application. Shared AI remains outside this repository as a deferred future Python
-runtime.
+application. `platform-core/shared-ai` is the Phase 1 same-JVM logical module.
+RPL-107 implements its first synchronous OpenAI model execution in that module;
+independent Process extraction, Streaming and Product release remain separate scope.
 
 The Dev Harness boundary preserves `DEC-003`, `DEC-004`, and `DEC-043`: V2 is a
 personal managed workflow, while team Workspace and Organization governance remain

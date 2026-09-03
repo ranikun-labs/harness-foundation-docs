@@ -3,7 +3,7 @@ title: Roadmap Index
 status: draft
 implementation_status: not_verifiable
 owner: product
-last_reviewed: 2026-07-15
+last_reviewed: 2026-09-03
 supersedes: []
 superseded_by: []
 source_inputs:
@@ -61,6 +61,23 @@ Release 통과 여부
 # Part I. Canonical Roadmap Document
 
 ## 2. Product Roadmap
+
+### 2.1 Shared AI current projection
+
+Shared AI의 현재 구현·제품 연동 상태는
+[`product-roadmap.md` §3.1](./product-roadmap.md#31-shared-ai-capability-track--user-facing-projection)에서
+제품 관점으로 투영하고, mutable implementation/status evidence의 원문은
+[Shared AI source-of-truth map §2.1](https://github.com/ranikun-labs/shared-ai-architecture/blob/0882173ccb1f91ce085f6828e00bfc67090351ba/docs/source-of-truth-map.md#21-current-implementation-projection)가
+소유한다. 이 Index는 전체 PR/SHA/gate/smoke package를 복제하지 않는다.
+
+| Classification | Foundation projection |
+| --- | --- |
+| `CANONICAL` | Ownership·placement·provider-neutral boundary는 accepted ADR가 소유한다. |
+| `DOCUMENTED_DRAFT` | Shared AI user-facing scope와 adoption boundary는 Product Roadmap의 제안이다. |
+| `IMPLEMENTED` | RPL-107 synchronous OpenAI Slice A의 bounded implementation evidence가 있다. |
+| `DEFERRED` | Streaming, broader provider/runtime capability와 trigger-gated alternatives다. |
+| `MISSING` | Product consumer integration, end-user UX, production support/deployment/release evidence다. |
+| `OUT_OF_SCOPE_OTHER_PRODUCT` | Product Prompt, Domain Policy, workflow/tool meaning, validation과 business effect다. |
 
 **Path**
 
