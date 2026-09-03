@@ -2,7 +2,7 @@
 title: Product Roadmap
 status: draft
 owner: product
-last_reviewed: 2026-07-29
+last_reviewed: 2026-09-03
 supersedes: []
 superseded_by: []
 related_adrs:
@@ -13,6 +13,8 @@ related_adrs:
   - ADR-0006
   - ADR-0009
   - ADR-0010
+  - ADR-0015
+  - ADR-0018
 source_inputs: []
 ---
 
@@ -212,6 +214,55 @@ Phase 번호는 우선순위와 일반적인 의존 방향을 나타낸다.
 모든 Phase가 완전히 직렬로 끝나야 다음 작업을 시작할 수 있다는 의미는 아니다.
 
 병행 가능한 작업은 각 Phase에 별도로 명시한다.
+
+### 3.1 Shared AI Capability Track — User-Facing Projection
+
+Shared AI는 V1/V2/V3와 별도의 cross-cutting execution capability다. 이 Track의
+구현 Evidence는 사용자에게 공개된 Product Feature, Product Integration 또는
+Product Release를 자동으로 의미하지 않는다. Foundation은 제품 관점의 분류와
+승격 순서를 투영하며, mutable implementation/status evidence의 원문은
+[Shared AI source-of-truth map §2.1](https://github.com/ranikun-labs/shared-ai-architecture/blob/0882173ccb1f91ce085f6828e00bfc67090351ba/docs/source-of-truth-map.md#21-current-implementation-projection)가
+소유한다.
+
+현재 projection:
+
+| Scope | Classification | Authority / evidence | Roadmap meaning |
+|---|---|---|---|
+| Shared AI ownership, provider-neutral boundary, Phase 1 `platform-core` same-JVM placement와 current OpenAI/GPT target | `CANONICAL` | Authority split: ADR-0001 ownership/capability boundary, ADR-0005 same-JVM placement, ADR-0006 runtime/framework boundary, ADR-0007 current OpenAI/GPT target; Foundation ADR-0015/0018의 상위 boundary/placement | Architecture authority를 따른다. Provider-specific Product contract를 만들지 않는다. |
+| Shared AI user-facing scope와 adoption boundary | `DOCUMENTED_DRAFT` | 이 Product Roadmap §3.1과 Shared AI current projection | 문서화된 제품 방향이며 Public support promise가 아니다. |
+| RPL-106 neutral foundation과 bounded synchronous `ModelGateway` path | `IMPLEMENTED` | [Platform Services PR #5 merge](https://github.com/ranikun-labs/platform-services/commit/ab016630152e1fea8d3460a356d77a02f80ab58f), `ab016630152e1fea8d3460a356d77a02f80ab58f` | Platform Core logical module의 neutral execution substrate가 존재한다. |
+| RPL-107 synchronous OpenAI Slice A | `IMPLEMENTED` | Shared AI Architecture Phase 1 canonical merge `0882173ccb1f91ce085f6828e00bfc67090351ba`와 §2.1 current projection; exact implementation merge evidence `b9cae7967182b0776a2dc64023009f5d96cfc8d4` | 실제 synchronous model execution capability다. Product Release를 주장하지 않는다. |
+| Finance investment-review consumer slice, Finance journal-aware review, Carelog treatment-preparation consumer slice, Carelog operational review, end-user Product AI UX와 release evidence | `MISSING` | 현재 Product consumer integration 및 user-facing release Evidence 없음 | 각 consumer와 UX는 별도 Product-owned scope와 gate가 필요하다. |
+| Streaming Slice B, broader provider routing/fallback, Gemini, embeddings/reranker, long-running async runtime, independent Shared AI process, Python/Pydantic runtime, Agent runtime | `DEFERRED` | Shared AI current projection과 accepted runtime boundary | 현재 구현이나 예정된 즉시 작업으로 승격하지 않는다. |
+| Product Prompt, Workflow/Skill business semantics, Domain Policy, Tool/Retriever business selection, Product semantic validation, final business mutation authority | `OUT_OF_SCOPE_OTHER_PRODUCT` | 각 Product/Domain의 canonical ownership | Shared AI Roadmap이 Product Domain 책임을 흡수하지 않는다. |
+
+`platform-services` current main은 `b2cb34825a8b8152e1bb1c45e4ed62d1dd49ae4b`다.
+이는 현재 Repository snapshot이며 RPL-107 exact implementation merge evidence인
+`b9cae7967182b0776a2dc64023009f5d96cfc8d4`와 다른 사실이다. Shared AI Architecture의
+canonical merged source pin은 `0882173ccb1f91ce085f6828e00bfc67090351ba`다.
+
+#### Product-facing maturity gates
+
+아래 단계는 서로 다른 promotion gate다. 앞 단계의 구현이 뒤 단계의 Product
+기능이나 권한을 자동으로 승격하지 않는다.
+
+1. **Shared AI foundation / execution substrate** — RPL-106 neutral contracts와 bounded execution substrate (`IMPLEMENTED`).
+2. **Real synchronous model execution** — RPL-107 synchronous OpenAI Slice A (`IMPLEMENTED`).
+3. **Finance investment-review consumer slice** — Finance Backend가 제품 입력·정책·결과 계약을 소유하는 별도 consumer gate (`MISSING`).
+4. **Finance journal-aware review** — Journal context와 review semantics를 포함하는 별도 Finance gate (`MISSING`).
+5. **Carelog treatment-preparation consumer slice** — Carelog가 customer/treatment context와 제품 정책을 소유하는 별도 consumer gate (`MISSING`).
+6. **Carelog operational review** — Carelog 운영 검토와 결과 반영의 별도 Product gate (`MISSING`).
+7. **Evidence-aware UX** — Evidence의 표시·수락·수정·거부와 사용자 통제 UX gate (`MISSING`).
+8. **Streaming UX** — SSE, reconnect/cancellation과 Product 전달 계약을 갖는 별도 gate (`DEFERRED`).
+9. **Assisted action / draft generation** — 사람이 검토·수정·승인할 수 있는 draft/advice gate; authorized mutation이 아님 (`DOCUMENTED_DRAFT`).
+10. **Authorized side effect / mutation** — authorization, policy, validation, idempotency와 명시적 mutation gate를 별도로 통과해야 하며 assisted draft/advice와 결합하지 않는다 (`MISSING`).
+11. **Agentic runtime** — 기본 목적지가 아니다. dynamic next-action selection이 load-bearing이 되거나 durable checkpoint/restart, long-running workflow, human pause/resume, persistent replay/state가 필요하고 bounded workflow의 동등한 실패가 Evidence로 확인될 때만 재검토한다 (`DEFERRED`).
+12. **Alternative runtime PoC** — Python/Pydantic 등 대안 runtime 비교는 동일 workflow에 대한 trigger-gated PoC이며 현재 예정 작업이나 Agent runtime 채택이 아니다 (`DEFERRED`).
+
+따라서 assisted draft/advice는 Product review를 위한 제안 상태로 남고,
+authorized side effect/mutation은 별도의 authorization·policy·mutation authority
+gate 없이는 실행되지 않는다. Agent runtime과 Pydantic/Python 비교도 위 trigger가
+충족되기 전에는 현재 Roadmap의 기본 목적지나 scheduled work가 아니다.
 
 ---
 

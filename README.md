@@ -3,7 +3,7 @@ title: Ranikun Labs Platform Foundation
 status: draft
 implementation_status: not_verifiable
 owner: product
-last_reviewed: 2026-08-08
+last_reviewed: 2026-09-03
 supersedes: []
 superseded_by: []
 source_inputs:
@@ -125,8 +125,11 @@ Shared Platform
 Repository Responsibility Boundary를 요약한다.
 
 `ADR-0017` / `DEC-067`이 승인한 `platform-services` Target만 예외적으로 확정한다.
-Target Repository container는 `created / empty`다. Application 구현은 `not_started`,
-Runtime·배포·출시는 각각 `not_supported / not_deployed / not_released`다.
+`ranikun-labs/platform-services` Repository는 존재하며 current main
+(`b2cb34825a8b8152e1bb1c45e4ed62d1dd49ae4b`)에 `gateway-app`,
+`platform-core/identity`, `platform-core/shared-ai`가 있다. Gateway·Identity의
+behavior-preserving extraction/cutover와 production runtime·배포·출시는 별도
+Evidence가 필요하다.
 
 목표 경계:
 
@@ -141,10 +144,11 @@ finance-harness
 = Finance Product Backend / Runtime 후보
 
 ranikun-labs/platform-services
-= Shared Java Platform Target (repository created / empty; implementation not_started)
+= Shared Java Platform (repository existing; current main contains Gateway, Identity and Shared AI modules)
   - gateway-app: independent SCG / WebFlux process
   - platform-core: independent Spring MVC process
     - identity ACTIVE target
+    - shared-ai Phase 1 same-JVM logical module; RPL-107 synchronous OpenAI Slice A IMPLEMENTED
     - commerce DEFERRED
     - audit DEFERRED
 
@@ -159,8 +163,11 @@ ranikun-labs/harness-foundation-docs
 후보로 기술했다. RPL-103 Stage A [ADR-0018](docs/adr/ADR-0018-shared-ai-platform-core-placement.md)과
 Shared AI ADR-0005의 coordinated acceptance는 2026-08-26 Phase 1 placement를
 `platform-core` same-JVM logical module로 확정하고 이전 placement assumption만 partial
-supersede했다. Runtime technology는 deferred이고 구현·지원·출시는 시작되지 않았다.
-Independent Shared AI Process는 evidence-triggered extraction option으로 유지된다.
+supersede했다. RPL-107 synchronous OpenAI Slice A는 그 logical module 안의
+`IMPLEMENTED` current capability다. 상세 current implementation/status는
+[Shared AI source-of-truth map §2.1](https://github.com/ranikun-labs/shared-ai-architecture/blob/0882173ccb1f91ce085f6828e00bfc67090351ba/docs/source-of-truth-map.md#21-current-implementation-projection)가
+소유하며, Product integration·Streaming·독립 Process·runtime support·배포·출시는
+별도 Evidence와 Gate가 필요하다.
 
 Repository 이름은 변경될 수 있다.
 

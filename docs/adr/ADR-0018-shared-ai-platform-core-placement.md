@@ -103,6 +103,21 @@ runtime_support_status: not_supported
 product_release_status: not_released
 ```
 
+### 2.1 Current implementation-status projection (non-historical)
+
+ADR-0018 remains the placement and architecture decision for Shared AI Phase 1.
+The historical `implementation_status: not_started` above is a point-in-time
+scope record for this placement ADR; it is not the current runtime status.
+Current Shared AI implementation/status is owned by
+`ranikun-labs/shared-ai-architecture` at
+[`docs/source-of-truth-map.md#21-current-implementation-projection`](https://github.com/ranikun-labs/shared-ai-architecture/blob/0882173ccb1f91ce085f6828e00bfc67090351ba/docs/source-of-truth-map.md#21-current-implementation-projection),
+whose canonical merged Phase 1 state is `0882173ccb1f91ce085f6828e00bfc67090351ba`.
+
+That current projection classifies RPL-107 synchronous OpenAI Slice A as
+`IMPLEMENTED`. It does not imply Product integration, independent deployment,
+runtime support, Streaming, Gemini, Agent runtime, Python/Pydantic runtime, or
+Product release.
+
 다음 acceptance condition이 2026-08-26 충족됐다.
 
 1. Foundation owner가 이 ADR을 승인했다.
