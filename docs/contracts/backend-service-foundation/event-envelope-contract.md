@@ -66,6 +66,26 @@ Consumers must implement idempotent effects.
 | `producer` | String | Stable publishing service name |
 | `payload` | Object | Event-specific data |
 
+### 4.1 Specialized security and audit contracts
+
+A specialized canonical contract may relax `aggregate_type` and `aggregate_id` when a
+recorded fact has no safe resource or account identifier. Anonymous authentication
+failure is the motivating case.
+
+Shared Audit is such a contract, accepted by
+[ADR-0021](../../adr/ADR-0021-shared-audit-foundation-architecture.md) / DEC-070.
+
+Rules for a specialized contract:
+
+- `event_id` remains the canonical event identity and keeps §6 semantics;
+- a producer must never fabricate or reverse-infer an aggregate identifier only to
+  satisfy this table;
+- every other required field in §4 still applies;
+- the relaxation must be recorded in the specialized contract itself.
+
+The concrete Shared Audit contract and any further envelope reconciliation are owned by
+AU-G1 and are not part of this document yet.
+
 ## 5. Conditional fields
 
 | Field | Rule |

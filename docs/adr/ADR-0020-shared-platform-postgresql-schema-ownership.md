@@ -138,6 +138,7 @@ PostgreSQL Application Database를 사용하면서도 Service별 Schema와 Write
 | `carelog` / Carelog product data | Carelog | Carelog |
 | `identity` / Shared Identity persistence | Shared Identity | Shared Identity |
 | `finance` / Finance product data | Finance | Finance |
+| `audit` / Shared Audit consumer-side ledger | Shared Audit | Shared Audit |
 | future product/shared schemas | Respective product or shared owner | Respective owner |
 
 Shared Identity가 소유하는 canonical persistence는 다음과 같다.
@@ -150,6 +151,27 @@ Shared Identity가 소유하는 canonical persistence는 다음과 같다.
 Carelog가 소유하는 `users`, CRM organization/role/customer Data는 Carelog Schema에
 남는다. `users.account_id`는 Product-side Weak Reference로 남을 수 있지만, 이를
 Cross-schema 또는 Cross-service Foreign Key로 만들지 않는다.
+
+Shared Audit가 소유하는 `audit` Schema는
+[ADR-0021](./ADR-0021-shared-audit-foundation-architecture.md) / DEC-070으로
+Architecture가 승인됐으며 아직 생성되지 않았다. Shared Audit가 해당 Schema의 Table과
+Migration을 소유한다.
+
+Audit Ledger는 Append-only다. 일반 UPDATE를 허용하지 않으며, 정정은 이전 Audit
+Fact를 변경하지 않고 새 Event를 Append하는 방식으로 수행한다. DELETE는 명시적
+Retention Lifecycle을 통해서만 수행하고, Retention 기간 Policy가 승인되기 전까지
+자동 삭제를 수행하지 않는다.
+
+Producer의 Audit Outbox는 `audit` Schema가 아니라 Producer 자신의 Schema에 위치한다.
+
+```text
+identity.audit_outbox        Shared Identity 소유 / Shared Identity Migration
+audit.<ledger tables>        Shared Audit 소유 / Shared Audit Migration
+```
+
+Producer Outbox는 Producer의 Domain Mutation과 같은 Local Transaction에 기록돼야
+하므로 다른 Service Schema에 둘 수 없다. 이 배치는 Ownership Inversion을 만들지
+않으며 Cross-schema Foreign Key를 요구하지 않는다.
 
 ### 6.2 Access Boundary
 
