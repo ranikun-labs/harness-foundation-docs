@@ -96,6 +96,8 @@ Product / Domain
 
 초기 배치는 `platform-core`의 `shared-audit` 논리 Module과 `platform-core:app`의
 background JetStream Consumer다. 별도 Audit Executable은 승인하지 않는다.
+이전 accepted platform topology ADR에 `audit`로 표시된 Deferred Module과 이 ADR이
+승인한 `shared-audit` 논리 Module은 별개 Module이 아니라 동일한 Shared Audit 경계를 가리킨다.
 
 이 결정은 Architecture 승인이며 구현·Runtime·Release 승인이 아니다.
 
