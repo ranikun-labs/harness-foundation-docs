@@ -1360,7 +1360,7 @@ ranikun-labs/platform-services
     - identity ACTIVE target
     - shared-ai Phase 1 same-JVM logical module; RPL-107 synchronous OpenAI Slice A IMPLEMENTED
     - commerce DEFERRED
-    - audit DEFERRED
+    - shared-audit ADR-0021 architecture-approved; implementation not started
 
 finance-harness-docs
 = Finance Lens / PolicyGuard / Fixture

@@ -95,7 +95,7 @@ ranikun-labs/platform-services          repository existing
     ├── identity                        ACTIVE target
     ├── shared-ai                       Phase 1 same-JVM logical module; RPL-107 sync Slice A implemented
     ├── commerce                        DEFERRED
-    └── audit                           DEFERRED
+    └── shared-audit                    ADR-0021 architecture-approved; implementation not started
 ```
 
 `gateway-app` and `platform-core` must not be combined into one Spring Boot

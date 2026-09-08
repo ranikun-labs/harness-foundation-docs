@@ -390,6 +390,28 @@ Event Envelope 상세, Subject Naming 상세, Retention, Dead Letter 처리,
 Reconciliation, Publisher Failure, 첫 Producer·Consumer, Backup·Restore는
 첫 Use Case ADR에서 확정한다.
 
+#### 첫 Use Case 확정
+
+Shared Audit가 이 절이 예고한 **첫 번째 구체적 JetStream Use Case**로 채택됐다.
+근거 Decision은 [ADR-0021](./ADR-0021-shared-audit-foundation-architecture.md) /
+DEC-070이다.
+
+```text
+architecture approved (ADR-0021 / DEC-070)
+≠ NATS Runtime 배포
+≠ Stream/Consumer provisioning
+≠ Producer·Consumer 구현
+```
+
+ADR-0021은 위 위임 항목 중 Transport 의미, Delivery 보장과 비보장, Producer Failure
+의미, Replay·Reconciliation 요구와 Producer-owned Outbox 경계를 Architecture
+수준에서 확정한다. Subject Naming 상세, Stream/Consumer 구성, Retention 기간,
+Dead Letter 운영 Runbook과 Backup·Restore는 ADR-0021 §7의 후속 Gate가 소유한다.
+
+이 절의 도입 원칙은 변경되지 않는다. Shared Audit도 at-least-once, Idempotent
+Consumer, `event_id` Unique, Consumer DB Commit 후 ACK, MQ는 Business Source of
+Truth가 아님을 그대로 따른다.
+
 ### 7.7 Deferred technology triggers
 
 #### gRPC
@@ -514,7 +536,8 @@ Carelog의 현재 적용 상태와 Gap만 소유해야 한다.
 - 내부 Service Authentication과 Discovery
 - Identity issuer·audience·JWKS 및 인증 Context Header Contract 승인
 - SSE 재연결·취소·Backpressure·저장 정합성
-- 첫 JetStream Producer·Consumer와 운영 정책
+- 첫 JetStream Producer·Consumer와 운영 정책 (Architecture는 ADR-0021 / DEC-070이
+  확정; Provisioning·구현·운영 Runbook은 후속 Gate)
 - Provider-neutral RAG·Embedding·Vector·AI Job Runtime 소유권
 - 실제 Trigger 충족 시 gRPC, Kafka 또는 Kubernetes 도입 ADR
 - Foundation ADR 병합 후 Carelog 공통 ADR 중복 제거

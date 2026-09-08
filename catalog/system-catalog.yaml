@@ -193,6 +193,20 @@ sources:
       decision_status: accepted
     purpose: Shared AI Phase 1의 Platform Core placement와 architectural boundary의 근거를 제공한다. Historical implementation status는 current tracker가 아니다.
 
+  - id: src.adr-0021
+    kind: repository_document
+    title: Shared Audit Foundation Architecture와 JetStream 활성화를 정의한다
+    authority: canonical
+    location:
+      repository: ranikun-labs/harness-foundation-docs
+      ref: main
+      path: docs/adr/ADR-0021-shared-audit-foundation-architecture.md
+      anchor: null
+    status:
+      document_status: accepted
+      decision_status: accepted_with_constraints
+    purpose: Shared Audit의 Architecture 경계, Transport 의미, Durability 정책과 Gate Sequencing의 근거를 제공한다. Architecture 승인이며 Runtime 구현·NATS 배포·Migration·Identity 계측 완료를 의미하지 않는다.
+
   - id: src.shared-ai-architecture
     kind: external_repository_document
     title: Shared AI current implementation and status projection
@@ -683,8 +697,8 @@ systems:
     current_implementation_hosts: []
     runtime_deployment:
       status: not_implemented
-      description: future NATS event-consumer boundary 후보이며 별도 Runtime과 platform-core Audit Module 모두 아직 구현되지 않음
-    lifecycle: deferred_future
+      description: ADR-0021 / DEC-070이 platform-core의 shared-audit 논리 Module과 platform-core:app background JetStream Consumer 배치를 Architecture 수준에서 승인했다. Module, Consumer Runtime과 별도 Audit Process는 모두 미구현이며 별도 Process는 승인되지 않았다
+    lifecycle: planned
     release: null
     verification:
       production_deployment: verification_required
@@ -695,9 +709,12 @@ systems:
     non_responsibilities:
       - 제품 Business Transaction Primary Store
       - 제품 원본 데이터 소유
+      - Application Logging / Metrics / Tracing 대체
+      - Event Sourcing Store
     source_refs:
       - src.system-landscape
       - src.adr-0015
+      - src.adr-0021
       - src.database-ownership-policy
       - src.adr-0017
 
@@ -1164,12 +1181,15 @@ communication_relations:
         - system.audit-consumer
       owner_scope: producer_business_data
       note: Producer는 Business Data를 소유하고 Audit Consumer는 Projection만 소유
-    failure_policy: Durable Consumer Retry DLQ 정책은 도입 시 결정
-    adoption_trigger: 검증된 Audit Use Case
+    failure_policy: ADR-0021이 at-least-once, explicit ACK, persistence before ACK, retry/redelivery와 terminal poison 처리를 Architecture 수준에서 확정했다. Stream/Consumer 구성과 DLQ 운영 Runbook은 AU-G3가 소유한다
+    adoption_trigger: ADR-0021 / DEC-070 Architecture 승인 완료; Runtime 도입은 AU-G3 이후
     constraints:
       - Audit Consumer는 제품 Business Transaction Primary Store가 아니다
+      - Product 요청 경로는 Audit 영속화·Consumer 처리를 동기 대기하지 않는다
+      - Audit 발행 실패가 이미 발생한 Security·Business 결과를 변경하지 않는다
     source_refs:
       - src.system-landscape
+      - src.adr-0021
       - src.adr-0015
 
   - id: relation.high-volume-service-to-grpc-peer
@@ -1501,14 +1521,14 @@ data_groups:
     display_name: Audit Event
     logical_owner: { kind: scope, scope: producer }
     current_store: { status: deferred, system_ref: system.audit-consumer, technology: null, description: Consumer 미구현 }
-    target_store: { status: deferred, system_ref: system.audit-consumer, blocked_by: [], description: Audit Store 후보 }
+    target_store: { status: planned, system_ref: system.audit-consumer, blocked_by: [], description: ADR-0021이 승인한 단일 Application Database 내 audit Schema Append-only Ledger; Schema는 아직 생성되지 않음 }
     write_authority: { system_refs: [], participant_scope: producer, note: 생산자는 event 발행; Consumer는 projection 기록 }
     read_consumers: { system_refs: [system.audit-consumer], participant_scopes: [] }
     sharing_method: [nats_jetstream_candidate]
     migration: { state: deferred, evidence: null }
-    follow_up: { state: deferred, description: 검증된 Audit Use Case와 Consumer 도입, related_jira: [] }
-    constraints: [Audit Projection은 Audit Consumer 소유 후보이다, Audit Consumer는 제품 Business Transaction Primary Store가 아니다, 제품은 원본 Business Data를 소유한다]
-    source_refs: [src.system-landscape, src.database-ownership-policy]
+    follow_up: { state: planned, description: "ADR-0021 Architecture 승인 완료; AU-G1 Contract, AU-G4 Append Store와 Retention 기간, AU-G5 Consumer 구현이 남음", related_jira: [RPL-107, RPL-108] }
+    constraints: [Audit Ledger는 Shared Audit 소유이다, Audit Consumer는 제품 Business Transaction Primary Store가 아니다, 제품은 원본 Business Data를 소유한다, Producer Audit Outbox는 Producer 자신의 Schema가 소유하며 audit Schema에 두지 않는다, Ledger는 Append-only이며 일반 UPDATE를 허용하지 않는다, Retention 기간 Policy 승인 전까지 자동 삭제를 수행하지 않는다, 원문 Secret과 불필요한 PII를 저장하지 않는다]
+    source_refs: [src.system-landscape, src.database-ownership-policy, src.adr-0021]
 
 architecture_gates:
   - id: gate.shared-identity-extraction
@@ -1609,19 +1629,19 @@ architecture_gates:
 
   - id: gate.nats-introduction
     display_name: NATS JetStream introduction
-    status: deferred
-    adoption_decision: not_decided
-    deferral_policy: accepted_with_constraints
-    current_state: 실제 Broker Runtime과 검증된 Audit/Event/Post-processing Use Case 없음
-    why_deferred: 현재 동기 HTTP로 충분하고 Broker 운영과 메시지 계약 비용이 발생함
+    status: approved_not_started
+    adoption_decision: accepted_with_constraints
+    deferral_policy: superseded_by_adr_0021
+    current_state: ADR-0021 / DEC-070이 Shared Audit를 첫 구체적 JetStream Use Case로 승인했다. Broker Runtime, Stream/Consumer provisioning과 Producer·Consumer 구현은 not_started다
+    why_deferred: Architecture는 승인됐고 Runtime 도입과 운영 Runbook은 AU-G3 이후 Gate가 소유한다
     required_evidence: [비동기 Use Case, Durability 요구, Retry/Replay 요구, Consumer 수와 처리량, DB Commit 이후 Event 발행 필요성, Idempotent Consumer 계약]
     adoption_triggers: [Audit Event, 장시간 Post-processing, 제품 상태 전파, 동기 호출로 장애 격리가 어려운 실제 문제]
     owner: { kind: scope, scope: platform_foundation }
     blocked_work: [Subject Naming, Event Envelope, Idempotency, Retry/DLQ, Retention, 운영 Runbook, Outbox 도입 판단]
-    related_jira: [RPL-20]
-    related_decisions: [DEC-064]
-    constraints: [기본 Delivery는 at-least-once, Consumer는 멱등성을 가져야 함, DB Commit 전 ACK 금지, Outbox는 필요한 Use Case에만 선택적으로 사용]
-    source_refs: [src.system-landscape, src.adr-0015, src.decision-dec-064]
+    related_jira: [RPL-20, RPL-107, RPL-108]
+    related_decisions: [DEC-064, DEC-070]
+    constraints: [기본 Delivery는 at-least-once, Consumer는 멱등성을 가져야 함, DB Commit 전 ACK 금지, Outbox는 필요한 Use Case에만 선택적으로 사용, Core NATS가 아닌 JetStream을 사용, exactly-once와 Product DB Commit·publish 사이 Distributed Atomicity를 주장하지 않음, Architecture 승인은 Broker Runtime 배포를 의미하지 않음]
+    source_refs: [src.system-landscape, src.adr-0015, src.decision-dec-064, src.adr-0021]
 
   - id: gate.shared-commerce-extraction
     display_name: Shared Commerce extraction
@@ -1641,19 +1661,19 @@ architecture_gates:
 
   - id: gate.audit-consumer-introduction
     display_name: Audit Consumer introduction
-    status: deferred
-    adoption_decision: not_decided
-    deferral_policy: accepted_with_constraints
-    current_state: Audit Consumer Runtime 없음; Audit Event Producer와 Retention 요구 미확정
-    why_deferred: 실제 Audit Use Case와 보존 정책이 없고 NATS 도입 Gate에 의존함
+    status: approved_not_started
+    adoption_decision: accepted_with_constraints
+    deferral_policy: superseded_by_adr_0021
+    current_state: ADR-0021 / DEC-070이 Shared Audit Foundation Architecture를 승인했다. Audit Consumer Runtime, audit Schema, Producer Outbox와 Identity 계측은 모두 not_started다. Retention 기간(AU-G4)과 Query/API Contract(AU-G6)는 아직 확정되지 않았다
+    why_deferred: Architecture는 승인됐고 Runtime 도입은 AU-G1~AU-G5 및 AU-G8 Gate 완료에 의존한다
     required_evidence: [보안·운영 Audit Event 목록, Producer Contract, Retention과 조회 요구, Replay와 복구 요구, 개인정보 최소화 기준]
     adoption_triggers: [독립 Audit Projection 필요, 제품별 Audit 중복 구현, 운영·보안 추적 요구, 비동기 보존 요구]
     owner: { kind: ref, ref: system.audit-consumer }
     blocked_work: [NATS Adoption, Event Contract, Retention Policy, Audit Store, PII Redaction, 운영 조회 기준]
-    related_jira: [RPL-20]
-    related_decisions: []
-    constraints: [Audit Consumer는 제품 Transaction Primary Store가 아님, Producer Business Data Ownership을 침범하지 않음, 원문 Secret과 불필요한 PII를 저장하지 않음]
-    source_refs: [src.system-landscape, src.adr-0015, src.database-ownership-policy]
+    related_jira: [RPL-20, RPL-107, RPL-108]
+    related_decisions: [DEC-070]
+    constraints: [Audit Consumer는 제품 Transaction Primary Store가 아님, Producer Business Data Ownership을 침범하지 않음, 원문 Secret과 불필요한 PII를 저장하지 않음, Architecture 승인은 Runtime 구현이 아님, Retention 기간 Evidence는 AU-G4에서 미완료, Query/조회 Evidence는 AU-G6에서 미완료, AU-G8은 AU-G7보다 선행해야 함]
+    source_refs: [src.system-landscape, src.adr-0015, src.database-ownership-policy, src.adr-0021]
 
   - id: gate.grpc-adoption
     display_name: gRPC adoption

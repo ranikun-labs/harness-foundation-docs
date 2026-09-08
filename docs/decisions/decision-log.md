@@ -19,6 +19,7 @@ related_adrs:
   - ADR-0016
   - ADR-0017
   - ADR-0020
+  - ADR-0021
 source_inputs:
   - docs/roadmap/product-roadmap.md
   - docs/architecture/shared-core-and-extensions.md
@@ -3914,6 +3915,161 @@ RPL-72
 RPL-53
 RPL-54
 RPL-55
+```
+
+---
+
+## DEC-070 — Shared Audit Foundation Architecture와 첫 JetStream 활성화를 승인한다
+
+**Status:** accepted_with_constraints
+**Owner:** architecture
+**Decision type:** architecture
+**Decision scope:** shared-platform / audit / messaging / persistence
+**Decision date:** 2026-09-08
+**Implementation status:** not_started
+**Reviewed at:** 2026-09-08
+**Decision source:** owner decision supplied in Shared Audit AU-G0 architecture review (`AU_G0_ARCHITECTURE_REVIEW_PASS`, Blocker 0 / Major 0)
+
+### Decision
+
+Shared Audit를 다수 Product가 공유하는 durable forensic/accountability 기록 경계로
+승인하고, ADR-0015 §7.6이 예고한 첫 번째 구체적 NATS JetStream Use Case로 활성화한다.
+
+```text
+Product / Domain
+→ AuditPublisher
+→ NATS JetStream Producer Adapter
+→ NATS JetStream
+→ Shared Audit Consumer
+→ PostgreSQL audit schema
+```
+
+초기 배치는 `platform-core`의 `shared-audit` 논리 Module과 `platform-core:app`의
+background JetStream Consumer다. 별도 Audit Executable·Microservice는 승인하지 않으며
+추출은 Independent Scaling, Material Resource Contention, Failure/Restart Isolation,
+Independent Deployment Cadence 또는 별도 Security/SLA Boundary Evidence를 요구한다.
+
+Shared Audit는 Application Logging, Metrics, Tracing, Debugging Telemetry, Event
+Sourcing 또는 Product Business Primary Storage가 아니다. Shared Audit Ownership은
+Identity Ownership이 아니며 Identity는 초기 Producer 후보다.
+
+### Transport와 Delivery
+
+Core NATS가 아닌 JetStream을 사용하고 durable stream, publish acknowledgement,
+durable consumer, explicit ACK, persistence before ACK, retry/redelivery/restart
+recovery, stable `event_id`, at-least-once delivery와 Idempotent Consumer를 전제한다.
+
+exactly-once delivery/processing과 Product DB Commit·NATS publish 사이의 Distributed
+Atomicity는 주장하지 않는다. Broker는 Delivery·Retry·Replay Infrastructure이며 영구
+forensic Source of Truth가 아니다.
+
+Product 요청 경로는 Audit PostgreSQL 영속화, Audit Consumer 처리와 Audit Query 처리를
+동기 대기하지 않는다. Audit 발행 실패는 이미 발생한 Security·Business 결과를 변경하지
+않는다.
+
+### Durability와 Outbox
+
+Audit Inclusion(`MUST_AUDIT` / `SHOULD_AUDIT` / `OBSERVABILITY_ONLY`), Durability
+(`SECURITY_CRITICAL` / `SECURITY_DECISION` / `BUSINESS_CRITICAL` / `INFORMATIONAL`),
+Retention(`SECURITY_LONG` / `SECURITY_SHORT` / `BUSINESS_LONG` /
+`INFORMATIONAL_SHORT`)은 독립 축이다. `MUST_AUDIT`는 `SECURITY_CRITICAL`이나
+fail-closed를 의미하지 않는다. Shared Audit의 `durability_class`는 Foundation의
+`criticality` 축에 대응한다.
+
+Transactional Outbox는 모든 Event가 아니라 Criticality가 요구하는 경우에만 적용한다.
+Producer PostgreSQL의 `SECURITY_CRITICAL` Mutation은 Domain Mutation과 Audit Outbox
+Record를 같은 Local Transaction에 기록한다.
+
+Producer Outbox는 Producer 자신의 Schema가 소유한다.
+
+```text
+identity.audit_outbox        Shared Identity 소유 / Shared Identity Migration
+audit.<ledger tables>        Shared Audit 소유 / Shared Audit Migration
+```
+
+`audit.audit_outbox`는 사용하지 않는다. Producer Outbox를 `audit` Schema에 두면
+Producer가 다른 Service Schema에 Transactional Write를 수행하게 되어 ADR-0020의
+Schema Ownership을 위반한다.
+
+권위 있는 Side Effect가 Redis 또는 외부 System에서 발생해 PostgreSQL Transaction을
+공유할 수 없는 경우 bounded JetStream publish와 acknowledgement를 시도하고, 발행
+실패는 metric과 alert로 관측 가능해야 한다. 재구성이 불가능한 잔여 창은 정직하게
+Residual Durability Limitation으로 문서화하며 존재하지 않는 Audit Fact를 만들지
+않는다.
+
+### Persistence
+
+동일한 물리 Application PostgreSQL 안의 별도 논리 `audit` Schema를 사용한다. Ledger는
+Append-only이며 Event Sourcing이 아니다. `audit_writer`(INSERT), `audit_reader`(SELECT),
+`audit_retention`(controlled DELETE), `audit_schema_owner`(DDL)로 논리 권한을 분리하고
+일반 UPDATE를 허용하지 않는다. 정정은 새 Event Append로 수행한다.
+
+Retention Class만 확정하고 구체적 보존 기간은 AU-G4의 Product/Compliance Policy다.
+해당 Policy가 승인되기 전까지 자동 Audit 삭제를 수행하지 않는다.
+
+### Gate Sequencing
+
+```text
+AU-G0 → AU-G1 → AU-G2 → AU-G3 → AU-G4 → AU-G5 → AU-G8 → AU-G6 → AU-G7 → AU-G9
+```
+
+AU-G8은 AU-G7보다 반드시 선행한다. AU-G8은 Outbox Mechanism, Publisher, Replay,
+Monitoring/Alerting을 소유하고 실제 Identity Producer Use-case Write를 포함하지
+않는다. AU-G7이 Identity Producer 통합을 소유한다.
+
+### Constraints and Non-goals
+
+- 이 결정은 Architecture 승인이며 `shared-audit` Module 구현, NATS/JetStream Runtime 배포, `audit` Schema 생성, Producer Outbox 구현, Identity Audit 계측 또는 Retention 삭제 활성화를 의미하지 않는다.
+- Kafka, Debezium/CDC, Elasticsearch, SIEM, blockchain/hash-chain, Event Sourcing, distributed 2PC, 순수 Architecture 목적의 Audit Microservice, 복잡한 Rules Engine과 Multi-region Replication은 초기 도입하지 않는다.
+- Audit는 기본적으로 raw password/hash, Token, JWT, Authorization Header, OAuth State/Code, PKCE, Provider Secret·Body, raw `providerSubject`, stacktrace, 전체 Request/Response Dump, `loginId`와 `email`을 저장하지 않는다. 인증된 Record는 opaque internal platform/account identifier로 상관관계를 표현하고 익명 실패는 `actor_type = ANONYMOUS`를 사용하며 Account Identity를 역추론하지 않는다.
+- Audit Ledger는 Public/End-user API가 아니다. 초기 Reader는 인가된 ADMIN/SECURITY Human Principal과 승인된 내부 Service Principal로 제한하며 Human/Admin 조회 자체가 감사 대상이다.
+- 전용 Audit DataSource Pool과 별도 Process는 Runtime Evidence 전까지 요구하지 않는다.
+- AU-G9의 External Producer 인증은 자체 Contract/Decision을 요구하며 ADR-0019의 임시 `platform-identity` → Carelog Credential을 재사용하지 않는다.
+- Shared Identity는 CLOSED 상태를 유지한다. 이 결정은 Identity를 재개방·재설계하지 않는다.
+
+### Affected Documents
+
+```text
+docs/adr/ADR-0021-shared-audit-foundation-architecture.md
+docs/adr/ADR-0013-target-deployment-and-data-boundaries.md
+docs/adr/ADR-0015-platform-communication-messaging-scaling.md
+docs/adr/ADR-0020-shared-platform-postgresql-schema-ownership.md
+docs/architecture/repository-service-boundaries.md
+docs/contracts/backend-service-foundation/event-envelope-contract.md
+catalog/system-catalog.yaml
+docs/adr/README.md
+docs/decisions/decision-log.md
+```
+
+### Supersession
+
+```text
+partial_supersedes:
+- ADR-0013 §8의 중앙 Audit Module이 즉시 구현 대상이 아니라는 Architecture 미승인 표현
+
+superseded_by: []
+```
+
+### References
+
+```text
+ADR-0013
+ADR-0015
+ADR-0018
+ADR-0019
+ADR-0020
+ADR-0021
+DEC-060
+DEC-064
+DEC-069
+RPL-20
+RPL-52
+RPL-103
+RPL-107
+RPL-108
+AU_G0_ARCHITECTURE_REVIEW_PASS
+platform-services/main@e5e656931c570b276d0c8900254efe9067a16b34
+harness-foundation-docs/main@a1ac1ce09e3a2da5f0e85f681ad05a36302a01f9
 ```
 
 ---

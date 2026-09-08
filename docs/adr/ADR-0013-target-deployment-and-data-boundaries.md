@@ -30,12 +30,14 @@ superseded_by:
   - ADR-0014
   - ADR-0017
   - ADR-0020
+  - ADR-0021
 superseded_scope:
   - "Shared Platform Server 명칭 범위"
   - "Shared Platform Server에서 파생된 물리 그룹과 Database 예시 표현"
   - "Gateway와 Identity 범위의 Repository·Process physicalization 미승인"
   - "Audit를 별도 Process로 분리할 수 없다는 영구 금지 해석"
   - "§6의 복수 Logical Database와 shared_services_db 기반 PostgreSQL target topology 표현"
+  - "§8의 중앙 Audit Module Architecture 미승인·Deferred 범위"
 remaining_valid_scope:
   - "Target Deployment Unit 구성"
   - "Identity·Commerce·Audit의 Module·Data·Schema·Migration Ownership 분리"
@@ -49,6 +51,8 @@ replacement_decision_refs:
   - DEC-067
   - ADR-0020
   - DEC-069
+  - ADR-0021
+  - DEC-070
 ---
 
 # ADR-0013: 목표 Deployment Unit과 PostgreSQL 데이터 소유권 경계를 정의한다
@@ -354,8 +358,22 @@ Service별 Local Outbox로 처리할 수 있다.
 
 Shared Audit API를 업무 Transaction 안에서 동기 호출하도록 강제하지 않는다.
 
-중앙 Audit Module은 즉시 구현 대상이 아니다.
-실제 통합 검색·보존·감사 요구가 생겼을 때 활성화한다.
+> **Partial supersession:** 중앙 Audit Module이 즉시 구현 대상이 아니라는 이 절의
+> Architecture 미승인 표현은
+> [ADR-0021](./ADR-0021-shared-audit-foundation-architecture.md) / DEC-070으로
+> 대체됐다. Shared Audit Foundation Architecture는 `accepted_with_constraints`이며
+> ADR-0015 §7.6의 첫 NATS JetStream Use Case로 활성화됐다.
+>
+> ```text
+> architecture approved
+> + implementation pending
+> ```
+>
+> 이 절의 Product별 Audit Event 소유권, Shared Audit 동기 호출 강제 금지와
+> Service별 Local Outbox 원칙은 계속 유효하다.
+
+중앙 Audit Module의 Architecture는 ADR-0021로 승인됐고 구현은 아직 시작되지 않았다.
+통합 검색·보존·감사 요구에 대한 Gate Sequencing은 ADR-0021 §7이 소유한다.
 
 ## 9. Physical Cluster Extraction
 
