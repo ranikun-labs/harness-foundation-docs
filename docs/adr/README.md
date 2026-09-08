@@ -28,10 +28,11 @@
 | ADR | Status | Title | Relationship |
 |---|---|---|---|
 | [ADR-0012](./ADR-0012-shared-identity-commerce-boundary.md) | accepted | Shared Identity와 Shared Commerce의 논리적 책임 경계를 분리한다 | ADR-0013/0014가 이 논리 경계를 유지 |
-| [ADR-0013](./ADR-0013-target-deployment-and-data-boundaries.md) | accepted_with_constraints | 목표 Deployment Unit과 PostgreSQL 데이터 소유권 경계를 정의한다 | 명칭은 ADR-0014, Gateway·Identity 물리화와 Audit 영구 금지 해석은 ADR-0017로 partial supersession |
+| [ADR-0013](./ADR-0013-target-deployment-and-data-boundaries.md) | accepted_with_constraints | 목표 Deployment Unit과 PostgreSQL 데이터 소유권 경계를 정의한다 | 명칭은 ADR-0014, Gateway·Identity 물리화와 Audit 영구 금지 해석은 ADR-0017, PostgreSQL target placement는 ADR-0020 / DEC-069로 partial supersession |
 | [ADR-0014](./ADR-0014-shared-services-deployment-unit-naming.md) | accepted | Identity·Commerce·Audit 공동 배포 후보를 Shared Services Deployment Unit으로 구분한다 | ADR-0013 명칭을 대체; 구체 Process는 ADR-0017이 partial supersede |
 | [ADR-0015](./ADR-0015-platform-communication-messaging-scaling.md) | accepted_with_constraints | 공통 플랫폼 통신·메시징·확장 기준을 정의한다 | Shared Identity 추출 미승인만 ADR-0017로 partial supersession; 통신 불변조건 유지 |
 | [ADR-0016](./ADR-0016-primary-deployment-and-disaster-recovery.md) | accepted_with_constraints | Mac mini Primary와 AWS DR 기반 배포·재해복구 경계를 정의한다 | implementation `not_started`; Production Adoption `not_approved`; RPL-42 / DEC-066 |
 | [ADR-0017](./ADR-0017-shared-platform-gateway-identity-physicalization.md) | accepted_with_constraints | Shared Gateway와 Shared Identity의 물리화를 승인한다 | Gateway·Identity only; implementation/runtime/release `not_started` / `not_supported` / `not_released`; DEC-067 |
 | [ADR-0018](./ADR-0018-shared-ai-platform-core-placement.md) | accepted | Shared AI Phase 1을 Platform Core 논리 모듈로 배치한다 | Effective 2026-08-26; ADR-0017 §7 placement assumption만 partial supersede; Shared AI ADR-0005 coordinated acceptance; technology deferred |
 | [ADR-0019](./ADR-0019-rpl-55-slice-a-interim-service-auth.md) | accepted_with_constraints | RPL-55 Slice A′의 임시 서비스 인증 경계를 기록한다 | `platform-identity` → Carelog CRM identity projection의 단일 endpoint-scoped credential; DEC-068; portfolio-wide service auth 아님 |
+| [ADR-0020](./ADR-0020-shared-platform-postgresql-schema-ownership.md) | accepted_with_constraints | Shared Platform PostgreSQL를 단일 Application Database와 Schema Ownership으로 정렬한다 | ADR-0013 §6의 PostgreSQL target placement를 partial supersede; DEC-069 |

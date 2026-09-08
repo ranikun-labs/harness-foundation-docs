@@ -1040,37 +1040,48 @@ Carelog cutover와 production adoption은 별도 Evidence가 필요하다.
 
 ### 10.1 PostgreSQL 목표 배치
 
-초기에는 하나의 PostgreSQL 물리 Cluster를 공유할 수 있다.
+> **Partial supersession by [ADR-0020](../adr/ADR-0020-shared-platform-postgresql-schema-ownership.md) / DEC-069:**
+> 이 절의 이전 Database-per-boundary Target 표현은 PostgreSQL placement 범위에서만
+> 부분 대체됐다. 기존 역사와 Supersession 관계는 ADR-0013과 DEC-058에 보존한다.
+
+현재 Target은 하나의 PostgreSQL Physical Instance와 하나의 Ranikun Labs Application
+Database 안에서 Schema Namespace로 Data Ownership을 분리하는 구조다.
 
 G1 Compose skeleton은 PostgreSQL physical instance 1개와 Redis physical instance
 1개만 표현할 수 있다. 이는 topology constraint이며 schema/table/migration, Redis ACL,
 business key contract, Product의 Identity data access 또는 Source of Truth 이동을
-승인하지 않는다.
+실행하지 않는다. Identity Schema Binding과 Migration Mechanism은 G3가, 최종 Live
+Backfill과 Auth Cutover는 G4가 소유한다.
 
 ```text
-PostgreSQL Physical Cluster
-├── carelog_db
-├── finance_db
-├── dev_cloud_db
-├── ai_runtime_db
-└── shared_services_db
+PostgreSQL physical instance
+└── Ranikun Labs application database
+    ├── carelog schema
+    │   └── Carelog product-owned data
     ├── identity schema
-    ├── commerce schema
-    └── audit schema
+    │   └── Shared Identity-owned persistence
+    ├── finance schema
+    │   └── Finance-owned persistence
+    └── future product/shared schemas
 ```
 
-이 구조는 목표 논리 배치이며 `shared_services_db`는 실제 Database 이름이 아닌 예시명이다.
-실제 Cluster, Database, Schema 생성은 구현 시점의 별도 승인 대상이다.
+Physical PostgreSQL을 공유해도 Data Ownership은 공유하지 않는다. Application
+Ownership과 Access Boundary는 Schema 단위로 분리한다. 다른 서비스가 소유한
+Schema/Table에 직접 접근하지 않으며, Cross-service Foreign Key는 허용하지 않는다.
+Product와 Identity의 연동은 Service Contract를 사용한다.
 
-| Logical Database / Schema | Data Source of Truth | Migration Owner |
+| Target Schema / Owned Data | Data Source of Truth | Migration Owner |
 |---|---|---|
-| `carelog_db` | Carelog CRM Server | Carelog CRM |
-| `finance_db` | Finance Harness Server | Finance Harness |
-| `dev_cloud_db` | Dev Harness Cloud Server | Dev Harness Cloud |
-| `ai_runtime_db` | AI Runtime Server | AI Runtime |
-| `shared_services_db.identity` | Shared Identity Module | Shared Identity Module |
-| `shared_services_db.commerce` | Shared Commerce Module | Shared Commerce Module |
-| `shared_services_db.audit` | Shared Services Audit Module | Shared Services Audit Module |
+| `carelog` | Carelog CRM Server | Carelog CRM |
+| `identity` | Shared Identity | Shared Identity |
+| `finance` | Finance Harness | Finance Harness |
+| future product/shared schemas | Respective product or shared owner | Respective owner |
+
+Shared Identity가 소유하는 핵심 Persistence는 `identity.platform_accounts`,
+`identity.password_credentials`, `identity.external_identities`와 Identity
+product-client registry다. Carelog가 소유하는 `users`와 CRM organization/role/customer
+Data는 Carelog Schema에 남는다. `users.account_id`는 Product-side Reference Key로
+남을 수 있지만 Cross-schema 또는 Cross-service Foreign Key로 만들지 않는다.
 
 ### 10.2 Shared Identity 논리 데이터
 

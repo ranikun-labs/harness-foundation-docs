@@ -29,11 +29,13 @@ supersedes: []
 superseded_by:
   - ADR-0014
   - ADR-0017
+  - ADR-0020
 superseded_scope:
   - "Shared Platform Server 명칭 범위"
   - "Shared Platform Server에서 파생된 물리 그룹과 Database 예시 표현"
   - "Gateway와 Identity 범위의 Repository·Process physicalization 미승인"
   - "Audit를 별도 Process로 분리할 수 없다는 영구 금지 해석"
+  - "§6의 복수 Logical Database와 shared_services_db 기반 PostgreSQL target topology 표현"
 remaining_valid_scope:
   - "Target Deployment Unit 구성"
   - "Identity·Commerce·Audit의 Module·Data·Schema·Migration Ownership 분리"
@@ -45,6 +47,8 @@ replacement_decision_refs:
   - DEC-060
   - ADR-0017
   - DEC-067
+  - ADR-0020
+  - DEC-069
 ---
 
 # ADR-0013: 목표 Deployment Unit과 PostgreSQL 데이터 소유권 경계를 정의한다
@@ -203,34 +207,108 @@ V1은 로그인·결제·외부 Cloud 서비스 없이 전체 핵심 Workflow를
 
 ## 6. PostgreSQL Placement
 
-초기에는 하나의 PostgreSQL 물리 Cluster를 공유할 수 있다.
+> **Partial supersession by [ADR-0020](./ADR-0020-shared-platform-postgresql-schema-ownership.md) / DEC-069:**
+> 이 절의 이전 `carelog_db`, `finance_db`, `dev_cloud_db`, `ai_runtime_db`,
+> `shared_services_db` 표현은 PostgreSQL Database 경계를 현재 Target으로 정하는
+> 범위에서만 부분 대체됐다. 기존 결정의 기록은 이 ADR과 DEC-058에 보존한다.
+
+현재 Target은 하나의 PostgreSQL Physical Instance와 하나의 Ranikun Labs
+Application Database 안에서 Schema Namespace로 소유권을 분리하는 것이다.
 
 ```text
-PostgreSQL Physical Cluster
-├── carelog_db
-├── finance_db
-├── dev_cloud_db
-├── ai_runtime_db
-└── shared_services_db
+PostgreSQL Physical Instance
+└── Ranikun Labs application database
+    ├── carelog schema
+    │   └── Carelog product-owned data
     ├── identity schema
-    ├── commerce schema
-    └── audit schema
+    │   └── Shared Identity-owned persistence
+    ├── finance schema
+    │   └── Finance-owned persistence
+    └── future product/shared schemas
 ```
 
-이 배치는 Database와 Schema의 목표 소유권을 나타낸다.
-실제 Cluster, Database와 Schema 생성 명령을 승인하지 않는다.
+Physical PostgreSQL을 공유해도 Data Ownership은 공유하지 않는다.
+하나의 Application Database 안에서도 Application Ownership과 Access Boundary는
+Schema 단위로 분리한다. Cross-service Foreign Key는 허용하지 않으며,
+Product에서 Identity로의 연동은 Database 직접 접근이 아닌 Service Contract를 사용한다.
 
-| Logical Database / Schema | Source of Truth Owner | Migration Owner |
+현재 구현에서 Carelog Table이 아직 `public` Schema에 존재할 수 있다는 Source Reality와
+Target `carelog` Schema를 구분한다. `public → carelog` rename은 G3 Identity
+Cross-Schema Migration과 동시에 수행하지 않으며, 별도 Sequencing과 Owner Decision으로
+다룬다.
+
+| Target Schema / Owned Data | Source of Truth Owner | Schema / Migration Owner |
 |---|---|---|
-| `carelog_db` | Carelog CRM Server | Carelog CRM |
-| `finance_db` | Finance Harness Server | Finance Harness |
-| `dev_cloud_db` | Dev Harness Cloud Server | Dev Harness Cloud |
-| `ai_runtime_db` | AI Runtime Server | AI Runtime |
-| `shared_services_db.identity` | Identity Module | Identity Module |
-| `shared_services_db.commerce` | Commerce Module | Commerce Module |
-| `shared_services_db.audit` | Audit Module | Audit Module |
+| `carelog` | Carelog CRM Server | Carelog CRM |
+| `identity` | Shared Identity | Shared Identity |
+| `finance` | Finance | Finance |
+| future product/shared schemas | Respective product or shared owner | Respective owner |
 
-같은 물리 Cluster 또는 Database를 사용해도 소유권은 합쳐지지 않는다.
+Identity가 소유하는 핵심 Persistence는 다음과 같다.
+
+- `identity.platform_accounts`
+- `identity.password_credentials`
+- `identity.external_identities`
+- Identity product-client registry
+
+Carelog가 소유하는 `users`, CRM organization/role/customer Data는 Carelog Schema에
+남는다. `users.account_id`는 Product-side Weak Reference로 남을 수 있지만 Cross-schema
+또는 Cross-service Foreign Key는 만들지 않는다.
+
+### 6.1 G3 / G4 Migration Boundary
+
+G3가 소유한다.
+
+- Identity Schema Ownership와 Binding
+- Single-instance consolidation mechanism
+- Idempotent one-shot backfill mechanism
+- Deterministic migration verification
+- Migration rehearsal evidence
+- Password와 OAuth continuity verification
+
+G4가 소유한다.
+
+- Final write freeze
+- Live data에 대한 final backfill execution
+- Deterministic verification
+- Active authentication traffic cutover
+- Cutover observation
+- Routing rollback
+
+> G3 completion does not mean that live production identity rows have already been cut over.
+> G3 establishes and verifies the migration mechanism; the final data execution occurs in the
+> G4 cutover window while Carelog is still the pre-cutover writer.
+
+따라서 G3 완료는 Live Production Identity Row의 Cutover 완료나 G3 COMPLETE 선언을
+의미하지 않는다. G4는 Carelog가 Pre-cutover Writer인 짧은 Write Freeze 안에서 최종
+Backfill과 검증을 수행한 뒤 Auth Traffic을 전환한다.
+
+### 6.2 Migration Strategy
+
+권장 전략은 다음과 같다.
+
+```text
+single-instance schema isolation
++ idempotent one-shot backfill
++ short write freeze
++ deterministic verification
+```
+
+다음은 사용하지 않는다.
+
+- All forms of Identity Data dual-write during partial cutover are prohibited,
+  including transitional or short-lived dual-write.
+- CDC / Debezium
+- Kafka migration pipeline
+- distributed transaction
+- separate migration service
+
+이는 [ADR-0017](./ADR-0017-shared-platform-gateway-identity-physicalization.md)의
+Identity Data dual-writer 금지와 정합하다.
+
+Historical Refresh Session은 Identity Migration의 필수 데이터로 보지 않는다.
+현재 권장 가능한 최소 G4 정책은 Forced Re-login이지만, 이는 별도 Product/Runtime
+Policy가 확정되기 전까지 Canonical Fixed Rule이 아닌 Recommended Cutover Policy다.
 
 ## 7. Cross-service Data Access
 

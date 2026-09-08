@@ -18,6 +18,7 @@ related_adrs:
   - ADR-0015
   - ADR-0016
   - ADR-0017
+  - ADR-0020
 source_inputs:
   - docs/roadmap/product-roadmap.md
   - docs/architecture/shared-core-and-extensions.md
@@ -2878,6 +2879,11 @@ supersedes: []
 superseded_by:
 - DEC-060 (Shared Platform Server 명칭 및 물리 그룹 파생 명칭 범위만)
 - DEC-067 (Gateway·Identity physicalization 미승인과 Audit 영구 비분리 해석 범위만)
+- DEC-069 (PostgreSQL placement: multiple logical databases vs one application database with schema namespaces only)
+
+DEC-069은 DEC-058의 역사적 기록 전체를 대체하지 않으며, PostgreSQL placement 표현에
+한해서만 현재 Target을 명확히 한다. Module·Data·Schema·Migration Ownership과
+no cross-service DB/FK/JOIN 원칙은 계속 유효하다.
 ```
 
 ADR-0012와 DEC-057의 논리 경계를 유지하며 이를 supersede하지 않는다.
@@ -3908,6 +3914,137 @@ RPL-72
 RPL-53
 RPL-54
 RPL-55
+```
+
+---
+
+## DEC-069 — Shared Platform PostgreSQL를 단일 Application Database와 Schema Ownership으로 통합한다
+
+**Status:** accepted_with_constraints
+**Owner:** architecture
+**Decision type:** architecture
+**Decision scope:** shared-platform / persistence / schema / migration
+**Decision date:** 2026-09-08
+**Implementation status:** not_started
+**Reviewed at:** 2026-09-08
+**Decision source:** owner decision supplied in G3 Cross-Schema Migration Architecture Audit
+
+### Decision
+
+PostgreSQL physical runtime은 하나로 통합하고, 하나의 Ranikun Labs Application
+Database 안에서 Schema Namespace로 Product와 Shared Platform의 Data Ownership을
+분리한다.
+
+```text
+PostgreSQL Physical Instance (1)
+└── Ranikun Labs application database (1)
+    ├── carelog schema
+    │   └── Carelog product-owned data
+    ├── identity schema
+    │   └── Shared Identity-owned persistence
+    ├── finance schema
+    │   └── Finance-owned persistence
+    └── future product/shared schemas
+```
+
+Physical PostgreSQL 공유는 Data Ownership 공유를 의미하지 않는다. Application
+Ownership과 Access Boundary는 Schema 단위로 분리하며, Cross-service Foreign Key와
+다른 서비스의 Database 직접 접근을 금지한다. Product와 Identity의 연동은 Service
+Contract를 사용한다.
+
+Identity는 다음을 소유한다.
+
+- `identity.platform_accounts`
+- `identity.password_credentials`
+- `identity.external_identities`
+- Identity product-client registry
+
+Carelog는 `users`와 CRM organization/role/customer Data를 소유한다. `users.account_id`는
+Product-side Reference Key로 남을 수 있지만 Cross-schema 또는 Cross-service Foreign Key는
+허용하지 않는다. Finance는 Finance-owned Schema Boundary를 유지한다.
+
+현재 Carelog Table이 `public` Schema에 존재하는 Source Reality와 Target `carelog`
+Schema를 구분한다. `public → carelog` Rename은 G3 Identity Cross-Schema Migration과
+동시에 수행하지 않으며 별도 Sequencing으로 다룬다.
+
+### G3 / G4 Boundary
+
+G3가 Identity Schema Ownership/Binding, Single-instance Consolidation Mechanism,
+Idempotent One-shot Backfill, Deterministic Verification, Rehearsal Evidence와
+Password/OAuth Continuity Verification을 소유한다.
+
+G4가 Final Write Freeze, Live-data Final Backfill, Deterministic Verification, Active
+Authentication Traffic Cutover, Observation과 Routing Rollback을 소유한다.
+
+> G3 completion does not mean that live production identity rows have already been cut over.
+> G3 establishes and verifies the migration mechanism; the final data execution occurs in the
+> G4 cutover window while Carelog is still the pre-cutover writer.
+
+G3 completion은 Live Production Identity Row의 Cutover 완료나 Production Migration
+완료를 의미하지 않는다.
+
+### Migration Strategy
+
+권장 전략은 다음과 같다.
+
+```text
+single-instance schema isolation
++ idempotent one-shot backfill
++ short write freeze
++ deterministic verification
+```
+
+Partial cutover 동안 Identity Data dual-write는 transitional 또는 short-lived를
+포함한 모든 형태를 금지한다. CDC/Debezium, Kafka migration pipeline, Distributed
+Transaction과 Separate Migration Service도 사용하지 않는다. 이는 [ADR-0017](../adr/ADR-0017-shared-platform-gateway-identity-physicalization.md)의
+Identity Data dual-writer 금지와 정합하다.
+
+Historical Refresh Session은 Identity Migration의 필수 데이터가 아니다. Forced Re-login은
+현재 권장 가능한 최소 G4 Cutover Policy이지만, 별도 Product/Runtime Policy가 확정되기
+전까지 Canonical Fixed Rule이 아닌 Recommended Policy다.
+
+### Constraints and Non-goals
+
+- 이 결정은 Canonical Persistence Topology와 Ownership Boundary를 정하며 G3 COMPLETE를 선언하지 않는다.
+- G3 Migration Mechanism과 Rehearsal은 실제 Live Production Row의 최종 Cutover와 다르다.
+- `public → carelog` Schema Rename, Source 구현, Flyway 작성·실행, Runtime 변경과 Production Promotion은 이 결정의 범위가 아니다.
+- ADR-0017의 G3/G4 Sequencing과 Identity Data dual-writer 금지 규칙을 유지한다.
+
+### Affected Documents
+
+```text
+docs/adr/ADR-0013-target-deployment-and-data-boundaries.md
+docs/adr/ADR-0017-shared-platform-gateway-identity-physicalization.md
+docs/adr/ADR-0020-shared-platform-postgresql-schema-ownership.md
+docs/architecture/repository-service-boundaries.md
+docs/adr/README.md
+docs/decisions/decision-log.md
+```
+
+### Supersession
+
+```text
+partial_supersedes:
+- DEC-058의 PostgreSQL placement와 복수 Logical Database target 표현만
+
+superseded_by: []
+
+remaining_valid_scope:
+- Target Deployment Unit 구성
+- Identity·Commerce·Audit Module/Data/Schema/Migration Ownership
+- no cross-service DB/FK/JOIN
+- Commerce deferral과 Audit의 현재 미구현 상태
+```
+
+### References
+
+```text
+ADR-0013
+ADR-0017
+ADR-0020
+DEC-058
+DEC-067
+G3 Cross-Schema Migration Architecture Audit
 ```
 
 ---
