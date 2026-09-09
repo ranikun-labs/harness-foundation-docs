@@ -956,7 +956,7 @@ Target Repository and Deployment Units
         ├── identity                         ACTIVE target
         ├── shared-ai                        Phase 1 same-JVM logical module; RPL-107 sync Slice A implemented
         ├── commerce                         DEFERRED
-        └── shared-audit                     ADR-0021 architecture-approved; implementation not started
+        └── shared-audit                     AU-G2 producer semantic boundary implemented; transport, store, consumer and producer instrumentation not implemented
 ```
 
 목표 Deployment Unit 중 G1 inert Runtime Foundation은 `RPL-72`로 구현할 수 있다.
@@ -977,7 +977,7 @@ extraction, Product consumer integration, Streaming 또는 Product release를
 1. Dev Harness V1 Local Core는 Shared Identity·Commerce·Audit·Shared AI에 의존하지 않는다.
 2. Dev Harness Cloud는 실제 Cloud 기능 개발 시점까지 구현을 유예한다.
 3. Commerce는 실제 유료화 전까지 구현을 유예할 수 있다.
-4. Shared Audit는 ADR-0021 / DEC-070으로 Architecture가 승인된 `platform-core` 논리 Module이며 구현은 아직 시작되지 않았다. 별도 Audit Process는 여전히 승인되지 않았고 향후 NATS consumer 추출은 새 Trigger와 Decision을 요구한다.
+4. Shared Audit는 ADR-0021 / DEC-070으로 Architecture가 승인된 `platform-core` 논리 Module이며 AU-G2 producer semantic boundary가 구현됐다. JetStream transport, Audit store, consumer, durability mechanism과 producer instrumentation은 아직 구현되지 않았다. 별도 Audit Process는 여전히 승인되지 않았고 향후 NATS consumer 추출은 새 Trigger와 Decision을 요구한다.
 5. Identity·Commerce·Audit는 같은 Deployment Unit에서도 코드·데이터·Migration 소유권을 분리한다.
 6. AI Runtime은 Provider 실행·Routing·Retry·Fallback·Token/Cost Metering·Trace를 담당한다.
 7. 제품별 Prompt·Policy·Context Schema·Evaluation은 각 Product Server가 소유한다.
@@ -1021,7 +1021,7 @@ platform-services
     ├── identity             ACTIVE target
     ├── shared-ai            Phase 1 same-JVM logical module; RPL-107 sync Slice A implemented
     ├── commerce             DEFERRED
-    └── shared-audit         ADR-0021 architecture-approved; not started
+    └── shared-audit         AU-G2 producer semantic boundary implemented; later runtime gates pending
 ```
 
 하나의 Repository라는 이유로 두 Process를 합치지 않는다. `platform-core`가
@@ -1325,11 +1325,15 @@ opaque identifier를 저장한다.
 
 ```text
 architecture approved
-+ implementation not started
++ AU-G2 producer semantic boundary implemented
++ transport/store/consumer/durability/instrumentation not implemented
 ```
 
 Shared Audit는 `platform-core`의 `shared-audit` 논리 Module과 `platform-core:app`의
-background JetStream Consumer로 배치되며, 별도 Audit Executable은 승인되지 않았다.
+future background JetStream Consumer로 배치되며, 현재 구현된 것은 producer semantic
+boundary다. JetStream Consumer, Audit Ledger, Producer Outbox와 Identity instrumentation은
+각각 AU-G5/AU-G4/AU-G8/AU-G7 범위이며 아직 구현되지 않았다. 별도 Audit Executable은
+승인되지 않았다.
 Audit Ledger는 `audit` Schema의 Append-only 저장소이고, Producer의 Audit Outbox는
 Producer 자신의 Schema가 소유한다. Gate Sequencing은 ADR-0021 §7이 소유한다.
 
@@ -1431,13 +1435,14 @@ platform-services                    repository existing
     ├── identity                     ACTIVE target
     ├── shared-ai                    Phase 1 same-JVM logical module; RPL-107 sync Slice A implemented
     ├── commerce                     DEFERRED
-    └── shared-audit                 ADR-0021 architecture-approved; not started
+    └── shared-audit                 AU-G2 producer semantic boundary implemented; later runtime gates pending
 ```
 
 `identity`는 Account, External Identity, Auth/OAuth, Token/Principal,
 Product Client Registry, OAuth State와 Identity-owned Persistence를 소유한다.
 Commerce 구현은 승인되지 않았다. Shared Audit는 ADR-0021로 Architecture가 승인됐고
-구현은 시작되지 않았다. 이전 boundary는 Shared AI를 이 Repository
+AU-G2 producer semantic boundary가 구현됐다. Transport·store·consumer·producer
+instrumentation은 아직 구현되지 않았다. 이전 boundary는 Shared AI를 이 Repository
 밖의 future independent Python Runtime 후보로 기술했다. RPL-103 Stage A `ADR-0018`과
 Shared AI ADR-0005의 2026-08-26 coordinated acceptance는 Phase 1 placement를
 `platform-core` same-JVM logical module로 확정하고 이전 placement assumption만 partial

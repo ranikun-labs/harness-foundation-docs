@@ -1,11 +1,11 @@
 # Shared Audit Producer Event Contract and Identity Initial Catalog
 
-- Status: Draft — independent contract review required
+- Status: Draft — canonical AU-G1 contract; AU-G1 review passed
 - Contract scope: AU-G1 producer wire contract and canonical event-policy registry
 - Canonical owner: `harness-foundation-docs`
 - Architecture predecessor: [ADR-0021](../../adr/ADR-0021-shared-audit-foundation-architecture.md) / DEC-070
-- Implementation evidence: `ranikun-labs/platform-services@e80fdae50a6274dd8398815501ccd5d7348c260e`
-- Implementation completed: No
+- AU-G2B implementation evidence: `ranikun-labs/platform-services@2009a46e68fb2289654b52065958a18313d9f6ce`
+- Producer semantic boundary: Implemented
 - Runtime supported: No
 - Product released: No
 
@@ -18,9 +18,8 @@ producers including Shared Identity, Carelog, Finance, Shared AI, Notification, 
 Subscription & Payments.
 
 ```text
-AU-G1 contract proposed for review
-!= shared-audit module implemented
-!= AuditPublisher implemented
+AU-G1 canonical contract and Identity catalog
++ AU-G2 producer semantic publisher boundary implemented
 != JetStream stream or consumer deployed
 != audit schema created
 != producer outbox implemented
@@ -31,6 +30,24 @@ AU-G1 contract proposed for review
 Shared Audit is not application logging, metrics, tracing, debugging telemetry, event sourcing,
 or Product primary business storage. The producer owns the fact and its meaning. Shared Audit
 owns the append-only forensic record after consumption.
+
+### 1.1 AU-G2 producer boundary implementation status
+
+At `platform-services/main@2009a46e68fb2289654b52065958a18313d9f6ce`,
+`platform-core:shared-audit` is a non-executable Java 21 `java-library` logical feature module
+composed opt-in into `platform-core:app`. It provides a provider-neutral `AuditPublisher`,
+static policy resolution by `event_type` and `schema_version`, producer-side actor/resource,
+per-event payload and privacy validation, and an internal `AuditEventCapture` mechanism boundary.
+
+`Accepted` means that canonical validation and policy resolution succeeded and the selected
+capture mechanism accepted custody according to its capability. It does not mean broker
+publication, broker acknowledgement, Audit PostgreSQL persistence, consumer processing,
+durable replay, or exactly-once behavior. The default capture remains unavailable, and
+`SECURITY_CRITICAL` events cannot be `Accepted` until AU-G8 supplies the required
+durability-capable capture.
+
+This implementation status does not add transport or persistence metadata to the producer
+wire contract. In particular, `recorded_at` remains consumer/store persistence metadata.
 
 ## 2. Resolved design choices
 
@@ -175,7 +192,8 @@ not carry a platform account resource derived from the submitted credential or t
 
 Initial actions are `CREATE`, `UPDATE`, `AUTHENTICATE`, `AUTHORIZE`,
 `INITIATE_AUTHORIZATION`, `REFRESH`, `REVOKE`, `VERIFY`, `READ`, and `EXECUTE`.
-New values require canonical catalog review; producers must not invent synonyms.
+New canonical action values require catalog/contract review and must follow the compatibility
+rules in §9. Producers may not emit arbitrary unregistered actions or invent synonyms.
 
 | Outcome | Meaning |
 |---|---|
@@ -259,8 +277,10 @@ classification_owner
 approval_reference
 ```
 
-The consumer resolves policy by supported `event_type` and `schema_version`. An unregistered or
-unclassified Audit event is treated as critical and is not silently accepted.
+The canonical policy key is `event_type` plus `schema_version`. The AU-G2 producer boundary
+resolves this static policy before capture; a future consumer uses the same key for its own
+canonical validation. An unregistered or unclassified Audit event is treated as critical and is
+not silently accepted.
 
 `durability_class` maps one-to-one to Foundation `criticality` with the same value:
 `SECURITY_CRITICAL`, `SECURITY_DECISION`, `BUSINESS_CRITICAL`, or `INFORMATIONAL`.
@@ -454,11 +474,16 @@ must not allow a reader to determine whether the submitted account exists. No ha
 correlation derived from submitted identity is introduced by default. Any exception requires an
 explicit privacy/security policy approval and contract revision.
 
-## 15. Deferred implementation gates
+## 15. Implementation gates
 
-This contract preserves the ADR-0021 gate order and does not implement later work:
+AU-G2's producer semantic publisher boundary is implemented as recorded in §1.1. It remains
+provider-neutral, performs no network or persistence work, and does not satisfy the later
+transport, store, consumer, durability, query, or producer-integration gates.
 
-- AU-G2: publisher boundary
+In particular, `ID-AUD-05`, `ID-AUD-09`, and `ID-AUD-10` remain unable to claim `Accepted`
+without the AU-G8 durability-capable capture. This contract preserves the ADR-0021 gate order;
+the following work remains deferred:
+
 - AU-G3: JetStream subject, transport, retry/configuration values, and operations
 - AU-G4: append store, fingerprint/dedup SQL, retention durations, and deletion policy
 - AU-G5: consumer

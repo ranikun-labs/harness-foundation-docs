@@ -83,6 +83,10 @@ Rules for a specialized contract:
 - every other required field in §4 still applies;
 - the relaxation must be recorded in the specialized contract itself.
 
+For the Shared Audit specialization, canonical `resource` replaces the generic
+`aggregate_type` / `aggregate_id` concept. Those generic fields are not separate mandatory
+Shared Audit producer fields, and anonymous facts must not fabricate an aggregate identifier.
+
 The concrete specialization is the
 [Shared Audit Producer Event Contract](./shared-audit-event-contract.md). It adds required actor,
 action, and outcome semantics plus conditional Product, tenant, and resource context. Its

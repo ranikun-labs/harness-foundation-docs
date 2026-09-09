@@ -220,7 +220,7 @@ sources:
       document_status: draft
       implementation_status: not_started
       runtime_support_status: not_supported
-    purpose: AU-G1 Producer Wire Contract, Event Policy Registry, Identity 초기 Event Catalog와 Logout 재도출을 기록한다. Contract 문서이며 Runtime 구현을 의미하지 않는다.
+    purpose: AU-G1 Producer Wire Contract, Event Policy Registry, Identity 초기 Event Catalog와 Logout 재도출을 기록한다. AU-G2B producer semantic boundary implementation evidence는 별도이며 Contract 문서가 전체 Runtime 구현을 의미하지 않는다.
 
   - id: src.shared-ai-architecture
     kind: external_repository_document
@@ -243,12 +243,12 @@ sources:
     location:
       repository: ranikun-labs/platform-services
       ref: main
-      commit: b2cb34825a8b8152e1bb1c45e4ed62d1dd49ae4b
+      commit: 2009a46e68fb2289654b52065958a18313d9f6ce
       path: README.md
       anchor: null
     status:
       document_status: draft
-    purpose: Current platform-services repository와 Gateway·Identity·Shared AI module 상태를 제공한다. RPL-107 exact implementation evidence와는 별개다.
+    purpose: Current platform-services repository와 Gateway·Identity·Shared AI module 상태를 제공한다.
 
   - id: src.platform-services-rpl-106
     kind: external_repository_document
@@ -275,6 +275,21 @@ sources:
     status:
       implementation_status: implemented
     purpose: RPL-107 synchronous OpenAI Slice A의 exact implementation evidence pointer다. Current platform-services main과 Shared AI status projection은 별도로 관리한다.
+
+  - id: src.platform-services-rpl-110
+    kind: external_repository_document
+    title: RPL-110 AU-G2B Shared Audit publisher boundary merge evidence
+    authority: canonical
+    location:
+      repository: ranikun-labs/platform-services
+      ref: main
+      commit: 2009a46e68fb2289654b52065958a18313d9f6ce
+      path: platform-core/shared-audit/build.gradle.kts
+      anchor: null
+    status:
+      implementation_status: implemented
+      runtime_support_status: not_supported
+    purpose: AU-G2B의 Java 21 java-library Shared Audit logical module과 producer semantic publisher boundary의 merge evidence를 제공한다. JetStream, Audit Store, Consumer, Outbox, Identity instrumentation과 Product release를 의미하지 않는다.
 
   - id: src.oauth-state-product-client-binding-contract
     kind: external_repository_document
@@ -702,22 +717,42 @@ systems:
       - src.adr-0017
 
   - id: system.audit-consumer
-    display_name: Audit Consumer
-    type: consumer
+    display_name: Shared Audit
+    type: shared_platform
     workstream: Platform Foundation
-    logical_boundary_status: candidate
+    logical_boundary_status: in_progress
     primary_repository:
-      status: not_implemented
-      repository: null
-    current_implementation_hosts: []
+      status: confirmed
+      repository: ranikun-labs/platform-services
+      module: platform-core/shared-audit
+      repository_lifecycle: existing
+      visibility: public
+      visibility_policy: not_decided
+    current_implementation_hosts:
+      - repository: ranikun-labs/platform-services
+        module: platform-core/shared-audit
+        role: au_g2b_producer_semantic_publisher_boundary
     runtime_deployment:
+      status: not_deployed
+      scope: phase1_same_jvm_logical_module
+      description: platform-core/shared-audit는 platform-core Spring MVC process에 hosted된 논리 feature module이며 AU-G2B producer semantic boundary가 구현됐다. JetStream transport, Audit Store, Consumer Runtime과 별도 Audit Process는 아직 구현·배포되지 않았으며 별도 Process는 승인되지 않았다
+    target_runtime_deployment:
       status: not_implemented
-      description: ADR-0021 / DEC-070이 platform-core의 shared-audit 논리 Module과 platform-core:app background JetStream Consumer 배치를 Architecture 수준에서 승인했다. Module, Consumer Runtime과 별도 Audit Process는 모두 미구현이며 별도 Process는 승인되지 않았다
-    lifecycle: planned
-    release: null
+      implementation_status: implemented
+      runtime_support_status: not_supported
+      deployment_status: not_deployed
+      repository: ranikun-labs/platform-services
+      module: platform-core/shared-audit
+      process: platform_core_spring_mvc
+      description: AU-G2B는 provider-neutral AuditPublisher, canonical policy resolution, producer validation과 unavailable/default capture boundary만 구현한다. JetStream, audit Schema/store, consumer, outbox/replay/reconciliation, Identity instrumentation과 query/API는 후속 Gate다
+    lifecycle: active_in_development
+    release:
+      released: false
+      artifact_status: not_released
     verification:
       production_deployment: verification_required
     core_responsibilities:
+      - Producer semantic AuditPublisher boundary
       - 비동기 Audit Event 소비
       - 운영 추적
       - 보안 이벤트 기록
@@ -733,6 +768,8 @@ systems:
       - src.shared-audit-event-contract
       - src.database-ownership-policy
       - src.adr-0017
+      - src.platform-services-main
+      - src.platform-services-rpl-110
 
   - id: system.platform-foundation-docs
     display_name: Platform Foundation Docs
@@ -1539,13 +1576,13 @@ data_groups:
     logical_owner: { kind: scope, scope: producer }
     current_store: { status: deferred, system_ref: system.audit-consumer, technology: null, description: Consumer 미구현 }
     target_store: { status: planned, system_ref: system.audit-consumer, blocked_by: [], description: ADR-0021이 승인한 단일 Application Database 내 audit Schema Append-only Ledger; Schema는 아직 생성되지 않음 }
-    write_authority: { system_refs: [], participant_scope: producer, note: 생산자는 event 발행; Consumer는 projection 기록 }
+    write_authority: { system_refs: [], participant_scope: producer, note: Producer는 event 의미와 semantic capture를 소유하며 Consumer는 미래 projection을 기록 }
     read_consumers: { system_refs: [system.audit-consumer], participant_scopes: [] }
     sharing_method: [nats_jetstream_candidate]
     migration: { state: deferred, evidence: null }
-    follow_up: { state: planned, description: "ADR-0021 Architecture 승인 완료; AU-G1 Producer Contract·Identity 초기 Event Catalog Draft가 정의됐고 independent review가 남음; AU-G4 Append Store와 Retention 기간, AU-G5 Consumer 구현은 남음", related_jira: [RPL-107, RPL-108, RPL-109] }
+    follow_up: { state: planned, description: "AU-G1 Producer Contract·Identity 초기 Event Catalog가 canonical main에 있고 AU-G2B producer semantic boundary가 구현됐다. AU-G3 JetStream transport, AU-G4 Append Store·Retention, AU-G5 Consumer, AU-G8 durability, AU-G6 Query/API와 AU-G7 Identity 계측은 남음", related_jira: [RPL-107, RPL-108, RPL-109, RPL-110] }
     constraints: [Audit Ledger는 Shared Audit 소유이다, Audit Consumer는 제품 Business Transaction Primary Store가 아니다, 제품은 원본 Business Data를 소유한다, Producer Audit Outbox는 Producer 자신의 Schema가 소유하며 audit Schema에 두지 않는다, Ledger는 Append-only이며 일반 UPDATE를 허용하지 않는다, Retention 기간 Policy 승인 전까지 자동 삭제를 수행하지 않는다, 원문 Secret과 불필요한 PII를 저장하지 않는다]
-    source_refs: [src.system-landscape, src.database-ownership-policy, src.adr-0021, src.shared-audit-event-contract]
+    source_refs: [src.system-landscape, src.database-ownership-policy, src.adr-0021, src.shared-audit-event-contract, src.platform-services-rpl-110]
 
 architecture_gates:
   - id: gate.shared-identity-extraction
@@ -1649,12 +1686,12 @@ architecture_gates:
     status: approved_not_started
     adoption_decision: accepted_with_constraints
     deferral_policy: superseded_by_adr_0021
-    current_state: ADR-0021 / DEC-070이 Shared Audit를 첫 구체적 JetStream Use Case로 승인했다. Broker Runtime, Stream/Consumer provisioning과 Producer·Consumer 구현은 not_started다
+    current_state: ADR-0021 / DEC-070이 Shared Audit를 첫 구체적 JetStream Use Case로 승인했고 AU-G2B producer semantic boundary가 구현됐다. Broker Runtime, Stream/Consumer provisioning과 JetStream transport adapter는 not_started다
     why_deferred: Architecture는 승인됐고 Runtime 도입과 운영 Runbook은 AU-G3 이후 Gate가 소유한다
     required_evidence: [비동기 Use Case, Durability 요구, Retry/Replay 요구, Consumer 수와 처리량, DB Commit 이후 Event 발행 필요성, Idempotent Consumer 계약]
     adoption_triggers: [Audit Event, 장시간 Post-processing, 제품 상태 전파, 동기 호출로 장애 격리가 어려운 실제 문제]
     owner: { kind: scope, scope: platform_foundation }
-    blocked_work: [Subject Naming, Event Envelope, Idempotency, Retry/DLQ, Retention, 운영 Runbook, Outbox 도입 판단]
+    blocked_work: [Subject Naming, Stream/Consumer configuration, JetStream transport adapter, Idempotency, Retry/DLQ, Retention, 운영 Runbook, Outbox 도입 판단]
     related_jira: [RPL-20, RPL-107, RPL-108]
     related_decisions: [DEC-064, DEC-070]
     constraints: [기본 Delivery는 at-least-once, Consumer는 멱등성을 가져야 함, DB Commit 전 ACK 금지, Outbox는 필요한 Use Case에만 선택적으로 사용, Core NATS가 아닌 JetStream을 사용, exactly-once와 Product DB Commit·publish 사이 Distributed Atomicity를 주장하지 않음, Architecture 승인은 Broker Runtime 배포를 의미하지 않음]
@@ -1681,16 +1718,16 @@ architecture_gates:
     status: approved_not_started
     adoption_decision: accepted_with_constraints
     deferral_policy: superseded_by_adr_0021
-    current_state: ADR-0021 / DEC-070이 Shared Audit Foundation Architecture를 승인했고 AU-G1 Producer Contract·Identity 초기 Event Catalog·Policy Matrix Draft가 정의됐으며 independent review가 필요하다. Audit Consumer Runtime, audit Schema, Producer Outbox와 Identity 계측은 모두 not_started다. Retention 기간(AU-G4)과 Query/API Contract(AU-G6)는 아직 확정되지 않았다
-    why_deferred: Architecture는 승인됐고 AU-G1 Contract는 review 대기 중이며 Runtime 도입은 AU-G2~AU-G5 및 AU-G8 Gate 완료에 의존한다
+    current_state: ADR-0021 / DEC-070이 Shared Audit Foundation Architecture를 승인했고 AU-G1 Producer Contract·Identity 초기 Event Catalog가 canonical main에 있으며 AU-G2B producer semantic boundary가 구현됐다. Audit Consumer Runtime, audit Schema, Producer Outbox와 Identity 계측은 모두 not_started다. Retention 기간(AU-G4)과 Query/API Contract(AU-G6)는 아직 확정되지 않았다
+    why_deferred: AU-G2B는 semantic producer boundary까지만 구현했으며 Runtime 도입은 AU-G3~AU-G5 및 AU-G8 Gate 완료에 의존한다
     required_evidence: [보안·운영 Audit Event 목록, Producer Contract, Retention과 조회 요구, Replay와 복구 요구, 개인정보 최소화 기준]
     adoption_triggers: [독립 Audit Projection 필요, 제품별 Audit 중복 구현, 운영·보안 추적 요구, 비동기 보존 요구]
     owner: { kind: ref, ref: system.audit-consumer }
-    blocked_work: [NATS Adoption, Publisher Boundary, Retention Policy, Audit Store, Consumer, Durability Mechanism, 운영 조회 기준, Identity 계측]
+    blocked_work: [NATS Adoption, Retention Policy, Audit Store, Consumer, Durability Mechanism, 운영 조회 기준, Identity 계측]
     related_jira: [RPL-20, RPL-107, RPL-108, RPL-109]
     related_decisions: [DEC-070]
     constraints: [Audit Consumer는 제품 Transaction Primary Store가 아님, Producer Business Data Ownership을 침범하지 않음, 원문 Secret과 불필요한 PII를 저장하지 않음, Architecture 승인은 Runtime 구현이 아님, Retention 기간 Evidence는 AU-G4에서 미완료, Query/조회 Evidence는 AU-G6에서 미완료, AU-G8은 AU-G7보다 선행해야 함]
-    source_refs: [src.system-landscape, src.adr-0015, src.database-ownership-policy, src.adr-0021, src.shared-audit-event-contract]
+    source_refs: [src.system-landscape, src.adr-0015, src.database-ownership-policy, src.adr-0021, src.shared-audit-event-contract, src.platform-services-rpl-110]
 
   - id: gate.grpc-adoption
     display_name: gRPC adoption
