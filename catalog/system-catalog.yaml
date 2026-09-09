@@ -207,6 +207,21 @@ sources:
       decision_status: accepted_with_constraints
     purpose: Shared Audit의 Architecture 경계, Transport 의미, Durability 정책과 Gate Sequencing의 근거를 제공한다. Architecture 승인이며 Runtime 구현·NATS 배포·Migration·Identity 계측 완료를 의미하지 않는다.
 
+  - id: src.shared-audit-event-contract
+    kind: repository_document
+    title: Shared Audit Producer Event Contract and Identity Initial Catalog
+    authority: canonical
+    location:
+      repository: ranikun-labs/harness-foundation-docs
+      ref: main
+      path: docs/contracts/backend-service-foundation/shared-audit-event-contract.md
+      anchor: null
+    status:
+      document_status: draft
+      implementation_status: not_started
+      runtime_support_status: not_supported
+    purpose: AU-G1 Producer Wire Contract, Event Policy Registry, Identity 초기 Event Catalog와 Logout 재도출을 기록한다. Contract 문서이며 Runtime 구현을 의미하지 않는다.
+
   - id: src.shared-ai-architecture
     kind: external_repository_document
     title: Shared AI current implementation and status projection
@@ -715,6 +730,7 @@ systems:
       - src.system-landscape
       - src.adr-0015
       - src.adr-0021
+      - src.shared-audit-event-contract
       - src.database-ownership-policy
       - src.adr-0017
 
@@ -1190,6 +1206,7 @@ communication_relations:
     source_refs:
       - src.system-landscape
       - src.adr-0021
+      - src.shared-audit-event-contract
       - src.adr-0015
 
   - id: relation.high-volume-service-to-grpc-peer
@@ -1526,9 +1543,9 @@ data_groups:
     read_consumers: { system_refs: [system.audit-consumer], participant_scopes: [] }
     sharing_method: [nats_jetstream_candidate]
     migration: { state: deferred, evidence: null }
-    follow_up: { state: planned, description: "ADR-0021 Architecture 승인 완료; AU-G1 Contract, AU-G4 Append Store와 Retention 기간, AU-G5 Consumer 구현이 남음", related_jira: [RPL-107, RPL-108] }
+    follow_up: { state: planned, description: "ADR-0021 Architecture 승인 완료; AU-G1 Producer Contract·Identity 초기 Event Catalog Draft가 정의됐고 independent review가 남음; AU-G4 Append Store와 Retention 기간, AU-G5 Consumer 구현은 남음", related_jira: [RPL-107, RPL-108, RPL-109] }
     constraints: [Audit Ledger는 Shared Audit 소유이다, Audit Consumer는 제품 Business Transaction Primary Store가 아니다, 제품은 원본 Business Data를 소유한다, Producer Audit Outbox는 Producer 자신의 Schema가 소유하며 audit Schema에 두지 않는다, Ledger는 Append-only이며 일반 UPDATE를 허용하지 않는다, Retention 기간 Policy 승인 전까지 자동 삭제를 수행하지 않는다, 원문 Secret과 불필요한 PII를 저장하지 않는다]
-    source_refs: [src.system-landscape, src.database-ownership-policy, src.adr-0021]
+    source_refs: [src.system-landscape, src.database-ownership-policy, src.adr-0021, src.shared-audit-event-contract]
 
 architecture_gates:
   - id: gate.shared-identity-extraction
@@ -1664,16 +1681,16 @@ architecture_gates:
     status: approved_not_started
     adoption_decision: accepted_with_constraints
     deferral_policy: superseded_by_adr_0021
-    current_state: ADR-0021 / DEC-070이 Shared Audit Foundation Architecture를 승인했다. Audit Consumer Runtime, audit Schema, Producer Outbox와 Identity 계측은 모두 not_started다. Retention 기간(AU-G4)과 Query/API Contract(AU-G6)는 아직 확정되지 않았다
-    why_deferred: Architecture는 승인됐고 Runtime 도입은 AU-G1~AU-G5 및 AU-G8 Gate 완료에 의존한다
+    current_state: ADR-0021 / DEC-070이 Shared Audit Foundation Architecture를 승인했고 AU-G1 Producer Contract·Identity 초기 Event Catalog·Policy Matrix Draft가 정의됐으며 independent review가 필요하다. Audit Consumer Runtime, audit Schema, Producer Outbox와 Identity 계측은 모두 not_started다. Retention 기간(AU-G4)과 Query/API Contract(AU-G6)는 아직 확정되지 않았다
+    why_deferred: Architecture는 승인됐고 AU-G1 Contract는 review 대기 중이며 Runtime 도입은 AU-G2~AU-G5 및 AU-G8 Gate 완료에 의존한다
     required_evidence: [보안·운영 Audit Event 목록, Producer Contract, Retention과 조회 요구, Replay와 복구 요구, 개인정보 최소화 기준]
     adoption_triggers: [독립 Audit Projection 필요, 제품별 Audit 중복 구현, 운영·보안 추적 요구, 비동기 보존 요구]
     owner: { kind: ref, ref: system.audit-consumer }
-    blocked_work: [NATS Adoption, Event Contract, Retention Policy, Audit Store, PII Redaction, 운영 조회 기준]
-    related_jira: [RPL-20, RPL-107, RPL-108]
+    blocked_work: [NATS Adoption, Publisher Boundary, Retention Policy, Audit Store, Consumer, Durability Mechanism, 운영 조회 기준, Identity 계측]
+    related_jira: [RPL-20, RPL-107, RPL-108, RPL-109]
     related_decisions: [DEC-070]
     constraints: [Audit Consumer는 제품 Transaction Primary Store가 아님, Producer Business Data Ownership을 침범하지 않음, 원문 Secret과 불필요한 PII를 저장하지 않음, Architecture 승인은 Runtime 구현이 아님, Retention 기간 Evidence는 AU-G4에서 미완료, Query/조회 Evidence는 AU-G6에서 미완료, AU-G8은 AU-G7보다 선행해야 함]
-    source_refs: [src.system-landscape, src.adr-0015, src.database-ownership-policy, src.adr-0021]
+    source_refs: [src.system-landscape, src.adr-0015, src.database-ownership-policy, src.adr-0021, src.shared-audit-event-contract]
 
   - id: gate.grpc-adoption
     display_name: gRPC adoption

@@ -9,8 +9,11 @@ superseded_by: []
 source_inputs:
   - docs/contracts/backend-service-foundation/identity-token-contract.md
   - docs/contracts/backend-service-foundation/event-envelope-contract.md
+  - docs/contracts/backend-service-foundation/shared-audit-event-contract.md
 related_decisions:
   - DEC-059
+  - ADR-0021
+  - DEC-070
 ---
 
 # Backend Service Foundation — Contracts
@@ -23,7 +26,8 @@ related_decisions:
 docs/contracts/backend-service-foundation/
 ├── README.md
 ├── identity-token-contract.md
-└── event-envelope-contract.md
+├── event-envelope-contract.md
+└── shared-audit-event-contract.md
 ```
 
 ---
@@ -46,6 +50,7 @@ docs/contracts/backend-service-foundation/
 |---|---|---|---|---|---|
 | [identity-token-contract.md](./identity-token-contract.md) | Shared Identity가 발급하고 Product Service가 로컬 검증하는 Access Token의 Claim 계약 | Draft | Shared Identity issuer, all consuming product services (Carelog, Finance Harness, future services) | `harness-foundation-docs` | Not implemented / Not runtime-supported / Not released |
 | [event-envelope-contract.md](./event-envelope-contract.md) | Cross-service Integration Event의 공통 Envelope 필드 계약 | Draft | All publishing/consuming MSA services | `harness-foundation-docs` | Not implemented / Not runtime-supported / Not released |
+| [shared-audit-event-contract.md](./shared-audit-event-contract.md) | Shared Audit Producer Envelope, Policy Registry와 Identity 초기 Event Catalog | Draft | Future Shared Audit producers and consumers | `harness-foundation-docs` | Not implemented / Not runtime-supported / Not released |
 
 ---
 
@@ -58,7 +63,9 @@ Runtime supported: No
 Product released: No
 ```
 
-`DEC-059`은 명칭 확정만 accepted 상태이며, 위 2개 문서의 기술적 내용 자체를 accepted로 전환하지 않는다.
+`DEC-059`는 명칭 확정만 accepted 상태이며, 위 Contract 문서의 기술적 내용
+자체를 accepted로 전환하지 않는다. `ADR-0021` / `DEC-070`의 Shared Audit
+Architecture 승인도 AU-G1 Contract Review 완료나 Runtime 구현을 의미하지 않는다.
 
 ---
 
@@ -69,5 +76,6 @@ docs/contracts/README.md
 docs/architecture/backend-service-foundation/README.md
 docs/architecture/backend-service-foundation/service-communication-policy.md
 docs/architecture/backend-service-foundation/distributed-consistency-policy.md
-docs/decisions/decision-log.md (DEC-005, DEC-059)
+docs/adr/ADR-0021-shared-audit-foundation-architecture.md
+docs/decisions/decision-log.md (DEC-005, DEC-059, DEC-070)
 ```

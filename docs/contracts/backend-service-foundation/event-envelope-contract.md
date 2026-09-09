@@ -83,8 +83,10 @@ Rules for a specialized contract:
 - every other required field in §4 still applies;
 - the relaxation must be recorded in the specialized contract itself.
 
-The concrete Shared Audit contract and any further envelope reconciliation are owned by
-AU-G1 and are not part of this document yet.
+The concrete specialization is the
+[Shared Audit Producer Event Contract](./shared-audit-event-contract.md). It adds required actor,
+action, and outcome semantics plus conditional Product, tenant, and resource context. Its
+`recorded_at` is consumer/store persistence metadata and is never producer-owned.
 
 ## 5. Conditional fields
 

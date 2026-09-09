@@ -36,6 +36,7 @@ affected_docs:
   - docs/adr/ADR-0020-shared-platform-postgresql-schema-ownership.md
   - docs/architecture/repository-service-boundaries.md
   - docs/contracts/backend-service-foundation/event-envelope-contract.md
+  - docs/contracts/backend-service-foundation/shared-audit-event-contract.md
   - catalog/system-catalog.yaml
   - docs/adr/README.md
   - docs/decisions/decision-log.md
@@ -304,6 +305,9 @@ opaque identifier를 저장한다"와 정합한다.
 
 Generic Envelope 문서의 최소 정합 수정과 Shared Audit Contract 확정은 AU-G1이
 소유한다.
+[Shared Audit Producer Event Contract](../contracts/backend-service-foundation/shared-audit-event-contract.md)는
+이 위임에 따라 Producer Wire Contract, Event Policy Registry와 Identity 초기 Catalog를
+기록하며 이 ADR의 Architecture 결정을 변경하지 않는다.
 
 ### 6.7 Classification Axes
 
