@@ -218,7 +218,7 @@ sources:
       anchor: null
     status:
       document_status: draft
-      implementation_status: implemented
+      implementation_status: not_started
       runtime_support_status: not_supported
     purpose: AU-G1 Producer Wire Contract, Event Policy Registry, Identity 초기 Event Catalog와 Logout 재도출을 기록한다. AU-G2B producer semantic boundary implementation evidence는 별도이며 Contract 문서가 전체 Runtime 구현을 의미하지 않는다.
 
@@ -248,7 +248,7 @@ sources:
       anchor: null
     status:
       document_status: draft
-    purpose: Current platform-services repository와 Gateway·Identity·Shared AI 및 AU-G2B Shared Audit producer boundary 상태를 제공한다. RPL-110의 AU-G2B merge evidence는 이 current-main pin으로 확인한다.
+    purpose: Current platform-services repository와 Gateway·Identity·Shared AI module 상태를 제공한다.
 
   - id: src.platform-services-rpl-106
     kind: external_repository_document
