@@ -126,8 +126,8 @@ Repository Responsibility Boundary를 요약한다.
 
 `ADR-0017` / `DEC-067`이 승인한 `platform-services` Target만 예외적으로 확정한다.
 `ranikun-labs/platform-services` Repository는 존재하며 current main
-(`b2cb34825a8b8152e1bb1c45e4ed62d1dd49ae4b`)에 `gateway-app`,
-`platform-core/identity`, `platform-core/shared-ai`가 있다. Gateway·Identity의
+(`2009a46e68fb2289654b52065958a18313d9f6ce`)에 `gateway-app`,
+`platform-core/identity`, `platform-core/shared-ai`, `platform-core/shared-audit`가 있다. Gateway·Identity의
 behavior-preserving extraction/cutover와 production runtime·배포·출시는 별도
 Evidence가 필요하다.
 
@@ -144,13 +144,13 @@ finance-harness
 = Finance Product Backend / Runtime 후보
 
 ranikun-labs/platform-services
-= Shared Java Platform (repository existing; current main contains Gateway, Identity and Shared AI modules)
+= Shared Java Platform (repository existing; current main contains Gateway, Identity, Shared AI and the Shared Audit producer boundary)
   - gateway-app: independent SCG / WebFlux process
   - platform-core: independent Spring MVC process
     - identity ACTIVE target
     - shared-ai Phase 1 same-JVM logical module; RPL-107 synchronous OpenAI Slice A IMPLEMENTED
     - commerce DEFERRED
-    - shared-audit ADR-0021 architecture-approved; implementation not started
+    - shared-audit AU-G2 producer semantic boundary implemented; transport, store, consumer and producer instrumentation not implemented
 
 finance-harness-docs
 = Finance Lens / PolicyGuard / Fixture Source of Truth

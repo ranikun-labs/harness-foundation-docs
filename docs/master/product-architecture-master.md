@@ -1354,13 +1354,13 @@ finance-harness
 = Finance Product Backend / Runtime
 
 ranikun-labs/platform-services
-= Shared Java Platform (repository existing; current main contains Gateway, Identity and Shared AI modules)
+= Shared Java Platform (repository existing; current main contains Gateway, Identity, Shared AI and the Shared Audit producer boundary)
   - gateway-app: independent SCG / WebFlux process
   - platform-core: independent Spring MVC process
     - identity ACTIVE target
     - shared-ai Phase 1 same-JVM logical module; RPL-107 synchronous OpenAI Slice A IMPLEMENTED
     - commerce DEFERRED
-    - shared-audit ADR-0021 architecture-approved; implementation not started
+    - shared-audit AU-G2 producer semantic boundary implemented; transport, store, consumer and producer instrumentation not implemented
 
 finance-harness-docs
 = Finance Lens / PolicyGuard / Fixture

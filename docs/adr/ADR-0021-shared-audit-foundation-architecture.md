@@ -49,6 +49,7 @@ evidence_refs:
   - RPL-54
   - AU_G0_ARCHITECTURE_REVIEW_PASS
   - "platform-services/main@e5e656931c570b276d0c8900254efe9067a16b34"
+  - "platform-services/main@2009a46e68fb2289654b52065958a18313d9f6ce (AU-G2B merge evidence)"
   - "harness-foundation-docs/main@a1ac1ce09e3a2da5f0e85f681ad05a36302a01f9"
 supersedes:
   - "ADR-0013 (partial)"
@@ -72,7 +73,7 @@ replacement_decision_refs:
 >
 > ```text
 > Architecture decision accepted_with_constraints
-> ≠ shared-audit Module 구현
+> + AU-G2 producer semantic publisher boundary implementation evidence
 > ≠ NATS/JetStream Runtime 배포
 > ≠ audit Schema 생성
 > ≠ Producer Outbox 구현
@@ -111,6 +112,23 @@ implementation_status: not_started
 runtime_support_status: not_supported
 product_release_status: not_released
 ```
+
+### 2.1 Current implementation-status projection (non-historical)
+
+ADR-0021 remains the architecture decision for the complete Shared Audit boundary,
+transport, durability policy, and gate sequencing. Its historical
+`implementation_status: not_started` records the decision-time scope and is not the
+current status of every AU-G2 capability.
+
+The verified current projection is `AU-G2B producer semantic publisher boundary
+implemented` at `ranikun-labs/platform-services/main@2009a46e68fb2289654b52065958a18313d9f6ce`.
+The `platform-core:shared-audit` Java 21 logical feature module provides the
+provider-neutral `AuditPublisher`, canonical policy resolution and producer-side validation,
+with an internal capture boundary and an unavailable default capture.
+
+This projection does not claim JetStream transport, broker acknowledgement, PostgreSQL Audit
+storage, consumer processing, durable outbox/replay/reconciliation, Identity instrumentation,
+query/API authorization, external producer authentication, runtime support, or product release.
 
 이 ADR은 Shared Audit의 Architecture 경계, Transport 의미, Durability 정책과
 Gate Sequencing을 소유한다. 실제 Event Catalog, Contract 상세, SQL, Migration,
@@ -196,7 +214,7 @@ platform-services
     ├── identity                     ACTIVE target
     ├── shared-ai                    Phase 1 same-JVM logical module
     ├── commerce                     DEFERRED
-    └── shared-audit                 architecture-approved logical module
+    └── shared-audit                 AU-G2 producer boundary implemented; later runtime gates pending
 ```
 
 별도 Audit Executable·Microservice는 초기에 승인하지 않는다. 추출은 다음 Evidence가
