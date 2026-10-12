@@ -39,9 +39,16 @@ evidence_refs:
   - ADR-0014
   - ADR-0015
 supersedes: []
-superseded_by: []
-superseded_scope: []
-remaining_valid_scope: []
+superseded_by:
+  - ADR-0022
+superseded_scope:
+  - "V1 Production Primary의 Mac mini 배치만 AWS EC2 Primary로 partial supersession"
+  - "V1의 AWS DR-only 해석만 partial supersession"
+  - "역사적 4시간 RTO / 15분 RPO를 신규 AWS Primary에 적용하는 해석만 partial supersession"
+remaining_valid_scope:
+  - "이 ADR의 원문과 역사적 결정 기록"
+  - "Human-approved Failover, Promotion, Write Enable 및 Write Fencing 원칙"
+  - "기존 4시간 RTO / 15분 RPO는 당시 시나리오의 기록이며 신규 AWS Primary 목표가 아님"
 replacement_decision_refs: []
 ---
 
