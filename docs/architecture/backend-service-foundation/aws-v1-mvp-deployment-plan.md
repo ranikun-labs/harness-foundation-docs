@@ -34,157 +34,105 @@ source_inputs:
   have higher priority.
 - No AWS Resource has been created or changed in this task.
 
-## 2. Deployment Topology
+## 2. Four-runtime deployment topology
 
-<pre>
-Internet Clients
-    │
-    └── Cloudflare Tunnel (validation gate; not selected)
-              │ outbound tunnel connection
-              ▼
-EC2, Seoul, one Compose Host
-    ├── Platform Gateway: Spring Cloud Gateway / WebFlux
-    ├── Platform Core: Spring MVC; Identity + Shared AI + Shared Audit Modules
-    ├── Finance Backend: independent Spring Service
-    ├── Carelog Backend: independent Spring Service
-    └── Valkey: official Docker Image; internal Docker Network only
-              │
-              └── PostgreSQL 5432 over private VPC path
-                         ▼
-              RDS PostgreSQL, Private Subnet
-              └── one Application Database; service-owned Schemas
-</pre>
+The baseline is four independent EC2 runtimes. The initial t4g sizes below are candidates,
+not capacity commitments. Services use private VPC addresses for internal HTTP/JSON and SSE.
 
-Production Compose must not start a PostgreSQL Container. RDS is the external database
-endpoint. The Gateway is the sole application ingress. Platform Core, Finance, Carelog
-and Valkey do not publish Host ports. If Cloudflare Tunnel passes its validation gate,
-its origin must reach the Gateway through a loopback-only Host binding or an equivalent
-private path.
+~~~text
+Cloudflare Tunnel (validation candidate; outbound only)
+                │
+       EC2 #1 Gateway / WebFlux
+          ├─────┼──────────┐
+          ▼     ▼          ▼
+ EC2 #2 Core  EC2 #3     EC2 #4
+  / MVC       Finance    Carelog
+  └ Valkey     │           │
+       └────────┴───────────┴── Private TLS ── RDS PostgreSQL (one instance)
+~~~
 
-The actual Repository also contains a Carelog Gateway Process. The fixed Owner target names
-one shared Gateway; do not add the Carelog Gateway to Production without a separate Cutover
-check. If it remains active, add its JVM and capacity to the estimate.
-
-## 3. EC2 / RDS Capacity Candidates
-
-### 3.1 Actual JVM Count and Memory Evidence
-
-The fixed Runtime contains four JVMs:
-
-| Process | Existing Build Evidence | JVM |
-|---|---|---|
-| Platform Gateway | platform-services has a separate Gateway Dockerfile; JVM target 17 | 1 |
-| Platform Core | platform-services has a separate Core Dockerfile; Java 21 | 1 |
-| Finance Backend | finance-harness-be uses Java 21 / Spring Boot 4.1.0 | 1 |
-| Carelog Backend | carelog-be uses Java 17 / Spring Boot 3.4.5 | 1 |
-
-Shared Identity, Shared AI and Shared Audit are Platform Core Modules and add no JVM.
-Carelog Gateway is outside the fixed Runtime count unless a later Cutover requires it.
-
-Current Dockerfiles / Compose do not set a measured per-process heap, cgroup Memory limit,
-or CPU limit. Production RSS, heap, CPU, request concurrency, PostgreSQL connection count
-and load profile are UNKNOWN. There is no measured memory value to treat as a fact.
-
-### 3.2 Recommended Sizing Candidates
-
-| Resource | Candidate | Published Capacity | Role / Limit |
+| Host | Process | Initial size | Inbound boundary |
 |---|---|---|---|
-| EC2 | m7g.xlarge | 4 vCPU, 16 GiB RAM | Initial four-JVM + Valkey load-test candidate; not a measured capacity commitment |
-| EC2 lower-cost comparison | m7g.large | 2 vCPU, 8 GiB RAM | Compare only after per-process RSS / heap and CPU limits are measured |
-| RDS PostgreSQL economy candidate | db.t4g.medium, Single-AZ | 2 vCPU, 4 GiB RAM | Initial integration / low-load candidate; burst CPU and low memory require measurement |
-| RDS PostgreSQL stable alternative | db.m7g.large | candidate size must be confirmed in current Region / Engine calculator | Compare if T-class sustained CPU or Memory becomes limiting |
-| RDS storage | gp3, 20–50 GiB candidate | RDS PostgreSQL gp3 minimum is 20 GiB | Actual DB size / WAL / growth are UNKNOWN; set after inventory |
+| EC2 #1 | Gateway / WebFlux | t4g.small | No direct Internet ingress; Tunnel only after approval |
+| EC2 #2 | Platform Core / MVC: Identity, Shared AI, Shared Audit; Valkey candidate | t4g.medium | HTTP only from Gateway; PostgreSQL from Core |
+| EC2 #3 | Finance Backend | t4g.small | HTTP only from Gateway; PostgreSQL from Finance |
+| EC2 #4 | Carelog Backend | t4g.small | HTTP only from Gateway; PostgreSQL from Carelog |
 
-All sizes remain ESTIMATE. m7g.xlarge is chosen as the first capacity test because the target
-has four separate Spring JVMs and no committed memory limits. This is not a claim that
-16 GiB is sufficient or that 4 vCPU meets a latency SLO. The four services must be built and
-measured on the selected CPU architecture. The EC2 target is ARM64; build and smoke-test
-all four Images on ARM64 before choosing Graviton.
+Mac mini is Development/Test only. No PostgreSQL container is used in Production. Valkey's
+co-location on Core is the cost-first candidate; because Gateway and Carelog are on other Hosts,
+TCP/6379 is a private ENI path restricted to their Security Groups. A dedicated Valkey EC2
+remains an Owner-approved alternative. The Private listener, contention, failure scope and
+blacklist recovery risk must be reviewed before deployment.
 
-RDS db.t4g.medium is a cost comparison candidate, not a fixed Production class. AWS documents
-that T4g classes are burstable and may incur CPU Credit charges in Unlimited mode. If sustained
-database CPU is likely, compare a non-burstable class using measured workload and official
-pricing. No PostgreSQL Engine Major Version is selected: current repository evidence spans
-PostgreSQL 16 and 18.4 Testcontainers.
+## 3. Four-EC2 / RDS capacity candidates
 
-Official instance references:
-[EC2 general-purpose specifications](https://docs.aws.amazon.com/ec2/latest/instancetypes/gp.html),
-[EC2 instance availability by Region](https://docs.aws.amazon.com/ec2/latest/instancetypes/ec2-instance-regions.html),
-[RDS T4g specifications](https://aws.amazon.com/rds/instance-types/),
-and [RDS PostgreSQL storage settings](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_Storage.html).
+### 3.1 Runtime and memory evidence
 
-## 4. AWS Monthly Cost Estimate
+The fixed baseline has four JVMs: Gateway (Java 17), Platform Core (Java 21), Finance (Java 21)
+and Carelog (Java 17), based on the inspected repositories. Runtime RSS, heap/native memory,
+CPU demand, image architecture support and request concurrency are UNKNOWN. The Owner-selected
+Graviton candidates are:
 
-### 4.1 Assumptions
+| Service | EC2 candidate | EBS candidate |
+|---|---:|---:|
+| Gateway | t4g.small | 24 GiB |
+| Platform Core + co-located Valkey | t4g.medium | 30 GiB |
+| Finance | t4g.small | 24 GiB |
+| Carelog | t4g.small | 24 GiB |
+| Dedicated Valkey alternative | t4g.small | 24 GiB, additional |
 
-- Commercial AWS, Seoul, On-Demand Linux, 730 hours per month, no Savings Plan / RI.
-- EC2 m7g.xlarge continuously running; 50 GiB gp3 root volume as a planning allowance.
-- RDS db.t4g.medium, PostgreSQL, Single-AZ, continuously running, 20 GiB gp3.
-- One EC2 public IPv4 for outbound Tunnel / image pull / SSM reachability. Inbound
-  Security Group rules remain closed.
-- No ALB and no NAT Gateway in the baseline. RDS remains private.
-- Currency conversion 1 USD ≈ 1,400 KRW is an ESTIMATE, not an FX quote.
-- No taxes, Cloudflare plan, AWS Support, public egress beyond the allowance, extra backup
-  retention, multi-AZ standby, NAT Gateway, ALB, high CloudWatch ingestion or T4g CPU Credit
-  overage is included.
+All four images require ARM64 build and smoke evidence. Measure JVM Heap and Native Memory, process
+and Container RSS, GC pauses, CPU/credit behavior and Valkey contention before sizing is accepted.
+Each service's instance type, AMI, EBS size, IAM role, Security Group and detailed monitoring
+setting remains independently configurable.
 
-### 4.2 Preliminary Estimate
+The shared RDS is one private PostgreSQL instance. PostgreSQL 16 and 18.x appear in current
+development history, so a common exact engine version and parameter family remain blocked on
+JDBC/Flyway compatibility checks for all three DB owners. RDS Multi-AZ and class are separate
+availability/cost Owner decisions; the estimate below assumes Single-AZ.
 
-| Item | Working Estimate | Status |
-|---|---:|---|
-| EC2 m7g.xlarge, 730 hours | about US$147 / month | ESTIMATE; candidate regional On-Demand rate must be recalculated |
-| RDS PostgreSQL db.t4g.medium, Single-AZ, 730 hours | about US$74 / month | ESTIMATE; Engine / Region / deployment selection must be recalculated |
-| EC2 gp3 50 GiB + RDS gp3 20 GiB | about US$7–12 / month | ESTIMATE; regional unit rate and actual volume UNKNOWN |
-| One public IPv4 | about US$4 / month | ESTIMATE; confirm current rate |
-| Basic logs / metrics allowance | US$0–20 / month | ESTIMATE; retention and volume UNKNOWN |
-| Preliminary total | about US$233–257 / month, roughly ₩326,000–₩360,000 | ESTIMATE; not an AWS quote |
+## 4. Seoul AWS cost estimate
 
-This base estimate is more than the 10,000 KRW monthly goal. The goal is not an absolute
-budget cap and does not override the fixed priority of shipping quickly with operational
-stability. This cost scenario intentionally uses Single-AZ RDS and excludes a NAT Gateway
-and ALB; it is not a final Availability decision. A Multi-AZ RDS option adds at least another
-database compute allocation and storage-related charges. Re-price before provisioning.
+No resource is deployed and no bill exists. The following are estimates from working public
+catalog rates, not an AWS Calculator quote. The 30-day scenario uses 720 EC2/RDS/public-IP
+hours and prorates EBS GB-month by 720/730. V1 assumes 3×t4g.small + 1×t4g.medium, disks
+24/30/24/24 GiB, one Single-AZ db.t4g.medium RDS with 20 GiB, and one public IPv4 per EC2.
 
-An official calculator quote was not available from the dynamic calculator during this
-documentation run. The numerical rates above are planning estimates only. Recalculate and
-save an AWS Pricing Calculator estimate for ap-northeast-2 immediately before any provisioning.
+| Candidate | EC2 | EBS | RDS | Public IPv4 | 30-day base | 7-day projection |
+|---|---:|---:|---:|---:|---:|---:|
+| V1: four independent EC2 | $74.88 | $11.45 | $73.44 | $14.40 | **$174.17 (~₩244k)** | **$40.64 (~₩56.9k)** |
+| V2: two t4g.medium, 30 GiB each | $59.90 | $7.67 | $73.44 | $7.20 | **$148.21 (~₩207k)** | **$34.58 (~₩48.4k)** |
+| V2: one t4g.large, 40 GiB | $59.90 | $5.87 | $73.44 | $3.60 | **$142.81 (~₩200k)** | **$33.32 (~₩46.6k)** |
 
-Official pricing references:
-[EC2 On-Demand pricing](https://aws.amazon.com/ec2/pricing/on-demand/),
-[Amazon RDS for PostgreSQL pricing and calculator](https://aws.amazon.com/rds/postgresql/pricing/),
-[Amazon EBS pricing](https://aws.amazon.com/ebs/pricing/),
-[AWS Pricing Calculator](https://calculator.aws/),
-[EC2 Seoul price-list index](https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/current/ap-northeast-2/index.json),
-[RDS Seoul price-list index](https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonRDS/current/ap-northeast-2/index.json).
+V2 is a cost comparison only; four JVMs have not been shown to fit either candidate. A seven-day
+projection is not a seven-day actual bill. A second 2-host fleet overlapping V1 for a week adds
+about $16.92; one larger host adds about $15.66, assuming the existing RDS is shared. Co-located
+Valkey is the cost-first design; a separate t4g.small Valkey host with 24 GiB and IPv4 adds about
+$20.73/30 days and $4.84/7 days.
 
-AWS's published price pages state that the calculator estimate varies with Region, instance,
-deployment option and storage. T4g CPU-credit overage, automated backup overage, data transfer,
-CloudWatch and public IPv4 can add cost. Keep those as UNKNOWN until the calculator estimate
-and traffic assumptions are saved.
+Unknowns excluded from the totals: egress, CloudWatch/API/alarm charges, snapshots beyond the
+assumed retention, retained EBS, Terraform state, CPU-credit overage, tax, Cloudflare, Grafana
+quota exceedance and load-generator cost. RDS/EBS/backup/IP charges can remain after stopping an
+EC2 application. Reprice in the AWS Calculator after Region, Engine, HA and storage decisions.
+The desired KRW 10,000 monthly cost is a goal, not a V1 cap.
 
 ## 5. VPC / Subnet / Security Group
 
-### Candidate Layout
+Use VPC 10.42.0.0/16, two public EC2 subnets and two private RDS subnets in distinct AZs.
+The current cost-first candidate places all four EC2s and a Single-AZ RDS in the first AZ; the
+second private subnet satisfies RDS DB Subnet Group requirements. This is not multi-AZ
+application availability. RDS Public Access is false.
 
-- One VPC in ap-northeast-2.
-- One EC2 Application subnet with outbound Internet routing for Tunnel, container registry,
-  CloudWatch and Systems Manager. It may have a public IPv4 for outbound access, but no public
-  inbound rule is required for an outbound Tunnel. A no-public-IP / VPC Endpoint alternative
-  requires a separate cost and reachability check.
-- At least two private subnets across Availability Zones for the RDS DB Subnet Group. RDS
-  Public Access is false.
-- NAT Gateway is not in the baseline cost because its fixed hourly and data charges may exceed
-  this MVP's cost goal. If private-only EC2 egress is required, compare VPC Endpoints and NAT
-  Gateway before selecting.
-- EC2 inbound: no SSH rule; use Systems Manager or a separately approved administrative path.
-  If Cloudflare Tunnel is used, its connection is outbound.
-- RDS inbound: TCP 5432 from the EC2 Application Security Group only. Never allow 0.0.0.0/0.
-- Valkey: no AWS Security Group port and no Docker Host Port mapping. Only the Docker
-  Application Network can reach it.
-- Application egress: document required HTTPS destinations and DNS path for Cloudflare,
-  Registry, Secrets, Systems Manager and monitoring. Exact egress enforcement is UNKNOWN.
-- Add separate IAM instance permissions for deploy, logs and secret retrieval. No static AWS
-  credentials in the Image, Compose file or environment template.
+Gateway has no Internet-origin inbound rule. Backend application ports accept traffic from the
+Gateway Security Group only. RDS TCP/5432 accepts only Core, Finance and Carelog Security Groups.
+Valkey TCP/6379 accepts only the approved private client groups. SSH/22 is absent; SSM is the
+administration path. Cloudflare Tunnel, if selected, connects outbound on its approved transport.
+
+No NAT Gateway, ALB or VPC Endpoint is created by default. With public EC2 IPv4, outbound HTTPS
+443 reaches SSM, the selected registry, package sources, Grafana Cloud and approved external APIs;
+the Gateway can also use outbound TCP/UDP 7844 for Cloudflare Tunnel. This broad 443 Egress and
+public IPv4 cost/exposure need Owner review. Without public IPv4, add and cost a reviewed NAT or
+the required VPC Endpoints. No route opens direct application ingress.
 
 ## 6. RDS Private Access / Schema / Role / Migration
 
@@ -210,25 +158,14 @@ Before production data is used, each Repository must:
 The common RDS PostgreSQL Major is a release blocker until Platform, Finance and Carelog migration
 tests agree. The current PostgreSQL 16 / 18.4 drift must not be resolved by assumption.
 
-## 7. Docker Compose Service Placement
+## 7. Docker Compose service placement
 
-Production Compose service set:
-
-- platform-gateway: public application entry; host bind is loopback/private to the selected ingress.
-- platform-core: one Spring MVC process hosting Identity, Shared AI and Shared Audit Modules.
-- finance-service: private internal HTTP/JSON service.
-- carelog-service: private internal HTTP/JSON service.
-- valkey: official Valkey Image on the internal Docker Network only.
-- cloudflared: optional only if the Cloudflare Tunnel gate passes; no selection is implied.
-
-Do not add a PostgreSQL container to Production Compose. Do not publish Valkey 6379. Do not
-publish Platform Core or Product Backend ports. Keep the existing Redis client / Spring
-configuration contract until an explicit Contract Decision says otherwise.
-
-The current platform-services Compose is a local Development topology: it uses PostgreSQL
-16-alpine and redis:7-alpine and publishes Gateway / Core ports. Do not reuse it unchanged as
-Production Compose. Its Valkey-compatible local configuration and Production override remain
-implementation work.
+Each runtime has a separate Compose stack, deployment/restart boundary and immutable image digest.
+Gateway is the only application entrypoint. Gateway-to-Core/Finance/Carelog traffic is Private
+HTTP/JSON; AI uses SSE. Each service keeps its JWT/OAuth/Refresh Token and internal authorization
+contracts. Secrets arrive at runtime through the approved instance role and exact Secrets Manager
+ARN; user data and image layers contain no secret. Valkey uses a private Docker network on Core
+and a narrowly restricted private ENI path for Gateway/Carelog when co-located.
 
 ## 8. Valkey Persistence / Security
 
@@ -300,23 +237,27 @@ Required pipeline:
 Registry, package retention, OIDC / credentials, ARM64 runner availability and rollback operator
 are UNKNOWN. A successful build job is not a deployed runtime.
 
-## 12. Health / Monitoring
+## 12. Central health and monitoring
 
-- Platform Gateway and Platform Core currently expose Actuator readiness endpoints in their
-  local Compose configuration.
-- Finance has Actuator health, liveness and readiness configuration.
-- Carelog's inspected backend build does not include Actuator and its repository has no
-  Application Container Health Check. Add this as deployment readiness work.
-- Compose must use process readiness and dependency readiness; a running Container alone is
-  not healthy.
-- Track EC2 CPU, memory, disk, restart count and Docker health; RDS CPU, FreeStorageSpace,
-  connections, latency, deadlocks and migration errors; Valkey memory, latency, evictions,
-  rejected connections and persistence errors; Gateway 4xx / 5xx and API latency; Tunnel
-  connectivity if selected.
-- Memory metrics require a Host agent or another measured collection path. Its cost and
-  retention are UNKNOWN.
-- Logs must exclude tokens, OAuth codes, secrets and sensitive Finance / Carelog request data.
-- Define an alert owner and tested notification path before Go-Live.
+Grafana Cloud Free is the preferred central UI candidate; verify current 10k active-series quota,
+14-day retention and API behavior against the selected stack before adoption. Grafana is not
+installed on EC2. Each host runs Alloy with 30-second host, Docker/cAdvisor, JVM process and
+available Spring Actuator scrapes. cAdvisor requires privileged host/Docker access, which is
+root-equivalent and needs a security Owner decision. Do not add Node Exporter/cAdvisor duplicates.
+
+Required comparisons include CPU/memory/disk/network and T4g CPU credits; Container RSS; JVM
+Heap/Max/Non-Heap/GC/thread/process RSS; HTTP RPS/P50/P95/P99/error/timeout; JDBC pool and query
+latency; RDS connections/CPU/free memory/storage/read-write latency; Valkey memory/clients/
+commands/eviction/latency; restart/health/deploy timestamp and itemized monthly cost. Labels use
+service, instance, environment. RDS CloudWatch integration and Valkey exporter use explicit IAM
+and bounded scrape configuration; no extra exporter is added without need.
+
+The inspected Gateway/Core and Finance repositories lack the Prometheus registry/endpoint;
+Carelog lacks Actuator. Application metrics therefore remain UNKNOWN until their separate
+owner tasks merge and return real samples. See coordination issues #34, #35, #36. Grafana Cloud
+retention is separate from redacted seven-day Evidence in the infrastructure repository. Alerts
+initially cover host telemetry absence and sustained CPU; notification contact and policy must
+be configured and tested by the Owner.
 
 ## 13. Backup / Restore / RPO / RTO
 
@@ -340,21 +281,13 @@ RDS automated backup retention can be configured over AWS-supported ranges; AWS 
 explains that the chosen period is an operational setting, not a default to adopt without Owner
 approval. Review the [RDS backup retention documentation](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_WorkingWithAutomatedBackups.BackupRetention.html).
 
-## 14. Cloudflare Tunnel Validation Gate
+## 14. Cloudflare Tunnel validation gate
 
-Cloudflare Tunnel is a candidate only. Before selecting it, verify:
-
-1. Account, Zone, Domain ownership, plan and supported connector behavior.
-2. EC2 connector can establish outbound connections without a public inbound Application Port.
-3. Origin routes only to the Gateway; Platform Core, Finance, Carelog, RDS and Valkey stay private.
-4. OAuth callback / redirect URI, forwarded client address and trusted proxy hop behavior.
-5. SSE event streaming, idle / read timeout, buffering, reconnect and long-running AI responses.
-6. Health / readiness behavior when the connector or origin restarts.
-7. Secret rotation, connector restart and audit of Tunnel configuration.
-8. Monthly Cloudflare and AWS egress cost estimate.
-
-Failing any gate leaves Ingress unselected and requires a separate Architecture Decision before
-using another ingress.
+Cloudflare Tunnel is a preferred validation candidate, not an accepted Production Ingress. Verify
+account/plan, DNS/TLS, token-file delivery, outbound TCP/UDP 7844, origin reachability to Gateway,
+tunnel loss/reconnect behavior, logging and monthly cost. Confirm no direct EC2-origin inbound
+path exists. Do not promote external traffic before written Owner acceptance. Any alternative
+Ingress needs a separate decision and revised cost/security evidence.
 
 ## 15. Auth / Product / AI / Audit E2E Release Gate
 
@@ -387,26 +320,21 @@ using another ingress.
 - If a real V1 asynchronous use case is identified, define its durability / retry / replay need
   as a separate Gate. Do not deploy a Broker solely because the Architecture was approved.
 
-## 16. MVP Go-Live Checklist
+## 16. MVP Go-Live checklist
 
-- [ ] ADR-0022 is reviewed and merged; this plan's source HEADs and status are refreshed.
-- [ ] AWS account / IAM / Region / VPC / subnets / Security Groups are approved.
-- [ ] RDS engine major is compatible with Platform, Finance and Carelog migrations.
-- [ ] RDS Multi-AZ, Backup Retention, V1 RPO and RTO have Owner decisions.
-- [ ] Per-service Schema, Flyway ownership, Grants and cross-schema denial are proven.
-- [ ] EC2 size is checked against measured JVM RSS / heap / CPU and load; ARM64 is proven.
-- [ ] Finance / Carelog production Dockerfiles, Health checks and CI pipelines pass.
-- [ ] Valkey version, access control, persistence policy and restore test pass.
-- [ ] GETDEL / TTL / EVAL / EVALSHA compatibility and Auth failure behavior pass.
-- [ ] Secret Store / rotation / operator recovery path is approved and exercised.
-- [ ] Image Registry, digest deployment, rollback and database migration sequence are proven.
-- [ ] Cloudflare Tunnel passes all gates or another ingress has a separate decision.
-- [ ] Monitoring, alert ownership, RDS restore and EC2 rebuild drills are complete.
-- [ ] Shared AI SSE and Shared Audit release gates pass.
-- [ ] Auth, Finance, Carelog, AI and Audit E2E evidence is linked.
-- [ ] Cost is recalculated through AWS Pricing Calculator with chosen HA, Storage, Backup,
-      Logs, Network and Tax assumptions.
-- [ ] Owner approves Production Go-Live explicitly.
+- [ ] ADR-0022 and DEC-071 merge; historical ADR-0016 remains intact with partial supersession metadata.
+- [ ] Private platform-infra repository, independent implementation PR, CI checks and state bootstrap review are complete.
+- [ ] AWS account, ap-northeast-2, subnets, egress and Security Groups are approved.
+- [ ] ARM64 builds, digest-pinned images, four independent Compose stacks and rollback pass.
+- [ ] RDS exact engine version is compatible with every JDBC/Flyway owner; TLS, schema/role grants and ownership are verified.
+- [ ] RDS class, Multi-AZ, backup retention and new RPO/RTO are explicit Owner decisions; restore evidence exists.
+- [ ] Valkey placement, credentials, noeviction, persistence, monitoring and blacklist recovery/invalidations pass.
+- [ ] Cloudflare Tunnel passes its validation gate or another Ingress has a separate approval.
+- [ ] Alloy labels and Grafana dashboards receive real metrics; app 계측 issue results are verified; alert contact path is tested.
+- [ ] Seven-day measurement and same-profile k6 evidence include cost, images, JVM flags, dataset and Dashboard export.
+- [ ] Shared AI SSE, Shared Audit, Auth, Finance and Carelog E2E release gates pass.
+- [ ] Cost Calculator estimate and V2 rollback proposal are reviewed.
+- [ ] Owner explicitly approves Go/No-Go. No automatic Apply, Merge, traffic promotion or EC2 deletion.
 
 ## 17. Repository Inspection and Deployment Blockers
 
@@ -424,40 +352,54 @@ Snapshot at the branches and HEADs in ADR-0022:
 No AWS Resource or Production Runtime was inspected or changed. GitHub branch visibility does not
 prove a cloud account or permission. Any resource state not directly evidenced is UNKNOWN.
 
-## 18. GitHub Issues Implementation Map
-Open-issue searches on 2026-10-12 found no existing open tasks in the four repositories.
-The following 14 issues were created for the implementation plan. These issues are task
-tracking, not approvals to change AWS resources or promote Production.
+## 18. GitHub Issues implementation map
+
+The initial 14 implementation issues remain in their owning repositories. A focused open-issue
+search for Actuator/Micrometer/Prometheus/metrics/observability found no instrumentation-specific
+duplicates in the three application repositories. Four cross-repository coordination tickets were
+created in Foundation Docs because application repositories are read-only in this session and the
+private platform-infra repository does not exist yet. These tickets request handoff; they are not
+AWS or application-code approvals.
+
+### New infrastructure / instrumentation handoffs
+
+| Owner | Task | Issue |
+|---|---|---|
+| platform-infra | Create private repository and open Terraform/Compose/Observability implementation PR | [Foundation Docs #33](https://github.com/ranikun-labs/harness-foundation-docs/issues/33) |
+| platform-services | Gateway/Core private Prometheus, HTTP/JVM/JDBC metrics | [Foundation Docs #35](https://github.com/ranikun-labs/harness-foundation-docs/issues/35) |
+| finance-harness-be | Finance Micrometer Prometheus and JDBC metrics | [Foundation Docs #34](https://github.com/ranikun-labs/harness-foundation-docs/issues/34) |
+| carelog-be | Actuator readiness and Micrometer Prometheus metrics | [Foundation Docs #36](https://github.com/ranikun-labs/harness-foundation-docs/issues/36) |
+
+### Existing V1 implementation issues
 
 | Workstream | Repository issue |
 |---|---|
 | First blocker: Platform Core Docker build inputs for Shared Audit | [platform-services#20](https://github.com/ranikun-labs/platform-services/issues/20) |
-| Official Valkey local server and command / flow compatibility | [platform-services#21](https://github.com/ranikun-labs/platform-services/issues/21) |
-| EC2 production Docker Compose foundation | [platform-services#22](https://github.com/ranikun-labs/platform-services/issues/22) |
-| Shared Identity RDS schema / role / migration | [platform-services#23](https://github.com/ranikun-labs/platform-services/issues/23) |
+| Official Valkey local server and command/flow compatibility | [platform-services#21](https://github.com/ranikun-labs/platform-services/issues/21) |
+| EC2 production Compose foundation (single-host assumptions require Owner review against this four-host ADR) | [platform-services#22](https://github.com/ranikun-labs/platform-services/issues/22) |
+| Shared Identity RDS schema/role/migration | [platform-services#23](https://github.com/ranikun-labs/platform-services/issues/23) |
 | Gateway / Identity Auth E2E | [platform-services#24](https://github.com/ranikun-labs/platform-services/issues/24) |
 | Immutable image CI/CD and rollback | [platform-services#25](https://github.com/ranikun-labs/platform-services/issues/25) |
 | Shared AI SSE / Shared Audit release gate | [platform-services#26](https://github.com/ranikun-labs/platform-services/issues/26) |
-| Finance image, finance schema, secret configuration, health and CI | [finance-harness-be#5](https://github.com/ranikun-labs/finance-harness-be/issues/5) |
+| Finance image, schema, secret configuration, health and CI | [finance-harness-be#5](https://github.com/ranikun-labs/finance-harness-be/issues/5) |
 | Finance Auth / product E2E | [finance-harness-be#6](https://github.com/ranikun-labs/finance-harness-be/issues/6) |
 | Carelog image, schema migration, secret configuration, health and CI | [carelog-be#47](https://github.com/ranikun-labs/carelog-be/issues/47) |
 | Carelog Auth / product E2E | [carelog-be#48](https://github.com/ranikun-labs/carelog-be/issues/48) |
-| AWS network, secret store, and Cloudflare Tunnel validation gate | [harness-foundation-docs#30](https://github.com/ranikun-labs/harness-foundation-docs/issues/30) |
-| Backup / restore / monitoring and recovery objective evidence | [harness-foundation-docs#29](https://github.com/ranikun-labs/harness-foundation-docs/issues/29) |
-| Final Go-Live evidence gate | [harness-foundation-docs#31](https://github.com/ranikun-labs/harness-foundation-docs/issues/31) |
+| AWS network, secret store, and Cloudflare Tunnel gate | [Foundation Docs #30](https://github.com/ranikun-labs/harness-foundation-docs/issues/30) |
+| Backup/restore, monitoring and recovery objectives | [Foundation Docs #29](https://github.com/ranikun-labs/harness-foundation-docs/issues/29) |
+| Final Go-Live evidence gate | [Foundation Docs #31](https://github.com/ranikun-labs/harness-foundation-docs/issues/31) |
 
-## 19. Remaining Owner Decisions
+## 19. Remaining Owner decisions
 
-1. Valkey exact Version / Tag.
-2. Valkey AOF / RDB, Volume, Backup, Restore and credential / ACL policy.
-3. Common RDS PostgreSQL Engine Major, RDS class, storage and actual deployment option.
-4. RDS Multi-AZ decision.
-5. V1 AWS Primary RPO, RTO, RDS Backup Retention and long-term snapshot policy.
-6. AWS Account / IAM / VPC egress and Infrastructure Repository owner.
-7. GHCR or ECR, Image retention and deploy authority.
-8. AWS Secrets Manager or SSM Parameter Store / secret rotation.
-9. Cloudflare Tunnel account / plan / Domain and test outcome.
-10. Production memory / CPU / DB connection budget based on measured load.
-11. Shared Audit V1 use cases and whether any asynchronous requirement exists.
-12. Explicit Go-Live approver and evidence storage location.
-
+1. Common PostgreSQL Engine Version, parameter family, class and Multi-AZ decision after JDBC/Flyway review.
+2. RDS backup retention, snapshots, encryption, restore evidence and new RPO/RTO.
+3. Valkey co-location vs dedicated EC2; image digest/version, credentials/ACL, AOF/RDB, volume and recovery.
+4. AWS account/identity, Terraform state bucket, egress/public IPv4 and detailed monitoring costs.
+5. ARM64 support, immutable image registry, deployment identity and secret rotation.
+6. Cloudflare Tunnel validation and fallback Ingress decision.
+7. Grafana Cloud Free limits, service-account scopes, contact point, cardinality and retention.
+8. Application instrumentation Owner issues and actual endpoint/metric evidence.
+9. Production load approval, safe route/dataset, concurrency and stop thresholds.
+10. Seven-day baseline completion criteria and V2 migration/rollback approver.
+11. Shared AI SSE and Shared Audit production release gates.
+12. Explicit Go-Live Owner and redacted evidence location.
