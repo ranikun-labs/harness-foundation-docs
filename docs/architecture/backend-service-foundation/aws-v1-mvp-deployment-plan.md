@@ -424,7 +424,29 @@ Snapshot at the branches and HEADs in ADR-0022:
 No AWS Resource or Production Runtime was inspected or changed. GitHub branch visibility does not
 prove a cloud account or permission. Any resource state not directly evidenced is UNKNOWN.
 
-## 18. Remaining Owner Decisions
+## 18. GitHub Issues Implementation Map
+Open-issue searches on 2026-10-12 found no existing open tasks in the four repositories.
+The following 14 issues were created for the implementation plan. These issues are task
+tracking, not approvals to change AWS resources or promote Production.
+
+| Workstream | Repository issue |
+|---|---|
+| First blocker: Platform Core Docker build inputs for Shared Audit | [platform-services#20](https://github.com/ranikun-labs/platform-services/issues/20) |
+| Official Valkey local server and command / flow compatibility | [platform-services#21](https://github.com/ranikun-labs/platform-services/issues/21) |
+| EC2 production Docker Compose foundation | [platform-services#22](https://github.com/ranikun-labs/platform-services/issues/22) |
+| Shared Identity RDS schema / role / migration | [platform-services#23](https://github.com/ranikun-labs/platform-services/issues/23) |
+| Gateway / Identity Auth E2E | [platform-services#24](https://github.com/ranikun-labs/platform-services/issues/24) |
+| Immutable image CI/CD and rollback | [platform-services#25](https://github.com/ranikun-labs/platform-services/issues/25) |
+| Shared AI SSE / Shared Audit release gate | [platform-services#26](https://github.com/ranikun-labs/platform-services/issues/26) |
+| Finance image, finance schema, secret configuration, health and CI | [finance-harness-be#5](https://github.com/ranikun-labs/finance-harness-be/issues/5) |
+| Finance Auth / product E2E | [finance-harness-be#6](https://github.com/ranikun-labs/finance-harness-be/issues/6) |
+| Carelog image, schema migration, secret configuration, health and CI | [carelog-be#47](https://github.com/ranikun-labs/carelog-be/issues/47) |
+| Carelog Auth / product E2E | [carelog-be#48](https://github.com/ranikun-labs/carelog-be/issues/48) |
+| AWS network, secret store, and Cloudflare Tunnel validation gate | [harness-foundation-docs#30](https://github.com/ranikun-labs/harness-foundation-docs/issues/30) |
+| Backup / restore / monitoring and recovery objective evidence | [harness-foundation-docs#29](https://github.com/ranikun-labs/harness-foundation-docs/issues/29) |
+| Final Go-Live evidence gate | [harness-foundation-docs#31](https://github.com/ranikun-labs/harness-foundation-docs/issues/31) |
+
+## 19. Remaining Owner Decisions
 
 1. Valkey exact Version / Tag.
 2. Valkey AOF / RDB, Volume, Backup, Restore and credential / ACL policy.
