@@ -20,6 +20,7 @@ related_adrs:
   - ADR-0017
   - ADR-0020
   - ADR-0021
+  - ADR-0022
 source_inputs:
   - docs/roadmap/product-roadmap.md
   - docs/architecture/shared-core-and-extensions.md
@@ -3681,7 +3682,8 @@ preserves:
 - ADR-0015
 
 supersedes: []
-superseded_by: []
+superseded_by:
+- DEC-071 (partial: Mac mini Production Primary / AWS DR-only interpretation; historical RTO/RPO and human-approved fencing remain valid)
 ```
 
 ### Affected Documents
@@ -4381,6 +4383,85 @@ docs/decisions/decision-log.md
 supersedes: []
 superseded_by: []
 ```
+
+---
+
+## DEC-071 — AWS V1 Production Primary를 네 개 독립 EC2로 운영한다
+
+**Status:** accepted_with_constraints
+**Owner:** architecture
+**Decision type:** architecture
+**Decision scope:** production-primary / infrastructure / observability / optimization
+**Decision date:** 2026-10-12
+**Implementation status:** not_started
+**Production adoption:** not_approved
+**Runtime evidence:** runtime_unverified
+**Decision owner:** Architecture Owner
+**Source:** Owner direction fixed in the 2026-10-12 infrastructure request
+**Related ADR:** ADR-0022
+
+### Decision
+
+Production Primary는 서울 Region ap-northeast-2의 EC2 + Docker Compose다. V1 Runtime을
+Gateway/WebFlux, Platform Core/MVC, Finance, Carelog 네 개의 독립 EC2에 각각 둔다.
+공통 RDS PostgreSQL Instance 한 개를 Private Subnet Group에 두고 서비스별 Database/
+Schema/Role/Migration 소유권을 유지한다. Valkey 서버는 Valkey로 고정하며 Platform Core
+EC2 동거를 비용 우선 설계안으로 두되 최종 위치는 Owner 승인 대상이다.
+
+각 Host의 Alloy가 중앙 Grafana Cloud 후보로 Host, Container, JVM, HTTP/Application
+지표를 보낸다. Application endpoint가 준비되지 않으면 계측 완료나 실측으로 표현하지
+않는다. Cloudflare Tunnel은 우선 검증 후보이며 Ingress 채택은 조건부다.
+
+### Rationale
+
+기존 Spring Runtime을 보존해 MVP를 빠르게 출시하면서 서비스별 자원, JVM, Latency,
+오류율, 재시작과 배포를 독립 측정한다. 이 자료는 동일 기능의 V2 배치 통합과 JVM/RDS/
+Connection Pool 최적화 전후를 비교한다. 4 Host는 운영 분리와 비교 가능성을 제공하지만
+항상 켜진 비용, 관리 단위, 단일 RDS/Valkey 장애 영향은 남는다. Mac mini는 개발·테스트
+전용이며 Production Primary가 아니다.
+
+### Constraints
+
+- PostgreSQL 공통 Version은 Platform/Finance/Carelog JDBC 및 Flyway 호환성 확인 전 결정하지 않는다.
+- RDS Public Access는 금지한다. Multi-AZ, class, backups, recovery 목표는 비용·복구 Owner Gate다.
+- OAuth State GETDEL/TTL, JWT Blacklist, Lua Rate Limiter와 fail-closed 계약은 보존한다. Blacklist 복구/무효화 증거 전 Release를 막는다.
+- EKS/Kubernetes, ECS/Fargate, Lambda 전면 전환, Aurora Serverless v2, 신규 NATS/SQS/PGMQ를 V1에 추가하지 않는다.
+- 최초 7일은 측정 목표다. 경과만으로 자동 변경·종료하지 않는다. 저부하 실사용만으로 P95/P99를 판단하지 않는다.
+- V2의 4→2/1 EC2 전환은 동일 부하/데이터/이미지와 비용·Latency·오류·Memory·Recovery 비교 후 Owner가 별도 승인한다.
+- Terraform Destroy/Replace와 AWS Apply는 이 Decision으로 승인되지 않는다.
+
+### Consequences
+
+V1에는 EC2 4대와 공통 RDS, Valkey, 중앙 모니터링 비용이 발생하며 실제 Seoul 가격,
+egress, snapshot, CloudWatch/API와 CPU credit 항목은 Calculator 및 Billing으로 재확인한다.
+V2는 일괄 삭제가 아닌 단계별 이행·관측 연속성·Rollback 계획을 요구한다. 장기 후보는
+독립 검증 Decision 전까지 선택 사항이다.
+
+### Affected Documents
+
+docs/adr/ADR-0016-primary-deployment-and-disaster-recovery.md
+docs/adr/ADR-0022-aws-v1-mvp-primary-runtime.md
+docs/adr/README.md
+docs/decisions/decision-log.md
+docs/architecture/README.md
+docs/architecture/backend-service-foundation/README.md
+docs/architecture/backend-service-foundation/aws-v1-mvp-deployment-plan.md
+docs/architecture/backend-service-foundation/aws-v2-optimization-roadmap.md
+
+### Supersession
+
+partial_supersedes:
+- ADR-0016 / DEC-066: Mac mini Production Primary placement and AWS DR-only interpretation only
+
+preserves:
+- ADR-0016 historical record and Human-approved failover/write-fencing principles
+- ADR-0016 historical 4h RTO / 15m RPO as non-applicable to the new AWS Primary
+- ADR-0015 communication and deferred-messaging boundaries
+- ADR-0020 product/service DB ownership and migration boundaries
+- ADR-0021 Shared Audit architecture; no V1 broker deployment is implied
+
+supersedes: []
+superseded_by: []
 
 ---
 
