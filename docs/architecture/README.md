@@ -15,6 +15,7 @@ source_inputs:
   - docs/testing/README.md
   - docs/poc/README.md
   - docs/decisions/decision-log.md
+  - docs/adr/ADR-0022-aws-v1-mvp-primary-runtime.md
 ---
 
 # Architecture
@@ -1259,3 +1260,13 @@ docs/architecture/backend-service-foundation/
 이 Index(§1-47)의 Non-goals, 불변조건, 미결정 사항은 `docs/architecture/backend-service-foundation/`에 적용되지 않는다. 해당 문서군은 자체 색인과 상태표를 가진다.
 
 관련: `docs/architecture/backend-service-foundation/README.md`, `docs/decisions/decision-log.md` DEC-059
+
+## 49. AWS V1 Production Primary navigation
+
+The cross-service backend deployment decision is recorded in [ADR-0022](../adr/ADR-0022-aws-v1-mvp-primary-runtime.md)
+and [DEC-071](../decisions/decision-log.md). It is a sibling Backend Service Foundation
+architecture, not an oh-my-ai Shared Core runtime change. The proposal uses four independent
+EC2 runtimes and a seven-day evidence baseline; implementation and cost details belong to the
+infrastructure repository, while the deployment strategy lives in
+[the Backend Service Foundation plan](./backend-service-foundation/aws-v1-mvp-deployment-plan.md).
+
