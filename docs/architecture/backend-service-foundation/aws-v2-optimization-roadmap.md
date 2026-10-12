@@ -16,6 +16,11 @@ source_inputs:
 > release dependency. Keep before/after evidence so each portfolio item shows a
 > verifiable change.
 
+The V1 comparison starts from four independent EC2 runtimes: Gateway, Platform Core, Finance,
+and Carelog, plus one shared private RDS and Valkey. The first optimization candidate is 4→2
+EC2; 4→1 is a separate, higher contention candidate. The first seven stable days are recorded
+before proposing either placement. Expiration of seven days is not an automatic change trigger.
+
 ## Baseline Record
 
 Capture this baseline after V1 is serving representative traffic, using a stated
@@ -94,7 +99,7 @@ size, and dashboard/query link. Use the same test profile before and after a cha
 
 ### ECS / Lambda
 
-- **Problem:** A measured single-host availability, scaling, or deployment limitation may exceed Compose.
+- **Problem:** Measured host contention, cross-service failure impact, scaling, or deployment limitations may justify a different placement.
 - **Baseline:** Host utilization, deployment / rollback duration, incident frequency, service coupling, and monthly cost — UNKNOWN.
 - **Hypothesis:** ECS or Lambda may address the measured constraint with acceptable migration and operations cost.
 - **Change:** Compare one bounded service in a staging environment; define networking, secrets, database connection, observability, and rollback first.
