@@ -1118,14 +1118,13 @@ Open Governance Decision을 현재 운영 사실로 표현하지 않는다.
 ## 46. 관련 문서
 
 현재 사용자 제공 Repository Tree 기준으로
-`docs/adr/README.md`의 경로 존재는 확인됐다.
-
-다만 이 Index는 해당 ADR 문서의 canonical 내용까지
-자동 검증하거나 대체하지 않는다.
+`docs/adr/README.md`의 경로 존재는 확인됐다. 이 Index는 개별 ADR의
+canonical 내용을 자동 검증하거나 대체하지 않는다.
 
 ```text
 docs/decisions/decision-log.md
 docs/adr/README.md
+docs/adr/ADR-0022-aws-v1-mvp-primary-runtime.md
 docs/product/README.md
 docs/roadmap/README.md
 docs/architecture/README.md
@@ -1133,6 +1132,10 @@ docs/contracts/README.md
 docs/testing/README.md
 docs/poc/README.md
 ```
+
+AWS V1 Production Primary의 Canonical proposal은 ADR-0022 / DEC-071이다.
+ADR-0016의 historical record와 Human-approved recovery 원칙은 유지한다.
+구현·배포 증거는 각 Owner Repository가 소유한다.
 
 ---
 
