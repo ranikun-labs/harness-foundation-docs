@@ -126,7 +126,7 @@ Repository Responsibility Boundary를 요약한다.
 
 `ADR-0017` / `DEC-067`이 승인한 `platform-services` Target만 예외적으로 확정한다.
 `ranikun-labs/platform-services` Repository는 존재하며 current main
-(`2009a46e68fb2289654b52065958a18313d9f6ce`)에 `gateway-app`,
+(`02821f230ce828ceffd6f126b056d3a018abd509`)에 `gateway-app`,
 `platform-core/identity`, `platform-core/shared-ai`, `platform-core/shared-audit`가 있다. Gateway·Identity의
 behavior-preserving extraction/cutover와 production runtime·배포·출시는 별도
 Evidence가 필요하다.
