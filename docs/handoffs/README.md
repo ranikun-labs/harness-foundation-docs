@@ -1052,6 +1052,7 @@ Template Convenience를 위해 Safety·Truthfulness 필드를 제거하지 않�
 |---|---|---|---|
 | Handoffs Index | `docs/handoffs/README.md` | canonical candidate | Not Verifiable in this index |
 | Session Handoff Template | `templates/session-handoff-template.md` | existing related document | Content alignment not verified here |
+| Platform Core Container Build Foundation | `docs/handoffs/2026-10-12-platform-core-container-handoff.md` | ready implementation handoff | Reviewed base HEAD recorded; implementation tests not run |
 
 `canonical candidate`는 문서 검수 상태를 의미한다.
 
