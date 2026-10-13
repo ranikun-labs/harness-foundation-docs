@@ -3,15 +3,16 @@ title: "서비스 간 메시징 목표를 SQS로 변경하고 환경 격리를 �
 adr_id: "ADR-0023"
 document_status: in_review
 decision_status: accepted_with_constraints
+decision_status_scope: owner_policy_direction_only
 decision_scope: architecture
 owner: architecture
 authors: [codex]
 reviewers: []
-approvers: ["Owner — Shared Environment Acceptance & Foundation ADR Alignment 요청"]
+approvers: []
 created_at: "2026-10-13"
 reviewed_at: "2026-10-13"
-approved_at: "2026-10-13"
-effective_from: "2026-10-13"
+approved_at: null
+effective_from: null
 implementation_status: not_started
 runtime_support_status: not_supported
 product_release_status: not_released
@@ -43,6 +44,12 @@ replacement_decision_refs: [DEC-072]
 ---
 
 # ADR-0023: SQS 목표 Provider와 Dev / Production 격리
+
+> **Owner Review 보완:** `decision_status`는 2026-10-13 요청에서 명시된 정책 방향에만
+> 적용한다. 이 ADR 전체의 상세 설계·최종 문서 승인이나 Supersession의 공식 발효를
+> 증명하지 않는다. `document_status: in_review`를 유지하고 공식 승인 기록은 확인되지
+> 않아 `approvers: []`, `approved_at: null`, `effective_from: null`로 둔다.
+> `reviewed_at`은 문서 검토일이며 Owner 최종 승인일이 아니다.
 
 ## 1. 결정과 승인 범위
 

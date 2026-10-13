@@ -3,15 +3,16 @@ title: "공통 Account와 제품 Membership, 개인 BillingSubject의 소유권�
 adr_id: "ADR-0024"
 document_status: in_review
 decision_status: accepted_with_constraints
+decision_status_scope: owner_policy_direction_only
 decision_scope: architecture
 owner: architecture
 authors: [codex]
 reviewers: []
-approvers: ["Owner — Shared Environment Acceptance & Foundation ADR Alignment 요청"]
+approvers: []
 created_at: "2026-10-13"
 reviewed_at: "2026-10-13"
-approved_at: "2026-10-13"
-effective_from: "2026-10-13"
+approved_at: null
+effective_from: null
 implementation_status: not_verifiable
 constraints:
   - "Owner 승인 범위는 논리 정책이며 전체 제품 구현·배포 완료가 아니다"
@@ -33,6 +34,12 @@ replacement_decision_refs: [DEC-073]
 ---
 
 # ADR-0024: Identity / Commerce / Product Owner 정책 정렬
+
+> **Owner Review 보완:** `decision_status`는 2026-10-13 요청에서 명시된 정책 방향에만
+> 적용한다. 이 ADR 전체의 상세 설계·최종 문서 승인이나 Supersession의 공식 발효를
+> 증명하지 않는다. `document_status: in_review`를 유지하고 공식 승인 기록은 확인되지
+> 않아 `approvers: []`, `approved_at: null`, `effective_from: null`로 둔다.
+> `reviewed_at`은 문서 검토일이며 Owner 최종 승인일이 아니다.
 
 ## 1. 결정과 기존 충돌
 
@@ -85,7 +92,7 @@ Product/Commerce의 데이터 보존 책임을 분리하고 MVP에 과도한 중
 추가하지 않는 방향으로 검토한다. `C`의 상세 실행 모델을 이 문서가 임의 정의하거나
 기존 법적 검토를 대체하지 않는다.
 
-다음은 **Proposed / 미결정**이며 이번 승인·effective date에 포함되지 않는다.
+다음은 **Proposed / 미결정**이며 확정된 Owner 정책 방향의 범위에 포함되지 않는다.
 
 | 항목 | 후속 Owner / Review | 확정 전 제약 |
 |---|---|---|

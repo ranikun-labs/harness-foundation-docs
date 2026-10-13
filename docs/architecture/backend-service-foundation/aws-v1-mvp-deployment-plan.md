@@ -359,15 +359,20 @@ prove a cloud account or permission. Any resource state not directly evidenced i
 The initial 14 implementation issues remain in their owning repositories. A focused open-issue
 search for Actuator/Micrometer/Prometheus/metrics/observability found no instrumentation-specific
 duplicates in the three application repositories. Four cross-repository coordination tickets were
-created in Foundation Docs because application repositories are read-only in this session and the
-private platform-infra repository does not exist yet. These tickets request handoff; they are not
-AWS or application-code approvals.
+created in Foundation Docs during the original session. The repository-missing premise in
+[Issue #33](https://github.com/ranikun-labs/harness-foundation-docs/issues/33) is now stale:
+on 2026-10-13, `ranikun-labs/platform-infra` exists as a private repository; remote `ls-remote`
+succeeds with zero refs. The advertised default branch is `main`, but no branch commit exists.
+Remaining work is to establish the initial baseline commit/main, locate and review the previously
+mentioned local candidate (its availability is not established here), import the reviewed files,
+open an independent Infra PR, and complete offline CI/reviewer checks with explicit Owner gates.
+No repository creation is needed. These handoffs authorize no AWS plan/Apply or application changes.
 
 ### New infrastructure / instrumentation handoffs
 
 | Owner | Task | Issue |
 |---|---|---|
-| platform-infra | Create private repository and open Terraform/Compose/Observability implementation PR | [Foundation Docs #33](https://github.com/ranikun-labs/harness-foundation-docs/issues/33) |
+| platform-infra | Initialize empty repository baseline; locate/review/import candidate; open Infra PR and complete offline validation | [Foundation Docs #33](https://github.com/ranikun-labs/harness-foundation-docs/issues/33) |
 | platform-services | Gateway/Core private Prometheus, HTTP/JVM/JDBC metrics | [Foundation Docs #35](https://github.com/ranikun-labs/harness-foundation-docs/issues/35) |
 | finance-harness-be | Finance Micrometer Prometheus and JDBC metrics | [Foundation Docs #34](https://github.com/ranikun-labs/harness-foundation-docs/issues/34) |
 | carelog-be | Actuator readiness and Micrometer Prometheus metrics | [Foundation Docs #36](https://github.com/ranikun-labs/harness-foundation-docs/issues/36) |
