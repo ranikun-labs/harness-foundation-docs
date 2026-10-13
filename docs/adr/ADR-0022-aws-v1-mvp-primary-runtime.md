@@ -62,6 +62,15 @@ replacement_decision_refs:
 > Foundation Docs의 Canonical 반영이 완료되지 않은 제안이다. 문서 Merge도 AWS 배포
 > 승인이나 운영 준비 완료를 뜻하지 않는다.
 
+## 0. 2026-10-13 Owner 메시징 정렬
+
+이 문서는 여전히 Open PR #32의 Proposed AWS V1 기록이다.
+[ADR-0023](./ADR-0023-sqs-messaging-and-environment-isolation.md) / DEC-072는 JetStream 목표를 SQS로 부분 대체한다.
+SQS 목표 승인과 AWS V1 즉시 배포는 별개다. 내부 Job은 Worker + JPA, Local은 Broker
+없이 실행한다. NATS 신규 구현·이중 Provider, pg_cron/PGMQ/별도 Saga 서버를 MVP
+기본 의존성으로 추가하지 않는다. 탈퇴·제품 Membership·개인 BillingSubject는
+[ADR-0024](./ADR-0024-identity-commerce-owner-policy-alignment.md)의 승인 범위와 Proposed 구분을 따른다.
+
 ## 1. 결정
 
 Ranikun Labs의 모든 Product와 Shared Platform이 공통으로 사용하는 Production
@@ -149,8 +158,9 @@ Dataset, Image Digest, JVM 설정을 맞춘 Evidence로 4 EC2를 2대 또는 1�
 영속 Volume과 복구 Snapshot을 자동 교체/삭제하지 않는다. Terraform Destroy/Replace에는
 명시적 별도 Owner 승인이 필요하다.
 
-Aurora Serverless v2, Managed Valkey, SQS/PGMQ, ECS/Lambda는 장기 검토 후보이지 도입
-의무가 아니다. 월 비용 감소, API 지연/오류율, GC/Memory 안정성, 실패 영향과 복구 능력을
+Aurora Serverless v2, Managed Valkey, ECS/Lambda는 장기 검토 후보이지 도입
+의무가 아니다. 서비스 간 SQS 목표는 ADR-0023으로 결정됐지만 Provisioning은 조건부다.
+PGMQ는 MVP 기본 의존성에서 제외하며 재검토에는 별도 Owner 결정이 필요하다. 월 비용 감소, API 지연/오류율, GC/Memory 안정성, 실패 영향과 복구 능력을
 함께 만족할 때 새 Decision으로 검토한다. 월 ₩10,000은 최적화 목표이지 V1의 예산 상한이
 아니다.
 
@@ -161,7 +171,8 @@ ADR-0016은 삭제하거나 본문을 다시 쓰지 않는다. 본 ADR은 Mac mi
 Fencing 원칙 및 역사적 RTO/RPO는 보존한다.
 
 ADR-0015의 HTTP/JSON, SSE와 Messaging 경계, ADR-0020의 PostgreSQL Schema/Role/
-Migration 소유권, ADR-0021의 Shared Audit/JetStream Architecture는 그대로 유지한다.
+Migration 소유권과 ADR-0021의 Shared Audit 의미·Durability는 유지한다. JetStream
+Provider·AU-G3은 ADR-0023 / DEC-072가 SQS 목표로 부분 대체한다.
 새 Broker는 V1 배포 범위가 아니다.
 
 ## 7. 승인 Gate와 상태

@@ -74,28 +74,21 @@ size, and dashboard/query link. Use the same test profile before and after a cha
 
 - **Problem:** A V1 asynchronous use case may require durable queueing, retries, or ordering.
 - **Baseline:** The specific use case, event rate, ordering / deduplication requirement, delivery failure rate, and synchronous latency — UNKNOWN.
-- **Hypothesis:** SQS may meet a proven workflow requirement with acceptable delivery and operational semantics.
-- **Change:** First document the use case and consistency contract; then compare Standard and FIFO in an isolated proof.
+- **Target:** [ADR-0023](../../adr/ADR-0023-sqs-messaging-and-environment-isolation.md) / DEC-072 selects SQS; queue type and provisioning remain use-case gated.
+- **Change:** Define ordering, competing-consumer/fan-out, criticality, outbox, retry/visibility and DLQ contracts. Compare Standard/FIFO and conditional SNS only in isolated AWS Dev with separate Queue/DLQ/IAM/configuration/encryption boundaries.
 - **Measurement:** Throughput, queue age, duplicate handling, ordering, retry / DLQ behavior, end-to-end completion latency, and cost.
-- **Decision:** No queue until a concrete async use case passes its own gate and a separate architecture decision is approved.
+- **Decision:** Provider target is approved. No queue provisioning until ADR-0023 triggers, security/operations evidence and separate Owner execution approval are complete. Local emulator evidence does not prove AWS behavior.
 
-### PostgreSQL PGMQ
+### Non-baseline messaging alternatives — 2026-10-13 update
 
-- **Problem:** A required asynchronous workflow may benefit from database-local queue semantics.
-- **Baseline:** Proven use case, transaction boundary, throughput, lock contention, database CPU / IO, and queue age — UNKNOWN.
-- **Hypothesis:** In-database queueing could simplify atomic state transitions if it does not harm application queries or database recovery.
-- **Change:** Prototype behind a migration and feature boundary; compare with an external broker and SQS.
-- **Measurement:** Transaction contention, throughput, queue age, failure / retry behavior, DB resource impact, backup / restore, and operating cost.
-- **Decision:** Adopt only when database-local semantics are needed and measured impact is acceptable.
+PGMQ and pg_cron are not MVP default dependencies. Service-internal jobs use Spring Boot
+Application Worker + JPA; DB constraints, transactions and persisted job state remain in PostgreSQL.
+Any later database-scheduler/queue proposal requires a separate Owner decision and evidence.
 
-### NATS JetStream
-
-- **Problem:** A concrete cross-service event requirement may need durable broker delivery.
-- **Baseline:** The event schema, producers / consumers, throughput, ordering, replay, retention, delivery and recovery requirements — UNKNOWN.
-- **Hypothesis:** JetStream could satisfy the use case while preserving the architecture already approved in ADR-0021.
-- **Change:** Treat the approved NATS architecture and deployed Broker as separate states. Implement only against a separately approved use case and runbook.
-- **Measurement:** Publish / consume latency, replay correctness, duplicate / ordering behavior, retention, node recovery, and operational burden.
-- **Decision:** ADR-0021 remains approved; Broker deployment is not implied. No deployment without the use-case gate and explicit readiness evidence.
+NATS JetStream is excluded from new implementation targets by
+[ADR-0023](../../adr/ADR-0023-sqs-messaging-and-environment-isolation.md) / DEC-072. The previous ADR-0021 approval remains
+in its historical record with scoped supersession. Local NATS / Production SQS is not adopted.
+This roadmap no longer carries a JetStream implementation experiment.
 
 ### ECS / Lambda
 

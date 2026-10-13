@@ -21,6 +21,8 @@ related_adrs:
   - ADR-0020
   - ADR-0021
   - ADR-0022
+  - ADR-0023
+  - ADR-0024
 source_inputs:
   - docs/roadmap/product-roadmap.md
   - docs/architecture/shared-core-and-extensions.md
@@ -2699,6 +2701,9 @@ superseded_by: []
 
 ## DEC-057 — Shared Identity와 Shared Commerce의 논리적 책임 경계를 분리한다
 
+> **2026-10-13 scoped replacement: DEC-073.** Product Membership의 Shared Commerce 소유 표현만 ADR-0024로 부분 대체한다. 제품별 Membership은 Product 소유이며 Identity/Commerce 독립 경계는 유지한다.
+> 아래 본문은 당시 승인 기록이며 부분 대체된 Provider/Ownership을 현재 기준으로 적용하지 않는다.
+
 **Status:** accepted_with_constraints
 **Owner:** architecture
 **Decision type:** architecture
@@ -2769,6 +2774,7 @@ docs/decisions/decision-log.md
 ```text
 supersedes: []
 superseded_by:
+- DEC-073 (partial; scope described above)
 - DEC-067 (Shared Identity physicalization 미승인과 시점 deferral 범위만)
 ```
 
@@ -3300,6 +3306,9 @@ Shared Platform 논리 경계와 물리 배포 명칭 구분, Module·Data·Migr
 
 ## DEC-064 — 공통 플랫폼 통신·메시징·확장 기준을 정의한다
 
+> **2026-10-13 scoped replacement: DEC-072.** JetStream 목표 Provider와 Broker 기반 내부 Job 해석은 ADR-0023으로 부분 대체한다. HTTP/JSON·SSE와 provider-neutral Delivery/Outbox 원칙은 유지한다.
+> 아래 본문은 당시 승인 기록이며 부분 대체된 Provider/Ownership을 현재 기준으로 적용하지 않는다.
+
 **Status:** accepted_with_constraints
 **Owner:** architecture
 **Decision type:** architecture
@@ -3374,6 +3383,7 @@ clarifies:
 
 supersedes: []
 superseded_by:
+- DEC-072 (partial; scope described above)
 - DEC-067 (Shared Identity physical extraction 미승인 범위만)
 ```
 
@@ -3923,6 +3933,9 @@ RPL-55
 
 ## DEC-070 — Shared Audit Foundation Architecture와 첫 JetStream 활성화를 승인한다
 
+> **2026-10-13 scoped replacement: DEC-072.** JetStream Provider·AU-G3 선택은 ADR-0023으로 부분 대체한다. Shared Audit 의미·Producer Boundary·Durability·Ledger·Gate 선후관계는 유지한다.
+> 아래 본문은 당시 승인 기록이며 부분 대체된 Provider/Ownership을 현재 기준으로 적용하지 않는다.
+
 **Status:** accepted_with_constraints
 **Owner:** architecture
 **Decision type:** architecture
@@ -4049,7 +4062,8 @@ docs/decisions/decision-log.md
 partial_supersedes:
 - ADR-0013 §8의 중앙 Audit Module이 즉시 구현 대상이 아니라는 Architecture 미승인 표현
 
-superseded_by: []
+superseded_by:
+- DEC-072 (partial; scope described above)
 ```
 
 ### References
@@ -4458,10 +4472,60 @@ preserves:
 - ADR-0016 historical 4h RTO / 15m RPO as non-applicable to the new AWS Primary
 - ADR-0015 communication and deferred-messaging boundaries
 - ADR-0020 product/service DB ownership and migration boundaries
-- ADR-0021 Shared Audit architecture; no V1 broker deployment is implied
+- ADR-0021 Shared Audit semantic/durability architecture; Provider choice is partially replaced by ADR-0023 / DEC-072, and no V1 broker deployment is implied
 
 supersedes: []
 superseded_by: []
+
+---
+
+## DEC-072 — SQS 목표 Provider, Worker + JPA 및 환경 격리
+
+**Status:** accepted_with_constraints
+**Owner / scope:** architecture / messaging, internal jobs, environment isolation
+**Decision date:** 2026-10-13
+**Approval source:** 이번 Owner Task와 Additional Local Messaging Decision
+**Document review:** in_review (PR); 구현·Runtime·Production 배포 승인 아님
+**Related ADR:** [ADR-0023](../adr/ADR-0023-sqs-messaging-and-environment-isolation.md)
+
+서비스 간 목표 Provider는 AWS SQS다. NATS 신규 구현과 Local NATS / Production SQS
+이중 Provider는 채택하지 않는다. Local 기본값은 Broker 없음, 내부 Job은 Spring Boot
+Application Worker + JPA다. pg_cron/PGMQ/별도 Saga 서버는 MVP 기본 의존성이 아니다.
+HTTP/JSON·SSE, 기존 Envelope와 조건부 Producer-owned Outbox는 유지한다.
+Dev/Production Queue·DLQ·ARN/URL·IAM/Credential·구성·암호화·운영 권한 격리는
+불변조건이다. Standard/FIFO·SNS·계정 분리·운영 수치·Provisioning 시점은 별도 Gate다.
+
+partial_supersedes: DEC-064 / ADR-0015의 JetStream 목표 및 내부 Job Broker 해석,
+DEC-070 / ADR-0021의 JetStream Provider·AU-G3 선택.
+remaining_valid_scope: HTTP/JSON·SSE, Audit 의미/Producer Contract, Durability/Outbox,
+Schema Ownership, Append Ledger, AU-G8 → AU-G7 및 전체 Gate 선후관계.
+superseded_by: []
+
+영향 문서·설계 요구·비용/보안 Trade-off·Provisioning Trigger는 ADR-0023에서 관리한다.
+이 결정은 AWS V1에 SQS를 즉시 배포하지 않는다.
+
+## DEC-073 — 공통 Account, 제품 Membership과 개인 구독 소유권
+
+**Status:** accepted_with_constraints
+**Owner / scope:** architecture / identity-commerce-product ownership
+**Decision date:** 2026-10-13
+**Approval source:** 이번 Owner Task의 Other Owner Decisions to Align
+**Document review:** in_review (PR); 전체 구현 상태 not_verifiable
+**Related ADR:** [ADR-0024](../adr/ADR-0024-identity-commerce-owner-policy-alignment.md)
+
+공통 PlatformAccount + 제품별 User/Membership, Carelog/Finance별 OAuth App,
+공통 SSO + 제품별 인가, 재인증을 거친 명시적 Social Account Linking,
+개인 BillingSubject 구독을 정렬한다. Organization Billing은 MVP에서 제외한다.
+Identity/Commerce/Product Data Ownership은 분리한다.
+
+partial_supersedes: DEC-057 / ADR-0012의 Product Membership을 Commerce가 소유한다는 범위만.
+remaining_valid_scope: Identity/Commerce 독립 논리 경계, Commerce 물리화 유예,
+V1 Local OSS 독립성과 Product Data Ownership.
+superseded_by: []
+
+C 중심 Lean Hybrid는 Owner 방향이다. 탈퇴·법정 보존 상세, 보존기간, Tombstone 수명,
+즉시 차단 수준은 **Proposed / 미결정**이며 이 승인의 effective scope에서 제외한다.
+상세 Ownership·재인증/연결 Guard·후속 Owner 질문은 ADR-0024에서 관리한다.
 
 ---
 

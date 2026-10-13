@@ -20,6 +20,12 @@ source_inputs:
 
 # Ranikun Labs Platform Foundation
 
+> **Owner policy alignment — 2026-10-13:** [ADR-0023](docs/adr/ADR-0023-sqs-messaging-and-environment-isolation.md) / DEC-072가
+> JetStream 목표를 SQS로 부분 대체하고 Worker + JPA·Local Broker 없음·Dev/Production
+> 보안 격리를 기록한다. [ADR-0024](docs/adr/ADR-0024-identity-commerce-owner-policy-alignment.md) / DEC-073은 공통 Account·제품별
+> Membership·개인 구독을 정렬한다. 탈퇴·보존 상세는 Proposed이며 AWS V1 즉시 배포와
+> 제품 구현 완료를 의미하지 않는다. 과거 ADR 승인 본문과 유효 잔여 범위는 보존한다.
+
 ## 1. Repository Purpose
 
 `ranikun-labs/harness-foundation-docs`는 Ranikun Labs의 Platform Foundation

@@ -25,16 +25,23 @@
 
 ## ADR Index
 
+Current Owner alignment (2026-10-13): ADR-0023 / DEC-072 and ADR-0024 / DEC-073.
+Owner directions are explicit; new document records are in review. ADR-0022 remains Proposed
+in [Open PR #32](https://github.com/ranikun-labs/harness-foundation-docs/pull/32).
+Historical approval text does not override the scoped supersession below.
+
 | ADR | Status | Title | Relationship |
 |---|---|---|---|
-| [ADR-0012](./ADR-0012-shared-identity-commerce-boundary.md) | accepted | Shared Identity와 Shared Commerce의 논리적 책임 경계를 분리한다 | ADR-0013/0014가 이 논리 경계를 유지 |
+| [ADR-0012](./ADR-0012-shared-identity-commerce-boundary.md) | accepted_with_constraints | Shared Identity와 Shared Commerce의 논리적 책임 경계를 분리한다 | ADR-0024가 Product Membership의 Commerce 소유 범위만 부분 대체; Identity/Commerce 독립 경계 유지 |
 | [ADR-0013](./ADR-0013-target-deployment-and-data-boundaries.md) | accepted_with_constraints | 목표 Deployment Unit과 PostgreSQL 데이터 소유권 경계를 정의한다 | 명칭은 ADR-0014, Gateway·Identity 물리화와 Audit 영구 금지 해석은 ADR-0017, PostgreSQL target placement는 ADR-0020 / DEC-069로 partial supersession |
 | [ADR-0014](./ADR-0014-shared-services-deployment-unit-naming.md) | accepted | Identity·Commerce·Audit 공동 배포 후보를 Shared Services Deployment Unit으로 구분한다 | ADR-0013 명칭을 대체; 구체 Process는 ADR-0017이 partial supersede |
-| [ADR-0015](./ADR-0015-platform-communication-messaging-scaling.md) | accepted_with_constraints | 공통 플랫폼 통신·메시징·확장 기준을 정의한다 | Shared Identity 추출 미승인만 ADR-0017로 partial supersession; 통신 불변조건 유지 |
+| [ADR-0015](./ADR-0015-platform-communication-messaging-scaling.md) | accepted_with_constraints | 공통 플랫폼 통신·메시징·확장 기준을 정의한다 | Identity 추출은 ADR-0017, JetStream Provider는 ADR-0023으로 partial supersession; HTTP/JSON·SSE 유지 |
 | [ADR-0016](./ADR-0016-primary-deployment-and-disaster-recovery.md) | accepted_with_constraints | Mac mini Primary와 AWS DR 기반 배포·재해복구 경계를 정의한다 | 원본 결정·상태를 보존; ADR-0022가 V1 Primary의 Mac mini 배치와 AWS DR-only 해석만 partial supersede; 과거 RPO/RTO와 Human-approved Failover / Write Fencing 원칙은 그대로 보존 |
 | [ADR-0017](./ADR-0017-shared-platform-gateway-identity-physicalization.md) | accepted_with_constraints | Shared Gateway와 Shared Identity의 물리화를 승인한다 | Gateway·Identity only; implementation/runtime/release `not_started` / `not_supported` / `not_released`; DEC-067 |
 | [ADR-0018](./ADR-0018-shared-ai-platform-core-placement.md) | accepted | Shared AI Phase 1을 Platform Core 논리 모듈로 배치한다 | Effective 2026-08-26; ADR-0017 §7 placement assumption만 partial supersede; Shared AI ADR-0005 coordinated acceptance; technology deferred |
 | [ADR-0019](./ADR-0019-rpl-55-slice-a-interim-service-auth.md) | accepted_with_constraints | RPL-55 Slice A′의 임시 서비스 인증 경계를 기록한다 | `platform-identity` → Carelog CRM identity projection의 단일 endpoint-scoped credential; DEC-068; portfolio-wide service auth 아님 |
 | [ADR-0020](./ADR-0020-shared-platform-postgresql-schema-ownership.md) | accepted_with_constraints | Shared Platform PostgreSQL를 단일 Application Database와 Schema Ownership으로 정렬한다 | ADR-0013 §6의 PostgreSQL target placement를 partial supersede; DEC-069 |
-| [ADR-0021](./ADR-0021-shared-audit-foundation-architecture.md) | accepted_with_constraints | Shared Audit Foundation Architecture와 JetStream 활성화를 정의한다 | ADR-0013 §8의 중앙 Audit Module 즉시 미구현 표현을 partial supersede; ADR-0015 §7.6의 첫 JetStream Use Case 확정; AU-G2 producer boundary implemented, later transport/store/consumer gates pending; runtime `not_supported`; DEC-070 |
-| [ADR-0022](./ADR-0022-aws-v1-mvp-primary-runtime.md) | proposed (decision: accepted_with_constraints) | AWS V1 MVP Production Primary Runtime을 4개 독립 EC2로 정한다 | ADR-0016의 Mac mini Primary와 AWS DR-only 해석만 partial supersede; EC2 4대/RDS/Valkey/중앙 관측의 7일 Baseline 및 증거 기반 V2; ADR-0015/0020/0021 유지
+| [ADR-0021](./ADR-0021-shared-audit-foundation-architecture.md) | accepted_with_constraints | Shared Audit Foundation Architecture와 JetStream 활성화를 정의한다 | ADR-0013 §8의 중앙 Audit Module 즉시 미구현 표현을 partial supersede; 당시 첫 JetStream 승인의 Provider·AU-G3은 ADR-0023으로 부분 대체; AU-G2 producer boundary implemented, later transport/store/consumer gates pending; runtime `not_supported`; DEC-070 |
+| [ADR-0022](./ADR-0022-aws-v1-mvp-primary-runtime.md) | proposed (decision: accepted_with_constraints) | AWS V1 MVP Production Primary Runtime을 4개 독립 EC2로 정한다 | ADR-0016의 Mac mini Primary와 AWS DR-only 해석만 partial supersede; EC2 4대/RDS/Valkey/중앙 관측·증거 기반 V2 제안; ADR-0023이 Messaging Provider만 정렬; 배포 미승인
+| [ADR-0023](./ADR-0023-sqs-messaging-and-environment-isolation.md) | in_review (decision: accepted_with_constraints) | SQS 목표 Provider와 Dev/Production 격리 | ADR-0015/0021의 JetStream Provider 부분 대체; Worker + JPA, Local Broker 없음; DEC-072 |
+| [ADR-0024](./ADR-0024-identity-commerce-owner-policy-alignment.md) | in_review (decision: accepted_with_constraints) | Account·제품 Membership·개인 BillingSubject 정책 | ADR-0012의 Membership 소유만 부분 대체; 탈퇴·보존 상세 Proposed; DEC-073 |

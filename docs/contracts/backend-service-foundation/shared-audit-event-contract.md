@@ -3,6 +3,7 @@
 - Status: Draft — canonical AU-G1 contract; AU-G1 review passed
 - Contract scope: AU-G1 producer wire contract and canonical event-policy registry
 - Canonical owner: `harness-foundation-docs`
+- Current transport architecture: [ADR-0023](../../adr/ADR-0023-sqs-messaging-and-environment-isolation.md) / DEC-072 — SQS target; no deployment implied
 - Architecture predecessor: [ADR-0021](../../adr/ADR-0021-shared-audit-foundation-architecture.md) / DEC-070
 - AU-G2B implementation evidence: `ranikun-labs/platform-services@2009a46e68fb2289654b52065958a18313d9f6ce`
 - Producer semantic boundary: Implemented
@@ -20,7 +21,7 @@ Subscription & Payments.
 ```text
 AU-G1 canonical contract and Identity catalog
 + AU-G2 producer semantic publisher boundary implemented
-!= JetStream stream or consumer deployed
+!= SQS queue or consumer deployed
 != audit schema created
 != producer outbox implemented
 != Identity instrumented
@@ -484,7 +485,7 @@ In particular, `ID-AUD-05`, `ID-AUD-09`, and `ID-AUD-10` remain unable to claim 
 without the AU-G8 durability-capable capture. This contract preserves the ADR-0021 gate order;
 the following work remains deferred:
 
-- AU-G3: JetStream subject, transport, retry/configuration values, and operations
+- AU-G3: SQS transport, environment-isolated Queue/DLQ mapping, retry/configuration values, and operations (ADR-0023 partially supersedes the former JetStream choice)
 - AU-G4: append store, fingerprint/dedup SQL, retention durations, and deletion policy
 - AU-G5: consumer
 - AU-G8: outbox/durable publication, replay, reconciliation, monitoring, and alerting mechanisms

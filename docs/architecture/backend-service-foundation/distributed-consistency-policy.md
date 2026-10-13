@@ -25,6 +25,15 @@ It covers:
 - dead-letter handling;
 - failure isolation.
 
+## 1.1 Current execution policy
+
+[ADR-0023](../../adr/ADR-0023-sqs-messaging-and-environment-isolation.md) governs AWS SQS delivery and Dev/Production isolation.
+Service-internal jobs, outbox publication and reconciliation use Spring Boot Worker + JPA
+with persisted state, bounded retries and safe claims/leases where required. FK/Unique/Index
+and local transactions remain DB responsibilities. pg_cron, PGMQ, a separate broker and a
+separate Saga server are not MVP defaults. The following consistency rules do not select a
+queue type, numeric retry policy or deploy infrastructure.
+
 ## 2. Core model
 
 A database transaction is local to one service.

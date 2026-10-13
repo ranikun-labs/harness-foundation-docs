@@ -27,6 +27,17 @@ The goal is to minimize temporal coupling while preserving clear ownership and o
 9. A user request should have at most one required synchronous downstream dependency where practical.
 10. Long required synchronous call chains are prohibited.
 
+## 2.1 Current messaging and worker decision
+
+[ADR-0023](../../adr/ADR-0023-sqs-messaging-and-environment-isolation.md) / DEC-072 replaces the earlier JetStream target with AWS SQS.
+HTTP/JSON and SSE stay in force. Internal jobs use Spring Boot Application Worker + JPA;
+local development starts without a broker. Local NATS / Production SQS is not adopted.
+pg_cron, PGMQ and a separate Saga server are not MVP baseline dependencies.
+Standard/FIFO and SNS are use-case decisions. Dev/Production isolation includes Queue/DLQ,
+URL/ARN, IAM, credentials, configuration and encryption boundaries; names alone are insufficient.
+Provider selection does not deploy SQS in AWS V1. Detailed delivery, audit, DLQ and provisioning
+requirements live in ADR-0023; existing envelope and criticality contracts remain authoritative.
+
 ## 3. Communication modes
 
 ## 3.1 Locally validated signed token
@@ -121,7 +132,8 @@ A command may be asynchronous, but it requires a separate command contract and o
 | External API | HTTP/JSON | Service repository records actual support |
 | Internal synchronous API | HTTP/JSON | Target default |
 | AI token streaming | SSE | Target default, not current runtime evidence |
-| Asynchronous event or job | NATS JetStream after a concrete use case | Not currently adopted |
+| Cross-service asynchronous message | AWS SQS; Standard/FIFO and SNS require use-case evidence | Target accepted (ADR-0023), provisioning gated |
+| Service-internal asynchronous job | Spring Boot Application Worker + JPA; local brokerless | Owner target; concrete implementation evidence required |
 
 The Gateway is the external ingress and security boundary.
 
@@ -367,7 +379,7 @@ Finance and Carelog must not communicate by reading each other's databases.
 A direct service relationship should be introduced only after ownership and contract review.
 
 No section in this document proves that an independent Shared Identity, Shared AI,
-NATS JetStream, gRPC, Kafka, or Kubernetes runtime currently exists.
+SQS, gRPC, Kafka, or Kubernetes runtime currently exists.
 
 ## 10. Required service documents
 

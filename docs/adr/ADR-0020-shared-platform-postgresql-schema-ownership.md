@@ -48,6 +48,11 @@ replacement_decision_refs:
 
 # ADR-0020: Shared Platform PostgreSQL를 단일 Application Database와 Schema Ownership으로 정렬한다
 
+> **2026-10-13 정합성:** [ADR-0023](./ADR-0023-sqs-messaging-and-environment-isolation.md)의 Worker + JPA 실행 정책에서도
+> 이 ADR의 Schema/Role/Migration Ownership은 유지한다. DB는 제약·Transaction·작업 상태
+> 영속성을 담당하며 pg_cron/PGMQ를 기본 실행기로 추가하지 않는다. Messaging 환경 격리는
+> PostgreSQL 물리 공유 승인과 별도 불변조건이다.
+
 > **상태 경계**
 >
 > ```text

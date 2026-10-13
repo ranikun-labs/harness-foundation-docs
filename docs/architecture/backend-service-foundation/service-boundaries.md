@@ -107,6 +107,16 @@ The Dev Harness boundary preserves `DEC-003`, `DEC-004`, and `DEC-043`: V2 is a
 personal managed workflow, while team Workspace and Organization governance remain
 V3. This map does not approve Workspace implementation in V2.
 
+## 3.1 Current Owner policy
+
+[ADR-0024](../../adr/ADR-0024-identity-commerce-owner-policy-alignment.md) / DEC-073 records the common PlatformAccount,
+product-owned User/Membership, Carelog/Finance OAuth App separation, shared SSO with
+product authorization, explicit reauthenticated Social Account Linking and personal
+BillingSubject subscription. Organization Billing is outside MVP. Commerce owns commercial
+entitlement, not product membership. Withdrawal follows the Owner's C-centered Lean Hybrid
+direction; legal retention, tombstone lifetime and immediate blocking details remain Proposed.
+Implementation and production completion are not implied.
+
 ## 4. Shared Identity boundary
 
 ### 4.1 Owned responsibilities
@@ -148,7 +158,7 @@ Shared Identity must not own:
 - product-specific organization membership unless explicitly promoted to a separate shared capability;
 - product-specific authorization policy;
 - product-specific consent;
-- billing or subscription state unless a separate Commerce service is adopted;
+- billing, subscription or commercial entitlement state (Commerce ownership; physicalization remains deferred);
 - large product profiles containing domain-specific fields.
 
 ### 4.4 Identity identifier

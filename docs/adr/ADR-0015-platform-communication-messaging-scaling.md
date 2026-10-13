@@ -42,20 +42,30 @@ evidence_refs:
   - "care-log/carelog-be PR #37"
 supersedes: []
 superseded_by:
+  - ADR-0023
   - ADR-0017
 superseded_scope:
+  - "JetStream 목표 Provider, Shared Audit 첫 JetStream Use Case 및 Broker 기반 내부 Job 해석"
   - "Shared Identity physical extraction 미승인 범위"
 remaining_valid_scope:
+  - "HTTP/JSON, SSE, Gateway/Identity 호출 경계와 provider-neutral Delivery/Outbox 원칙"
   - "HTTP/JSON과 Direct internal call 기본값"
   - "Gateway ingress와 trusted authentication context 경계"
-  - "NATS·gRPC·Kafka·Kubernetes 도입 Trigger"
+  - "gRPC·Kafka·Kubernetes 도입 Trigger (NATS 선택은 ADR-0023으로 부분 대체)"
   - "Shared AI와 Product 책임 경계"
 replacement_decision_refs:
+  - ADR-0023
+  - DEC-072
   - ADR-0017
   - DEC-067
 ---
 
 # ADR-0015: 공통 플랫폼 통신·메시징·확장 기준을 정의한다
+
+> **2026-10-13 Owner 결정 / Partial supersession:** [ADR-0023](./ADR-0023-sqs-messaging-and-environment-isolation.md) / DEC-072가
+> JetStream 목표 Provider, Shared Audit 첫 JetStream Use Case 및 Broker 기반 내부 Job 해석을 부분 대체한다.
+> HTTP/JSON, SSE, Gateway/Identity 호출 경계와 provider-neutral Delivery/Outbox 원칙은 유지한다. 아래 당시 승인 본문·날짜는 역사 기록이며,
+> 대체된 범위를 현재 구현 지침으로 사용하지 않는다. SQS 목표 승인은 배포 승인이 아니다.
 
 > **Partial supersession:** Shared Identity physical extraction 미승인 범위만
 > [ADR-0017](./ADR-0017-shared-platform-gateway-identity-physicalization.md)로 대체됐다.

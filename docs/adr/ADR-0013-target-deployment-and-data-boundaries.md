@@ -57,6 +57,11 @@ replacement_decision_refs:
 
 # ADR-0013: 목표 Deployment Unit과 PostgreSQL 데이터 소유권 경계를 정의한다
 
+> **현재 메시징·소유권 정렬 (2026-10-13):** [ADR-0023](./ADR-0023-sqs-messaging-and-environment-isolation.md)은 ADR-0021의
+> JetStream Provider 승인을 SQS 목표로 부분 대체한다. 이 문서의 JetStream 활성화 인용은
+> 당시 DEC-070의 이력이다. Product User/Membership과 개인 BillingSubject는
+> [ADR-0024](./ADR-0024-identity-commerce-owner-policy-alignment.md)가 소유하며, 이 ADR의 독립 Data Ownership은 유지한다.
+
 ## 1. Decision Summary
 
 > **Partial supersession:** `Shared Platform Server` 명칭과 그 물리 그룹 파생 표현은
