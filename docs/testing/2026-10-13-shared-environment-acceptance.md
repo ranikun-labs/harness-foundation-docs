@@ -95,9 +95,9 @@ accepted_with_constraints이며, ADR-0012/0013의 일부 물리화·배치 범�
 
 | 기존 상태 / 충돌·누락 | 처리 |
 |---|---|
-| ADR-0015 / DEC-064: 조건 충족 후 JetStream | ADR-0023 / DEC-072로 Provider만 부분 대체; HTTP/JSON·SSE 유지 |
-| ADR-0021 / DEC-070: Shared Audit JetStream 승인·AU-G3 | 같은 신규 결정으로 Provider·AU-G3 부분 대체; 원문/승인일·Audit 의미/Durability/Gate 유지 |
-| ADR-0012 / DEC-057: Product Membership을 Commerce 소유 | ADR-0024 / DEC-073으로 제품 소유 정렬; Identity/Commerce 독립 경계 유지 |
+| ADR-0015 / DEC-064: 조건 충족 후 JetStream | Owner 정책 방향은 SQS Target; formal Supersession / 발효일 미확인; HTTP/JSON·SSE 유지 |
+| ADR-0021 / DEC-070: Shared Audit JetStream 승인·AU-G3 | SQS Target Owner 방향; formal Supersession / 발효일 미확인; 원문·Audit 의미/Durability/Gate 유지 |
+| ADR-0012 / DEC-057: Product Membership을 Commerce 소유 | Owner 방향은 각 Product 소유로 정렬; ADR 최종 승인·formal Supersession / 발효일 미확인; Identity/Commerce 경계 유지 |
 | 공통 SSO·제품별 OAuth App·재인증 Linking·개인 BillingSubject 누락 | ADR-0024에 Owner 확정 범위 명시; Organization Billing MVP 제외 |
 | Local/Prod 이중 Provider 및 내부 Job 실행 해석 | Local Broker 없음, Worker + JPA; pg_cron/PGMQ/별도 Saga 기본 의존성 제외 |
 | Dev/Prod 보안 경계 누락 | Queue/DLQ·ARN/URL·IAM/Credential·설정·Secret/KMS·운영 Role 격리 불변조건 |

@@ -53,10 +53,8 @@ evidence_refs:
   - "harness-foundation-docs/main@a1ac1ce09e3a2da5f0e85f681ad05a36302a01f9"
 supersedes:
   - "ADR-0013 (partial)"
-superseded_by:
-  - ADR-0023
+superseded_by: []
 superseded_scope:
-  - "JetStream Producer/Consumer/Stream과 ACK Provider 선택 및 AU-G3 JetStream Transport"
   - "ADR-0013 §8의 중앙 Audit Module이 즉시 구현 대상이 아니라는 Architecture 미승인 표현"
   - "Audit를 Architecture Decision 없는 Deferred 후보로만 표현한 범위"
 remaining_valid_scope:
@@ -64,7 +62,7 @@ remaining_valid_scope:
   - "ADR-0013 §8의 Product별 Audit Event 의미·생성 시점 소유권"
   - "ADR-0013 §8의 Shared Audit 동기 호출 강제 금지"
   - "ADR-0013 §7의 Audit Event가 Product Domain Entity에 물리 FK를 걸지 않는 규칙"
-  - "ADR-0015의 provider-neutral Delivery 기본값 (JetStream 선택은 ADR-0023으로 부분 대체)"
+  - "ADR-0015의 provider-neutral Delivery 기본값; SQS 목표는 Owner 정책 방향으로 기록됐으며 formal Supersession / 발효일은 미확인"
   - "ADR-0020의 Schema Ownership과 Cross-service FK 금지"
 replacement_decision_refs:
   - ADR-0023
@@ -74,10 +72,10 @@ replacement_decision_refs:
 
 # ADR-0021: Shared Audit Foundation Architecture와 JetStream 활성화를 정의한다
 
-> **2026-10-13 Owner 결정 / Partial supersession:** [ADR-0023](./ADR-0023-sqs-messaging-and-environment-isolation.md) / DEC-072가
-> JetStream Producer/Consumer/Stream과 ACK Provider 선택 및 AU-G3 JetStream Transport를 부분 대체한다.
-> Shared Audit 의미, Producer Contract, Criticality/Outbox/Schema Ownership, Ledger 및 Gate 선후관계는 유지한다. 아래 당시 승인 본문·날짜는 역사 기록이며,
-> 대체된 범위를 현재 구현 지침으로 사용하지 않는다. SQS 목표 승인은 배포 승인이 아니다.
+> **2026-10-13 Owner 정책 방향 (formal Supersession / 발효일 미확인):** [ADR-0023](./ADR-0023-sqs-messaging-and-environment-isolation.md) / DEC-072는
+> SQS 목표와 NATS 신규 구현 제외 방향을 기록한다. ADR-0023은 in_review이며 공식 최종 승인은 미확인이다.
+> Shared Audit 의미, Producer Contract, Criticality / Outbox / Schema Ownership, Ledger 및 Gate
+> 선후관계는 유지한다. 아래 당시 승인 본문·날짜는 역사 기록이다.
 
 > **상태 경계**
 >

@@ -112,10 +112,10 @@ Product Ecosystem
 │   └── Finance Product Backend / Runtime
 │
 ├── Shared Identity
-│   └── Account / Credential / Authentication / Token / Session
+│   └── PlatformAccount / Credential / Authentication / Token / Session
 │
 ├── Shared Commerce
-│   └── Product Membership / Subscription / Billing / Payment / Entitlement / Quota
+│   └── Subscription / Billing / Payment / Refund / Commercial Entitlement
 │
 ├── Shared AI
 │   └── Product-neutral model/tool/retrieval execution
@@ -678,7 +678,7 @@ Shared Identity
 
 #### 주요 책임
 
-- Account
+- PlatformAccount
 - Credential 관리
 - Login / Logout과 Authentication
 - Access / Refresh Token
@@ -688,20 +688,21 @@ Shared Identity
 
 #### Shared Commerce와의 경계
 
-Shared Identity는 Product Membership, Payment, Entitlement를 소유하지 않는다.
+Shared Identity는 Product Membership을 소유하지 않으며 Shared Commerce의 Subscription / Billing / Payment / Refund / 상업적 Entitlement를 소유하지 않는다.
 
 ```text
 Shared Identity
-= 사용자가 누구인가
-= 인증됐는가
+= PlatformAccount / Authentication / Session
+
+Product Membership
+= 각 Product가 소유하는 User / Membership 및 제품 인가
 
 Shared Commerce
-= Product Membership
-+ Subscription
+= Subscription
 + Billing
 + Payment
-+ Entitlement
-+ Quota
++ Refund
++ Commercial Entitlement
 ```
 
 #### 논리 경계와 물리화 시점
@@ -728,15 +729,14 @@ Shared Commerce는 여러 제품이 공유할 수 있는 상업 기능의
 
 ```text
 Shared Commerce
-├── product-membership
 ├── subscription
 ├── billing
 ├── payment
-├── entitlement
-└── quota
+├── refund
+└── commercial-entitlement
 ```
 
-Shared Commerce는 Shared Identity의 하위 Module이 아니다.
+Shared Commerce는 Shared Identity의 하위 Module이 아니다. Organization Billing은 MVP 범위 밖이다.
 
 별도 Server, Repository, Database와 Deployment는 승인하지 않는다.
 
@@ -1100,13 +1100,14 @@ refresh token
 논리 소유자: Shared Commerce
 
 ```text
-product membership
 subscription
 billing
 payment
-entitlement
-quota
+refund
+commercial entitlement
 ```
+
+Product Membership은 각 Product가 소유하며 Shared Commerce 데이터에 포함되지 않는다.
 
 ### 10.4 Development Control 데이터
 

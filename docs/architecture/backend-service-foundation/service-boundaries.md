@@ -109,13 +109,12 @@ V3. This map does not approve Workspace implementation in V2.
 
 ## 3.1 Current Owner policy
 
-[ADR-0024](../../adr/ADR-0024-identity-commerce-owner-policy-alignment.md) / DEC-073 records the common PlatformAccount,
-product-owned User/Membership, Carelog/Finance OAuth App separation, shared SSO with
-product authorization, explicit reauthenticated Social Account Linking and personal
-BillingSubject subscription. Organization Billing is outside MVP. Commerce owns commercial
-entitlement, not product membership. Withdrawal follows the Owner's C-centered Lean Hybrid
-direction; legal retention, tombstone lifetime and immediate blocking details remain Proposed.
-Implementation and production completion are not implied.
+[ADR-0024](../../adr/ADR-0024-identity-commerce-owner-policy-alignment.md) / DEC-073 records the Owner direction:
+shared PlatformAccount / Authentication / Session; product-owned User / Membership; separate Carelog / Finance OAuth
+Apps; shared SSO with product authorization; explicit reauthenticated Social Account Linking; and personal BillingSubject
+subscription. Shared Commerce owns Subscription, Billing, Payment, Refund and commercial Entitlement. Organization
+Billing is outside MVP. ADR-0024 remains in_review; official final approval and formal Supersession / effective date are
+unconfirmed. Withdrawal / retention details remain Proposed. Implementation and production completion are not implied.
 
 ## 4. Shared Identity boundary
 

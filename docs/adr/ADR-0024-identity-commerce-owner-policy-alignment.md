@@ -18,16 +18,15 @@ constraints:
   - "Owner 승인 범위는 논리 정책이며 전체 제품 구현·배포 완료가 아니다"
   - "Organization Billing은 MVP 범위에서 제외한다"
   - "탈퇴·법정 보존 상세 정책은 Proposed이며 수치·즉시 차단 수준을 확정하지 않는다"
+  - "Owner 승인은 정책 방향에 한정하며 공식 ADR 최종 승인과 formal Supersession / 발효일은 미확인이다"
 affected_docs:
   - docs/adr/ADR-0012-shared-identity-commerce-boundary.md
   - docs/architecture/backend-service-foundation/service-boundaries.md
   - docs/decisions/decision-log.md
 evidence_refs:
   - "Owner task decision, 2026-10-13, Other Owner Decisions to Align"
-supersedes: [ADR-0012]
+supersedes: []
 superseded_by: []
-superseded_scope:
-  - "ADR-0012의 Product Membership을 Shared Commerce가 소유하는 포괄적 표현"
 remaining_valid_scope:
   - "Identity와 Commerce의 동급 독립 논리 경계, Commerce 물리화 유예와 V1 Local OSS 독립성"
 replacement_decision_refs: [DEC-073]
@@ -35,18 +34,18 @@ replacement_decision_refs: [DEC-073]
 
 # ADR-0024: Identity / Commerce / Product Owner 정책 정렬
 
-> **Owner Review 보완:** `decision_status`는 2026-10-13 요청에서 명시된 정책 방향에만
-> 적용한다. 이 ADR 전체의 상세 설계·최종 문서 승인이나 Supersession의 공식 발효를
-> 증명하지 않는다. `document_status: in_review`를 유지하고 공식 승인 기록은 확인되지
-> 않아 `approvers: []`, `approved_at: null`, `effective_from: null`로 둔다.
+> **Owner 승인 범위:** `decision_status: accepted_with_constraints`는 이 문서의 정책 방향에만 적용한다.
+> ADR 문서는 `document_status: in_review`이며 공식 문서 최종 승인과 formal Supersession /
+> 발효일은 미확인이다. `approvers: []`, `approved_at: null`, `effective_from: null`을 유지한다.
 > `reviewed_at`은 문서 검토일이며 Owner 최종 승인일이 아니다.
 
 ## 1. 결정과 기존 충돌
 
 ADR-0012 / DEC-057은 Shared Commerce에 `Product Membership`을 포함한다.
 이번 Owner 결정에 따라 **제품별 User / Membership은 Product가 소유**하고
-Commerce는 구독·Billing·Payment·상업적 Entitlement를 소유한다. Membership과
-유료 Entitlement는 같은 개념이 아니다. 기존 본문을 지우지 않고 이 범위만 부분 대체한다.
+Shared Commerce는 Subscription·Billing·Payment·Refund와 상업적 Entitlement를 소유한다. Membership과
+유료 Entitlement는 같은 개념이 아니다. 이는 승인된 Owner 정책 방향이며, 기존 ADR-0012의 공식
+Supersession이나 발효를 의미하지 않는다.
 
 공통 `PlatformAccount`, 제품별 OAuth App, 공통 SSO·제품별 인가, 명시적 Social
 Account Linking과 개인 BillingSubject는 기존 ADR의 누락된 정책을 구체화한다.
@@ -60,7 +59,7 @@ Identity 물리화 ADR-0017, PostgreSQL ADR-0020과 Audit ADR-0021의 독립 Own
 | Identity | 공통 PlatformAccount, Credential, ExternalIdentity, 인증·Session·Token·SSO | 제품은 안정적 opaque Account ID를 Weak Reference로 소비 |
 | Carelog / Finance | 각 제품의 User, Membership, Onboarding, Consent, Role/Permission과 인가 | 공통 로그인은 제품 가입·권한 부여를 자동 의미하지 않음 |
 | OAuth App | Carelog / Finance별 App 분리 | Identity가 인증·Linkage를 관리하되 Client 설정·Redirect·State·제품 Audience 경계를 분리 |
-| Commerce | 개인 BillingSubject 기반 Subscription, Billing, Payment와 상업적 Entitlement | Product Membership을 대체하지 않고 각 제품은 자체 접근 인가를 집행 |
+| Commerce | 개인 BillingSubject 기반 Subscription, Billing, Payment, Refund와 상업적 Entitlement | Product Membership을 대체하지 않고 각 제품은 자체 접근 인가를 집행 |
 | Shared AI | 공통 실행 경계와 구현된 Capability의 기존 소유권 유지 | Product 데이터·Prompt·Workflow·인가 정책을 이전하지 않음 |
 
 OAuth App 분리는 사용자 계정의 제품별 복제를 의미하지 않는다. 같은 PlatformAccount를

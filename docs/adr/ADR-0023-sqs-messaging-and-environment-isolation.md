@@ -22,6 +22,8 @@ constraints:
   - "Local 기본값은 Broker 없음; 내부 Job은 Spring Boot Application Worker + JPA"
   - "Dev/Production Queue, DLQ, IAM 및 구성 경계를 격리한다"
   - "Standard/FIFO, SNS, 운영 수치와 AWS 계정 분리는 요구사항 기반 후속 결정이다"
+  - "Owner 승인은 SQS 목표 정책 방향에 한정하며 공식 문서 최종 승인과 Supersession / 발효일은 미확인이다"
+  - "AWS Dev / Production Provisioning은 실행되지 않았고 승인되지 않았다"
 affected_docs:
   - docs/adr/ADR-0015-platform-communication-messaging-scaling.md
   - docs/adr/ADR-0021-shared-audit-foundation-architecture.md
@@ -32,11 +34,8 @@ evidence_refs:
   - "Owner task decision, 2026-10-13, including Additional Local Messaging Decision"
   - "https://github.com/ranikun-labs/harness-foundation-docs/pull/32"
   - docs/testing/2026-10-13-shared-environment-acceptance.md
-supersedes: [ADR-0015, ADR-0021]
+supersedes: []
 superseded_by: []
-superseded_scope:
-  - "ADR-0015의 JetStream 목표 Provider 및 내부 Job에 Broker를 도입하는 해석"
-  - "ADR-0021의 JetStream Producer/Consumer/Stream, ACK 및 AU-G3 Provider 종속 선택"
 remaining_valid_scope:
   - "HTTP/JSON, Direct internal call, Gateway ingress 및 SSE 계약"
   - "Shared Audit Producer 의미, Durability 분류, Schema/Outbox Ownership, Append Ledger, Gate 선후관계"
@@ -45,39 +44,39 @@ replacement_decision_refs: [DEC-072]
 
 # ADR-0023: SQS 목표 Provider와 Dev / Production 격리
 
-> **Owner Review 보완:** `decision_status`는 2026-10-13 요청에서 명시된 정책 방향에만
-> 적용한다. 이 ADR 전체의 상세 설계·최종 문서 승인이나 Supersession의 공식 발효를
-> 증명하지 않는다. `document_status: in_review`를 유지하고 공식 승인 기록은 확인되지
-> 않아 `approvers: []`, `approved_at: null`, `effective_from: null`로 둔다.
-> `reviewed_at`은 문서 검토일이며 Owner 최종 승인일이 아니다.
+> **Owner 승인 범위:** `decision_status: accepted_with_constraints`는 SQS 목표에 관한 정책 방향에만 적용한다.
+> ADR 문서는 `document_status: in_review`이며 공식 문서 최종 승인은 미확인이다. Formal
+> Supersession과 발효일도 미확인이라 `supersedes: []`, `effective_from: null`을 유지한다.
+> AWS Dev / Production Provisioning은 실행되지 않았고 승인되지 않았다. `reviewed_at`은 문서
+> 검토일이며 Owner 최종 승인일이 아니다.
 
 ## 1. 결정과 승인 범위
 
-Owner는 서비스 간 비동기 메시징의 목표 Provider를 **AWS SQS**로 변경했다.
-NATS JetStream은 신규 구현 대상에서 제외하며 Local NATS / Production SQS 이중
-Provider도 운영하지 않는다. HTTP/JSON 동기 통신과 기존 SSE 정책은 유지한다.
-문서 검토·Merge 상태와 Owner가 명시한 방향 승인을 구분한다. 이 ADR은 배포나
-실제 SQS 통합 완료를 선언하지 않는다.
+Owner는 서비스 간 비동기 메시징의 목표 Provider를 **AWS SQS**로 선택하고, NATS JetStream 신규 구현과
+Local NATS / Production SQS 이중 운영을 정책 방향에서 제외했다. HTTP/JSON 동기 통신과 SSE 정책은 유지한다.
+이 범위는 Owner 정책 방향 승인이다. ADR 최종 문서 승인, 공식 Supersession 및 발효일은 미확인이다.
+AWS Dev / Production Provisioning은 승인되거나 실행되지 않았다.
 
 Local 개발은 기본적으로 Broker 없이 실행한다. 단위 테스트는 Port의 Test Double을
 사용할 수 있다. SQS 통합이 필요할 때만 호환 에뮬레이터를 검토한다. 에뮬레이터의
 통과 결과로 AWS IAM·KMS·FIFO·Redrive 동작을 검증했다고 주장하지 않는다.
-실제 동작은 격리된 **AWS Dev SQS**에서 검증한다.
+실제 동작은 Gate 1의 별도 Dev Queue 생성 승인을 받은 뒤 격리된 **AWS Dev SQS**에서 검증한다.
+현재 이 승인은 없으며 이 Task에서 AWS 리소스를 생성하지 않는다.
 
 ## 2. 변경 이력과 대안
 
 | 이전 결정 / 대안 | 이번 결정 | 유지 범위 / 근거 |
 |---|---|---|
-| ADR-0015 / DEC-064: 첫 Use Case 이후 JetStream | Provider 부분 대체 | 동기 통신·Envelope·멱등성과 조건부 Outbox 유지 |
-| ADR-0021 / DEC-070: Shared Audit의 JetStream 승인 | Provider·AU-G3 부분 대체 | Audit 의미·Producer Boundary·Ledger·Durability 유지 |
+| ADR-0015 / DEC-064: 첫 Use Case 이후 JetStream | SQS 목표 Owner 정책 방향; 공식 Supersession / 발효일 미확인 | 동기 통신·Envelope·멱등성과 조건부 Outbox 유지 |
+| ADR-0021 / DEC-070: Shared Audit의 JetStream 승인 | SQS 목표 Owner 정책 방향; 공식 Supersession / 발효일 미확인 | Audit 의미·Producer Boundary·Ledger·Durability 유지 |
 | Local NATS + Production SQS | 미채택 | 환경별 의미 차이와 두 Provider의 운영·테스트 부담 |
 | 모든 내부 Job도 외부 Broker 사용 | 미채택 | 서비스 내부 Worker + JPA로 단순한 실행·상태 복구 |
 | SQS를 AWS V1에 즉시 추가 | 미승인 | 구체 Use Case·보안·비용·운영 Gate가 먼저 필요 |
 
-이전 ADR의 당시 승인 본문과 날짜를 보존하고 reciprocal partial supersession을 기록한다.
+이전 ADR의 당시 승인 본문과 날짜를 보존한다. 이 문서에는 formal supersession 관계나 발효일을 기록하지 않는다.
 [AWS V1 ADR-0022](./ADR-0022-aws-v1-mvp-primary-runtime.md)는 Open PR #32의
 Proposed 문서다. 본 변경은 그 V1 Broker 미배포 경계를 유지하면서 장기 Provider
-표현만 정렬한다. 기존 Gate의 선후관계는 유지하고 AU-G3은 **SQS Transport**로 읽는다.
+표현만 정렬한다. 기존 Gate의 선후관계는 유지하며 AU-G3의 SQS Transport는 Owner 정책 방향이다. 공식 Supersession과 발효일은 미확인이다.
 
 ## 3. Standard / FIFO와 구독 모델 — Use Case별 결정
 
@@ -171,13 +170,20 @@ CloudWatch, 데이터 전송과 Private Endpoint/NAT 비용을 함께 추정한�
 비용을 줄일 수 있으나 지연·부분 Batch 실패·Visibility와 정합성을 검토한다.
 현재 가격·실제 비용·용량은 미측정이며 Free Tier를 운영 예산 근거로 확정하지 않는다.
 
-실제 Queue 생성은 아래 모두 충족한 Use Case에서 별도 Owner 실행 승인을 요구한다.
+Provisioning은 순서가 고정된 세 Gate로 나눈다. SQS Target 정책 방향만으로 리소스 생성 권한이 생기지 않는다.
 
-1. 서비스 간 비동기 분리가 필요한 구체 Workflow·Producer/Consumer·SLO·Criticality 근거.
-2. Standard/FIFO·구독 topology·필요 시 SNS·Outbox·멱등성·Retry/Visibility·DLQ 계약.
-3. 환경별 IAM/Queue/KMS/Secret·IaC Ownership·비용·보존·관측·Redrive Runbook 검토.
-4. 격리된 AWS Dev에서 중복·역순·Crash·Timeout·Poison·Redrive·권한 거부 검증 후
-   Production 준비·Rollback 및 별도 승인.
+1. **Gate 1 — Use Case / 설계 / IAM / 비용 검토와 Dev 생성 승인.** 구체 Workflow, Producer·Consumer, SLO,
+   Criticality, Standard/FIFO와 구독 구조, Retry·Visibility·DLQ, 최소권한 IAM, IaC 소유권, 비용·보존·관측과
+   Redrive Runbook을 검토한다. 이 Gate에서 별도 Owner가 승인할 수 있는 범위는 격리된 AWS Dev Queue/DLQ
+   생성까지다.
+2. **Gate 2 — 격리 AWS Dev Queue 생성 후 실제 검증.** Gate 1 승인이 기록된 뒤에만 Dev 리소스를 만든다.
+   중복·역순·Crash·Timeout·Poison·Redrive 동작과 Dev/Production 교차 접근 거부를 실제 AWS Dev에서
+   검증하고 결과를 남긴다.
+3. **Gate 3 — Production 준비 검토와 별도 Owner 승인.** Gate 2 증거를 바탕으로 운영·비용·보안·Rollback
+   준비를 검토하고, Production 리소스 생성 전 별도의 Owner 승인을 받는다. Gate 1 승인이나 Dev 검증은
+   Production 승인이 아니다.
+
+현재 Dev 생성 승인은 확인되지 않았으며 이 Task에서 AWS 리소스 생성이나 Provisioning 승인을 수행하지 않는다.
 
 내부 Job은 Spring Boot Application Worker + JPA로 실행한다. DB는 FK/Unique/Index,
 Transaction과 작업 상태·Lease·재시도 상태의 영속성을 담당한다. `pg_cron`, PGMQ,
@@ -187,8 +193,9 @@ Transaction과 작업 상태·Lease·재시도 상태의 영속성을 담당한�
 ## 9. 미결정과 검증 근거
 
 특정 Queue 종류·SNS·Timeout/시도/보존 수치·계정 분리·KMS 방식·Provisioning 시점은
-미결정이다. 승인된 목표와 위 설계 요구를 값의 승인으로 확대하지 않는다.
-Repository Apply는 이 문서 PR만이며 AWS Apply·Merge·Production Release 권한을 추가하지 않는다.
+미결정이다. Owner 정책 방향은 AWS Dev 또는 Production Queue 생성을 승인하지 않는다.
+현재 Provisioning은 실행되지 않았고 승인되지 않았다. Repository Apply는 이 문서 PR에
+한정되며 AWS Apply·Merge·Production Release 권한을 추가하지 않는다.
 
 설계 참고: [SQS Standard](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/standard-queues.html),
 [FIFO](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/FIFO-queues.html),

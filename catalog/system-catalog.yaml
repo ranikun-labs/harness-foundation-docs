@@ -205,7 +205,7 @@ sources:
     status:
       document_status: accepted
       decision_status: accepted_with_constraints
-    purpose: Shared Audit의 Architecture 경계, Transport 의미, Durability 정책과 Gate Sequencing의 근거를 제공한다. 당시 JetStream 선택은 ADR-0023으로 부분 대체됐다. Audit 의미·Durability·Ownership은 유지하며 Runtime 구현·배포·Migration·Identity 계측 완료를 의미하지 않는다.
+    purpose: Shared Audit의 Architecture 경계, Transport 의미, Durability 정책과 Gate Sequencing의 근거를 제공한다. SQS 선택은 ADR-0023 / DEC-072의 Owner 정책 방향이며 공식 Supersession·발효일은 미확인이다. Audit 의미·Durability·Ownership은 유지하며 Runtime 구현·배포·Migration·Identity 계측 완료를 의미하지 않는다.
 
   - id: src.adr-0023
     kind: repository_document
@@ -219,7 +219,7 @@ sources:
     status:
       document_status: in_review
       decision_status: accepted_with_constraints
-    purpose: DEC-072; JetStream 선택 부분 대체; 배포 미승인
+    purpose: DEC-072; Owner 정책 방향상 SQS Target 승인, 문서 in_review; 공식 최종 승인·Supersession·발효일 미확인; AWS Provisioning 미실행·미승인
 
   - id: src.adr-0024
     kind: repository_document
@@ -233,7 +233,7 @@ sources:
     status:
       document_status: in_review
       decision_status: accepted_with_constraints
-    purpose: DEC-073; Product Membership 소유 정렬; 탈퇴 상세 Proposed
+    purpose: DEC-073; Owner 정책 방향 승인 및 Product Membership 소유 정렬; 문서 in_review; 공식 최종 승인·Supersession·발효일 미확인; 탈퇴 상세 Proposed
 
   - id: src.shared-audit-event-contract
     kind: repository_document
@@ -734,9 +734,11 @@ systems:
       - Plan
       - Personal BillingSubject
       - Subscription
+      - Billing
       - Order
       - Payment
-      - Entitlement
+      - Refund
+      - Commercial Entitlement
     non_responsibilities:
       - 제품별 User/Membership
       - Organization Billing (MVP 제외)
@@ -1717,28 +1719,31 @@ architecture_gates:
 
   - id: gate.nats-introduction
     display_name: NATS JetStream introduction (historical)
-    status: superseded
-    adoption_decision: superseded
-    deferral_policy: superseded_by_adr_0023
-    current_state: ADR-0021 / DEC-070의 당시 승인을 보존하되 ADR-0023 / DEC-072가 Provider 선택만 대체했다. 신규 NATS 구현과 Local NATS / Production SQS 이중 운영은 채택하지 않는다
-    why_deferred: 현재 목표는 SQS이며 이 historical Gate는 구현 승인으로 사용할 수 없다
+    status: deferred
+    adoption_decision: not_decided
+    deferral_policy: accepted_with_constraints
+    current_state: Owner 정책 방향은 SQS를 목표로 승인하고 신규 NATS 구현을 제외한다. ADR-0023 / DEC-072 문서는 in_review이며 공식 최종 승인과 formal Supersession / 발효일은 미확인이다. 과거 NATS 승인 기록은 보존하며 이 Gate로 신규 구현을 승인하지 않는다
+    why_deferred: Owner 정책 방향상 신규 NATS 구현은 제외됐으며 공식 Supersession 발효는 확인되지 않았다
     required_evidence: []
     adoption_triggers: []
     owner: { kind: scope, scope: platform_foundation }
     blocked_work: [New NATS implementation]
     related_jira: [RPL-20, RPL-107, RPL-108]
     related_decisions: [DEC-064, DEC-070, DEC-072]
-    constraints: [당시 Audit 의미와 Durability는 유지, superseded Provider의 신규 구현 금지]
+    constraints: [당시 Audit 의미와 Durability 유지, Owner 정책 방향은 신규 NATS 구현 제외, 공식 Supersession / 발효일 미확인]
     source_refs: [src.adr-0015, src.adr-0021, src.adr-0023]
 
   - id: gate.sqs-introduction
     display_name: SQS provisioning after use-case and isolation gates
-    status: approved_not_started
+    status: deferred
     adoption_decision: accepted_with_constraints
     deferral_policy: provisioning_gated_by_adr_0023
-    current_state: SQS 목표 Provider만 승인; Queue/DLQ/IAM, Adapter, Consumer와 AWS Dev 통합은 미구현·미검증. AWS V1 즉시 배포 아님
-    why_deferred: 구체 Use Case와 운영·보안·비용·환경 격리 검증 및 별도 Owner 실행 승인 필요
-    required_evidence: [Producer/Consumer 계약, Criticality 및 Outbox, Ordering와 Queue 종류 근거, Retry/Visibility/DLQ/Redrive, Dev/Production 권한 거부 테스트, 비용과 Runbook]
+    current_state: Owner 정책 방향으로 SQS Target만 승인; ADR-0023 / DEC-072는 in_review이며 공식 최종 승인·Supersession·발효일은 미확인. AWS Dev / Production 리소스 생성은 미실행·미승인
+    why_deferred: Gate 1 설계 검토와 별도 Dev 생성 승인, Gate 2 실제 격리 Dev 검증, Gate 3 Production 준비 검토와 별도 Owner 승인이 필요
+    required_evidence:
+      - "Gate 1 — Use Case·설계·IAM 최소권한·비용·운영 검토와 격리된 Dev Queue/DLQ 생성에 한정한 Owner 승인"
+      - "Gate 2 — 격리된 AWS Dev Queue/DLQ 생성 후 중복·역순·Crash·Timeout·Poison·Redrive 및 교차 환경 권한 거부의 실제 검증"
+      - "Gate 3 — Production 준비·Rollback·비용·운영 검토와 별도 Production Owner 승인"
     adoption_triggers: [실제 서비스 간 비동기 분리 요구와 완료 SLO, 장애 격리와 durable delivery 필요]
     owner: { kind: scope, scope: platform_foundation }
     blocked_work: [Queue kind and conditional SNS, platform-infra provisioning, SQS adapter, AWS Dev verification, Production readiness]

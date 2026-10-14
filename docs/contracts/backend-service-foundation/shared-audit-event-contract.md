@@ -485,7 +485,7 @@ In particular, `ID-AUD-05`, `ID-AUD-09`, and `ID-AUD-10` remain unable to claim 
 without the AU-G8 durability-capable capture. This contract preserves the ADR-0021 gate order;
 the following work remains deferred:
 
-- AU-G3: SQS transport, environment-isolated Queue/DLQ mapping, retry/configuration values, and operations (ADR-0023 partially supersedes the former JetStream choice)
+- AU-G3: SQS transport, environment-isolated Queue/DLQ mapping, retry/configuration values, and operations (SQS is the Owner policy direction in ADR-0023 / DEC-072; formal Supersession / effective date are unconfirmed)
 - AU-G4: append store, fingerprint/dedup SQL, retention durations, and deletion policy
 - AU-G5: consumer
 - AU-G8: outbox/durable publication, replay, reconciliation, monitoring, and alerting mechanisms
