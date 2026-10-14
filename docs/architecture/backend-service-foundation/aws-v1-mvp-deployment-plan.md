@@ -58,11 +58,22 @@ Cloudflare Tunnel (validation candidate; outbound only)
 | EC2 #3 | Finance Backend | t4g.small | HTTP only from Gateway; PostgreSQL from Finance |
 | EC2 #4 | Carelog Backend | t4g.small | HTTP only from Gateway; PostgreSQL from Carelog |
 
-Mac mini is Development/Test only. No PostgreSQL container is used in Production. Valkey's
-co-location on Core is the cost-first candidate; because Gateway and Carelog are on other Hosts,
-TCP/6379 is a private ENI path restricted to their Security Groups. A dedicated Valkey EC2
-remains an Owner-approved alternative. The Private listener, contention, failure scope and
-blacklist recovery risk must be reviewed before deployment.
+Mac mini is Development/Test only. No PostgreSQL container is used in Production. Valkey
+co-location on Core is the cost-first candidate; a dedicated Valkey EC2 remains an alternative.
+For co-location, run Valkey on the Core Compose bridge network and publish host TCP/6379 only
+through a Compose port mapping bound only to `${VALKEY_PRIVATE_ENI_IP}` on a private-only ENI:
+```yaml
+ports:
+  - target: 6379
+    published: "6379"
+    protocol: tcp
+    host_ip: ${VALKEY_PRIVATE_ENI_IP}
+```
+Core-local clients use the Docker bridge. Gateway and Carelog reach the endpoint over VPC private networking.
+The attached Security Group allows TCP/6379 only from the Gateway and Carelog Security Groups;
+it has no public CIDR rule. Do not bind/publish the port on a Public interface or `0.0.0.0`.
+The ENI choice, ACL/credential, contention, failure scope and blacklist recovery risk remain
+Owner gates before deployment.
 
 ## 3. Four-EC2 / RDS capacity candidates
 
@@ -125,8 +136,10 @@ application availability. RDS Public Access is false.
 
 Gateway has no Internet-origin inbound rule. Backend application ports accept traffic from the
 Gateway Security Group only. RDS TCP/5432 accepts only Core, Finance and Carelog Security Groups.
-Valkey TCP/6379 accepts only the approved private client groups. SSH/22 is absent; SSM is the
-administration path. Cloudflare Tunnel, if selected, connects outbound on its approved transport.
+Valkey TCP/6379 is bound to the Core host's private-only ENI address and its Security Group
+accepts only the Gateway/Carelog Security Groups; public address binding and public CIDR ingress
+are prohibited. SSH/22 is absent; SSM is the administration path. Cloudflare Tunnel, if selected,
+connects outbound on its approved transport.
 
 No NAT Gateway, ALB or VPC Endpoint is created by default. With public EC2 IPv4, outbound HTTPS
 443 reaches SSM, the selected registry, package sources, Grafana Cloud and approved external APIs;
@@ -162,10 +175,16 @@ tests agree. The current PostgreSQL 16 / 18.4 drift must not be resolved by assu
 
 Each runtime has a separate Compose stack, deployment/restart boundary and immutable image digest.
 Gateway is the only application entrypoint. Gateway-to-Core/Finance/Carelog traffic is Private
-HTTP/JSON; AI uses SSE. Each service keeps its JWT/OAuth/Refresh Token and internal authorization
-contracts. Secrets arrive at runtime through the approved instance role and exact Secrets Manager
-ARN; user data and image layers contain no secret. Valkey uses a private Docker network on Core
-and a narrowly restricted private ENI path for Gateway/Carelog when co-located.
+HTTP/JSON; AI uses SSE. Each service keeps its JWT/OAuth/Refresh Token and internal authorization contracts.
+The secret
+store remains an Owner decision; no provider is selected. After approval, a per-EC2 instance
+profile may read only exact secret resources required by that host. A trusted host-side fetcher
+delivers only each container's required values as a read-only file mount accessible to that
+service UID; application containers must not obtain instance-profile credentials through IMDS.
+Do not put secrets in image layers, user data, source control, command arguments, shell history,
+or ordinary logs. The EC2 Role is not the RDS Master Role. For co-located Valkey, use the Core
+Docker bridge and the private-only ENI/port binding plus Security Group source references described
+above.
 
 ## 8. Valkey Persistence / Security
 
@@ -174,7 +193,9 @@ and a narrowly restricted private ENI path for Gateway/Carelog when co-located.
 - Preserve current Spring Data Redis / Lettuce clients, Redis package names and property names.
 - The existing platform config names include PLATFORM_GATEWAY_REDIS_* and
   PLATFORM_IDENTITY_REDIS_*; do not rename them merely because the server changes.
-- Valkey Port 6379 must not be published to the EC2 Host or VPC.
+- Valkey TCP/6379 may be published only on its private-only ENI address using Compose `host_ip`;
+  the Security Group allows only Gateway/Carelog Security Group sources. No Public Interface bind,
+  public IP association on the Valkey ENI, `0.0.0.0:6379`, or public CIDR Ingress is allowed.
 - Use an authenticated Valkey endpoint or ACL and keep its credential in the chosen secret
   system. Exact ACL / password design is not selected.
 - AOF, RDB, write frequency, fsync, named Volume, snapshot / backup interval and retention are
@@ -191,11 +212,17 @@ and a narrowly restricted private ENI path for Gateway/Carelog when co-located.
 - No production .env or credential is committed to Git.
 - Existing application variable contracts remain the source for binding. Never rename JWT,
   Refresh Token, OAuth, DB or Redis client properties as part of this architecture change.
-- Secret Store is an Owner Decision. Compare AWS Systems Manager Parameter Store SecureString
-  and AWS Secrets Manager using secret count, rotation, access audit, API cost and operator effort.
-- Use an EC2 instance role with least-privilege read access rather than a long-lived AWS key.
-- If Compose receives secrets as files, verify the application can read them without placing
-  values in image layers, source control, shell history or ordinary logs.
+- Secret Store is unselected. Compare AWS Systems Manager Parameter Store SecureString and AWS
+  Secrets Manager using secret count, rotation, access audit, API cost and operator effort.
+- The injection contract uses the EC2 instance profile with least-privilege reads limited to the
+  exact approved secret resources used by that host; the Core host role is limited to Core/Valkey
+  secrets and each other host role to its service secrets. No long-lived AWS key is distributed.
+- A trusted host-side fetcher mounts only each container's required values as read-only files
+  scoped to the service UID. The application container must not access IMDS credentials. Verify
+  a file-binding adapter preserves each application's existing property contract without logging
+  values. Store choice, exact resources, rotation and fetcher remain Owner gates.
+- Never inject the RDS Master Credential. Keep secret values out of user data, image layers,
+  environment dumps, command arguments, shell history, source control and ordinary logs.
 - Separate runtime / health configuration from secrets. Keep local sample values clearly
   non-production.
 - CI publishing credential and production runtime credential are separate identities.
@@ -316,13 +343,18 @@ Ingress needs a separate decision and revised cost/security evidence.
 - Model, provider credential source, timeout and streaming failure behavior remain explicit.
 - Shared Audit's inspected default capture is Unavailable. Its release contract and required V1
   events must be evidenced before calling Audit production-ready.
-- ADR-0021's NATS architecture approval remains. No Broker is deployed by this plan.
-- If a real V1 asynchronous use case is identified, define its durability / retry / replay need
-  as a separate Gate. Do not deploy a Broker solely because the Architecture was approved.
+- ADR-0021 / DEC-070 records a historical NATS JetStream approval; that historical record is
+  preserved, but new NATS implementation is not the current Owner target.
+- The current Owner policy direction designates SQS as the target, tracked in stacked
+  [PR #37](https://github.com/ranikun-labs/harness-foundation-docs/pull/37). Its ADR/document
+  approval and formal supersession/effective date are unconfirmed. Queue type and use case remain
+  open; no SQS/NATS AWS resource is provisioned or approved here.
+- If a real V1 asynchronous use case is identified, define durability / retry / replay requirements
+  and pass separate design, IAM, cost and Dev gates before any resource is created.
 
 ## 16. MVP Go-Live checklist
 
-- [ ] ADR-0022 and DEC-071 merge; historical ADR-0016 remains intact with partial supersession metadata.
+- [ ] DEC-071 Owner policy direction is recorded; ADR-0022 document review/final approval and ADR-0016 partial-supersession effective status are explicit, with historical ADR-0016 content preserved.
 - [ ] Private platform-infra repository, independent implementation PR, CI checks and state bootstrap review are complete.
 - [ ] AWS account, ap-northeast-2, subnets, egress and Security Groups are approved.
 - [ ] ARM64 builds, digest-pinned images, four independent Compose stacks and rollback pass.
@@ -331,8 +363,9 @@ Ingress needs a separate decision and revised cost/security evidence.
 - [ ] Valkey placement, credentials, noeviction, persistence, monitoring and blacklist recovery/invalidations pass.
 - [ ] Cloudflare Tunnel passes its validation gate or another Ingress has a separate approval.
 - [ ] Alloy labels and Grafana dashboards receive real metrics; app 계측 issue results are verified; alert contact path is tested.
-- [ ] Seven-day measurement and same-profile k6 evidence include cost, images, JVM flags, dataset and Dashboard export.
+- [ ] Pre-Go-Live smoke/load evidence and production-load approval (if used) meet the separately approved Go-Live gate.
 - [ ] Shared AI SSE, Shared Audit, Auth, Finance and Carelog E2E release gates pass.
+- [ ] After explicitly approved Pilot/Go-Live begins representative traffic, capture the first seven-day baseline with cost, images, JVM flags, dataset and Dashboard export. This is post-Go-Live V2 evidence, not a prerequisite for the initial Go-Live. Pilot observations count only if an Owner confirms they represent the baseline workload and window.
 - [ ] Cost Calculator estimate and V2 rollback proposal are reviewed.
 - [ ] Owner explicitly approves Go/No-Go. No automatic Apply, Merge, traffic promotion or EC2 deletion.
 
@@ -342,7 +375,7 @@ Snapshot at the branches and HEADs in ADR-0022:
 
 | Repository | Verified Evidence | Blocker |
 |---|---|---|
-| harness-foundation-docs | ADR-0016 accepted_with_constraints: Mac mini Primary / AWS DR; ADR-0020: one Application DB with service Schemas; ADR-0021: NATS approved, broker not implied | New ADR must merge; old ADR-0016 history must remain |
+| harness-foundation-docs | ADR-0016 accepted historical record; ADR-0020: one Application DB with service Schemas; ADR-0021 / DEC-070: historical JetStream approval; new NATS implementation is not the current Owner target; PR #37 tracks SQS target direction but remains in review, with no AWS provisioning | ADR-0022 document approval/formal partial supersession are unconfirmed; preserve ADR-0016 history and integrate #37 policy separately |
 | platform-services | Compose runs Gateway, Platform Core, local postgres:16-alpine, redis:7-alpine; Gateway / Core Dockerfiles exist; current Compose publishes 8080 / 8081; shared-audit is included in platform-core/settings.gradle.kts and app/build.gradle.kts | First blocker: platform-core/app/Dockerfile omits shared-audit/build.gradle.kts and shared-audit/src even though the included project is an app dependency; Docker image build is expected to fail at Gradle configuration, but was not executed in this documentation task. Production image / network configuration absent; no CI workflow; local Compose is not production |
 | finance-harness-be | Java 21, Spring Boot 4.1.0, Flyway; Postgres 18.4 Testcontainers; configuration is environment-backed | No Dockerfile / Compose / GitHub Actions workflow; test uses finance_db and does not prove the ADR-0020 finance Schema / Role |
 | carelog-be | Java 17, Spring Boot 3.4.5, Flyway; PostgreSQL 16 + redis:7 development Compose; V1 baseline is public Schema | No application Dockerfile / CI workflow; Compose has a committed local password and publishes DB / Redis host ports; no Actuator dependency or Application health check; public-to-carelog migration needs rehearsal |
@@ -400,6 +433,6 @@ AWS or application-code approvals.
 7. Grafana Cloud Free limits, service-account scopes, contact point, cardinality and retention.
 8. Application instrumentation Owner issues and actual endpoint/metric evidence.
 9. Production load approval, safe route/dataset, concurrency and stop thresholds.
-10. Seven-day baseline completion criteria and V2 migration/rollback approver.
+10. Seven-day baseline start/representative-traffic and stable-day criteria after Go-Live, Pilot vs Go-Live timing, and V2 migration/rollback approver. Exact operational values remain undecided.
 11. Shared AI SSE and Shared Audit production release gates.
 12. Explicit Go-Live Owner and redacted evidence location.

@@ -1263,10 +1263,10 @@ docs/architecture/backend-service-foundation/
 
 ## 49. AWS V1 Production Primary navigation
 
-The cross-service backend deployment decision is recorded in [ADR-0022](../adr/ADR-0022-aws-v1-mvp-primary-runtime.md)
-and [DEC-071](../decisions/decision-log.md). It is a sibling Backend Service Foundation
-architecture, not an oh-my-ai Shared Core runtime change. The proposal uses four independent
-EC2 runtimes and a seven-day evidence baseline; implementation and cost details belong to the
-infrastructure repository, while the deployment strategy lives in
-[the Backend Service Foundation plan](./backend-service-foundation/aws-v1-mvp-deployment-plan.md).
+The Owner policy direction is recorded in [DEC-071](../decisions/decision-log.md) and
+[ADR-0022](../adr/ADR-0022-aws-v1-mvp-primary-runtime.md). ADR-0022 is in_review; its
+official final document approval and formal ADR-0016 partial-supersession effective date are
+unconfirmed. The direction uses four independent EC2 runtimes. The first seven-day evidence baseline begins after an explicitly approved Pilot/Go-Live
+with representative traffic; it is not a pre-Go-Live gate. Implementation and cost details belong to the infrastructure repository, while
+the deployment strategy lives in [the Backend Service Foundation plan](./backend-service-foundation/aws-v1-mvp-deployment-plan.md).
 

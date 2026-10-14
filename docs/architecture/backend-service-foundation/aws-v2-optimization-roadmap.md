@@ -17,15 +17,20 @@ source_inputs:
 > verifiable change.
 
 The V1 comparison starts from four independent EC2 runtimes: Gateway, Platform Core, Finance,
-and Carelog, plus one shared private RDS and Valkey. The first optimization candidate is 4→2
-EC2; 4→1 is a separate, higher contention candidate. The first seven stable days are recorded
-before proposing either placement. Expiration of seven days is not an automatic change trigger.
+and Carelog, plus one shared private RDS Application Database and Valkey. The first optimization
+candidate is 4→2 EC2; 4→1 is a separate, higher contention candidate. Record the first seven
+stable, representative days only after an explicitly Owner-approved Pilot/Go-Live starts serving
+the agreed workload. Pilot data count only if the Owner confirms the same representative window.
+This baseline supports V2 proposals; it is not a prerequisite for the initial Go-Live. No exact
+date, traffic threshold, stability rule or Pilot duration is approved here. Expiration of seven
+days is not an automatic change trigger.
 
 ## Baseline Record
 
-Capture this baseline after V1 is serving representative traffic, using a stated
-time window, request mix, deployment version, and traffic volume. Current measurements
-are UNKNOWN; do not invent values.
+Capture this baseline after V1 is serving representative traffic under an explicitly
+approved Pilot or Go-Live, using a stated time window, request mix, deployment version, and traffic volume.
+Record Pilot-only observations separately unless an Owner confirms they qualify for this same
+baseline. Current measurements are UNKNOWN; do not invent timing or operational thresholds.
 
 | Signal | Baseline to record | Current status |
 |---|---|---|
@@ -70,14 +75,23 @@ size, and dashboard/query link. Use the same test profile before and after a cha
 - **Measurement:** Contract results, p95/p99, failure recovery, backup restore, operator effort, and current Seoul price estimate.
 - **Decision:** Adopt only if observed recovery / operations improvements justify cost and all compatibility tests pass.
 
-### SQS Standard / FIFO
+### SQS Target (Standard / FIFO selection remains open)
 
-- **Problem:** A V1 asynchronous use case may require durable queueing, retries, or ordering.
-- **Baseline:** The specific use case, event rate, ordering / deduplication requirement, delivery failure rate, and synchronous latency — UNKNOWN.
-- **Hypothesis:** SQS may meet a proven workflow requirement with acceptable delivery and operational semantics.
-- **Change:** First document the use case and consistency contract; then compare Standard and FIFO in an isolated proof.
-- **Measurement:** Throughput, queue age, duplicate handling, ordering, retry / DLQ behavior, end-to-end completion latency, and cost.
-- **Decision:** No queue until a concrete async use case passes its own gate and a separate architecture decision is approved.
+- **Owner policy direction:** SQS is the current asynchronous target direction in stacked
+  [PR #37](https://github.com/ranikun-labs/harness-foundation-docs/pull/37). The ADR is in review;
+  official document approval and formal supersession/effective date are unconfirmed.
+- **Provisioning:** No SQS Queue/DLQ or AWS resource has been approved or created. This roadmap
+  does not authorize provisioning. Queue type, use case, event rate, ordering/deduplication,
+  retry/DLQ policy, and cost remain undecided.
+- **Gate 1 — Dev creation approval:** Record the use case and consistency contract, review
+  design, IAM and cost, and explicitly approve Dev Queue creation.
+- **Gate 2 — isolated Dev validation:** Only after Gate 1, create an isolated AWS Dev Queue and
+  verify the actual producer/consumer path, IAM boundary, delivery, retry and failure behavior.
+- **Gate 3 — Production approval:** Review Production readiness and obtain a separate Owner
+  approval before any Production resource or cutover.
+- **Measurement:** Throughput, queue age, duplicate handling, ordering, retry / DLQ behavior,
+  end-to-end completion latency and cost are measured only in an approved isolated Dev environment.
+  No such environment has been provisioned by this PR.
 
 ### PostgreSQL PGMQ
 
@@ -88,14 +102,15 @@ size, and dashboard/query link. Use the same test profile before and after a cha
 - **Measurement:** Transaction contention, throughput, queue age, failure / retry behavior, DB resource impact, backup / restore, and operating cost.
 - **Decision:** Adopt only when database-local semantics are needed and measured impact is acceptable.
 
-### NATS JetStream
+### NATS JetStream — historical approval; no new implementation target
 
-- **Problem:** A concrete cross-service event requirement may need durable broker delivery.
-- **Baseline:** The event schema, producers / consumers, throughput, ordering, replay, retention, delivery and recovery requirements — UNKNOWN.
-- **Hypothesis:** JetStream could satisfy the use case while preserving the architecture already approved in ADR-0021.
-- **Change:** Treat the approved NATS architecture and deployed Broker as separate states. Implement only against a separately approved use case and runbook.
-- **Measurement:** Publish / consume latency, replay correctness, duplicate / ordering behavior, retention, node recovery, and operational burden.
-- **Decision:** ADR-0021 remains approved; Broker deployment is not implied. No deployment without the use-case gate and explicit readiness evidence.
+- ADR-0021 / DEC-070 preserves the historical JetStream architecture and Owner approval record.
+- The current Owner policy direction selects SQS as the target. New NATS implementation is
+  excluded from the current target; this roadmap does not reopen it as a V2 implementation candidate.
+- No formal ADR-0021 supersession/effective date or final SQS ADR approval is confirmed in this
+  branch. The policy documentation is being reviewed in stacked PR #37.
+- No NATS Broker is provisioned. The historical approval record does not authorize a new
+  implementation or AWS resource.
 
 ### ECS / Lambda
 

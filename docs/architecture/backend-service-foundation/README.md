@@ -101,10 +101,12 @@ docs/architecture/backend-service-foundation/
 `ADR-0015` / `DEC-064`는 제약과 함께 승인됐으며, 각 세부 문서의 Draft 상태와
 구현·Runtime 지원·제품 출시 상태는 별도로 유지한다.
 
-AWS V1 Production Primary는 `ADR-0022` / `DEC-071`에서 Gateway, Platform Core,
-Finance, Carelog의 독립 EC2 4대 Baseline으로 제안됐다. 공통 RDS와 Valkey의 세부 Owner
-Gate, 중앙 Alloy/Grafana, 7일 Evidence와 단계별 V2 4→2/1 후보는 아래 계획 문서에 있다.
-이 계획은 아직 AWS 리소스 생성·운영, Runtime Support 또는 V2 기술 도입을 의미하지 않는다.
+AWS V1 Production Primary는 `DEC-071`의 Owner 정책 방향과 `ADR-0022`의
+in_review 문서에 Gateway, Platform Core, Finance, Carelog의 독립 EC2 4대로 기록됐다.
+ADR 문서 최종 승인 및 ADR-0016 부분 대체 발효일은 확인되지 않았다. 공통 RDS와 Valkey의
+세부 Owner Gate, 중앙 Alloy/Grafana, 승인된 Pilot/Go-Live 후 7일 Evidence와 단계별 V2 4→2/1 후보는
+아래 계획 문서에 있다. 이 계획은 AWS 리소스 생성·운영, Runtime Support 또는 V2 기술
+도입을 승인하지 않는다.
 Application Micrometer/Actuator 구현은 각 Runtime Owner가 별도 수행한다.
 
 ---
