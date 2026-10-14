@@ -21,7 +21,7 @@ metadata:
     systems: 10
     communication_relations: 17
     data_groups: 19
-    architecture_gates: 12
+    architecture_gates: 13
 
 sources:
   - id: src.portfolio-work-management-governance
