@@ -1734,7 +1734,7 @@ architecture_gates:
     source_refs: [src.adr-0015, src.adr-0021, src.adr-0023]
 
   - id: gate.sqs-introduction
-    display_name: SQS provisioning after use-case and isolation gates
+    display_name: 사용 사례·격리 Gate 이후 SQS Provisioning
     status: deferred
     adoption_decision: accepted_with_constraints
     deferral_policy: provisioning_gated_by_adr_0023
@@ -1746,7 +1746,7 @@ architecture_gates:
       - "Gate 3 — Production 준비·Rollback·비용·운영 검토와 별도 Production Owner 승인"
     adoption_triggers: [실제 서비스 간 비동기 분리 요구와 완료 SLO, 장애 격리와 durable delivery 필요]
     owner: { kind: scope, scope: platform_foundation }
-    blocked_work: [Queue kind and conditional SNS, platform-infra provisioning, SQS adapter, AWS Dev verification, Production readiness]
+    blocked_work: [Queue 종류와 조건부 SNS 결정, platform-infra Provisioning, SQS Adapter, AWS Dev 검증, Production 준비]
     related_jira: [RPL-107, RPL-108]
     related_decisions: [DEC-072]
     constraints: [Standard/FIFO 및 SNS 미확정, Dev/Prod Queue·DLQ·ARN/URL·IAM·구성·암호화 격리, 내부 Job Worker + JPA, Local Broker 없음, exactly-once 및 Distributed Atomicity 주장 금지, AWS 계정 분리 별도 Owner 결정]

@@ -39,16 +39,9 @@ evidence_refs:
   - ADR-0014
   - ADR-0015
 supersedes: []
-superseded_by:
-  - ADR-0022
-superseded_scope:
-  - "V1 Production Primary의 Mac mini 배치만 AWS EC2 Primary로 partial supersession"
-  - "V1의 AWS DR-only 해석만 partial supersession"
-  - "역사적 4시간 RTO / 15분 RPO를 신규 AWS Primary에 적용하는 해석만 partial supersession"
-remaining_valid_scope:
-  - "이 ADR의 원문과 역사적 결정 기록"
-  - "Human-approved Failover, Promotion, Write Enable 및 Write Fencing 원칙"
-  - "기존 4시간 RTO / 15분 RPO는 당시 시나리오의 기록이며 신규 AWS Primary 목표가 아님"
+superseded_by: []
+superseded_scope: []
+remaining_valid_scope: []
 replacement_decision_refs: []
 ---
 
@@ -68,6 +61,11 @@ replacement_decision_refs: []
 > RPL-42 Comment 10144의 사용자 입력은 Architecture Target과 Decision Driver를
 > 고정한다. Docker Compose, ECR/GHCR, ECS Fargate/EC2, S3 또는 Cloudflare Load Balancing의
 > 채택이나 Runtime 운영을 증명하지 않는다.
+>
+> **ADR-0022 관계 상태:** ADR-0022는 이 ADR의 일부 Production Primary/DR 방향을 바꾸려는
+> Owner 정책 제안으로 기록됐다. 현재 ADR-0022 문서는 in_review이고 공식 최종 승인과
+> 발효일은 확인되지 않았으므로 이 ADR의 승인된 역사 본문은 변경하지 않으며, front matter의
+> superseded_by와 superseded_scope도 비워 둔다.
 
 ---
 

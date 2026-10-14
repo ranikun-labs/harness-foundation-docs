@@ -101,12 +101,12 @@ accepted_with_constraints이며, ADR-0012/0013의 일부 물리화·배치 범�
 | 공통 SSO·제품별 OAuth App·재인증 Linking·개인 BillingSubject 누락 | ADR-0024에 Owner 확정 범위 명시; Organization Billing MVP 제외 |
 | Local/Prod 이중 Provider 및 내부 Job 실행 해석 | Local Broker 없음, Worker + JPA; pg_cron/PGMQ/별도 Saga 기본 의존성 제외 |
 | Dev/Prod 보안 경계 누락 | Queue/DLQ·ARN/URL·IAM/Credential·설정·Secret/KMS·운영 Role 격리 불변조건 |
-| AWS V1 Open PR #32의 JetStream 유지·SQS 미선택 표현 | 같은 제안 위의 별도 PR에서 현재 Provider projection 수정; AWS V1 즉시 배포 경계 유지 |
+| 2026-10-13 확인 당시 #32에 남아 있던 JetStream 유지·SQS 미선택 표현 | 당시 별도 stacked PR에서 Provider projection을 정렬 중; AWS V1 즉시 배포 경계 유지 |
 | 탈퇴·보존 정책 미확정 | C 중심 Lean Hybrid 방향만 기록; 상세/수치·Tombstone·차단 수준 Proposed 유지 |
 
 ## 5. Open PR과 승인 구분
 
-GitHub Connector로 [Open PR #32](https://github.com/ranikun-labs/harness-foundation-docs/pull/32)의
+2026-10-13 당시 GitHub에서 확인한 [PR #32](https://github.com/ranikun-labs/harness-foundation-docs/pull/32)은
 state=open, merged=false, base=main@3722a30d8d6a7d12c55376061e07a6a9b5b14ba6,
 head=docs/aws-v1-mvp-ssot-2026-10-12@dbac7b1764ea0a6f72b02eec52bba01441bf5a44 및
 diff를 검토했다. 이 PR은 AWS V1 ADR-0022와 DEC-071을 포함하며 문서 상태 Proposed와

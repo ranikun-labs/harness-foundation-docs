@@ -74,9 +74,10 @@ Local 개발은 기본적으로 Broker 없이 실행한다. 단위 테스트는 
 | SQS를 AWS V1에 즉시 추가 | 미승인 | 구체 Use Case·보안·비용·운영 Gate가 먼저 필요 |
 
 이전 ADR의 당시 승인 본문과 날짜를 보존한다. 이 문서에는 formal supersession 관계나 발효일을 기록하지 않는다.
-[AWS V1 ADR-0022](./ADR-0022-aws-v1-mvp-primary-runtime.md)는 Open PR #32의
-Proposed 문서다. 본 변경은 그 V1 Broker 미배포 경계를 유지하면서 장기 Provider
-표현만 정렬한다. 기존 Gate의 선후관계는 유지하며 AU-G3의 SQS Transport는 Owner 정책 방향이다. 공식 Supersession과 발효일은 미확인이다.
+[AWS V1 ADR-0022](./ADR-0022-aws-v1-mvp-primary-runtime.md)는 PR #32 병합 뒤에도
+`in_review`이며 공식 문서 승인은 미확인이다. 본 정책은 AWS V1의 Broker 미배포 경계를
+유지하면서 Provider 목표를 정렬한다. 기존 Gate 선후관계를 유지하고 AU-G3 SQS Transport는
+Owner 정책 방향으로 기록한다. 공식 Supersession과 발효일은 미확인이다.
 
 ## 3. Standard / FIFO와 구독 모델 — Use Case별 결정
 

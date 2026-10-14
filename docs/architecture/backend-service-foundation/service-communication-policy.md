@@ -27,16 +27,18 @@ The goal is to minimize temporal coupling while preserving clear ownership and o
 9. A user request should have at most one required synchronous downstream dependency where practical.
 10. Long required synchronous call chains are prohibited.
 
-## 2.1 Current messaging and worker decision
+## 2.1 현재 메시징 및 Worker 정책
 
-[ADR-0023](../../adr/ADR-0023-sqs-messaging-and-environment-isolation.md) / DEC-072 replaces the earlier JetStream target with AWS SQS.
-HTTP/JSON and SSE stay in force. Internal jobs use Spring Boot Application Worker + JPA;
-local development starts without a broker. Local NATS / Production SQS is not adopted.
-pg_cron, PGMQ and a separate Saga server are not MVP baseline dependencies.
-Standard/FIFO and SNS are use-case decisions. Dev/Production isolation includes Queue/DLQ,
-URL/ARN, IAM, credentials, configuration and encryption boundaries; names alone are insufficient.
-Provider selection does not deploy SQS in AWS V1. Detailed delivery, audit, DLQ and provisioning
-requirements live in ADR-0023; existing envelope and criticality contracts remain authoritative.
+[ADR-0023](../../adr/ADR-0023-sqs-messaging-and-environment-isolation.md) / DEC-072는 기존
+JetStream 목표 Provider를 AWS SQS로 정렬한다. HTTP/JSON과 SSE는 유지한다. 내부 작업은
+Spring Boot Application Worker + JPA로 수행하고 Local 개발은 Broker 없이 시작한다.
+Local NATS와 Production SQS를 함께 운영하지 않는다. `pg_cron`, PGMQ와 별도 Saga 서버는
+MVP 기본 의존성이 아니다.
+
+Standard/FIFO와 SNS는 사용 사례에 따라 정한다. Dev/Production 격리는 Queue/DLQ,
+URL/ARN, IAM, 자격 증명, 구성과 암호화를 포함하며 이름만 분리하는 것으로 충분하지 않다.
+Provider 선택은 AWS V1의 SQS 배포를 승인하지 않는다. 상세 전달·Audit·DLQ·Provisioning
+요구는 ADR-0023을 따르며 기존 Envelope와 Criticality 계약을 유지한다.
 
 ## 3. Communication modes
 
@@ -132,8 +134,8 @@ A command may be asynchronous, but it requires a separate command contract and o
 | External API | HTTP/JSON | Service repository records actual support |
 | Internal synchronous API | HTTP/JSON | Target default |
 | AI token streaming | SSE | Target default, not current runtime evidence |
-| Cross-service asynchronous message | AWS SQS; Standard/FIFO and SNS require use-case evidence | Target accepted (ADR-0023), provisioning gated |
-| Service-internal asynchronous job | Spring Boot Application Worker + JPA; local brokerless | Owner target; concrete implementation evidence required |
+| 서비스 간 비동기 메시지 | AWS SQS; Standard/FIFO와 SNS는 사용 사례 근거 필요 | 목표 정책 승인 (ADR-0023); Provisioning Gate 적용 |
+| 서비스 내부 비동기 작업 | Spring Boot Application Worker + JPA; Local Broker 없음 | Owner 방향; 구현 증거 별도 필요 |
 
 The Gateway is the external ingress and security boundary.
 
@@ -378,8 +380,8 @@ Finance and Carelog must not communicate by reading each other's databases.
 
 A direct service relationship should be introduced only after ownership and contract review.
 
-No section in this document proves that an independent Shared Identity, Shared AI,
-SQS, gRPC, Kafka, or Kubernetes runtime currently exists.
+이 문서의 어느 절도 Shared Identity, Shared AI, SQS, gRPC, Kafka 또는 Kubernetes의
+독립 Runtime이 현재 존재한다는 증거가 아니다.
 
 ## 10. Required service documents
 

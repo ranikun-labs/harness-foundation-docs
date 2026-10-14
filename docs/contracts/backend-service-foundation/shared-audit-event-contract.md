@@ -3,7 +3,7 @@
 - Status: Draft — canonical AU-G1 contract; AU-G1 review passed
 - Contract scope: AU-G1 producer wire contract and canonical event-policy registry
 - Canonical owner: `harness-foundation-docs`
-- Current transport architecture: [ADR-0023](../../adr/ADR-0023-sqs-messaging-and-environment-isolation.md) / DEC-072 — SQS target; no deployment implied
+- 현재 Transport Architecture: [ADR-0023](../../adr/ADR-0023-sqs-messaging-and-environment-isolation.md) / DEC-072의 SQS 목표이며 실제 배포를 뜻하지 않는다.
 - Architecture predecessor: [ADR-0021](../../adr/ADR-0021-shared-audit-foundation-architecture.md) / DEC-070
 - AU-G2B implementation evidence: `ranikun-labs/platform-services@2009a46e68fb2289654b52065958a18313d9f6ce`
 - Producer semantic boundary: Implemented
@@ -485,7 +485,7 @@ In particular, `ID-AUD-05`, `ID-AUD-09`, and `ID-AUD-10` remain unable to claim 
 without the AU-G8 durability-capable capture. This contract preserves the ADR-0021 gate order;
 the following work remains deferred:
 
-- AU-G3: SQS transport, environment-isolated Queue/DLQ mapping, retry/configuration values, and operations (SQS is the Owner policy direction in ADR-0023 / DEC-072; formal Supersession / effective date are unconfirmed)
+- AU-G3: SQS Transport, 환경별 Queue/DLQ 매핑, 재시도·구성 값과 운영 설계를 남긴다. SQS는 ADR-0023 / DEC-072의 Owner 정책 방향이며 공식 Supersession·발효일은 미확인이다.
 - AU-G4: append store, fingerprint/dedup SQL, retention durations, and deletion policy
 - AU-G5: consumer
 - AU-G8: outbox/durable publication, replay, reconciliation, monitoring, and alerting mechanisms

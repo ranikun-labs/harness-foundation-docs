@@ -3692,8 +3692,12 @@ preserves:
 - ADR-0015
 
 supersedes: []
-superseded_by:
-- DEC-071 (partial: Mac mini Production Primary / AWS DR-only interpretation; historical RTO/RPO and human-approved fencing remain valid)
+superseded_by: []
+partial_superseded_by:
+  - DEC-071 (accepted Owner policy direction only: Mac mini Production Primary placement and
+    AWS DR-only interpretation; formal ADR-0016 supersession/effective date remain unconfirmed;
+    historical RTO/RPO and Human-approved fencing remain valid)
+full_supersession: none
 ```
 
 ### Affected Documents
@@ -4413,12 +4417,16 @@ superseded_by: []
 **Decision owner:** Architecture Owner
 **Source:** Owner direction fixed in the 2026-10-12 infrastructure request
 **Related ADR:** ADR-0022
+**Owner policy direction:** accepted_with_constraints
+**ADR document status:** in_review; official final document approval unconfirmed
+**ADR-0016 formal supersession/effective date:** unconfirmed
+**AWS provisioning:** not approved and not performed
 
 ### Decision
 
 Production Primary는 서울 Region ap-northeast-2의 EC2 + Docker Compose다. V1 Runtime을
 Gateway/WebFlux, Platform Core/MVC, Finance, Carelog 네 개의 독립 EC2에 각각 둔다.
-공통 RDS PostgreSQL Instance 한 개를 Private Subnet Group에 두고 서비스별 Database/
+공통 RDS PostgreSQL 물리 Instance 안에 하나의 Application Database를 두고, 서비스별
 Schema/Role/Migration 소유권을 유지한다. Valkey 서버는 Valkey로 고정하며 Platform Core
 EC2 동거를 비용 우선 설계안으로 두되 최종 위치는 Owner 승인 대상이다.
 
@@ -4439,8 +4447,8 @@ Connection Pool 최적화 전후를 비교한다. 4 Host는 운영 분리와 비
 - PostgreSQL 공통 Version은 Platform/Finance/Carelog JDBC 및 Flyway 호환성 확인 전 결정하지 않는다.
 - RDS Public Access는 금지한다. Multi-AZ, class, backups, recovery 목표는 비용·복구 Owner Gate다.
 - OAuth State GETDEL/TTL, JWT Blacklist, Lua Rate Limiter와 fail-closed 계약은 보존한다. Blacklist 복구/무효화 증거 전 Release를 막는다.
-- EKS/Kubernetes, ECS/Fargate, Lambda 전면 전환, Aurora Serverless v2, 신규 NATS/SQS/PGMQ를 V1에 추가하지 않는다.
-- 최초 7일은 측정 목표다. 경과만으로 자동 변경·종료하지 않는다. 저부하 실사용만으로 P95/P99를 판단하지 않는다.
+- EKS/Kubernetes, ECS/Fargate, Lambda 전면 전환, Aurora Serverless v2, 신규 Broker를 V1에 추가하거나 AWS에 Provision하지 않는다. 이 DEC는 비동기 Provider Target을 결정하지 않는다. 현재 Owner 정책 방향은 SQS Target이며 ADR-0023 / DEC-072와 PR #37에서 검토 중이다. 공식 ADR 승인, Supersession 발효와 AWS Provisioning은 확인되지 않았다. 신규 NATS 구현은 현 Owner 목표에서 제외한다.
+- 최초 7일은 Owner 승인 Pilot 또는 Go-Live가 대표 트래픽을 제공한 뒤 수집하는 측정 목표다. Pilot 자료는 별도 표시하며 Owner가 Baseline 대표성/기간을 명시하지 않으면 7일에 산입하지 않는다. 이 baseline은 최초 Go-Live의 사전 Gate가 아니며, Pilot/Go-Live 시점과 대표성 기준은 미결정이다. 경과만으로 자동 변경·종료하지 않고, 저부하 실사용만으로 P95/P99를 판단하지 않는다.
 - V2의 4→2/1 EC2 전환은 동일 부하/데이터/이미지와 비용·Latency·오류·Memory·Recovery 비교 후 Owner가 별도 승인한다.
 - Terraform Destroy/Replace와 AWS Apply는 이 Decision으로 승인되지 않는다.
 
@@ -4462,20 +4470,38 @@ docs/architecture/backend-service-foundation/README.md
 docs/architecture/backend-service-foundation/aws-v1-mvp-deployment-plan.md
 docs/architecture/backend-service-foundation/aws-v2-optimization-roadmap.md
 
-### Supersession
+### Supersession intent and historical preservation
 
-partial_supersedes:
-- ADR-0016 / DEC-066: Mac mini Production Primary placement and AWS DR-only interpretation only
+The accepted DEC-071 Owner policy direction partially supersedes DEC-066 at the Decision Log
+level only, limited to the Mac mini Production Primary placement and AWS DR-only interpretation.
+This records the accepted policy direction only: ADR-0022 remains in_review and its official
+final document approval is unconfirmed; formal ADR-0016 supersession and its effective date are
+also unconfirmed and are not recorded as effective.
+
+Partial Supersession Scope (DEC-066):
+
+```text
+superseded_scope:
+  - Mac mini Production Primary placement
+  - AWS DR-only interpretation
+remaining_valid_scope:
+  - ADR-0016 historical record and Human-approved failover/write-fencing principles
+  - Historical 4h RTO / 15m RPO, which do not apply to the new AWS Primary
+replacement_decision_ref: DEC-071
+```
 
 preserves:
 - ADR-0016 historical record and Human-approved failover/write-fencing principles
 - ADR-0016 historical 4h RTO / 15m RPO as non-applicable to the new AWS Primary
 - ADR-0015 communication and deferred-messaging boundaries
 - ADR-0020 product/service DB ownership and migration boundaries
-- ADR-0021 Shared Audit semantic/durability architecture; Provider choice is partially replaced by ADR-0023 / DEC-072, and no V1 broker deployment is implied
+- ADR-0021 Shared Audit의 의미·내구성 Architecture는 유지한다. Provider 선택만 ADR-0023 / DEC-072로 부분 대체하며 V1 Broker 배포를 뜻하지 않는다.
 
 supersedes: []
 superseded_by: []
+partial_supersedes:
+  - DEC-066
+full_supersession: none
 
 ---
 

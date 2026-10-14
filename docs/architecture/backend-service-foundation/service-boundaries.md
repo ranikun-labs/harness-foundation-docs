@@ -109,12 +109,13 @@ V3. This map does not approve Workspace implementation in V2.
 
 ## 3.1 Current Owner policy
 
-[ADR-0024](../../adr/ADR-0024-identity-commerce-owner-policy-alignment.md) / DEC-073 records the Owner direction:
-shared PlatformAccount / Authentication / Session; product-owned User / Membership; separate Carelog / Finance OAuth
-Apps; shared SSO with product authorization; explicit reauthenticated Social Account Linking; and personal BillingSubject
-subscription. Shared Commerce owns Subscription, Billing, Payment, Refund and commercial Entitlement. Organization
-Billing is outside MVP. ADR-0024 remains in_review; official final approval and formal Supersession / effective date are
-unconfirmed. Withdrawal / retention details remain Proposed. Implementation and production completion are not implied.
+[ADR-0024](../../adr/ADR-0024-identity-commerce-owner-policy-alignment.md) / DEC-073은 Owner 정책 방향을
+기록한다. Shared Identity는 공통 PlatformAccount·인증·세션을 소유하고, 각 Product는 자체 User·Membership을
+소유한다. Carelog와 Finance의 OAuth App은 분리한다. 공통 SSO는 제품별 인가를 대신하지 않으며 Social Account
+Linking에는 재인증이 필요하다. 개인 BillingSubject 기반 구독을 사용하고, Shared Commerce는 Subscription,
+Billing, Payment, Refund와 상업적 Entitlement를 소유한다. Organization Billing은 MVP에서 제외한다.
+ADR-0024는 `in_review`이며 공식 최종 승인·Supersession·발효일은 미확인이다. 탈퇴·보존 상세는 Proposed로
+남으며 구현이나 Production 완료를 뜻하지 않는다.
 
 ## 4. Shared Identity boundary
 
@@ -157,7 +158,7 @@ Shared Identity must not own:
 - product-specific organization membership unless explicitly promoted to a separate shared capability;
 - product-specific authorization policy;
 - product-specific consent;
-- billing, subscription or commercial entitlement state (Commerce ownership; physicalization remains deferred);
+- 청구·구독·상업적 Entitlement 상태 (Commerce 소유; 물리화는 보류);
 - large product profiles containing domain-specific fields.
 
 ### 4.4 Identity identifier

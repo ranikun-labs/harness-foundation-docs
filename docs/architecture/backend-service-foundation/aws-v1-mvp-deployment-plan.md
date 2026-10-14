@@ -58,11 +58,22 @@ Cloudflare Tunnel (validation candidate; outbound only)
 | EC2 #3 | Finance Backend | t4g.small | HTTP only from Gateway; PostgreSQL from Finance |
 | EC2 #4 | Carelog Backend | t4g.small | HTTP only from Gateway; PostgreSQL from Carelog |
 
-Mac mini is Development/Test only. No PostgreSQL container is used in Production. Valkey's
-co-location on Core is the cost-first candidate; because Gateway and Carelog are on other Hosts,
-TCP/6379 is a private ENI path restricted to their Security Groups. A dedicated Valkey EC2
-remains an Owner-approved alternative. The Private listener, contention, failure scope and
-blacklist recovery risk must be reviewed before deployment.
+Mac mini is Development/Test only. No PostgreSQL container is used in Production. Valkey
+co-location on Core is the cost-first candidate; a dedicated Valkey EC2 remains an alternative.
+For co-location, run Valkey on the Core Compose bridge network and publish host TCP/6379 only
+through a Compose port mapping bound only to `${VALKEY_PRIVATE_ENI_IP}` on a private-only ENI:
+```yaml
+ports:
+  - target: 6379
+    published: "6379"
+    protocol: tcp
+    host_ip: ${VALKEY_PRIVATE_ENI_IP}
+```
+Core-local clients use the Docker bridge. Gateway and Carelog reach the endpoint over VPC private networking.
+The attached Security Group allows TCP/6379 only from the Gateway and Carelog Security Groups;
+it has no public CIDR rule. Do not bind/publish the port on a Public interface or `0.0.0.0`.
+The ENI choice, ACL/credential, contention, failure scope and blacklist recovery risk remain
+Owner gates before deployment.
 
 ## 3. Four-EC2 / RDS capacity candidates
 
@@ -125,8 +136,10 @@ application availability. RDS Public Access is false.
 
 Gateway has no Internet-origin inbound rule. Backend application ports accept traffic from the
 Gateway Security Group only. RDS TCP/5432 accepts only Core, Finance and Carelog Security Groups.
-Valkey TCP/6379 accepts only the approved private client groups. SSH/22 is absent; SSM is the
-administration path. Cloudflare Tunnel, if selected, connects outbound on its approved transport.
+Valkey TCP/6379 is bound to the Core host's private-only ENI address and its Security Group
+accepts only the Gateway/Carelog Security Groups; public address binding and public CIDR ingress
+are prohibited. SSH/22 is absent; SSM is the administration path. Cloudflare Tunnel, if selected,
+connects outbound on its approved transport.
 
 No NAT Gateway, ALB or VPC Endpoint is created by default. With public EC2 IPv4, outbound HTTPS
 443 reaches SSM, the selected registry, package sources, Grafana Cloud and approved external APIs;
@@ -162,10 +175,16 @@ tests agree. The current PostgreSQL 16 / 18.4 drift must not be resolved by assu
 
 Each runtime has a separate Compose stack, deployment/restart boundary and immutable image digest.
 Gateway is the only application entrypoint. Gateway-to-Core/Finance/Carelog traffic is Private
-HTTP/JSON; AI uses SSE. Each service keeps its JWT/OAuth/Refresh Token and internal authorization
-contracts. Secrets arrive at runtime through the approved instance role and exact Secrets Manager
-ARN; user data and image layers contain no secret. Valkey uses a private Docker network on Core
-and a narrowly restricted private ENI path for Gateway/Carelog when co-located.
+HTTP/JSON; AI uses SSE. Each service keeps its JWT/OAuth/Refresh Token and internal authorization contracts.
+The secret
+store remains an Owner decision; no provider is selected. After approval, a per-EC2 instance
+profile may read only exact secret resources required by that host. A trusted host-side fetcher
+delivers only each container's required values as a read-only file mount accessible to that
+service UID; application containers must not obtain instance-profile credentials through IMDS.
+Do not put secrets in image layers, user data, source control, command arguments, shell history,
+or ordinary logs. The EC2 Role is not the RDS Master Role. For co-located Valkey, use the Core
+Docker bridge and the private-only ENI/port binding plus Security Group source references described
+above.
 
 ## 8. Valkey Persistence / Security
 
@@ -174,7 +193,9 @@ and a narrowly restricted private ENI path for Gateway/Carelog when co-located.
 - Preserve current Spring Data Redis / Lettuce clients, Redis package names and property names.
 - The existing platform config names include PLATFORM_GATEWAY_REDIS_* and
   PLATFORM_IDENTITY_REDIS_*; do not rename them merely because the server changes.
-- Valkey Port 6379 must not be published to the EC2 Host or VPC.
+- Valkey TCP/6379 may be published only on its private-only ENI address using Compose `host_ip`;
+  the Security Group allows only Gateway/Carelog Security Group sources. No Public Interface bind,
+  public IP association on the Valkey ENI, `0.0.0.0:6379`, or public CIDR Ingress is allowed.
 - Use an authenticated Valkey endpoint or ACL and keep its credential in the chosen secret
   system. Exact ACL / password design is not selected.
 - AOF, RDB, write frequency, fsync, named Volume, snapshot / backup interval and retention are
@@ -191,11 +212,17 @@ and a narrowly restricted private ENI path for Gateway/Carelog when co-located.
 - No production .env or credential is committed to Git.
 - Existing application variable contracts remain the source for binding. Never rename JWT,
   Refresh Token, OAuth, DB or Redis client properties as part of this architecture change.
-- Secret Store is an Owner Decision. Compare AWS Systems Manager Parameter Store SecureString
-  and AWS Secrets Manager using secret count, rotation, access audit, API cost and operator effort.
-- Use an EC2 instance role with least-privilege read access rather than a long-lived AWS key.
-- If Compose receives secrets as files, verify the application can read them without placing
-  values in image layers, source control, shell history or ordinary logs.
+- Secret Store is unselected. Compare AWS Systems Manager Parameter Store SecureString and AWS
+  Secrets Manager using secret count, rotation, access audit, API cost and operator effort.
+- The injection contract uses the EC2 instance profile with least-privilege reads limited to the
+  exact approved secret resources used by that host; the Core host role is limited to Core/Valkey
+  secrets and each other host role to its service secrets. No long-lived AWS key is distributed.
+- A trusted host-side fetcher mounts only each container's required values as read-only files
+  scoped to the service UID. The application container must not access IMDS credentials. Verify
+  a file-binding adapter preserves each application's existing property contract without logging
+  values. Store choice, exact resources, rotation and fetcher remain Owner gates.
+- Never inject the RDS Master Credential. Keep secret values out of user data, image layers,
+  environment dumps, command arguments, shell history, source control and ordinary logs.
 - Separate runtime / health configuration from secrets. Keep local sample values clearly
   non-production.
 - CI publishing credential and production runtime credential are separate identities.
@@ -316,15 +343,17 @@ Ingress needs a separate decision and revised cost/security evidence.
 - Model, provider credential source, timeout and streaming failure behavior remain explicit.
 - Shared Audit's inspected default capture is Unavailable. Its release contract and required V1
   events must be evidenced before calling Audit production-ready.
-- ADR-0021's semantic/durability approval remains; [ADR-0023](../../adr/ADR-0023-sqs-messaging-and-environment-isolation.md)
-  / DEC-072 partially supersedes its JetStream provider with an SQS target. No Broker is deployed
-  by this plan; internal jobs use Worker + JPA and local development defaults to no broker.
-- If a real V1 asynchronous use case is identified, define its durability / retry / replay need
-  as a separate Gate. Do not deploy a Broker solely because the Architecture was approved.
+- ADR-0021 / DEC-070의 NATS JetStream 승인 기록과 Shared Audit의 의미·내구성 원칙을
+  보존한다. 신규 NATS 구현은 현재 Owner 목표에서 제외한다.
+- ADR-0023 / DEC-072는 SQS를 목표 Provider로 정렬한다. ADR은 `in_review`이며 공식 승인,
+  Supersession과 발효일은 미확정이다. Queue 종류와 구체 사용 사례도 미결정이고,
+  이 계획과 PR #37은 SQS/NATS AWS 자원 생성을 승인하지 않는다.
+- 실제 V1 비동기 사용 사례가 확인되면 내구성·재시도·재생 요구, 설계, IAM, 비용을
+  검토하고, 격리된 AWS Dev 리소스를 만들기 전 별도 Owner 승인을 받는다.
 
 ## 16. MVP Go-Live checklist
 
-- [ ] ADR-0022 and DEC-071 merge; historical ADR-0016 remains intact with partial supersession metadata.
+- [ ] DEC-071 Owner policy direction is recorded; ADR-0022 document review/final approval and ADR-0016 partial-supersession effective status are explicit, with historical ADR-0016 content preserved.
 - [ ] Private platform-infra repository, independent implementation PR, CI checks and state bootstrap review are complete.
 - [ ] AWS account, ap-northeast-2, subnets, egress and Security Groups are approved.
 - [ ] ARM64 builds, digest-pinned images, four independent Compose stacks and rollback pass.
@@ -333,8 +362,9 @@ Ingress needs a separate decision and revised cost/security evidence.
 - [ ] Valkey placement, credentials, noeviction, persistence, monitoring and blacklist recovery/invalidations pass.
 - [ ] Cloudflare Tunnel passes its validation gate or another Ingress has a separate approval.
 - [ ] Alloy labels and Grafana dashboards receive real metrics; app 계측 issue results are verified; alert contact path is tested.
-- [ ] Seven-day measurement and same-profile k6 evidence include cost, images, JVM flags, dataset and Dashboard export.
+- [ ] Pre-Go-Live smoke/load evidence and production-load approval (if used) meet the separately approved Go-Live gate.
 - [ ] Shared AI SSE, Shared Audit, Auth, Finance and Carelog E2E release gates pass.
+- [ ] After explicitly approved Pilot/Go-Live begins representative traffic, capture the first seven-day baseline with cost, images, JVM flags, dataset and Dashboard export. This is post-Go-Live V2 evidence, not a prerequisite for the initial Go-Live. Pilot observations count only if an Owner confirms they represent the baseline workload and window.
 - [ ] Cost Calculator estimate and V2 rollback proposal are reviewed.
 - [ ] Owner explicitly approves Go/No-Go. No automatic Apply, Merge, traffic promotion or EC2 deletion.
 
@@ -344,7 +374,7 @@ Snapshot at the branches and HEADs in ADR-0022:
 
 | Repository | Verified Evidence | Blocker |
 |---|---|---|
-| harness-foundation-docs | ADR-0016 accepted_with_constraints: Mac mini Primary / AWS DR; ADR-0020: one Application DB with service Schemas; ADR-0021 semantics preserved; ADR-0023: SQS target, provisioning gated | New ADR must merge; old ADR-0016 history must remain |
+| harness-foundation-docs | ADR-0016의 과거 승인 기록; ADR-0020의 단일 Application DB와 서비스별 Schema; ADR-0021 / DEC-070의 역사적 JetStream 승인. 신규 NATS 구현은 현재 목표에서 제외하며, ADR-0023 / DEC-072의 SQS 목표 정책을 이 PR #37에서 검토 중이고 AWS Provisioning은 미실행 | ADR-0022의 공식 승인·ADR-0016 부분 대체 발효는 미확정; ADR-0016 역사와 Human 승인 Fencing 원칙 보존 |
 | platform-services | Compose runs Gateway, Platform Core, local postgres:16-alpine, redis:7-alpine; Gateway / Core Dockerfiles exist; current Compose publishes 8080 / 8081; shared-audit is included in platform-core/settings.gradle.kts and app/build.gradle.kts | First blocker: platform-core/app/Dockerfile omits shared-audit/build.gradle.kts and shared-audit/src even though the included project is an app dependency; Docker image build is expected to fail at Gradle configuration, but was not executed in this documentation task. Production image / network configuration absent; no CI workflow; local Compose is not production |
 | finance-harness-be | Java 21, Spring Boot 4.1.0, Flyway; Postgres 18.4 Testcontainers; configuration is environment-backed | No Dockerfile / Compose / GitHub Actions workflow; test uses finance_db and does not prove the ADR-0020 finance Schema / Role |
 | carelog-be | Java 17, Spring Boot 3.4.5, Flyway; PostgreSQL 16 + redis:7 development Compose; V1 baseline is public Schema | No application Dockerfile / CI workflow; Compose has a committed local password and publishes DB / Redis host ports; no Actuator dependency or Application health check; public-to-carelog migration needs rehearsal |
@@ -359,20 +389,17 @@ prove a cloud account or permission. Any resource state not directly evidenced i
 The initial 14 implementation issues remain in their owning repositories. A focused open-issue
 search for Actuator/Micrometer/Prometheus/metrics/observability found no instrumentation-specific
 duplicates in the three application repositories. Four cross-repository coordination tickets were
-created in Foundation Docs during the original session. The repository-missing premise in
-[Issue #33](https://github.com/ranikun-labs/harness-foundation-docs/issues/33) is now stale:
-on 2026-10-13, `ranikun-labs/platform-infra` exists as a private repository; remote `ls-remote`
-succeeds with zero refs. The advertised default branch is `main`, but no branch commit exists.
-Remaining work is to establish the initial baseline commit/main, locate and review the previously
-mentioned local candidate (its availability is not established here), import the reviewed files,
-open an independent Infra PR, and complete offline CI/reviewer checks with explicit Owner gates.
-No repository creation is needed. These handoffs authorize no AWS plan/Apply or application changes.
+created in Foundation Docs because application repositories are read-only in this session. The
+private `platform-infra` repository now exists, but GitHub reports it as empty with `main` as its
+default branch. Foundation Docs #33 still needs a baseline commit, confirmation that the earlier
+local candidate is available and consistent, and a separate infrastructure PR. These tickets
+request handoff; they are not AWS or application-code approvals.
 
 ### New infrastructure / instrumentation handoffs
 
 | Owner | Task | Issue |
 |---|---|---|
-| platform-infra | Initialize empty repository baseline; locate/review/import candidate; open Infra PR and complete offline validation | [Foundation Docs #33](https://github.com/ranikun-labs/harness-foundation-docs/issues/33) |
+| platform-infra | Establish the `main` baseline, verify candidate-file availability and open a separate Terraform/Compose/Observability implementation PR | [Foundation Docs #33](https://github.com/ranikun-labs/harness-foundation-docs/issues/33) |
 | platform-services | Gateway/Core private Prometheus, HTTP/JVM/JDBC metrics | [Foundation Docs #35](https://github.com/ranikun-labs/harness-foundation-docs/issues/35) |
 | finance-harness-be | Finance Micrometer Prometheus and JDBC metrics | [Foundation Docs #34](https://github.com/ranikun-labs/harness-foundation-docs/issues/34) |
 | carelog-be | Actuator readiness and Micrometer Prometheus metrics | [Foundation Docs #36](https://github.com/ranikun-labs/harness-foundation-docs/issues/36) |
@@ -407,6 +434,6 @@ No repository creation is needed. These handoffs authorize no AWS plan/Apply or 
 7. Grafana Cloud Free limits, service-account scopes, contact point, cardinality and retention.
 8. Application instrumentation Owner issues and actual endpoint/metric evidence.
 9. Production load approval, safe route/dataset, concurrency and stop thresholds.
-10. Seven-day baseline completion criteria and V2 migration/rollback approver.
+10. Seven-day baseline start/representative-traffic and stable-day criteria after Go-Live, Pilot vs Go-Live timing, and V2 migration/rollback approver. Exact operational values remain undecided.
 11. Shared AI SSE and Shared Audit production release gates.
 12. Explicit Go-Live Owner and redacted evidence location.

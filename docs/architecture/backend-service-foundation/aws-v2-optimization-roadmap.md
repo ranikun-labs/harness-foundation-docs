@@ -17,15 +17,20 @@ source_inputs:
 > verifiable change.
 
 The V1 comparison starts from four independent EC2 runtimes: Gateway, Platform Core, Finance,
-and Carelog, plus one shared private RDS and Valkey. The first optimization candidate is 4→2
-EC2; 4→1 is a separate, higher contention candidate. The first seven stable days are recorded
-before proposing either placement. Expiration of seven days is not an automatic change trigger.
+and Carelog, plus one shared private RDS Application Database and Valkey. The first optimization
+candidate is 4→2 EC2; 4→1 is a separate, higher contention candidate. Record the first seven
+stable, representative days only after an explicitly Owner-approved Pilot/Go-Live starts serving
+the agreed workload. Pilot data count only if the Owner confirms the same representative window.
+This baseline supports V2 proposals; it is not a prerequisite for the initial Go-Live. No exact
+date, traffic threshold, stability rule or Pilot duration is approved here. Expiration of seven
+days is not an automatic change trigger.
 
 ## Baseline Record
 
-Capture this baseline after V1 is serving representative traffic, using a stated
-time window, request mix, deployment version, and traffic volume. Current measurements
-are UNKNOWN; do not invent values.
+Capture this baseline after V1 is serving representative traffic under an explicitly
+approved Pilot or Go-Live, using a stated time window, request mix, deployment version, and traffic volume.
+Record Pilot-only observations separately unless an Owner confirms they qualify for this same
+baseline. Current measurements are UNKNOWN; do not invent timing or operational thresholds.
 
 | Signal | Baseline to record | Current status |
 |---|---|---|
@@ -70,25 +75,37 @@ size, and dashboard/query link. Use the same test profile before and after a cha
 - **Measurement:** Contract results, p95/p99, failure recovery, backup restore, operator effort, and current Seoul price estimate.
 - **Decision:** Adopt only if observed recovery / operations improvements justify cost and all compatibility tests pass.
 
-### SQS Standard / FIFO
+### SQS 목표 (Standard / FIFO 선택 미정)
 
-- **Problem:** A V1 asynchronous use case may require durable queueing, retries, or ordering.
-- **Baseline:** The specific use case, event rate, ordering / deduplication requirement, delivery failure rate, and synchronous latency — UNKNOWN.
-- **Target:** [ADR-0023](../../adr/ADR-0023-sqs-messaging-and-environment-isolation.md) / DEC-072 selects SQS; queue type and provisioning remain use-case gated.
-- **Change:** Define ordering, competing-consumer/fan-out, criticality, outbox, retry/visibility and DLQ contracts. Compare Standard/FIFO and conditional SNS only in isolated AWS Dev with separate Queue/DLQ/IAM/configuration/encryption boundaries.
-- **Measurement:** Throughput, queue age, duplicate handling, ordering, retry / DLQ behavior, end-to-end completion latency, and cost.
-- **Decision:** Provider target is approved. No queue provisioning until ADR-0023 triggers, security/operations evidence and separate Owner execution approval are complete. Local emulator evidence does not prove AWS behavior.
+- **Owner 정책 방향:** ADR-0023 / DEC-072는 서비스 간 메시징의 목표 Provider를 SQS로
+  정렬한다. ADR 문서는 `in_review`이며 공식 승인, Supersession과 발효일은 미확정이다.
+- **Provisioning:** SQS Queue/DLQ와 AWS 자원은 승인되거나 생성되지 않았다. Queue 종류,
+  사용 사례, 이벤트량, 순서·중복 제거, 재시도·DLQ 정책과 비용은 별도 결정으로 남는다.
+- **Gate 1 — Dev 생성 승인:** 사용 사례와 일관성 계약, 설계, IAM, 비용을 검토하고
+  격리된 Dev Queue 생성에 대해 별도 명시적 Owner 승인을 받는다.
+- **Gate 2 — 격리된 Dev 검증:** Gate 1 승인 뒤 실제 AWS Dev Queue에서 Producer/Consumer,
+  IAM 경계, 전달·재시도·실패 동작을 검증한다.
+- **Gate 3 — Production 승인:** 운영 준비 증거를 검토하고 Production 자원 생성이나
+  전환 전에 별도의 Owner 승인을 받는다.
+- **측정:** 처리량, Queue Age, 중복·순서, 재시도·DLQ, 완료 지연과 비용은 승인된 격리
+  AWS Dev에서 측정한다. 현재 해당 환경은 준비되지 않았다.
 
-### Non-baseline messaging alternatives — 2026-10-13 update
+### 비동기 대안과 내부 작업
 
-PGMQ and pg_cron are not MVP default dependencies. Service-internal jobs use Spring Boot
-Application Worker + JPA; DB constraints, transactions and persisted job state remain in PostgreSQL.
-Any later database-scheduler/queue proposal requires a separate Owner decision and evidence.
+PGMQ와 `pg_cron`은 MVP 기본 의존성이 아니다. 서비스 내부 작업은 Spring Boot
+Application Worker + JPA로 실행하고, 작업 상태·제약조건·트랜잭션은 PostgreSQL에 둔다.
+다른 Database Queue나 Scheduler가 필요하면 실제 사용 사례와 운영·복구 증거를 제시해
+별도 Owner 결정을 받는다.
 
-NATS JetStream is excluded from new implementation targets by
-[ADR-0023](../../adr/ADR-0023-sqs-messaging-and-environment-isolation.md) / DEC-072. The previous ADR-0021 approval remains
-in its historical record with scoped supersession. Local NATS / Production SQS is not adopted.
-This roadmap no longer carries a JetStream implementation experiment.
+### NATS JetStream — 과거 승인 기록 보존
+
+- ADR-0021 / DEC-070의 JetStream Architecture 승인 기록은 역사로 보존한다.
+- 현재 Owner 정책 방향은 SQS를 목표로 정렬하며 신규 NATS 구현을 제외한다. 이를 V2
+  구현 후보로 다시 포함하지 않는다.
+- ADR-0021의 공식 Supersession·발효일과 SQS ADR 최종 승인은 미확정이며, 관련 정책은
+  현재 PR #37에서 검토 중이다.
+- NATS Broker는 배포되지 않았다. 과거 승인 기록은 신규 구현이나 AWS 자원 생성을
+  허가하지 않는다.
 
 ### ECS / Lambda
 

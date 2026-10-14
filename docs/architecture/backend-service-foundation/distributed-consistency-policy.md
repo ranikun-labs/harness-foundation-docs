@@ -27,12 +27,12 @@ It covers:
 
 ## 1.1 Current execution policy
 
-[ADR-0023](../../adr/ADR-0023-sqs-messaging-and-environment-isolation.md) governs AWS SQS delivery and Dev/Production isolation.
-Service-internal jobs, outbox publication and reconciliation use Spring Boot Worker + JPA
-with persisted state, bounded retries and safe claims/leases where required. FK/Unique/Index
-and local transactions remain DB responsibilities. pg_cron, PGMQ, a separate broker and a
-separate Saga server are not MVP defaults. The following consistency rules do not select a
-queue type, numeric retry policy or deploy infrastructure.
+[ADR-0023](../../adr/ADR-0023-sqs-messaging-and-environment-isolation.md)은 AWS SQS 전달과
+Dev/Production 격리를 다룬다. 서비스 내부 작업, Outbox 발행과 조정 작업은 필요한 경우
+상태를 저장하고 제한된 재시도 및 안전한 Claim/Lease를 사용하는 Spring Boot Worker + JPA로
+수행한다. FK/Unique/Index와 로컬 트랜잭션은 계속 DB 책임이다. `pg_cron`, PGMQ, 별도
+Broker와 별도 Saga 서버는 MVP 기본값이 아니다. 아래 일관성 규칙은 Queue 종류, 재시도
+횟수나 배포 인프라를 확정하지 않는다.
 
 ## 2. Core model
 
