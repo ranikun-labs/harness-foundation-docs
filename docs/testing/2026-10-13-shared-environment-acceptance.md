@@ -170,3 +170,14 @@ Gate 1개로 구분한다. 승인 방향·Proposed 상세·미결정 선택과 �
 - `docs/decisions/decision-log.md`
 - `docs/testing/2026-10-13-shared-environment-acceptance.md`
 - `docs/testing/README.md`
+
+## 9. 2026-10-14 통합 반영
+
+PR #32는 `bf5667d7853f155715ebb4b0096cbd1cbe3deac7`로 `main`에 병합됐다. 기존 PR #37과
+기존 커밋 이력을 유지하고 `main`을 일반 Merge 방식으로 통합했다. PR #37은 `main`을 Base로
+독립 검토를 받기 위해 열어 두며, 자동 Merge나 Owner Merge는 수행하지 않았다.
+
+2026-10-14 확인 시 `platform-infra`는 private 빈 저장소이고 기본 브랜치는 `main`이다.
+따라서 저장소 생성 자체가 아니라 `main` 기준 baseline, 기존 후보 파일의 정합성·가용성 검증,
+독립 Infrastructure PR이 남은 작업이다. 과거 상태를 기록한 위 절의 PR #32 관측은
+2026-10-13 기준 기록으로 보존한다.

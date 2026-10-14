@@ -1742,8 +1742,8 @@ architecture_gates:
     why_deferred: Gate 1 설계 검토와 별도 Dev 생성 승인, Gate 2 실제 격리 Dev 검증, Gate 3 Production 준비 검토와 별도 Owner 승인이 필요
     required_evidence:
       - "Gate 1 — Use Case·설계·IAM 최소권한·비용·운영 검토와 격리된 Dev Queue/DLQ 생성에 한정한 Owner 승인"
-      - "Gate 2 — 격리된 AWS Dev Queue/DLQ 생성 후 중복·역순·Crash·Timeout·Poison·Redrive 및 교차 환경 권한 거부의 실제 검증"
-      - "Gate 3 — Production 준비·Rollback·비용·운영 검토와 별도 Production Owner 승인"
+      - "Gate 2 — 격리된 AWS Dev Queue/DLQ 생성 후 Dev 범위에서 중복·역순·Crash·Timeout·Poison·Redrive 실제 검증; 아직 없는 Production ARN에 대한 교차 환경 거부는 정책 시뮬레이션·구성 검토와 Dev 범위 Negative Test로 한정"
+      - "Gate 3 — Production 준비·Rollback·비용·운영 검토와 별도 Production Owner 승인; 승인 후 Production 리소스 생성 시 Production 전환 전에 실제 ARN 기준 Dev Role→Production 및 Production Role→Dev 접근 거부 검증"
     adoption_triggers: [실제 서비스 간 비동기 분리 요구와 완료 SLO, 장애 격리와 durable delivery 필요]
     owner: { kind: scope, scope: platform_foundation }
     blocked_work: [Queue 종류와 조건부 SNS 결정, platform-infra Provisioning, SQS Adapter, AWS Dev 검증, Production 준비]

@@ -4523,6 +4523,7 @@ Dev/Production Queue·DLQ·ARN/URL·IAM/Credential·구성·암호화·운영 �
 
 partial_supersedes: DEC-064 / ADR-0015의 JetStream 목표 및 내부 Job Broker 해석,
 DEC-070 / ADR-0021의 JetStream Provider·AU-G3 선택.
+이는 Owner 정책 방향의 범위 기록이며 공식 ADR 승인, formal Supersession 또는 발효 선언이 아니다.
 remaining_valid_scope: HTTP/JSON·SSE, Audit 의미/Producer Contract, Durability/Outbox,
 Schema Ownership, Append Ledger, AU-G8 → AU-G7 및 전체 Gate 선후관계.
 superseded_by: []
@@ -4545,6 +4546,7 @@ superseded_by: []
 Identity/Commerce/Product Data Ownership은 분리한다.
 
 partial_supersedes: DEC-057 / ADR-0012의 Product Membership을 Commerce가 소유한다는 범위만.
+이는 Owner 정책 방향의 범위 기록이며 ADR-0012의 공식 승인, formal Supersession 또는 발효 선언이 아니다.
 remaining_valid_scope: Identity/Commerce 독립 논리 경계, Commerce 물리화 유예,
 V1 Local OSS 독립성과 Product Data Ownership.
 superseded_by: []

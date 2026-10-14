@@ -178,11 +178,13 @@ Provisioning은 순서가 고정된 세 Gate로 나눈다. SQS Target 정책 방
    Redrive Runbook을 검토한다. 이 Gate에서 별도 Owner가 승인할 수 있는 범위는 격리된 AWS Dev Queue/DLQ
    생성까지다.
 2. **Gate 2 — 격리 AWS Dev Queue 생성 후 실제 검증.** Gate 1 승인이 기록된 뒤에만 Dev 리소스를 만든다.
-   중복·역순·Crash·Timeout·Poison·Redrive 동작과 Dev/Production 교차 접근 거부를 실제 AWS Dev에서
-   검증하고 결과를 남긴다.
+   중복·역순·Crash·Timeout·Poison·Redrive 동작을 Dev 리소스 범위에서 실제 검증하고 결과를 남긴다.
+   Production Queue가 아직 없으므로 이 단계의 교차 환경 검증은 정책 시뮬레이션·구성 검토와 Dev 범위의
+   Negative Test로 한정한다. 존재하지 않는 Production ARN에 대한 거부 응답은 격리 증거로 간주하지 않는다.
 3. **Gate 3 — Production 준비 검토와 별도 Owner 승인.** Gate 2 증거를 바탕으로 운영·비용·보안·Rollback
-   준비를 검토하고, Production 리소스 생성 전 별도의 Owner 승인을 받는다. Gate 1 승인이나 Dev 검증은
-   Production 승인이 아니다.
+   준비를 검토하고 Production 리소스 생성 전 별도의 Owner 승인을 받는다. 승인 후 Production Queue/DLQ를
+   만든 경우 Production 전환 전에 실제 ARN을 대상으로 Dev Role의 Production 접근과 Production Role의
+   Dev 접근이 모두 거부되는지 검증하고 결과를 남긴다. Gate 1 승인이나 Dev 검증은 Production 승인이 아니다.
 
 현재 Dev 생성 승인은 확인되지 않았으며 이 Task에서 AWS 리소스 생성이나 Provisioning 승인을 수행하지 않는다.
 

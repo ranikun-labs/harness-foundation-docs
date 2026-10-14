@@ -354,7 +354,7 @@ Ingress needs a separate decision and revised cost/security evidence.
 ## 16. MVP Go-Live checklist
 
 - [ ] DEC-071 Owner policy direction is recorded; ADR-0022 document review/final approval and ADR-0016 partial-supersession effective status are explicit, with historical ADR-0016 content preserved.
-- [ ] Private platform-infra repository, independent implementation PR, CI checks and state bootstrap review are complete.
+- [ ] `platform-infra`에 `main` 기준 커밋을 만들고, 후보 파일 정합성·독립 구현 PR·CI·State bootstrap을 검토한다.
 - [ ] AWS account, ap-northeast-2, subnets, egress and Security Groups are approved.
 - [ ] ARM64 builds, digest-pinned images, four independent Compose stacks and rollback pass.
 - [ ] RDS exact engine version is compatible with every JDBC/Flyway owner; TLS, schema/role grants and ownership are verified.
@@ -364,9 +364,15 @@ Ingress needs a separate decision and revised cost/security evidence.
 - [ ] Alloy labels and Grafana dashboards receive real metrics; app 계측 issue results are verified; alert contact path is tested.
 - [ ] Pre-Go-Live smoke/load evidence and production-load approval (if used) meet the separately approved Go-Live gate.
 - [ ] Shared AI SSE, Shared Audit, Auth, Finance and Carelog E2E release gates pass.
-- [ ] After explicitly approved Pilot/Go-Live begins representative traffic, capture the first seven-day baseline with cost, images, JVM flags, dataset and Dashboard export. This is post-Go-Live V2 evidence, not a prerequisite for the initial Go-Live. Pilot observations count only if an Owner confirms they represent the baseline workload and window.
 - [ ] Cost Calculator estimate and V2 rollback proposal are reviewed.
 - [ ] Owner explicitly approves Go/No-Go. No automatic Apply, Merge, traffic promotion or EC2 deletion.
+
+### Go-Live 이후 V2 Baseline 측정 (초기 Go-Live Gate 아님)
+
+Owner가 승인한 Pilot/Go-Live에서 대표 트래픽이 발생한 뒤 첫 7일 Baseline을 수집한다.
+비용, 이미지, JVM flags, 데이터셋과 Dashboard export를 함께 보존한다. 이 측정은
+Go-Live 이후 V2 판단을 위한 증거이며 최초 Go-Live 선행조건이 아니다. Pilot 관측은
+Owner가 Baseline의 부하와 측정 기간을 대표한다고 확인한 경우에만 포함한다.
 
 ## 17. Repository Inspection and Deployment Blockers
 

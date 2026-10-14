@@ -114,7 +114,8 @@ ADR-0021에 따른다. 구체 보존기간은 여전히 AU-G4 Product/Compliance
 운영과 Linking 검증 부담이 늘어난다. 개인 BillingSubject는 MVP를 줄이되 Organization
 결제는 후속 범위로 남긴다.
 
-승인된 논리 방향과 부분 Supersession을 DEC-073으로 기록한다. Proposed Lifecycle 상세,
+Owner 정책 방향과 그 범위에 한정된 부분 대체를 DEC-073으로 기록한다. 이는 ADR-0012의
+공식 승인·formal Supersession·발효 선언이 아니다. Proposed Lifecycle 상세,
 재인증 강도와 Commerce 구현 계약은 각 Owner의 후속 검토가 필요하다. 기존
 Identity / Shared AI / Carelog / Finance의 부분 구현 Evidence를 전체 정책 구현 완료로
 확대하지 않는다. Human Review·Merge·AWS Apply·Production Release 권한은 추가하지 않는다.
