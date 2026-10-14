@@ -3682,8 +3682,12 @@ preserves:
 - ADR-0015
 
 supersedes: []
-superseded_by:
-- DEC-071 (partial: Mac mini Production Primary / AWS DR-only interpretation; historical RTO/RPO and human-approved fencing remain valid)
+superseded_by: []
+partial_superseded_by:
+  - DEC-071 (accepted Owner policy direction only: Mac mini Production Primary placement and
+    AWS DR-only interpretation; formal ADR-0016 supersession/effective date remain unconfirmed;
+    historical RTO/RPO and Human-approved fencing remain valid)
+full_supersession: none
 ```
 
 ### Affected Documents
@@ -4454,10 +4458,23 @@ docs/architecture/backend-service-foundation/aws-v2-optimization-roadmap.md
 
 ### Supersession intent and historical preservation
 
-The approved DEC-071 Owner policy direction intends to replace only the Mac mini Production
-Primary placement and AWS DR-only interpretation from ADR-0016 / DEC-066. ADR-0022 is still
-in_review, and its official final document approval and effective date are unconfirmed. Therefore
-the ADR-level partial supersession is not recorded as effective in this branch.
+The accepted DEC-071 Owner policy direction partially supersedes DEC-066 at the Decision Log
+level only, limited to the Mac mini Production Primary placement and AWS DR-only interpretation.
+This records the accepted policy direction only: ADR-0022 remains in_review and its official
+final document approval is unconfirmed; formal ADR-0016 supersession and its effective date are
+also unconfirmed and are not recorded as effective.
+
+Partial Supersession Scope (DEC-066):
+
+```text
+superseded_scope:
+  - Mac mini Production Primary placement
+  - AWS DR-only interpretation
+remaining_valid_scope:
+  - ADR-0016 historical record and Human-approved failover/write-fencing principles
+  - Historical 4h RTO / 15m RPO, which do not apply to the new AWS Primary
+replacement_decision_ref: DEC-071
+```
 
 preserves:
 - ADR-0016 historical record and Human-approved failover/write-fencing principles
@@ -4468,6 +4485,9 @@ preserves:
 
 supersedes: []
 superseded_by: []
+partial_supersedes:
+  - DEC-066
+full_supersession: none
 
 ---
 
