@@ -12,10 +12,14 @@ source_inputs:
   - docs/architecture/backend-service-foundation/service-communication-policy.md
   - docs/architecture/backend-service-foundation/distributed-consistency-policy.md
   - docs/architecture/backend-service-foundation/documentation-ownership-and-placement.md
+  - docs/architecture/backend-service-foundation/aws-v1-mvp-deployment-plan.md
+  - docs/architecture/backend-service-foundation/aws-v2-optimization-roadmap.md
+  - docs/adr/ADR-0022-aws-v1-mvp-primary-runtime.md
 related_decisions:
   - DEC-059
   - DEC-064
   - DEC-067
+  - DEC-071
 ---
 
 # Backend Service Foundation — Architecture
@@ -89,11 +93,21 @@ docs/architecture/backend-service-foundation/
 | [service-communication-policy.md](./service-communication-policy.md) | 동기 API / 비동기 Event / 로컬 검증 Token 선택 기준 | Draft | Inter-service communication | `harness-foundation-docs` | Not implemented / Not runtime-supported / Not released |
 | [distributed-consistency-policy.md](./distributed-consistency-policy.md) | Outbox, Idempotency, Reconciliation, Saga 등 분산 정합성 원칙 | Draft | Cross-service workflows | `harness-foundation-docs` | Not implemented / Not runtime-supported / Not released |
 | [documentation-ownership-and-placement.md](./documentation-ownership-and-placement.md) | Foundation vs 각 MSA 레포 vs Domain 문서 배치 원칙 | Draft | Foundation + all MSA repositories | `harness-foundation-docs` | Not implemented / Not runtime-supported / Not released |
+| [aws-v1-mvp-deployment-plan.md](./aws-v1-mvp-deployment-plan.md) | AWS V1 MVP 토폴로지, 배포·보안·복구와 Go-Live 실행 계획 | Draft | Platform Services, Finance, Carelog, AWS Runtime | `harness-foundation-docs` | Planning only; not implemented / not deployed |
+| [aws-v2-optimization-roadmap.md](./aws-v2-optimization-roadmap.md) | 실측 기반 V2 최적화 후보와 portfolio before/after evidence | Draft | AWS V1 services and V2 candidates | `harness-foundation-docs` | Baseline not yet measured; no candidate is mandatory |
 
 공통 통신·메시징·확장 선택의 Decision Record는
 [`ADR-0015`](../../adr/ADR-0015-platform-communication-messaging-scaling.md)다.
 `ADR-0015` / `DEC-064`는 제약과 함께 승인됐으며, 각 세부 문서의 Draft 상태와
 구현·Runtime 지원·제품 출시 상태는 별도로 유지한다.
+
+AWS V1 Production Primary는 `DEC-071`의 Owner 정책 방향과 `ADR-0022`의
+in_review 문서에 Gateway, Platform Core, Finance, Carelog의 독립 EC2 4대로 기록됐다.
+ADR 문서 최종 승인 및 ADR-0016 부분 대체 발효일은 확인되지 않았다. 공통 RDS와 Valkey의
+세부 Owner Gate, 중앙 Alloy/Grafana, 승인된 Pilot/Go-Live 후 7일 Evidence와 단계별 V2 4→2/1 후보는
+아래 계획 문서에 있다. 이 계획은 AWS 리소스 생성·운영, Runtime Support 또는 V2 기술
+도입을 승인하지 않는다.
+Application Micrometer/Actuator 구현은 각 Runtime Owner가 별도 수행한다.
 
 ---
 

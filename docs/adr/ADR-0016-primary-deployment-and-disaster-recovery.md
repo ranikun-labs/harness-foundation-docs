@@ -61,6 +61,11 @@ replacement_decision_refs: []
 > RPL-42 Comment 10144의 사용자 입력은 Architecture Target과 Decision Driver를
 > 고정한다. Docker Compose, ECR/GHCR, ECS Fargate/EC2, S3 또는 Cloudflare Load Balancing의
 > 채택이나 Runtime 운영을 증명하지 않는다.
+>
+> **ADR-0022 관계 상태:** ADR-0022는 이 ADR의 일부 Production Primary/DR 방향을 바꾸려는
+> Owner 정책 제안으로 기록됐다. 현재 ADR-0022 문서는 in_review이고 공식 최종 승인과
+> 발효일은 확인되지 않았으므로 이 ADR의 승인된 역사 본문은 변경하지 않으며, front matter의
+> superseded_by와 superseded_scope도 비워 둔다.
 
 ---
 
