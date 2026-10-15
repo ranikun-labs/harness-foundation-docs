@@ -207,24 +207,42 @@ Jira **원격 쓰기**(Create, Update, Transition, Comment, Link, Bulk)가 예�
 | **G0 문서 제안/승인** | 기존 `customfield_10042/10043/10044` 및 기존 승인 정책. 신규 계약은 검토용 | **기존 현행 Field만**; 새 옵션/새 필드 사용 금지 | 기존 승인 Writer/Role/Workflow로 수행 가능 | 문서 승인/병합은 Admin 적용 아님 |
 | **G1 신규 Admin Field 설정** | **기존 레거시 Field가 유효 권위**. 새 Field는 시험 대상 | 승인된 Pilot 전에는 신규 Field 쓰기 금지. Legacy Create는 실제 Issue Type 스키마 준수 | 계속 가능. Target 미존재/미전환 이유로 정지 금지 | Field ID·Option ID·Context·타입/필수/default·권한 실측 및 Snapshot, Pilot 승인 |
 | **G2 승인 Pilot Issue 한정** | Pilot Manifest에 등재되어도 **Cutover 승인 + 재조회 검증 + `ReadAuthority=target` 확인 전까지 Legacy가 권위**. 승인·검증 완료된 Issue만 Target | Pilot Maintainer가 승인된 Target Field에 단방향 기록·검증. 완료 전 다른 분류 Writer는 정지; 일반 신규 Create는 G1 계약 | 역할/증거 Gate를 지키는 일반 Comment·Transition은 계속 가능 | Target 저장 → 재조회·원본/영향 보존 검증 → Human Cutover 승인 → Manifest 권위 전환 |
-| **G3 활성 Issue 단계적 Cutover** | Cutover 승인·재조회 검증을 마치고 Manifest 권위가 Target인 Issue만 Target; 나머지는 Legacy. 신규 Create는 **별도 Issue Type 전환 Gate** | 활성화 승인된 Issue Type만 신규 선택형 Create 사용. 기존 유형의 Legacy Create와 임의 병행 금지; Product 변경은 추가 승인 | 분류 수정 없이 기존 승인 Workflow 지속 | 기존 required/default 해제, Target required/옵션 검증, 격리 Create 성공, Writer/Board/Automation 확인 후 유형별 전환 |
+| **G3 활성 Issue 단계적 Cutover** | 기존 Issue는 승인·검증된 Migration Manifest, **신규 Target Create Issue는 검증된 Create Origin Manifest**를 기준으로 분류 권위 결정. 출처 불명은 분류 Read/Write 중단 | 승인된 Issue Type만 Target Create. **요청 사전 등록 → IssueKey 연결 → Target 필드 재조회 → 이슈별 권위 초기화**를 완료해야 성공 | 기존 승인 Workflow의 비분류 작업은 지속 | 기존 required/default·필드 시험뿐 아니라 Origin Registry/Reader·Rollback 검증 및 유형별 승인 |
 
 | **G4 레거시 Cleanup 검토** | 승인된 범위는 Target; 미전환 과거 기록은 Legacy 이력 보존 | 대상 유형별 검증된 Target 경로만 | 기존 증거/링크 계속 유지 | 원본 보존·의존성 제거 확인 후 별도 Owner 승인. 자동 레거시 삭제 금지 |
 
 **Migration Manifest 최소 필드(별도 승인된 기록/파일, Jira 새 필드로 가정 금지):**
-`IssueKey`, `IssueType`, `ExpectedLegacyHash/SnapshotRef`, `TargetFieldIDs/OptionIDs`, `TargetOwnerApprovalRef`, `ImpactPreservationRef`, `Phase:staged|verified|cutover|rolled_back`, `ReadAuthority:legacy|target`, `WriteAuthority:legacy|target|frozen`, `MigratedAt`, `VerifiedAt`, `RollbackRef`, `CutoverApprovalRef`.
+`IssueKey`, `IssueType`, `Origin:legacy_migration|target_create`, `ExpectedLegacyHash/SnapshotRef`, `TargetFieldIDs/OptionIDs`, `TargetOwnerApprovalRef`, `ImpactPreservationRef`, `Phase:staged|verified|cutover|rolled_back|create_pending|create_ready|create_quarantined`, `ReadAuthority:legacy|target|none`, `WriteAuthority:legacy|target|frozen`, `CreateRequestId`, `CreateActivationRef`, `InitializedAt`, `MigratedAt`, `VerifiedAt`, `RollbackRef`, `CutoverApprovalRef`. **Origin별 조건부 필드:** 기존 Issue의 `legacy_migration`에는 원본 Snapshot·이슈별 Cutover 승인 필수. 신규 `target_create`에는 없는 Legacy Snapshot/기존 Issue Migration 승인을 만들어내지 않으며 `not_applicable`을 명시하고, 유형별 승인·Create 증거·저장값 재조회·권위 초기화 증거를 요구한다. `ReadAuthority=none`은 출처 검증 전 분류 차단용 상태다.
 
 - **Pilot 승인 전개:** Manifest 등재·Target 저장만으로 권위를 바꾸지 않는다. ① Owner가 대상·필드·원본 스냅샷 승인 → ② Pilot Maintainer가 Target 저장 → ③ 저장값 재조회와 Target Owner/Component 검증 → ④ Cross-product 영향 보존/Legacy Snapshot 검증 → ⑤ 승인자가 검증 결과를 보고 **별도 Cutover 승인** → ⑥ Manifest의 `Phase=cutover`, `ReadAuthority=target`, `WriteAuthority=target`을 승인된 방식으로 갱신 → ⑦ 후속 Read에 반영한다.
-- **검증 실패/승인 대기:** `Phase=staged` 또는 `verified`인 Issue의 **ReadAuthority는 계속 legacy**. 동시에 해당 Issue 분류 쓰기는 `WriteAuthority=frozen`으로 통제하여 Stale 분류 변경을 방지한다. 실패 시 원본 Legacy를 권위로 유지하고 실패한 Target 기록을 격리·보고한다. Target 저장 성공, `VerifiedAt` 값 또는 `CutoverApprovalRef` 중 **하나만** 존재하는 것으로 Cutover를 추론하지 않는다.
-- **Create 전환 Manifest/Checklist는 개별 Issue Manifest와 별도이다.** Issue Type별 `TypeId`, `LegacyRequired/DefaultState`, `TargetRequired/DefaultState`, `OptionIDs`, `VerifiedCreateRef`, `Writer/Board/AutomationReadinessRef`, `CutoverApprovalRef`, `ActiveCreateAuthority:legacy|target`, `RollbackRef`를 기록한다. 현재 테스트·Owner 승인 전까지 `legacy`이다.
+- **기존 Legacy Issue의 검증 실패/승인 대기:** `Origin=legacy_migration`이고 `Phase=staged` 또는 `verified`면 **ReadAuthority=legacy**, 분류 `WriteAuthority=frozen`을 유지한다. 실패한 Target 기록을 격리하고 기존 Snapshot을 권위로 보존한다. 저장 성공·`VerifiedAt`·`CutoverApprovalRef` 중 하나만으로 Cutover를 추론하지 않는다. **이 Legacy fallback 규칙을 신규 `Origin=target_create`에 적용하지 않는다.**
+- **Create 전환 Manifest/Checklist는 개별 Issue Manifest와 별도이다.** Issue Type별 `TypeId`, `LegacyRequired/DefaultState`, `TargetRequired/DefaultState`, `OptionIDs`, `VerifiedCreateRef`, `Writer/Board/AutomationReadinessRef`, `CreateOriginRegistryReadinessRef`, `CutoverApprovalRef`, `ActiveCreateAuthority:legacy|target`, `ActivationRef/EffectiveFrom/EffectiveTo`(전환 기간 이력), `RollbackRef`를 기록한다. 현재 테스트·Owner 승인 전까지 `legacy`이다. 유형별 CreateAuthority는 **미래 생성 경로**를 정할 뿐 기존 또는 이미 생성된 Issue의 ReadAuthority를 자동 변경하지 않는다.
 
-- **이슈별 명시적 라우팅:** Manifest에 없는 Issue 또는 유형은 **Legacy 권위**로만 취급하며, Target 필드가 빈 것을 Legacy로 메우는 임의 fallback이나 숨은 dual-write를 허용하지 않는다. 등록된 Pilot도 `Phase=cutover`와 Cutover 승인 증거 없이는 Read 권위를 바꾸지 않는다.
-- **Issue Type별 Create 전환:** 실험·생성 경로 변경은 별도 Human 승인으로 대상 유형의 신규 Create를 일시 정지하거나 격리해 시행한다. **기존 Legacy required/default 정리 → 신규 Target required/option 확인 → 신규 Target만 보낸 시험 Create의 성공/재조회 → 자동화·Writer/Board 경로 검증 → Create 전환 승인** 순서다. 이 단계의 중간 상태에서는 해당 유형의 분류 Create를 멈추고, 검증 실패 시 승인된 이전 구성 복구 및 Create 재검증 없이는 재개하지 않는다. Legacy Create와 Target Create를 동시 활성화하지 않으며, 타입 외 유형·기존 이슈 데이터는 자동 수정하지 않는다.
+- **이슈별 명시적 라우팅:** 기존 레거시 Issue의 `Phase=cutover` 승인·검증 전에는 Legacy 권위를 유지한다. **신규 Target Issue는 §8.1의 Create Origin·권위 초기화 규칙이 우선**한다. Manifest 미등재 이슈를 일률적으로 Legacy로 단정하거나 숨은 fallback/dual-write하지 않는다.
+- **Issue Type별 Create 전환:** 실험·생성 경로 변경은 별도 Human 승인으로 대상 유형의 신규 Create를 일시 정지하거나 격리해 시행한다. **기존 Legacy required/default 정리 → 신규 Target required/option 확인 → Target-only 시험 Create·Origin 등록·Reader 재조회까지 검증 → 자동화·Writer/Board 경로 검증 → Create 전환 승인** 순서다. 기존 미이전 Legacy Issue와 새로운 Target Issue를 구분하는지 포함한다. 전환 중에는 분류 Create를 멈추고, 실패 시 승인된 이전 구성 복구 및 Create 재검증 없이 재개하지 않는다. 동일 유형의 Legacy/Target Create 동시 활성화 금지.
 - **같은 Issue에서 분류 SSOT 두 개를 동시에 활성화하지 않는다.** 기존 Label은 Migration 도중 변동·삭제하지 않으며, Target 쓰기는 승인된 Maintainer가 수행한다. Legacy↔Target 값 차이는 `DRIFT`로 보고하고, 권위 미확인 상태에서는 **분류 수정만 WRITE STOP**. 일반 Comment/Transition은 역할·상태 기준을 독립 검증한다.
-- **Rollback:** Pilot을 철회하면 원본 Snapshot을 유지한 상태에서 검증·승인된 절차로 Manifest 권위를 Legacy로 전환하고, Target-only 기록을 격리·비교한 뒤 후속 쓰기를 허용한다. 이미 변경된 Jira 필드·필수값·기본값은 별도의 Admin 복구 및 Create/Read 재검증이 필요하다. **레거시를 무조건 덮어쓰거나 자동 재동기화하지 않는다.**
-- **Board/Filter/Automation:** G2 Pilot 대상에서 Target이 분류 권위여도, 기존 Board/Filter의 Legacy 기반 목록은 **과거 호환 View**일 수 있다. 이를 최신 Target 분류 결과로 표현하지 않으며, Pilot 보고에는 Manifest 대상과 조회 경로를 명시한다. G3 이전에는 Legacy 조회 기준을 유지한다. G3 혼합 기간엔 승인된 Manifest/별도 Read Adapter로 분기하거나 집계 범위를 명시한다. 기존 Jira JQL과 자동화에서 두 필드를 암묵적으로 OR 결합해 중복 집계하지 않는다.
+- **Rollback:** 기존 레거시 Issue의 Pilot을 철회하면 원본 Snapshot을 유지해 승인된 방식으로 권위를 전환하고 Target 기록을 격리한다. **신규 Target Create의 유형별 Rollback은 미래 Create만 바꾸며 이미 생성된 Target Issue를 자동 Legacy로 이전하지 않는다(§8.1).** 변경된 Jira 필수·기본값은 별도 Admin 복구 및 Create/Read 재검증 필요. Legacy 값 자동 재동기화 금지.
+- **Board/Filter/Automation:** G2 Pilot의 기존 Board/Filter Legacy 기반 목록은 **과거 호환 View**일 수 있다. G3에서는 Manifest·Create Origin·승인된 Read Adapter로 **미이전 Legacy / 전환된 기존 Target / 신규 Target / UNKNOWN_ORIGIN**을 구분한다. 읽기 근거가 없으면 분류 조회/집계 성공을 주장하지 않으며, 검증된 대상 범위만 표시한다. 기존 Jira JQL과 자동화에서 두 필드를 암묵적으로 OR 결합하지 않는다.
 - **기존 완료 이슈:** v1.1의 전량 Backfill 금지 유지. 활성·재활성화 대상만 기본 Migration Scope. 완료 이슈 전량 이전은 별도 Owner 승인·백업·복구/검증 Gate 필요.
-- **미확정 운영 사항:** Manifest의 실제 저장소/권한·정기 유지 방법, G3 신규 Create 유형별 승인 방식과 일시 정지/복구 방식, Jira Admin Field ID/option/Required 설정, 지원 불가 Issue Type의 분류 방식은 Owner/Admin 결정 전까지 운영 활성화하지 않는다.
+- **미확정 운영 사항:** Migration Manifest 및 신규 Create Intent/Origin Registry의 영속 저장소·권한·조회 경로·장애 복구 구현, G3 Create 유형별 승인·정지·복구, Jira Admin Field ID/Option/Required, 지원 불가 유형의 분류는 Owner/Admin 결정과 실제 시험 전까지 활성화하지 않는다.
+
+
+### 8.1 신규 Target Create Issue의 권위 초기화 (N1)
+
+**구분:** 기존 레거시 Issue의 이전은 `Origin=legacy_migration`과 이슈별 승인·Snapshot을 따른다. **신규 Target Create Issue는 Legacy Snapshot이 없으므로** 별도 출처 기록(`Origin=target_create`)과 **생성 직후 개별 Issue 권위 초기화**를 사용한다. 두 경우 모두 이슈별 유효 권위가 있어야 읽고 쓸 수 있으며, 유형별 `ActiveCreateAuthority=target`만으로 과거 Issue를 Target으로 바꾸지 않는다.
+
+**G3 Create 활성화 전제:** Owner가 승인한 유형별 Create Cutover, `ActivationRef/EffectiveFrom/EffectiveTo` 기간 이력, 실제 Field/Option·Required/Default, 승인된 Writer, 영속적인 Create Intent/Origin Manifest 저장소 및 이를 조회하는 **Reader/Board/Automation 경로**가 검증돼야 한다. 이 조건과 신규 Origin 초기화까지 포함한 격리 시험 Create가 실패하면 해당 유형의 Target Create를 활성화하지 않는다.
+
+**승인된 Jira Create Writer의 순서:**
+
+1. 실제 유형·활성화 기간·옵션·Owner/Role을 확인하고 **Jira Create 호출 전에** 고유한 `CreateRequestId`로 지속 저장되는 `Create Intent`(`TypeId`, `ActivationRef`, 옵션/필드, 요청 주체, `pending`)를 먼저 기록한다. 이는 추후 생성 결과가 불명확할 때 대조할 근거다.
+2. 승인된 **Target 분류 필드만** 보낸다. Jira가 반환한 `IssueKey`를 Intent에 연결하고, 새 Issue를 **재조회**해 Issue Type·Target Product/Component/Concern·옵션 저장값과 요청의 일치 여부를 확인한다.
+3. 저장된 값을 확인한 뒤 `IssueKey`의 Origin Manifest를 **`Origin=target_create`, `Phase=create_ready`, `ReadAuthority=target`, `WriteAuthority=target`** 및 `CreateRequestId`·`CreateActivationRef`·`VerifiedAt`·`InitializedAt`·유형별 Cutover 승인 근거와 함께 **영속 등록**한다. **개별 등록 완료 이후에만 정상 Create 성공을 보고하고 일반 분류 Read/Write를 개방**한다. 별도 Legacy→Target 이슈 이전 승인이나 존재하지 않는 Legacy Snapshot은 요구하지 않는다.
+4. **Create 결과 불명확·재조회 불일치·Origin 등록 실패:** 성공을 보고하지 않고 Intent 및 알려진 `IssueKey`를 `create_pending` 또는 `create_quarantined`로 보존한다. 해당 Issue 분류는 **`ReadAuthority=none / WriteAuthority=frozen`**으로 취급하고 Reader/집계에서 `UNKNOWN_ORIGIN`으로 격리한다. **Legacy 값 공란을 이용한 대체 조회·자동 재생성·중복 Create 재시도를 금지**한다. 승인된 Maintainer가 요청 ID와 Jira 실재 이슈를 대조하여 멱등적으로 검증·권위 등록을 복구한다. Jira 자체의 idempotency 제공을 가정하지 않는다. 비분류 Comment·Transition은 독립된 Role/Workflow Gate를 계속 적용한다.
+
+**라우팅 결정 순서:** ① 기존 `legacy_migration` Manifest가 있는 Issue는 해당 전환 상태를 따른다. ② `target_create` Manifest가 있는 Issue는 `create_ready` 및 재조회 근거가 유효할 때만 Target, 아니면 분류 중단. ③ Manifest 미등재 Issue는 유형별 **과거 활성화 기간 이력·생성 출처 기록**을 대조해 기존 Legacy임이 입증되면 Legacy다. **Target Create가 가능한 기간에 생성됐거나, Issue Type 변경·외부 생성·시각 경계 등으로 출처가 불명확하면 `UNKNOWN_ORIGIN`으로 분류 Read/Write와 집계를 중단**하고 재조사한다. 생성 시각·현행 Issue Type·Target 필드의 공란만으로 권위를 추측하지 않는다.
+
+**Create Rollback:** 유형별 `ActiveCreateAuthority`를 이전 Legacy Create 계약으로 되돌려도 **이미 생성된 `target_create` Issue는 Target 권위와 출처 이력을 유지**한다. 향후 생성 경로에만 변경을 적용하고 활성화 기간 이력을 보존한다. 기존 Target-created Issue를 Legacy로 변경하려면 별도 승인·Snapshot·양방향 필드 검증을 포함한 **이슈별 역방향 이전**이 필요하다. Origin Registry/Reader 장애 중에는 신규 분류 Create를 중단한다. **이 절차는 제안 계약이며 실제 저장소·운영 구현·Create 시험은 아직 미검증이다.**
 
 **문서 PR Merge ≠ Jira Admin 적용 ≠ 티켓 분류 이전 ≠ Board Cutover ≠ Runtime 배포.**
 
@@ -237,6 +255,7 @@ ai-session-governance.md의 SHA·역할을 확인한다.
 jira-field-taxonomy.md는 승인·발효 및 해당 이슈의
 G0~G4 Cutover 상태를 확인한 경우에만 적용한다.
 신규 Create/분류 수정은 Issue Type의 실제 지원·Field/Option을 검증한다.
+Target Create 이슈는 Origin 등록·재조회 검증 전 분류 Read/Write를 중단한다.
 미전환 이슈의 Comment/Transition은 기존 승인 계약으로 진행할 수 있다.
 권위 불명확·미승인 소유권 변경·대량 수정·삭제는 중단한다.
 ```
