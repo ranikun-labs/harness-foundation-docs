@@ -1,8 +1,13 @@
 ---
 title: Ranikun Labs Portfolio Work Management Governance
-version: "1.1"
-document_status: accepted
-decision_status: accepted_with_constraints
+version: "1.2"
+document_status: approved_pending_merge
+decision_status: accepted
+owner_approval_status: approved
+owner_approval_ref: docs/governance/jira-governance-owner-approval-2026-10-15.md
+g0_owner_classification_status: approved
+g0_owner_classification_date: "2026-10-15"
+g0_owner_classification_ref: docs/governance/jira-taxonomy-g0-owner-decision-2026-10-15.md
 implementation_status: not_started
 owner: governance
 authors:
@@ -12,9 +17,11 @@ reviewers:
 approvers:
   - 박성환
 created_at: "2026-07-29"
-reviewed_at: "2026-07-29"
-approved_at: "2026-07-29"
-effective_from: "2026-07-29"
+reviewed_at: null
+approved_at: "2026-10-15"
+effective_from: null
+final_metadata_review_status: pending_independent_delta_review
+merge_gate_status: pending_owner_authorization
 related_decisions:
   - DEC-010
   - DEC-025
@@ -33,7 +40,7 @@ supporting_architecture_inputs:
   - source-inputs/Carelog-Finance-Dev-Harness-공통-MSA-플랫폼-설계-v2.md
 ---
 
-# Ranikun Labs Portfolio Work Management Governance v1.1
+# Ranikun Labs Portfolio Work Management Governance v1.2 — Owner 승인, 병합 전 미발효
 
 ## 1. 목적과 상태
 
@@ -47,8 +54,16 @@ supporting_architecture_inputs:
 ≠ Runtime 또는 Product 변경
 ```
 
-현재 문서는 인간 승인에 따라 `accepted`, `DEC-065`는
-`accepted_with_constraints`다.
+기존 v1.1(`accepted`, DEC-065 `accepted_with_constraints`)을 개정한
+**v1.2 전체 정책을 Owner가 2026-10-15 최종 승인**했다
+([전체 정책 승인 기록](jira-governance-owner-approval-2026-10-15.md)).
+별도의 [G0 분류 5개 결정](jira-taxonomy-g0-owner-decision-2026-10-15.md)도 유지한다.
+**최신 Sol 독립 설계 검수 PASS는 승인 메타데이터 변경 전 HEAD에 대한 결과**이며,
+새 메타데이터 HEAD는 재검수해야 한다. 현재 `decision_status: accepted`는
+Owner의 정책 채택을 뜻하지만, `document_status: approved_pending_merge`,
+`effective_from: null`이므로 **아직 운영 정책으로 발효되지 않았다.**
+최종 HEAD 독립 재검수 및 별도 Owner Merge Gate 이후 `main`에 반영되기 전까지
+기존 v1.1 Governance가 현행 계약이다. 이 승인만으로 Jira Admin 설정이나 이슈 이전을 허용하지 않는다.
 
 Architecture 정책은 이 문서가 재정의하지 않는다. 적용 우선순위는 다음과
 같다.
@@ -100,17 +115,44 @@ Canonical Repository는 `harness-foundation-docs`다.
 Portfolio 작업은 단일 Jira Project `RPL`을 유지한다. Product별 Jira
 Project 분리는 별도 운영 병목과 권한 경계가 확인되기 전에는 하지 않는다.
 
-### 3.2 필수 분류
+### 3.2 필수 분류 — 개정 제안
 
-| 분류 | 질문 | 초기값 |
+실제 Jira의 세 커스텀 필드가 자유 입력 Labels로 구성된 문제와 과거
+Workstream/Component/Area 계약의 중첩을 해소한다. 상세 옵션·이전·AI CRUD Gate는
+[**Jira Field Taxonomy**](jira-field-taxonomy.md)에 정의한다.
+
+| 필드 | 질문 | Target 정책 |
 |---|---|---|
-| Workstream | 어느 제품·공통 역량의 흐름인가 | Carelog, Finance Harness, Dev Harness, Shared Identity, Shared AI, Platform Foundation |
-| Component | 어느 기술·문서 계층인가 | Frontend, Backend, Local Runtime, Cloud Control Plane, Gateway / Ingress, Shared Service, Documentation |
-| Primary Repository | 주 변경과 Merge Evidence는 어디에 있는가 | 아래 Registry |
-| Area | 어떤 책임 영역인가 | 아래 분류 |
+| Product | 이 일의 최종 책임 시스템 1개는? | **책임 기준 하나**. 지원되는 Issue Type만 신규 단일 Dropdown 저장·필수화; 적용 상태는 Taxonomy §5.1/§8 참고 |
+| Component | 주된 기술 작업 영역은? | **대표 영역 하나**. 지원되는 Issue Type에만 단일 Dropdown 저장·필수화 |
+| Concern | 어떤 횡단 기술 관심사가 있는가? | **다중 선택, 선택, 0~3개** |
+| Primary Repository | 주 구현과 PR Merge Evidence는 어디에 있는가? | 기존 단일 주 Repo 계약 유지. 별도 Jira Field 확정 여부는 관리 단계 검증 |
+| Parent/Epic, Issue Link | 상위 목표와 선후행·관련 이슈는? | Jira 기본 관계 사용 |
 
-한 Issue에는 하나의 Primary Repository를 둔다. 여러 Repository 변경이
-독립적으로 검수·병합되어야 하면 Issue를 분리하고 Dependency로 연결한다.
+- **G0 Owner 승인된 논리 Product 9개:** `carelog`, `finance`, `gateway`,
+  `identity`, `ai`, `audit`, `commerce`, `platform-foundation`, `dev-harness`.
+  **`commerce`는 향후 사용 예약값**으로, 별도 활성화/Scope 승인 전에는 신규 운영 티켓
+  Product로 선택하지 않는다. 실제 Jira Dropdown Field/Option 활성화는 별도 G1/G3 Gate.
+- **G0 Owner 승인 Component 5개:** `backend`, `frontend`, `infra`, `documentation`, `ai`.
+  **Concern 14개**는 [Taxonomy §4](jira-field-taxonomy.md)에 고정하며 유형별 저장·필수
+  설정과 Concern 최대 3개 기술적 강제는 Jira Admin 검증 대상이다.
+- 과거 Workstream은 논리적 책임 단위로 설계됐으며 이 개정안에서는
+  **Product가 주 소유 시스템 역할을 대체**한다. 이미 기록된 값은 역사적 이력으로 보존한다.
+- `shared-platform`은 **Portfolio 논리 그룹**, `platform-core`는 **Host**,
+  `finance-harness`와 `shared-ai`는 기존 값의 Alias 후보이다.
+- 제품 간 영향은 Product 복수 입력으로 대체하지 않는다. 다중 Product Epic의 대표 Owner는
+  Human Owner의 결정 근거를 요구하며, 정규화된 영향 Product ID·관계·근거·관련 Issue는
+  [Taxonomy §2.1](jira-field-taxonomy.md)에 따라 보존한다. 제품별 집계 필요 시
+  별도 `Affected Products` 필드를 승인한다. **RPL-51의 대표 Product는 G0 Owner
+  승인으로 `platform-foundation`**, 영향 Product는 `gateway` / `identity` /
+  `carelog`로 기록한다. 이는 실제 Jira 이슈·필드 수정 승인이 아니며
+  RPL-51의 Component 대표값은 아직 결정되지 않았다.
+- Jira 프로젝트는 하나의 `RPL`을 유지하며, Product마다 프로젝트를 생성하지 않는다.
+- Subtask/Story/Tech Debt의 생성 메타데이터에 현행 Product·Component·Labels가 노출되지 않는다.
+  모든 Issue Type에 전역 필수화를 가정하지 않으며, 유형별 지원 여부·Parent 해석 규칙은
+  [Taxonomy §5.1](jira-field-taxonomy.md)에서 검증/Owner 결정으로 분리한다.
+  G0에서 승인한 원칙은 **Subtask Parent를 소유권 참고 정보로만** 사용하는 것이며,
+  Parent Product의 자동 승인/직접 저장은 허용하지 않는다.
 
 ### 3.3 Primary Repository Registry
 
@@ -135,26 +177,17 @@ Canonical Registry는 `ranikun-labs/*`를 사용한다. `platform-services` Repo
 존재하고 `gateway-app`, `platform-core/identity`, `platform-core/shared-ai`를 포함하지만,
 그 존재만으로 Primary implementation Repository나 production adoption을 자동 확정하지
 않는다. Gateway·Identity의 승인된 extraction/cutover는 별도 상태로 관리하고, Shared AI
-RPL-107 current implementation/status는 Shared AI Architecture의 current projection이
-소유한다. 현재 Carelog 경로는 `ranikun-labs/carelog-be`에 남아 있다.
+구현/상태의 현재 Projection은 Shared AI Architecture가 소유한다. **RPL-107은 Shared Audit Epic**이므로
+Shared AI 상태의 근거로 사용하지 않는다. 현재 Carelog 경로는 `ranikun-labs/carelog-be`에 남아 있다.
 
-### 3.4 Area 초기값
+### 3.4 기존 Area의 이전 경계
 
-```text
-Auth / Identity
-API / Contract
-Data / Migration
-Messaging / Consistency
-AI / Model Integration
-Runtime / Deployment
-Security / Secret
-Observability / Operations
-Product / Workflow
-Architecture / Governance
-Documentation
-```
+기존 Area(`Auth / Identity`, `Data / Migration` 등)는 역사적 설계 분류로 보존한다.
+신규 필수 Jira 필드로 늘리지 않고 Component(기술 작업 영역)와 Concern(횡단 관심사)으로
+통합 제안한다. 과거 Area 값의 전체 제거·자동 치환은 허용하지 않는다.
 
-Area는 Workstream이나 Component를 대체하지 않는다.
+`Primary Repository`는 코드/문서 변경의 실제 Host를 의미하며 Product(논리 소유권)와
+다르게 나타날 수 있다. 기존 Registry는 검증된 실제 현황에 따라 별도 갱신한다.
 
 ### 3.5 Assignee
 
@@ -162,29 +195,29 @@ Assignee는 작업 결과에 책임지는 사람이다. AI Model, Agent, Session
 Assignee로 사용하지 않는다. AI 사용 여부는 PR, Handoff 또는 Session
 Evidence로 기록한다.
 
-### 3.6 Workstream과 논리 Service 관계
+### 3.6 Product와 논리 Service 관계
 
-Workstream은 현재 Process나 Repository 배치가 아니라 작업의 논리적
-책임을 나타낸다.
+Product는 Jira의 **소유권 분류**이며 Process·Host·Repository와 동일하지 않다.
 
-| Workstream | 논리 책임 | 구현 Host 해석 |
+| Product | 작업 소유 책임 | Host와의 구별 |
 |---|---|---|
-| Carelog | Carelog 제품 Domain | Carelog Repository의 실제 적용 상태가 소유 |
-| Finance Harness | Finance 제품 Domain | Finance Repository의 실제 적용 상태가 소유 |
-| Dev Harness | Dev Harness 제품 Domain | Dev Harness Repository의 실제 적용 상태가 소유 |
-| Shared Identity | Account·Identity 논리 Capability | 현재 코드가 `carelog-be`에 있어도 Shared Identity Workstream 가능 |
-| Shared AI | 제품 중립 AI 실행 Capability | 실제 Runtime 존재 여부와 분리해 분류 |
-| Platform Foundation | 공통 Architecture·Contract·Governance | `harness-foundation-docs`가 Canonical |
+| `carelog` | CRM Product | Carelog 제품 기능 |
+| `finance` | Finance Product | 기존 `finance-harness` Repo/코드 Rename 아님 |
+| `gateway` | SCG·라우팅·Gateway 정책 | `platform-services/gateway-app`은 구현 Host |
+| `identity` | Account·Auth·OAuth·Session·SSO | Core와 Carelog 연동을 분리 |
+| `ai` | Shared AI·RAG·Model/Tool 연계 | Spring AI, Python, JVM 등 구현 기술과 무관 |
+| `audit` | 공통 Audit 계약/이벤트 | 문서·Producer·Transport·운영 배포 상태 별도 확인 |
+| `commerce` | Billing·Payment·Subscription·Refund | **G0 예약값**. 별도 활성화·제품 Scope 승인 전 실제 운영 분류에 사용 금지 |
+| `platform-foundation` | 공통 Architecture·Governance·Host/Infra 기반 | 단순 미분류/기타로 사용 금지 |
+| `dev-harness` | 개발 도구·Agent Session·Dev Runtime | `oh-my-ai` 등 실제 Repo 확인 |
+
+`shared-platform`은 그룹명일 뿐 Product 옵션이 아니다. **독립된 Capability 소유권이
+독립 Process·배포·서비스 지원 완료를 뜻하지 않는다.** Jira 완료도 GitHub Merge
+및 Runtime 운영 검증의 근거를 대체할 수 없다.
 
 ```text
-Logical Service Boundary
-≠ Current Implementation Host
-≠ Runtime Deployed
+Logical Product Owner ≠ Implementation Repository ≠ Runtime Deployed
 ```
-
-Shared Commerce와 독립 Audit은 별도 Decision 전까지 초기 활성 Workstream으로
-확정하지 않는다. 관련 조사는 기존 Workstream의 Area 또는 Research Issue로
-기록한다.
 
 ### 3.7 Architecture 상태 표현
 
@@ -343,97 +376,82 @@ Canonical Reference를 포함해야 한다. Confluence가 ADR, Contract, Jira
 
 이번 문서 PR은 Confluence를 수정하지 않는다.
 
-## 11. Proposed Jira Rollout Plan
+## 11. Jira Taxonomy Rollout Plan (정책 승인·실행 분리)
 
-아래는 문서화된 제안이며 이번 PR에서 Jira 전역 설정을 생성·변경하지 않는다.
+**현재 상태: Owner 정책 승인 / GitHub PR Merge Gate 대기 / Jira Admin·이슈 데이터 미변경.**
 
-### Phase 0 — 정보 구조와 Active WIP
+- **G0 Contract**: [G0 Owner 승인 기록](jira-taxonomy-g0-owner-decision-2026-10-15.md)의
+  5개 결정과 [전체 정책 승인 기록](jira-governance-owner-approval-2026-10-15.md)의
+  v1.2/Taxonomy v1.0 채택을 구분한다. 승인 메타데이터 변경 HEAD의 독립 검수와
+  별도 Owner Merge 승인 전에는 `effective_from: null`로 **미발효**다.
+  문서 병합도 Jira 필드 적용이 아니다. 실제 G1·G2·G3 Cutover 전에는 기존
+  Legacy Jira 필드를 해당 이슈의 권위로 유지한다.
+- **G1 Admin**: 실제 Jira Field·Option ID, Issue Type별 화면/필수 여부,
+  기본값·권한을 검증하고 신규 커스텀 선택형 필드를 생성한다. 기존 레거시 필드·값은 보존한다.
+  Epic·Task·Feature·Bug·Research의 레거시 Product·Component·커스텀 Labels는 현재
+  Create Metadata상 required이므로, 신규 Create 전환 대상 유형에서는 **기존 필수·기본값을
+  안전하게 해제할 수 있는지** 및 다른 required 일정·담당자 필드의 정책을 확인한다.
+  실제 설정·Type Scope·신규 옵션·Create 테스트 없이 전환하지 않는다.
+- **G2 Pilot**: 대상 Issue가 Manifest에 등재돼도 **Target 저장 → 재조회·영향 보존 검증
+  → 별도 Owner Cutover 승인 → Manifest ReadAuthority 전환** 완료 전에는 Legacy 권위를
+  유지한다. 준비·검증 중에는 해당 Issue의 분류 쓰기를 `frozen`으로 제한하며,
+  Comment·Transition 등 비분류 작업에는 영향을 주지 않는다.
+- **G3 Active Issues**: 기존 Issue는 **개별 Migration Manifest의 Cutover 승인·검증**
+  후에만 Target 권위다. 신규 `Target Create` Issue는 유형별 승인된 Create 경로에서
+  생성된 뒤 [Taxonomy §8.1](jira-field-taxonomy.md)에 따라 **Create Intent →
+  IssueKey 연결 → Target 저장값 재조회 → 개별 Origin Manifest `create_ready`/
+  `ReadAuthority=target` 초기화**를 마쳐야 Target 권위다.
+  신규 Create 활성화 전에 Legacy required/default 정리·신규 필드/옵션 검증뿐 아니라
+  **Origin Registry, Writer/Reader·Board/Automation 경로와 격리 시험**을 검증하고
+  별도 승인한다. 동일 유형의 Legacy/Target 신규 Create는 동시 활성화하지 않는다.
+  유형별 Rollback은 미래 Create 경로만 변경하며 기존 Target-created 이슈의 권위를
+  자동 Legacy로 되돌리지 않는다.
+- **G4 Cleanup**: 이력·권한·자동화 검증 후에만 레거시 필드 비활성화/삭제를 별도 결정.
 
-- Jira의 실제 완료 Status가 Done Category인지 확인한다.
-- Workstream Custom Field를 생성한다.
-- Primary Repository Custom Field를 생성한다.
-- Area Custom Field를 생성한다.
-- 초기 Components를 등록한다.
-- 활성 Issue Metadata만 보정한다.
-- `진행 중 + 검토 중` WIP를 3개 이하로 조정한다.
+**전환기 SSOT:** **기존 Legacy Issue의 이전**은 [Taxonomy §8](jira-field-taxonomy.md)의
+개별 Migration Manifest가 승인·재조회 검증된 뒤 `Phase=cutover`·
+`ReadAuthority=target`으로 전환될 때만 Target 권위다. **새로운 Target Create
+Issue는 §8.1의 생성 출처·검증·개별 권위 초기화(`Origin=target_create`,
+`Phase=create_ready`)로 구분한다.** 등록 대기·실패·누락·출처가 불명확한 신규
+이슈를 Legacy 권위로 대체하지 않고 `UNKNOWN_ORIGIN`으로 분류 Read/Write 및
+분류 집계를 중단한다. 검증된 기존 미이전 Legacy 이슈만 Legacy 권위이고 임의
+fallback·dual-write는 금지한다. Comment/Transition/비분류 Update는 별도 승인
+Role·Workflow를 지키며 새 분류 필드 부재만으로 중단하지 않는다.
 
-### Phase 1 — Portfolio Epic
+기존 v1.1의 **완료된 과거 Issue 전량 Backfill 금지** 유지. RPL 111개를
+READ-ONLY로 감사했다는 이유로 111개 모두를 수정할 권한이 생기지 않는다.
+대량 이전은 대상·일정·복구·승인 범위가 포함된 별도 Change Gate를 요구한다.
 
-- Shared Identity Foundation Epic
-- Platform Architecture Baseline Epic
-- Dev Harness V1.x Epic
-- Finance STEP 10 Epic
-
-### Phase 2 — Confluence Projection
-
-- System Landscape
-- Product·Shared Platform Page Properties
-- Portfolio Overview 집계
-
-### Phase 3 — Repository Catalog
-
-- `harness-foundation-docs/catalog/system-catalog.yaml`
-- 별도 Platform Repository는 생성하지 않는다.
-
-후속 Catalog Schema 후보:
-
-```text
-system_id
-display_name
-workstream
-logical_owner
-primary_repository
-current_implementation_host
-lifecycle
-architecture_refs
-runtime_evidence_ref
-dependencies
-```
-
-이는 Metadata 후보일 뿐 이번 PR에서 Catalog 파일이나 Runtime Registry를
-생성하지 않는다.
-
-### Phase 4 — 점진 Backfill
-
-- 다시 활성화되거나 참조되는 티켓만 보정한다.
-- 완료된 과거 Jira 전체를 일괄 수정하지 않는다.
-
-각 Phase의 실제 적용은 별도 Jira Admin 또는 Documentation 작업과 승인
-Evidence를 요구한다.
+AI는 Jira 원격 쓰기 전 GitHub main의 **현재 승인·발효된 Portfolio 및
+AI Session Governance**의 SHA·역할·대상을 확인한다. 신규 Taxonomy는
+**승인·발효됐고 대상 Issue/유형의 G0~G4 Cutover가 확인된 경우에만** Target 분류
+Write Gate로 적용한다. 미전환 이슈의 기존 승인된 Comment·Link·Transition·비분류
+Update는 신규 필드/옵션 미존재만으로 막지 않는다. 정책 또는 해당 쓰기의 권한·
+실제 필드 계약 확인이 불가하거나 권위가 충돌하면 **영향받는 쓰기만 중단**하고 보고한다.
+원격 쓰기가 금지된 Reviewer/Portfolio Audit은 Jira Comment·Link·Transition도 수행하지 않는다.
 
 ## 12. 사용자 흐름
 
 ```text
-Task 시작
-→ Jira Primary Issue 확인
-→ Workstream과 Repository 확인
-→ Canonical Git 문서 확인
-→ Writer Session이 Draft PR 생성
-→ 독립 Review
-→ Finding Delta Fix
-→ 검수된 Head Merge
-→ Jira 완료
-→ Confluence Projection 갱신
+Jira 대상·작업 요청
+→ 승인·발효된 현행 Governance SHA·Role 및 대상 Cutover 상태 확인
+→ 대상 Issue의 Legacy Migration/Target Create Origin/미전환 상태 확인
+→ Target로 전환된 유형/Issue에만 승인된 Taxonomy와 Field/Option Metadata 확인
+→ 기존 Issue·Parent/Repo/Owner 탐색과 CRUD Scope 검증
+→ 필요한 Writer Session의 작업 및 Draft PR
+→ Independent Review → 필요 시 Delta Fix
+→ Human Approval 및 검수 Head Merge
+→ Jira 최소 필드 수정·Evidence 기록·완료 전환
+→ 저장값 재조회, 필요 시 Confluence Projection 갱신
 ```
 
-### Product Client Registry 예시
+동일 Jira Issue가 다중 Repo에서 독립 PR을 요구하면 개별 Primary Issue를
+분리한다. 예를 들어 Identity 소유 기능이 Carelog에 영향을 준다고
+Product를 `identity, carelog` 복수 선택하지 않는다. 필요 시 관련 Issue/Dependency로
+구현·검증 단위를 나눠 연결한다.
 
-| Field | Value |
-|---|---|
-| Issue | `RPL-16` |
-| Workstream | Shared Identity |
-| Component | Backend |
-| Primary Repository | `ranikun-labs/carelog-be` |
-| Area | Auth / Identity |
-| Logical Owner | Shared Identity |
-| Current Implementation Host | Carelog Backend |
-
-Logical Owner와 Current Implementation Host를 혼합하지 않는다.
-따라서 Shared Identity 코드가 현재 Carelog Backend에 있더라도 Issue의
-Workstream은 Shared Identity이고 Primary Repository는 실제 변경이 일어나는
-`ranikun-labs/carelog-be`가 될 수 있다. RPL-54의 구현 Target은 존재하는
-`ranikun-labs/platform-services`지만, RPL-55 Cutover 전까지 Current Implementation
-Host가 바뀌었다고 간주하지 않는다.
+Jira CRUD 규칙 전문을 매 티켓에 반복 복사하지 않고 승인 문서
+[**Jira Field Taxonomy**](jira-field-taxonomy.md)를 참조한다.
 
 ## 13. 과설계 방지선
 
@@ -457,13 +475,15 @@ Host가 바뀌었다고 간주하지 않는다.
 ### Open Decisions
 
 - Jira 완료 Status의 실제 Done Category
-- Custom Field Type, Context와 Option ID
-- Component 등록 권한과 관리자 실행 순서
+- 신규 Product/Component/Concern Custom Field Type, Context, Option ID와 Required/default 값
+- **RPL은 Team-managed**이므로 현행 기본 Jira `components` 사용은 지원 근거 없이 채택하지 않는다. 신규 커스텀 선택형 필드의 실제 Issue Type별 제공/설정 방법
 - Phase 1 Epic의 실제 Scope와 Dependency
 - Confluence Page Properties Schema
 - Repository 분리 Trigger 충족 여부
 
 ## 15. References
+
+- [Jira Field Taxonomy 및 AI CRUD Gate — v1 제안](jira-field-taxonomy.md)
 
 - [AI Session Governance](ai-session-governance.md)
 - [ADR-0015](../adr/ADR-0015-platform-communication-messaging-scaling.md)
