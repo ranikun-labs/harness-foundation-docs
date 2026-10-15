@@ -56,6 +56,16 @@ replacement_decision_refs: []
 > 기록하지 않는다. AWS Provisioning, Runtime 구현·배포와 Production Go-Live는 승인되거나
 > 실행되지 않았다. 문서 Merge도 이 운영 승인을 의미하지 않는다.
 
+## 0. 메시징·Identity·Commerce 정책 정렬
+
+ADR-0023 / DEC-072는 서비스 간 메시징의 SQS 목표 정책, 신규 NATS 구현 제외,
+Local Broker 없음과 내부 Worker + JPA를 기록한다. Dev / Production Queue·DLQ·IAM
+격리는 불변조건이다. 이 정책 방향은 AWS Queue Provisioning 승인이 아니다.
+ADR-0024 / DEC-073에 따라 Product Membership은 각 Product가 소유하고,
+Shared Identity는 PlatformAccount, Shared Commerce는 구독·결제·환불과 상업적
+Entitlement를 담당한다. 조직 결제는 MVP에서 제외한다. 두 신규 ADR 모두 문서 상태는
+`in_review`이며 공식 승인·Supersession·발효일을 확정하지 않는다.
+
 ## 1. 결정
 
 Ranikun Labs의 모든 Product와 Shared Platform이 공통으로 사용하는 Production
@@ -116,8 +126,8 @@ Cloudflare Tunnel은 Outbound 연결 방식의 우선 검증 후보이지 최종
 ECS/Fargate, Lambda 전면 전환, Aurora Serverless v2 및 신규 Broker Provisioning을
 요구하지 않는다. 새 NATS 구현은 현재 목표에서 제외되며, 현재 Owner 정책 방향은 SQS
 Target이다. SQS는 target 방향만을 뜻하며 Queue 유형·Use Case 승인·AWS Provisioning을
-뜻하지 않는다. 이 Provider 정책 문서는 stacked PR #37에서 별도 검토 중이고, 공식 문서
-최종 승인 및 ADR-0021과의 형식상 supersession 발효 여부는 확인되지 않았다.
+뜻하지 않는다. 이 Provider 정책은 ADR-0023 / DEC-072와 함께 PR #37에서 검토 중이다.
+ADR-0023의 공식 문서 승인과 ADR-0021의 형식상 Supersession·발효일은 확인되지 않았다.
 
 ## 4. Central Observability와 Baseline
 
@@ -174,8 +184,8 @@ in_review다. 공식 최종 문서 승인과 발효일이 확인될 때까지 AD
 ADR-0015의 HTTP/JSON, SSE와 Messaging 경계와 ADR-0020의 단일 Application Database,
 서비스별 Schema/Role/Migration 소유권은 유지한다. ADR-0021/DEC-070의 NATS JetStream
 승인은 역사적 결정 기록으로 보존하되, 새 NATS 구현 목표는 현재 Owner 방향에서 제외한다.
-현재 SQS Target 방향과 미Provisioning 상태는 stacked PR #37에서 별도 검토 중이며, 이는
-AWS Resource 생성 승인이 아니다.
+SQS Target 정책은 ADR-0023 / DEC-072로 정렬하며 이 PR #37에서 검토 중이다. 이는 AWS
+Resource 생성 승인이 아니며, Queue/DLQ와 Worker는 아직 구현·배포되지 않았다.
 
 ## 7. 승인 Gate와 상태
 
@@ -184,7 +194,7 @@ ARM64 이미지와 Secret 주입, Cloudflare Ingress, Observability 권한·보�
 Rollback을 Owner가 승인해야 Infrastructure 계획이 실행 가능하다. Terraform Plan에서
 Destroy/Replace가 나오면 계획을 중지한다.
 
-Owner policy direction: accepted_with_constraints; ADR document: in_review;
-official final document approval: unconfirmed; ADR-0016 supersession/effective date:
-unconfirmed; AWS provisioning: not approved and not performed; Runtime: not deployed;
+Owner 정책 방향: `accepted_with_constraints`; ADR 문서: `in_review`;
+공식 최종 승인: 미확인; ADR-0016 Supersession / 발효일: 미확인;
+AWS Provisioning: 미승인·미실행; Runtime: 미배포;
 Monitoring: not collecting; Production Go-Live: not approved.

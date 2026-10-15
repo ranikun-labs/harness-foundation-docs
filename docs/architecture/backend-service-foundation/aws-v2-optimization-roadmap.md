@@ -75,42 +75,37 @@ size, and dashboard/query link. Use the same test profile before and after a cha
 - **Measurement:** Contract results, p95/p99, failure recovery, backup restore, operator effort, and current Seoul price estimate.
 - **Decision:** Adopt only if observed recovery / operations improvements justify cost and all compatibility tests pass.
 
-### SQS Target (Standard / FIFO selection remains open)
+### SQS 목표 (Standard / FIFO 선택 미정)
 
-- **Owner policy direction:** SQS is the current asynchronous target direction in stacked
-  [PR #37](https://github.com/ranikun-labs/harness-foundation-docs/pull/37). The ADR is in review;
-  official document approval and formal supersession/effective date are unconfirmed.
-- **Provisioning:** No SQS Queue/DLQ or AWS resource has been approved or created. This roadmap
-  does not authorize provisioning. Queue type, use case, event rate, ordering/deduplication,
-  retry/DLQ policy, and cost remain undecided.
-- **Gate 1 — Dev creation approval:** Record the use case and consistency contract, review
-  design, IAM and cost, and explicitly approve Dev Queue creation.
-- **Gate 2 — isolated Dev validation:** Only after Gate 1, create an isolated AWS Dev Queue and
-  verify the actual producer/consumer path, IAM boundary, delivery, retry and failure behavior.
-- **Gate 3 — Production approval:** Review Production readiness and obtain a separate Owner
-  approval before any Production resource or cutover.
-- **Measurement:** Throughput, queue age, duplicate handling, ordering, retry / DLQ behavior,
-  end-to-end completion latency and cost are measured only in an approved isolated Dev environment.
-  No such environment has been provisioned by this PR.
+- **Owner 정책 방향:** ADR-0023 / DEC-072는 서비스 간 메시징의 목표 Provider를 SQS로
+  정렬한다. ADR 문서는 `in_review`이며 공식 승인, Supersession과 발효일은 미확정이다.
+- **Provisioning:** SQS Queue/DLQ와 AWS 자원은 승인되거나 생성되지 않았다. Queue 종류,
+  사용 사례, 이벤트량, 순서·중복 제거, 재시도·DLQ 정책과 비용은 별도 결정으로 남는다.
+- **Gate 1 — Dev 생성 승인:** 사용 사례와 일관성 계약, 설계, IAM, 비용을 검토하고
+  격리된 Dev Queue 생성에 대해 별도 명시적 Owner 승인을 받는다.
+- **Gate 2 — 격리된 Dev 검증:** Gate 1 승인 뒤 실제 AWS Dev Queue에서 Producer/Consumer,
+  IAM 경계, 전달·재시도·실패 동작을 검증한다.
+- **Gate 3 — Production 승인:** 운영 준비 증거를 검토하고 Production 자원 생성이나
+  전환 전에 별도의 Owner 승인을 받는다.
+- **측정:** 처리량, Queue Age, 중복·순서, 재시도·DLQ, 완료 지연과 비용은 승인된 격리
+  AWS Dev에서 측정한다. 현재 해당 환경은 준비되지 않았다.
 
-### PostgreSQL PGMQ
+### 비동기 대안과 내부 작업
 
-- **Problem:** A required asynchronous workflow may benefit from database-local queue semantics.
-- **Baseline:** Proven use case, transaction boundary, throughput, lock contention, database CPU / IO, and queue age — UNKNOWN.
-- **Hypothesis:** In-database queueing could simplify atomic state transitions if it does not harm application queries or database recovery.
-- **Change:** Prototype behind a migration and feature boundary; compare with an external broker and SQS.
-- **Measurement:** Transaction contention, throughput, queue age, failure / retry behavior, DB resource impact, backup / restore, and operating cost.
-- **Decision:** Adopt only when database-local semantics are needed and measured impact is acceptable.
+PGMQ와 `pg_cron`은 MVP 기본 의존성이 아니다. 서비스 내부 작업은 Spring Boot
+Application Worker + JPA로 실행하고, 작업 상태·제약조건·트랜잭션은 PostgreSQL에 둔다.
+다른 Database Queue나 Scheduler가 필요하면 실제 사용 사례와 운영·복구 증거를 제시해
+별도 Owner 결정을 받는다.
 
-### NATS JetStream — historical approval; no new implementation target
+### NATS JetStream — 과거 승인 기록 보존
 
-- ADR-0021 / DEC-070 preserves the historical JetStream architecture and Owner approval record.
-- The current Owner policy direction selects SQS as the target. New NATS implementation is
-  excluded from the current target; this roadmap does not reopen it as a V2 implementation candidate.
-- No formal ADR-0021 supersession/effective date or final SQS ADR approval is confirmed in this
-  branch. The policy documentation is being reviewed in stacked PR #37.
-- No NATS Broker is provisioned. The historical approval record does not authorize a new
-  implementation or AWS resource.
+- ADR-0021 / DEC-070의 JetStream Architecture 승인 기록은 역사로 보존한다.
+- 현재 Owner 정책 방향은 SQS를 목표로 정렬하며 신규 NATS 구현을 제외한다. 이를 V2
+  구현 후보로 다시 포함하지 않는다.
+- ADR-0021의 공식 Supersession·발효일과 SQS ADR 최종 승인은 미확정이며, 관련 정책은
+  현재 PR #37에서 검토 중이다.
+- NATS Broker는 배포되지 않았다. 과거 승인 기록은 신규 구현이나 AWS 자원 생성을
+  허가하지 않는다.
 
 ### ECS / Lambda
 

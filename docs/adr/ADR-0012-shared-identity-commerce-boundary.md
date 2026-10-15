@@ -29,15 +29,22 @@ superseded_by:
 superseded_scope:
   - "Shared Identity의 물리 Server·Repository·Database·Deployment 미승인과 시점 deferral"
 remaining_valid_scope:
+  - "PlatformAccount와 Identity/Commerce 독립 경계 및 Commerce physicalization deferral"
   - "Shared Identity와 Shared Commerce의 독립 논리 경계"
   - "Shared Commerce physicalization deferral"
   - "V1 Local OSS 독립성과 물리화 Trigger 원칙"
 replacement_decision_refs:
+  - ADR-0024
+  - DEC-073
   - ADR-0017
   - DEC-067
 ---
 
 # ADR-0012: Shared Identity와 Shared Commerce의 논리적 책임 경계를 분리한다
+
+> **Owner 정책 방향 (공식 Supersession / 발효일 미확인):** [ADR-0024](./ADR-0024-identity-commerce-owner-policy-alignment.md) / DEC-073은
+> 제품별 User/Membership을 Product 소유로 정렬한다. ADR-0024는 in_review이며 공식 최종 승인과
+> formal Supersession / 발효일은 미확인이다. 아래 기존 승인 본문과 Identity / Commerce 독립 경계·Commerce 유예는 보존한다.
 
 > **Partial supersession:** Shared Identity physicalization의 미승인·시점 유예 범위는
 > [ADR-0017](./ADR-0017-shared-platform-gateway-identity-physicalization.md)로 대체됐다.

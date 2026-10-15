@@ -112,10 +112,10 @@ Product Ecosystem
 │   └── Finance Product Backend / Runtime
 │
 ├── Shared Identity
-│   └── Account / Credential / Authentication / Token / Session
+│   └── PlatformAccount / Credential / Authentication / Token / Session
 │
 ├── Shared Commerce
-│   └── Product Membership / Subscription / Billing / Payment / Entitlement / Quota
+│   └── Subscription / Billing / Payment / Refund / Commercial Entitlement
 │
 ├── Shared AI
 │   └── Product-neutral model/tool/retrieval execution
@@ -678,7 +678,7 @@ Shared Identity
 
 #### 주요 책임
 
-- Account
+- PlatformAccount
 - Credential 관리
 - Login / Logout과 Authentication
 - Access / Refresh Token
@@ -688,20 +688,21 @@ Shared Identity
 
 #### Shared Commerce와의 경계
 
-Shared Identity는 Product Membership, Payment, Entitlement를 소유하지 않는다.
+Shared Identity는 Product Membership을 소유하지 않으며 Shared Commerce의 Subscription / Billing / Payment / Refund / 상업적 Entitlement를 소유하지 않는다.
 
 ```text
 Shared Identity
-= 사용자가 누구인가
-= 인증됐는가
+= PlatformAccount / Authentication / Session
+
+Product Membership
+= 각 Product가 소유하는 User / Membership 및 제품 인가
 
 Shared Commerce
-= Product Membership
-+ Subscription
+= Subscription
 + Billing
 + Payment
-+ Entitlement
-+ Quota
++ Refund
++ Commercial Entitlement
 ```
 
 #### 논리 경계와 물리화 시점
@@ -728,15 +729,14 @@ Shared Commerce는 여러 제품이 공유할 수 있는 상업 기능의
 
 ```text
 Shared Commerce
-├── product-membership
 ├── subscription
 ├── billing
 ├── payment
-├── entitlement
-└── quota
+├── refund
+└── commercial-entitlement
 ```
 
-Shared Commerce는 Shared Identity의 하위 Module이 아니다.
+Shared Commerce는 Shared Identity의 하위 Module이 아니다. Organization Billing은 MVP 범위 밖이다.
 
 별도 Server, Repository, Database와 Deployment는 승인하지 않는다.
 
@@ -977,7 +977,7 @@ extraction, Product consumer integration, Streaming 또는 Product release를
 1. Dev Harness V1 Local Core는 Shared Identity·Commerce·Audit·Shared AI에 의존하지 않는다.
 2. Dev Harness Cloud는 실제 Cloud 기능 개발 시점까지 구현을 유예한다.
 3. Commerce는 실제 유료화 전까지 구현을 유예할 수 있다.
-4. Shared Audit는 ADR-0021 / DEC-070으로 Architecture가 승인된 `platform-core` 논리 Module이며 AU-G2 producer semantic boundary가 구현됐다. JetStream transport, Audit store, consumer, durability mechanism과 producer instrumentation은 아직 구현되지 않았다. 별도 Audit Process는 여전히 승인되지 않았고 향후 NATS consumer 추출은 새 Trigger와 Decision을 요구한다.
+4. Shared Audit는 ADR-0021 / DEC-070으로 Architecture가 승인된 `platform-core` 논리 Module이며 AU-G2 producer semantic boundary가 구현됐다. SQS transport, Audit store, consumer, durability mechanism과 producer instrumentation은 아직 구현되지 않았다. 별도 Audit Process는 여전히 승인되지 않았고 향후 SQS consumer 추출은 새 Trigger와 Decision을 요구한다 (ADR-0023).
 5. Identity·Commerce·Audit는 같은 Deployment Unit에서도 코드·데이터·Migration 소유권을 분리한다.
 6. AI Runtime은 Provider 실행·Routing·Retry·Fallback·Token/Cost Metering·Trace를 담당한다.
 7. 제품별 Prompt·Policy·Context Schema·Evaluation은 각 Product Server가 소유한다.
@@ -1100,13 +1100,14 @@ refresh token
 논리 소유자: Shared Commerce
 
 ```text
-product membership
 subscription
 billing
 payment
-entitlement
-quota
+refund
+commercial entitlement
 ```
+
+Product Membership은 각 Product가 소유하며 Shared Commerce 데이터에 포함되지 않는다.
 
 ### 10.4 Development Control 데이터
 
@@ -1330,8 +1331,8 @@ architecture approved
 ```
 
 Shared Audit는 `platform-core`의 `shared-audit` 논리 Module과 `platform-core:app`의
-future background JetStream Consumer로 배치되며, 현재 구현된 것은 producer semantic
-boundary다. JetStream Consumer, Audit Ledger, Producer Outbox와 Identity instrumentation은
+future background SQS Consumer (ADR-0023)로 배치되며, 현재 구현된 것은 producer semantic
+boundary다. SQS Consumer, Audit Ledger, Producer Outbox와 Identity instrumentation은
 각각 AU-G5/AU-G4/AU-G8/AU-G7 범위이며 아직 구현되지 않았다. 별도 Audit Executable은
 승인되지 않았다.
 Audit Ledger는 `audit` Schema의 Append-only 저장소이고, Producer의 Audit Outbox는
@@ -1692,7 +1693,7 @@ Shared Gateway·Identity 물리 분리
 28. Deployment Unit별 Data Source of Truth와 Migration 소유권을 분리한다.
 29. Cross-service Foreign Key와 OLTP Cross-service JOIN을 금지한다.
 30. `platform-core`의 Identity·Commerce·Audit는 같은 Process에서도 Module과 Schema 경계를 유지한다.
-31. Audit는 현재 미구현 Module 후보이며 future NATS consumer 추출에는 별도 Trigger와 Decision이 필요하다.
+31. Audit는 AU-G2B producer boundary까지만 구현됐다. SQS transport/store/consumer는 후속 Gate이며 별도 Process 추출에는 새 Trigger와 Decision이 필요하다 (ADR-0021/0023).
 32. 인증 논리 서비스의 canonical 명칭은 `Shared Identity`고 existing Repository의 planned implementation location은 `ranikun-labs/platform-services`의 `platform-core/identity`다 (`DEC-059`, `DEC-067`).
 33. Carelog는 기존 Product Service로 이 지도에 등록되며(§7.7), 그 Auth Phase A 현재 상태는 oh-my-ai V1/V2/V3 Phase 1-5 물리화 타임라인과 분리해 기록한다 (`DEC-059`).
 34. Shared AI Phase 1의 RPL-107 synchronous OpenAI Slice A는 `platform-core` logical module의 implementation Evidence이며, Streaming, independent Process, Product consumer integration 또는 Product release를 의미하지 않는다.

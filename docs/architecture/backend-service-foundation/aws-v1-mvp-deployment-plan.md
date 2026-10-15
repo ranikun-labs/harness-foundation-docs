@@ -343,19 +343,18 @@ Ingress needs a separate decision and revised cost/security evidence.
 - Model, provider credential source, timeout and streaming failure behavior remain explicit.
 - Shared Audit's inspected default capture is Unavailable. Its release contract and required V1
   events must be evidenced before calling Audit production-ready.
-- ADR-0021 / DEC-070 records a historical NATS JetStream approval; that historical record is
-  preserved, but new NATS implementation is not the current Owner target.
-- The current Owner policy direction designates SQS as the target, tracked in stacked
-  [PR #37](https://github.com/ranikun-labs/harness-foundation-docs/pull/37). Its ADR/document
-  approval and formal supersession/effective date are unconfirmed. Queue type and use case remain
-  open; no SQS/NATS AWS resource is provisioned or approved here.
-- If a real V1 asynchronous use case is identified, define durability / retry / replay requirements
-  and pass separate design, IAM, cost and Dev gates before any resource is created.
+- ADR-0021 / DEC-070의 NATS JetStream 승인 기록과 Shared Audit의 의미·내구성 원칙을
+  보존한다. 신규 NATS 구현은 현재 Owner 목표에서 제외한다.
+- ADR-0023 / DEC-072는 SQS를 목표 Provider로 정렬한다. ADR은 `in_review`이며 공식 승인,
+  Supersession과 발효일은 미확정이다. Queue 종류와 구체 사용 사례도 미결정이고,
+  이 계획과 PR #37은 SQS/NATS AWS 자원 생성을 승인하지 않는다.
+- 실제 V1 비동기 사용 사례가 확인되면 내구성·재시도·재생 요구, 설계, IAM, 비용을
+  검토하고, 격리된 AWS Dev 리소스를 만들기 전 별도 Owner 승인을 받는다.
 
 ## 16. MVP Go-Live checklist
 
 - [ ] DEC-071 Owner policy direction is recorded; ADR-0022 document review/final approval and ADR-0016 partial-supersession effective status are explicit, with historical ADR-0016 content preserved.
-- [ ] Private platform-infra repository, independent implementation PR, CI checks and state bootstrap review are complete.
+- [ ] `platform-infra`에 `main` 기준 커밋을 만들고, 후보 파일 정합성·독립 구현 PR·CI·State bootstrap을 검토한다.
 - [ ] AWS account, ap-northeast-2, subnets, egress and Security Groups are approved.
 - [ ] ARM64 builds, digest-pinned images, four independent Compose stacks and rollback pass.
 - [ ] RDS exact engine version is compatible with every JDBC/Flyway owner; TLS, schema/role grants and ownership are verified.
@@ -365,9 +364,15 @@ Ingress needs a separate decision and revised cost/security evidence.
 - [ ] Alloy labels and Grafana dashboards receive real metrics; app 계측 issue results are verified; alert contact path is tested.
 - [ ] Pre-Go-Live smoke/load evidence and production-load approval (if used) meet the separately approved Go-Live gate.
 - [ ] Shared AI SSE, Shared Audit, Auth, Finance and Carelog E2E release gates pass.
-- [ ] After explicitly approved Pilot/Go-Live begins representative traffic, capture the first seven-day baseline with cost, images, JVM flags, dataset and Dashboard export. This is post-Go-Live V2 evidence, not a prerequisite for the initial Go-Live. Pilot observations count only if an Owner confirms they represent the baseline workload and window.
 - [ ] Cost Calculator estimate and V2 rollback proposal are reviewed.
 - [ ] Owner explicitly approves Go/No-Go. No automatic Apply, Merge, traffic promotion or EC2 deletion.
+
+### Go-Live 이후 V2 Baseline 측정 (초기 Go-Live Gate 아님)
+
+Owner가 승인한 Pilot/Go-Live에서 대표 트래픽이 발생한 뒤 첫 7일 Baseline을 수집한다.
+비용, 이미지, JVM flags, 데이터셋과 Dashboard export를 함께 보존한다. 이 측정은
+Go-Live 이후 V2 판단을 위한 증거이며 최초 Go-Live 선행조건이 아니다. Pilot 관측은
+Owner가 Baseline의 부하와 측정 기간을 대표한다고 확인한 경우에만 포함한다.
 
 ## 17. Repository Inspection and Deployment Blockers
 
@@ -375,7 +380,7 @@ Snapshot at the branches and HEADs in ADR-0022:
 
 | Repository | Verified Evidence | Blocker |
 |---|---|---|
-| harness-foundation-docs | ADR-0016 accepted historical record; ADR-0020: one Application DB with service Schemas; ADR-0021 / DEC-070: historical JetStream approval; new NATS implementation is not the current Owner target; PR #37 tracks SQS target direction but remains in review, with no AWS provisioning | ADR-0022 document approval/formal partial supersession are unconfirmed; preserve ADR-0016 history and integrate #37 policy separately |
+| harness-foundation-docs | ADR-0016의 과거 승인 기록; ADR-0020의 단일 Application DB와 서비스별 Schema; ADR-0021 / DEC-070의 역사적 JetStream 승인. 신규 NATS 구현은 현재 목표에서 제외하며, ADR-0023 / DEC-072의 SQS 목표 정책을 이 PR #37에서 검토 중이고 AWS Provisioning은 미실행 | ADR-0022의 공식 승인·ADR-0016 부분 대체 발효는 미확정; ADR-0016 역사와 Human 승인 Fencing 원칙 보존 |
 | platform-services | Compose runs Gateway, Platform Core, local postgres:16-alpine, redis:7-alpine; Gateway / Core Dockerfiles exist; current Compose publishes 8080 / 8081; shared-audit is included in platform-core/settings.gradle.kts and app/build.gradle.kts | First blocker: platform-core/app/Dockerfile omits shared-audit/build.gradle.kts and shared-audit/src even though the included project is an app dependency; Docker image build is expected to fail at Gradle configuration, but was not executed in this documentation task. Production image / network configuration absent; no CI workflow; local Compose is not production |
 | finance-harness-be | Java 21, Spring Boot 4.1.0, Flyway; Postgres 18.4 Testcontainers; configuration is environment-backed | No Dockerfile / Compose / GitHub Actions workflow; test uses finance_db and does not prove the ADR-0020 finance Schema / Role |
 | carelog-be | Java 17, Spring Boot 3.4.5, Flyway; PostgreSQL 16 + redis:7 development Compose; V1 baseline is public Schema | No application Dockerfile / CI workflow; Compose has a committed local password and publishes DB / Redis host ports; no Actuator dependency or Application health check; public-to-carelog migration needs rehearsal |
@@ -390,15 +395,17 @@ prove a cloud account or permission. Any resource state not directly evidenced i
 The initial 14 implementation issues remain in their owning repositories. A focused open-issue
 search for Actuator/Micrometer/Prometheus/metrics/observability found no instrumentation-specific
 duplicates in the three application repositories. Four cross-repository coordination tickets were
-created in Foundation Docs because application repositories are read-only in this session and the
-private platform-infra repository does not exist yet. These tickets request handoff; they are not
-AWS or application-code approvals.
+created in Foundation Docs because application repositories are read-only in this session. The
+private `platform-infra` repository now exists, but GitHub reports it as empty with `main` as its
+default branch. Foundation Docs #33 still needs a baseline commit, confirmation that the earlier
+local candidate is available and consistent, and a separate infrastructure PR. These tickets
+request handoff; they are not AWS or application-code approvals.
 
 ### New infrastructure / instrumentation handoffs
 
 | Owner | Task | Issue |
 |---|---|---|
-| platform-infra | Create private repository and open Terraform/Compose/Observability implementation PR | [Foundation Docs #33](https://github.com/ranikun-labs/harness-foundation-docs/issues/33) |
+| platform-infra | Establish the `main` baseline, verify candidate-file availability and open a separate Terraform/Compose/Observability implementation PR | [Foundation Docs #33](https://github.com/ranikun-labs/harness-foundation-docs/issues/33) |
 | platform-services | Gateway/Core private Prometheus, HTTP/JVM/JDBC metrics | [Foundation Docs #35](https://github.com/ranikun-labs/harness-foundation-docs/issues/35) |
 | finance-harness-be | Finance Micrometer Prometheus and JDBC metrics | [Foundation Docs #34](https://github.com/ranikun-labs/harness-foundation-docs/issues/34) |
 | carelog-be | Actuator readiness and Micrometer Prometheus metrics | [Foundation Docs #36](https://github.com/ranikun-labs/harness-foundation-docs/issues/36) |

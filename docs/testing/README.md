@@ -543,3 +543,9 @@ docs/contracts/README.md
 docs/decisions/decision-log.md
 docs/poc/v2-local-invocation-poc.md
 ```
+
+
+## Fresh shared-environment evidence
+
+[2026-10-13 Fresh Task Acceptance](./2026-10-13-shared-environment-acceptance.md)는
+이번 Task의 실행 근거이며 Product release 또는 SQS Runtime 검증을 의미하지 않는다.

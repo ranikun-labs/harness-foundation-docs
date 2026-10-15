@@ -232,7 +232,8 @@ Registry에 추가하지 않고 Owner System 아래의 기술·위치 설명으�
 
 ## Architecture Gates
 
-Architecture Gate는 실제 Adoption 승인이나 Runtime 구현이 아니며 정확히 12개다.
+Architecture Gate는 Runtime 구현 증거가 아니다. 현재 Gate 12개와 부분 대체 이력을
+보존한 historical NATS Gate 1개를 구분한다. SQS 목표 승인은 Provisioning 승인이 아니다.
 `deferral_policy`와 `adoption_decision`을 분리해 기록한다. Trigger가 충족되더라도
 별도 Decision과 구현 Jira가 필요하다.
 
@@ -250,5 +251,5 @@ Candidate보다 우선한다. 정식 도입 전에는 별도 검토와 Migration
 ## Current Slice
 
 현재 Slice는 Source Registry, External Actor Registry, System Inventory 10개와
-Communication Relation 17개, Data Group 19개, Architecture Gate 12개와 Taxonomy
+Communication Relation 17개, Data Group 19개, 현재 Architecture Gate 12개와 historical Gate 1개 및 Taxonomy
 Candidate를 등록한다.
