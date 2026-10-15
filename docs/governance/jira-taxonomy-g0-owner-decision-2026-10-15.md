@@ -3,10 +3,12 @@ title: Jira Taxonomy G0 — Owner 분류 결정
 record_id: GOV-JIRA-G0-2026-10-15
 recorded_at: "2026-10-15"
 owner_decision_status: approved
-document_status: in_review
+document_status: accepted
 implementation_status: not_started
-policy_effective_from: null
-policy_merge_status: pending_independent_review_and_owner_merge_gate
+policy_effective_from: "2026-10-15T15:03:00+09:00"
+policy_merge_status: merged
+merge_commit_sha: "3faf402a8603aa87449070ba0833b862df46bd3f"
+merged_at: "2026-10-15T15:03:00+09:00"
 related_pull_request: "https://github.com/ranikun-labs/harness-foundation-docs/pull/38"
 pr_head_observed_at_owner_decision: "bffff29f7f8acffa9f4f68bb21c7ce8712b0abe8"
 related_policies:
@@ -38,10 +40,10 @@ related_policies:
 
 ## 3. 승인하지 않은 범위와 활성화 조건
 
-다음 항목은 **G0 승인 대상 밖**이며 승인·검증을 따로 요구한다.
+다음 항목은 **G0 승인 당시 범위 밖**이었다. 이후 정책 전체 승인·PR 병합의 증거는 §4에 기록하며, Jira 실행은 현재도 별도 Gate가 필요하다.
 
-- PR #38의 독립 Reviewer PASS·Ready 전환·Merge. 이 결정 기록을 추가하는 Writer Commit은 **새 HEAD**이므로 기존 리뷰 결과를 승계하지 않는다. 기존 독립 Sol Reviewer의 Delta/Closure와 최신 main 통합 점검을 우선한다.
-- Governance 전체 문서의 `accepted` 전환 및 `effective_from` 설정. 승인된 G0 분류안도 **PR #38이 검수·Owner Merge Gate를 거쳐 main의 유효 계약이 되기 전에는 운영 정책이 아니다**.
+- **G0 승인 당시** PR #38의 독립 Reviewer PASS·Ready 전환·Merge는 미승인 단계였다. 이후 별도 Sol 검수·Owner Merge Gate로 완료됐다(§4).
+- **G0 결정만으로는** 전체 Governance `accepted` 전환·`effective_from` 설정을 승인하지 않았다. 이후 전체 Owner 승인 및 실제 Merge 증거로 발효됐다(§4).
 - Jira Product/Component/Concern Custom Field 생성·Option 등록·필수/기본값 해제, 기존 필드 제거.
 - 이슈 생성·댓글·수정·Transition·Link, `RPL-51`을 포함한 실제 이슈 마이그레이션. 별도 Role·Scope/Target·Pilot 승인 필요.
 - Team-managed Issue Type별 필드 지원·Create 검증 및 Legacy↔Target Migration Manifest 저장·Cutover 승인.
@@ -50,3 +52,7 @@ related_policies:
 **필요한 순서:** Owner G0 결정 기록 → Writer 문서 변경 → 독립 Reviewer Delta/Closure → Owner의 명시적 PR Merge Gate → 승인된 정책 발효 → Jira Admin G1 → 승인된 소량 Pilot G2 → 단계별 G3/G4.
 
 **이 기록은 과거 승인된 v1.1 Governance를 무효화하지 않는다.** G1~G4까지 해당 대상의 실질적인 Jira Read/Write 권위는 승인된 Taxonomy §8의 단계별 계약 및 현재 실제 필드에 따른다.
+
+## 4. G0 이후 Owner 정책 승인 및 병합 증거
+
+[전체 정책 승인](jira-governance-owner-approval-2026-10-15.md)과 최종 Sol Delta PASS(HEAD `73873713`), 별도 Owner Merge 승인 이후 [PR #38](https://github.com/ranikun-labs/harness-foundation-docs/pull/38)이 [Merge Commit `3faf402a`](https://github.com/ranikun-labs/harness-foundation-docs/commit/3faf402a8603aa87449070ba0833b862df46bd3f)으로 **2026-10-15 15:03 KST** `main`에 병합됐다. **정책은 발효됐지만 Jira G1~G4 미실행**이며 `implementation_status: not_started`를 유지한다.

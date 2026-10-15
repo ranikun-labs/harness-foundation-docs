@@ -1,7 +1,7 @@
 ---
 title: Ranikun Labs Jira Field Taxonomy and AI CRUD Gate
 version: "1.0"
-document_status: approved_pending_merge
+document_status: accepted
 decision_status: accepted
 owner_approval_status: approved
 owner_approval_ref: docs/governance/jira-governance-owner-approval-2026-10-15.md
@@ -11,9 +11,12 @@ g0_owner_classification_ref: docs/governance/jira-taxonomy-g0-owner-decision-202
 implementation_status: not_started
 owner: governance
 approved_at: "2026-10-15"
-effective_from: null
-final_metadata_review_status: pending_independent_delta_review
-merge_gate_status: pending_owner_authorization
+effective_from: "2026-10-15T15:03:00+09:00"
+merge_commit_sha: "3faf402a8603aa87449070ba0833b862df46bd3f"
+merged_at: "2026-10-15T15:03:00+09:00"
+final_metadata_review_status: passed_independent_sol_user_reported
+final_metadata_reviewed_head: "7387371319bb7c5b841e4363e05f3bb848f8ed4b"
+merge_gate_status: completed
 related_documents:
   - docs/governance/portfolio-work-management-governance.md
   - docs/governance/ai-session-governance.md
@@ -21,9 +24,9 @@ related_documents:
   - docs/governance/jira-governance-owner-approval-2026-10-15.md
 ---
 
-# Jira Field Taxonomy & AI CRUD Gate — v1.0 (Owner 승인, 병합 전 미발효)
+# Jira Field Taxonomy & AI CRUD Gate — v1.0 (main 발효 / Jira G1 미실행)
 
-> **Owner가 전체 Jira Taxonomy v1.0 정책을 2026-10-15 최종 승인했으나, PR #38 병합 전이므로 미발효 / Jira 미적용.** [전체 정책 승인 기록](jira-governance-owner-approval-2026-10-15.md)과 [G0 분류 결정 기록](jira-taxonomy-g0-owner-decision-2026-10-15.md)을 구분한다. 현재 `decision_status: accepted`는 **Owner의 정책 채택**만 의미한다. `document_status: approved_pending_merge`·`effective_from: null`이므로 GitHub main의 발효된 운영 계약은 기존 v1.1이다. 현 HEAD의 최종 메타데이터 독립 검수와 **별도 Owner Merge 승인**이 필요하며, 승인·병합만으로 Jira Field·Issue·Board Cutover가 실행되지 않는다.
+> **Owner 최종 승인과 Sol Delta PASS를 거쳐 [PR #38](https://github.com/ranikun-labs/harness-foundation-docs/pull/38)이 [Merge Commit `3faf402a`](https://github.com/ranikun-labs/harness-foundation-docs/commit/3faf402a8603aa87449070ba0833b862df46bd3f)으로 2026-10-15 15:03 KST `main`에 병합되어 정책 발효됐다.** [전체 Owner 승인](jira-governance-owner-approval-2026-10-15.md)과 [G0 승인](jira-taxonomy-g0-owner-decision-2026-10-15.md)은 별도 근거다. **정책 발효 ≠ Jira Field/Option 적용·Issue Migration·Pilot 완료.** `implementation_status: not_started` 및 G1~G4 Gate를 유지한다.
 
 ## 1. 목적과 책임
 
