@@ -1,8 +1,10 @@
 ---
 title: Ranikun Labs Portfolio Work Management Governance
-version: "1.2-proposed"
-document_status: in_review
-decision_status: proposed
+version: "1.2"
+document_status: approved_pending_merge
+decision_status: accepted
+owner_approval_status: approved
+owner_approval_ref: docs/governance/jira-governance-owner-approval-2026-10-15.md
 g0_owner_classification_status: approved
 g0_owner_classification_date: "2026-10-15"
 g0_owner_classification_ref: docs/governance/jira-taxonomy-g0-owner-decision-2026-10-15.md
@@ -16,8 +18,10 @@ approvers:
   - 박성환
 created_at: "2026-07-29"
 reviewed_at: null
-approved_at: null
+approved_at: "2026-10-15"
 effective_from: null
+final_metadata_review_status: pending_independent_delta_review
+merge_gate_status: pending_owner_authorization
 related_decisions:
   - DEC-010
   - DEC-025
@@ -36,7 +40,7 @@ supporting_architecture_inputs:
   - source-inputs/Carelog-Finance-Dev-Harness-공통-MSA-플랫폼-설계-v2.md
 ---
 
-# Ranikun Labs Portfolio Work Management Governance v1.2 — 개정 초안
+# Ranikun Labs Portfolio Work Management Governance v1.2 — Owner 승인, 병합 전 미발효
 
 ## 1. 목적과 상태
 
@@ -50,13 +54,16 @@ supporting_architecture_inputs:
 ≠ Runtime 또는 Product 변경
 ```
 
-이 브랜치는 기존 v1.1(`accepted`, DEC-065 `accepted_with_constraints`)을 대체하려는
-**v1.2 개정 제안**이다. Product/Component/Concern·Subtask·RPL-51 관련
-**G0 Owner 5개 결정은 2026-10-15 승인됐다**([승인 기록](jira-taxonomy-g0-owner-decision-2026-10-15.md)).
-다만 **해당 정책 문서 전체는 아직 독립 검수·PR Merge Gate 전**이므로
-`document_status: in_review`, `decision_status: proposed`, `approved_at: null`,
-`effective_from: null`을 유지한다. G0 승인/PR 생성만으로 Jira 정책이 발효되지는
-않으며, 승인된 개정안이 검수·Owner Merge를 마칠 때까지 `main`의 v1.1이 적용된다.
+기존 v1.1(`accepted`, DEC-065 `accepted_with_constraints`)을 개정한
+**v1.2 전체 정책을 Owner가 2026-10-15 최종 승인**했다
+([전체 정책 승인 기록](jira-governance-owner-approval-2026-10-15.md)).
+별도의 [G0 분류 5개 결정](jira-taxonomy-g0-owner-decision-2026-10-15.md)도 유지한다.
+**최신 Sol 독립 설계 검수 PASS는 승인 메타데이터 변경 전 HEAD에 대한 결과**이며,
+새 메타데이터 HEAD는 재검수해야 한다. 현재 `decision_status: accepted`는
+Owner의 정책 채택을 뜻하지만, `document_status: approved_pending_merge`,
+`effective_from: null`이므로 **아직 운영 정책으로 발효되지 않았다.**
+최종 HEAD 독립 재검수 및 별도 Owner Merge Gate 이후 `main`에 반영되기 전까지
+기존 v1.1 Governance가 현행 계약이다. 이 승인만으로 Jira Admin 설정이나 이슈 이전을 허용하지 않는다.
 
 Architecture 정책은 이 문서가 재정의하지 않는다. 적용 우선순위는 다음과
 같다.
@@ -369,16 +376,16 @@ Canonical Reference를 포함해야 한다. Confluence가 ADR, Contract, Jira
 
 이번 문서 PR은 Confluence를 수정하지 않는다.
 
-## 11. Proposed Jira Taxonomy Rollout Plan (승인·실행 분리)
+## 11. Jira Taxonomy Rollout Plan (정책 승인·실행 분리)
 
-**현재 상태: 문서 제안. Jira Admin 설정·이슈 데이터 미변경.**
+**현재 상태: Owner 정책 승인 / GitHub PR Merge Gate 대기 / Jira Admin·이슈 데이터 미변경.**
 
-- **G0 Contract**: [2026-10-15 G0 Owner 승인 기록](jira-taxonomy-g0-owner-decision-2026-10-15.md)의
-  다섯 가지 분류·책임 선택은 **Owner 승인 완료**. 단, PR #38의 독립 Reviewer
-  Delta/Closure·최신 main 통합 확인·별도 Owner Merge Gate가 완료되기 전에는
-  v1.2를 `accepted`/발효 상태로 표시하지 않는다. 문서 Merge도 Jira 필드 적용은
-  아니다. 실제 대상의 G1 실설정·G2/G3 Cutover 전까지 승인된 v1.1과 Legacy
-  Jira 필드를 현행 쓰기 계약으로 유지한다.
+- **G0 Contract**: [G0 Owner 승인 기록](jira-taxonomy-g0-owner-decision-2026-10-15.md)의
+  5개 결정과 [전체 정책 승인 기록](jira-governance-owner-approval-2026-10-15.md)의
+  v1.2/Taxonomy v1.0 채택을 구분한다. 승인 메타데이터 변경 HEAD의 독립 검수와
+  별도 Owner Merge 승인 전에는 `effective_from: null`로 **미발효**다.
+  문서 병합도 Jira 필드 적용이 아니다. 실제 G1·G2·G3 Cutover 전에는 기존
+  Legacy Jira 필드를 해당 이슈의 권위로 유지한다.
 - **G1 Admin**: 실제 Jira Field·Option ID, Issue Type별 화면/필수 여부,
   기본값·권한을 검증하고 신규 커스텀 선택형 필드를 생성한다. 기존 레거시 필드·값은 보존한다.
   Epic·Task·Feature·Bug·Research의 레거시 Product·Component·커스텀 Labels는 현재

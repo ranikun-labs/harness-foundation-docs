@@ -1,24 +1,29 @@
 ---
 title: Ranikun Labs Jira Field Taxonomy and AI CRUD Gate
-version: "1.0-proposed"
-document_status: in_review
-decision_status: proposed
+version: "1.0"
+document_status: approved_pending_merge
+decision_status: accepted
+owner_approval_status: approved
+owner_approval_ref: docs/governance/jira-governance-owner-approval-2026-10-15.md
 g0_owner_classification_status: approved
 g0_owner_classification_date: "2026-10-15"
 g0_owner_classification_ref: docs/governance/jira-taxonomy-g0-owner-decision-2026-10-15.md
 implementation_status: not_started
 owner: governance
-approved_at: null
+approved_at: "2026-10-15"
 effective_from: null
+final_metadata_review_status: pending_independent_delta_review
+merge_gate_status: pending_owner_authorization
 related_documents:
   - docs/governance/portfolio-work-management-governance.md
   - docs/governance/ai-session-governance.md
   - docs/governance/jira-taxonomy-g0-owner-decision-2026-10-15.md
+  - docs/governance/jira-governance-owner-approval-2026-10-15.md
 ---
 
-# Jira Field Taxonomy & AI CRUD Gate — v1 (승인 제안)
+# Jira Field Taxonomy & AI CRUD Gate — v1.0 (Owner 승인, 병합 전 미발효)
 
-> **G0 Owner 분류 5개 결정 승인(2026-10-15) / PR #38은 독립 리뷰·병합 전 / Jira 미적용.** [G0 승인 기록](jira-taxonomy-g0-owner-decision-2026-10-15.md)은 분류·소유권 의사결정의 근거일 뿐 문서 전체의 기술 검수나 정책 발효 증거가 아니다. 이 파일의 `decision_status: proposed`·`approved_at: null`·`effective_from: null`은 PR Merge Gate 이전 상태를 정확히 나타낸다. 문서의 존재나 G0 승인만으로 Jira 필드·이슈 이전을 완료했다고 간주하지 않는다. 기존 main v1.1 정책은 발효 전까지 유지된다.
+> **Owner가 전체 Jira Taxonomy v1.0 정책을 2026-10-15 최종 승인했으나, PR #38 병합 전이므로 미발효 / Jira 미적용.** [전체 정책 승인 기록](jira-governance-owner-approval-2026-10-15.md)과 [G0 분류 결정 기록](jira-taxonomy-g0-owner-decision-2026-10-15.md)을 구분한다. 현재 `decision_status: accepted`는 **Owner의 정책 채택**만 의미한다. `document_status: approved_pending_merge`·`effective_from: null`이므로 GitHub main의 발효된 운영 계약은 기존 v1.1이다. 현 HEAD의 최종 메타데이터 독립 검수와 **별도 Owner Merge 승인**이 필요하며, 승인·병합만으로 Jira Field·Issue·Board Cutover가 실행되지 않는다.
 
 ## 1. 목적과 책임
 
