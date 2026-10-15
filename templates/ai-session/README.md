@@ -7,6 +7,7 @@
 
 - [AI Session Governance](../../docs/governance/ai-session-governance.md)
 - [Portfolio Work Management Governance](../../docs/governance/portfolio-work-management-governance.md)
+- [Jira Field Taxonomy & AI CRUD Gate](../../docs/governance/jira-field-taxonomy.md) — **미승인 제안; 실제 Jira 쓰기에는 승인·발효 상태 확인 필수**
 
 Template은 공통 규칙을 복제하지 않는다. `<...>` Placeholder를 실제
 Primary Jira, Repository, Base, Head, Scope와 Verification으로 교체한다.
