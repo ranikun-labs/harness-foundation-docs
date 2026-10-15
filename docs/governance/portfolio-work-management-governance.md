@@ -389,20 +389,27 @@ Canonical Reference를 포함해야 한다. Confluence가 ADR, Contract, Jira
   → 별도 Owner Cutover 승인 → Manifest ReadAuthority 전환** 완료 전에는 Legacy 권위를
   유지한다. 준비·검증 중에는 해당 Issue의 분류 쓰기를 `frozen`으로 제한하며,
   Comment·Transition 등 비분류 작업에는 영향을 주지 않는다.
-- **G3 Active Issues**: Cutover 승인·검증된 Issue만 Target 권위이며, 신규 Create는
-  유형별 **기존 Legacy required/default 정리·신규 Target 필수/옵션 검증·격리 Create 재조회
-  ·Writer/Board/Automation 경로 검증·별도 전환 승인** 뒤 활성화한다.
-  Legacy와 Target 신규 Create는 동일 유형에서 동시 활성화하지 않는다.
-  나머지는 Legacy 계약 사용. Board/Filter/Automation 조회·집계 권위를 점진 전환한다.
+- **G3 Active Issues**: 기존 Issue는 **개별 Migration Manifest의 Cutover 승인·검증**
+  후에만 Target 권위다. 신규 `Target Create` Issue는 유형별 승인된 Create 경로에서
+  생성된 뒤 [Taxonomy §8.1](jira-field-taxonomy.md)에 따라 **Create Intent →
+  IssueKey 연결 → Target 저장값 재조회 → 개별 Origin Manifest `create_ready`/
+  `ReadAuthority=target` 초기화**를 마쳐야 Target 권위다.
+  신규 Create 활성화 전에 Legacy required/default 정리·신규 필드/옵션 검증뿐 아니라
+  **Origin Registry, Writer/Reader·Board/Automation 경로와 격리 시험**을 검증하고
+  별도 승인한다. 동일 유형의 Legacy/Target 신규 Create는 동시 활성화하지 않는다.
+  유형별 Rollback은 미래 Create 경로만 변경하며 기존 Target-created 이슈의 권위를
+  자동 Legacy로 되돌리지 않는다.
 - **G4 Cleanup**: 이력·권한·자동화 검증 후에만 레거시 필드 비활성화/삭제를 별도 결정.
 
-**전환기 SSOT:** [Taxonomy §8](jira-field-taxonomy.md)의 Manifest에 등재됐다는
-이유만으로 Target 분류 권위가 발생하지 않는다. 재조회 검증·원본/영향 보존과 별도
-Cutover 승인 이후 Manifest의 `Phase=cutover` 및 `ReadAuthority=target`이 확인된
-Issue에 한해 Target 권위다. 미등재/미승인 대상은 Legacy가 권위이고 검증 중인
-분류 쓰기는 정지한다. 임의 fallback·dual-write 금지.
-Comment/Transition/비분류 Update는 기존 승인 Role·Workflow로 진행하며 신규
-분류 필드가 없다고 중단하지 않는다.
+**전환기 SSOT:** **기존 Legacy Issue의 이전**은 [Taxonomy §8](jira-field-taxonomy.md)의
+개별 Migration Manifest가 승인·재조회 검증된 뒤 `Phase=cutover`·
+`ReadAuthority=target`으로 전환될 때만 Target 권위다. **새로운 Target Create
+Issue는 §8.1의 생성 출처·검증·개별 권위 초기화(`Origin=target_create`,
+`Phase=create_ready`)로 구분한다.** 등록 대기·실패·누락·출처가 불명확한 신규
+이슈를 Legacy 권위로 대체하지 않고 `UNKNOWN_ORIGIN`으로 분류 Read/Write 및
+분류 집계를 중단한다. 검증된 기존 미이전 Legacy 이슈만 Legacy 권위이고 임의
+fallback·dual-write는 금지한다. Comment/Transition/비분류 Update는 별도 승인
+Role·Workflow를 지키며 새 분류 필드 부재만으로 중단하지 않는다.
 
 기존 v1.1의 **완료된 과거 Issue 전량 Backfill 금지** 유지. RPL 111개를
 READ-ONLY로 감사했다는 이유로 111개 모두를 수정할 권한이 생기지 않는다.
@@ -421,6 +428,7 @@ Update는 신규 필드/옵션 미존재만으로 막지 않는다. 정책 또�
 ```text
 Jira 대상·작업 요청
 → 승인·발효된 현행 Governance SHA·Role 및 대상 Cutover 상태 확인
+→ 대상 Issue의 Legacy Migration/Target Create Origin/미전환 상태 확인
 → Target로 전환된 유형/Issue에만 승인된 Taxonomy와 Field/Option Metadata 확인
 → 기존 Issue·Parent/Repo/Owner 탐색과 CRUD Scope 검증
 → 필요한 Writer Session의 작업 및 Draft PR
