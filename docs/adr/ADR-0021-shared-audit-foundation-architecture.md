@@ -53,7 +53,8 @@ evidence_refs:
   - "harness-foundation-docs/main@a1ac1ce09e3a2da5f0e85f681ad05a36302a01f9"
 supersedes:
   - "ADR-0013 (partial)"
-superseded_by: []
+superseded_by:
+  - "ADR-0023 (partial: JetStream Provider and AU-G3 choice; effective on canonical PR merge)"
 superseded_scope:
   - "ADR-0013 §8의 중앙 Audit Module이 즉시 구현 대상이 아니라는 Architecture 미승인 표현"
   - "Audit를 Architecture Decision 없는 Deferred 후보로만 표현한 범위"
@@ -72,8 +73,8 @@ replacement_decision_refs:
 
 # ADR-0021: Shared Audit Foundation Architecture와 JetStream 활성화를 정의한다
 
-> **2026-10-13 Owner 정책 방향 (formal Supersession / 발효일 미확인):** [ADR-0023](./ADR-0023-sqs-messaging-and-environment-isolation.md) / DEC-072는
-> SQS 목표와 NATS 신규 구현 제외 방향을 기록한다. ADR-0023은 in_review이며 공식 최종 승인은 미확인이다.
+> **2026-10-19 Owner 공식 SQS 승인 (정본 PR Merge 시 Provider 선택 부분 대체 발효):** [ADR-0023](./ADR-0023-sqs-messaging-and-environment-isolation.md) / DEC-072는
+> JetStream Provider·AU-G3 선택만 대체한다. Merge 전에는 기존 승인 선택의 권위를 유지한다.
 > Shared Audit 의미, Producer Contract, Criticality / Outbox / Schema Ownership, Ledger 및 Gate
 > 선후관계는 유지한다. 아래 당시 승인 본문·날짜는 역사 기록이다.
 
@@ -127,12 +128,12 @@ ADR-0021 remains the accepted architecture record for Shared Audit semantics, th
 provider-neutral producer boundary and event contract, durability and ownership
 invariants, and gate sequencing. Its JetStream transport selection (ADR-0021 / DEC-070)
 is preserved as the 2026-09-08 approval record, not the current Owner policy direction
-for new implementation. ADR-0023 / DEC-072 conditionally select SQS for AU-G3 and exclude new
-JetStream implementation; ADR-0023 remains `in_review` with `approved_at: null`,
-`effective_from: null`, and `supersedes: []`, so the SQS direction is not formal ADR
-approval, recorded supersession, or an effective transport change. AU-G3 remains
-conditional on that formal approval; AWS Dev/Production Provisioning is unapproved
-and unexecuted. Its historical `implementation_status: not_started` records the
+for new implementation. ADR-0023 / DEC-072 were formally approved as SQS target
+architecture by the Owner on 2026-10-19. Only JetStream Provider / AU-G3 selection
+is partially superseded upon this canonical PR's actual `main` merge, not before.
+Merge time is unknown while drafting, so ADR-0023's `effective_from` remains null
+pending GitHub `merged_at` reconciliation. AU-G3 implementation and AWS Dev/Production
+Provisioning remain separately unapproved and unexecuted. Its historical `implementation_status: not_started` records the
 decision-time scope and is not the current status of every AU-G2 capability.
 
 The verified current projection is `AU-G2B producer semantic publisher boundary

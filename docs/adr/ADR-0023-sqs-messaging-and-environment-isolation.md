@@ -1,17 +1,17 @@
 ---
 title: "서비스 간 메시징 목표를 SQS로 변경하고 환경 격리를 불변조건으로 정한다"
 adr_id: "ADR-0023"
-document_status: in_review
+document_status: accepted
 decision_status: accepted_with_constraints
-decision_status_scope: owner_policy_direction_only
 decision_scope: architecture
 owner: architecture
 authors: [codex]
 reviewers: []
-approvers: []
+approvers:
+  - "Ranikun Labs Owner — formal SQS architecture approval, 2026-10-19"
 created_at: "2026-10-13"
 reviewed_at: "2026-10-13"
-approved_at: null
+approved_at: "2026-10-19"
 effective_from: null
 implementation_status: not_started
 runtime_support_status: not_supported
@@ -22,7 +22,7 @@ constraints:
   - "Local 기본값은 Broker 없음; 내부 Job은 Spring Boot Application Worker + JPA"
   - "Dev/Production Queue, DLQ, IAM 및 구성 경계를 격리한다"
   - "Standard/FIFO, SNS, 운영 수치와 AWS 계정 분리는 요구사항 기반 후속 결정이다"
-  - "Owner 승인은 SQS 목표 정책 방향에 한정하며 공식 문서 최종 승인과 Supersession / 발효일은 미확인이다"
+  - "2026-10-19 Owner는 SQS 목표 Provider와 ADR-0015·0021의 JetStream 선택만 부분 대체하도록 공식 승인했다. 발효는 독립 리뷰 PASS 및 본 정본 PR main Merge 시점"
   - "AWS Dev / Production Provisioning은 실행되지 않았고 승인되지 않았다"
 affected_docs:
   - docs/adr/ADR-0015-platform-communication-messaging-scaling.md
@@ -32,9 +32,15 @@ affected_docs:
   - catalog/system-catalog.yaml
 evidence_refs:
   - "Owner task decision, 2026-10-13, including Additional Local Messaging Decision"
+  - "2026-10-19 Owner formal approval: AWS SQS target, limited partial provider supersession, no AWS provisioning or runtime authorization"
   - "https://github.com/ranikun-labs/harness-foundation-docs/pull/32"
   - docs/testing/2026-10-13-shared-environment-acceptance.md
-supersedes: []
+supersedes:
+  - "ADR-0015 (partial: JetStream target provider and internal-job broker interpretation)"
+  - "ADR-0021 (partial: JetStream provider and AU-G3 transport choice)"
+superseded_scope:
+  - "ADR-0015: JetStream target and internal job broker interpretation"
+  - "ADR-0021: JetStream provider and AU-G3 choice only"
 superseded_by: []
 remaining_valid_scope:
   - "HTTP/JSON, Direct internal call, Gateway ingress 및 SSE 계약"
@@ -44,18 +50,22 @@ replacement_decision_refs: [DEC-072]
 
 # ADR-0023: SQS 목표 Provider와 Dev / Production 격리
 
-> **Owner 승인 범위:** `decision_status: accepted_with_constraints`는 SQS 목표에 관한 정책 방향에만 적용한다.
-> ADR 문서는 `document_status: in_review`이며 공식 문서 최종 승인은 미확인이다. Formal
-> Supersession과 발효일도 미확인이라 `supersedes: []`, `effective_from: null`을 유지한다.
-> AWS Dev / Production Provisioning은 실행되지 않았고 승인되지 않았다. `reviewed_at`은 문서
-> 검토일이며 Owner 최종 승인일이 아니다.
+> **Owner 공식 승인 (2026-10-19):** 신규 서비스 간 비동기 메시징의 목표 Provider는 AWS SQS다.
+> ADR-0015·0021의 JetStream Provider 선택만 부분 대체한다. 과거 승인은 역사적으로 보존한다.
+> **발효:** 이 정본 PR의 독립 리뷰 PASS 후 `main` Merge **실제 시점**. Merge 이전에는 기존 ADR 권위가 유지된다.
+> 실제 Merge 시점은 PR 작성 중 알 수 없어 `effective_from: null`을 유지한다. Owner Merge Gate에서
+> GitHub `merged_at` 확인 후 해당 시각을 별도 메타데이터 정합화 기록에 반영해야 한다.
+> AWS Dev/Production Provisioning·AU-G3 구현·Runtime 전환은 승인되지 않았다.
+> 2026-10-13 `reviewed_at`은 과거 검토일이며 `approved_at`은 실제 Owner 승인일이다.
 
 ## 1. 결정과 승인 범위
 
-Owner는 서비스 간 비동기 메시징의 목표 Provider를 **AWS SQS**로 선택하고, NATS JetStream 신규 구현과
-Local NATS / Production SQS 이중 운영을 정책 방향에서 제외했다. HTTP/JSON 동기 통신과 SSE 정책은 유지한다.
-이 범위는 Owner 정책 방향 승인이다. ADR 최종 문서 승인, 공식 Supersession 및 발효일은 미확인이다.
-AWS Dev / Production Provisioning은 승인되거나 실행되지 않았다.
+Owner는 2026-10-19 서비스 간 비동기 메시징의 공식 목표 Provider를 **AWS SQS**로 승인했다.
+신규 NATS JetStream과 Local NATS / Production SQS 이중 Provider 운영은 제외한다.
+ADR-0015의 JetStream 목표·내부 Job Broker 해석과 ADR-0021의 JetStream Provider·AU-G3 선택만 부분 대체한다.
+기존 HTTP/JSON·SSE, 조건부 Outbox, Idempotency, Shared Audit 의미·Producer Contract·Ledger·Gate 순서는 유지한다.
+Provider 부분 대체의 효력은 이 정본 PR의 독립 리뷰 PASS 후 실제 main Merge 시 발생하며, 이전에는 기존 공식 선택의 권위를 유지한다.
+AWS Dev / Production Provisioning 및 AU-G3 구현·배포는 여전히 승인되지 않았다.
 
 Local 개발은 기본적으로 Broker 없이 실행한다. 단위 테스트는 Port의 Test Double을
 사용할 수 있다. SQS 통합이 필요할 때만 호환 에뮬레이터를 검토한다. 에뮬레이터의
@@ -67,17 +77,17 @@ Local 개발은 기본적으로 Broker 없이 실행한다. 단위 테스트는 
 
 | 이전 결정 / 대안 | 이번 결정 | 유지 범위 / 근거 |
 |---|---|---|
-| ADR-0015 / DEC-064: 첫 Use Case 이후 JetStream | SQS 목표 Owner 정책 방향; 공식 Supersession / 발효일 미확인 | 동기 통신·Envelope·멱등성과 조건부 Outbox 유지 |
-| ADR-0021 / DEC-070: Shared Audit의 JetStream 승인 | SQS 목표 Owner 정책 방향; 공식 Supersession / 발효일 미확인 | Audit 의미·Producer Boundary·Ledger·Durability 유지 |
+| ADR-0015 / DEC-064: 첫 Use Case 이후 JetStream | 2026-10-19 SQS 공식 승인; 정본 PR Merge 시 해당 JetStream 선택 부분 대체 발효 | 동기 통신·Envelope·멱등성과 조건부 Outbox 유지 |
+| ADR-0021 / DEC-070: Shared Audit의 JetStream 승인 | 2026-10-19 SQS 공식 승인; 정본 PR Merge 시 해당 Provider·AU-G3 부분 대체 발효 | Audit 의미·Producer Boundary·Ledger·Durability 유지 |
 | Local NATS + Production SQS | 미채택 | 환경별 의미 차이와 두 Provider의 운영·테스트 부담 |
 | 모든 내부 Job도 외부 Broker 사용 | 미채택 | 서비스 내부 Worker + JPA로 단순한 실행·상태 복구 |
 | SQS를 AWS V1에 즉시 추가 | 미승인 | 구체 Use Case·보안·비용·운영 Gate가 먼저 필요 |
 
-이전 ADR의 당시 승인 본문과 날짜를 보존한다. 이 문서에는 formal supersession 관계나 발효일을 기록하지 않는다.
+이전 ADR의 당시 승인 본문·날짜는 역사 기록으로 보존한다. 부분 대체 관계는 본 ADR의 `supersedes`와 상대 ADR의 `superseded_by`에 양방향 기록한다. 실제 발효 시각은 Merge 후 확인·기록한다.
 [AWS V1 ADR-0022](./ADR-0022-aws-v1-mvp-primary-runtime.md)는 PR #32 병합 뒤에도
 `in_review`이며 공식 문서 승인은 미확인이다. 본 정책은 AWS V1의 Broker 미배포 경계를
 유지하면서 Provider 목표를 정렬한다. 기존 Gate 선후관계를 유지하고 AU-G3 SQS Transport는
-Owner 정책 방향으로 기록한다. 공식 Supersession과 발효일은 미확인이다.
+공식 목표로 기록한다. Provider 전환은 이 정본 PR Merge 전에는 발효하지 않는다.
 
 ## 3. Standard / FIFO와 구독 모델 — Use Case별 결정
 

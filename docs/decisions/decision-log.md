@@ -3306,7 +3306,7 @@ Shared Platform 논리 경계와 물리 배포 명칭 구분, Module·Data·Migr
 
 ## DEC-064 — 공통 플랫폼 통신·메시징·확장 기준을 정의한다
 
-> **2026-10-13 scoped replacement: DEC-072.** JetStream 목표 Provider와 Broker 기반 내부 Job 해석은 ADR-0023으로 부분 대체한다. HTTP/JSON·SSE와 provider-neutral Delivery/Outbox 원칙은 유지한다.
+> **2026-10-13 정책 방향 / 2026-10-19 Owner 공식 승인 (정본 PR Merge 시 효력): DEC-072.** JetStream 목표 Provider 및 내부 Job Broker 기본 해석만 ADR-0023이 부분 대체한다. Merge 전 기존 공식 권위와 HTTP/JSON·SSE·Outbox는 유지한다.
 > 아래 본문은 당시 승인 기록이며 부분 대체된 Provider/Ownership을 현재 기준으로 적용하지 않는다.
 
 **Status:** accepted_with_constraints
@@ -3937,7 +3937,7 @@ RPL-55
 
 ## DEC-070 — Shared Audit Foundation Architecture와 첫 JetStream 활성화를 승인한다
 
-> **2026-10-13 scoped replacement: DEC-072.** JetStream Provider·AU-G3 선택은 ADR-0023으로 부분 대체한다. Shared Audit 의미·Producer Boundary·Durability·Ledger·Gate 선후관계는 유지한다.
+> **2026-10-13 정책 방향 / 2026-10-19 Owner 공식 승인 (정본 PR Merge 시 효력): DEC-072.** JetStream Provider·AU-G3 선택만 ADR-0023이 부분 대체한다. Merge 전 기존 공식 권위를 유지하며 Audit 의미·Producer Contract·Durability·Ledger·Gate 순서는 보존한다.
 > 아래 본문은 당시 승인 기록이며 부분 대체된 Provider/Ownership을 현재 기준으로 적용하지 않는다.
 
 **Status:** accepted_with_constraints
@@ -4511,7 +4511,7 @@ full_supersession: none
 **Owner / scope:** architecture / messaging, internal jobs, environment isolation
 **Decision date:** 2026-10-13
 **Approval source:** 이번 Owner Task와 Additional Local Messaging Decision
-**Document review:** in_review (PR); 구현·Runtime·Production 배포 승인 아님
+**Document review:** Owner 공식 승인 2026-10-19; ADR-0023 정본 PR 독립 리뷰·Merge Gate 대기. Provider 발효는 실제 main Merge 시점; 구현·Runtime·Production 배포 승인 아님
 **Related ADR:** [ADR-0023](../adr/ADR-0023-sqs-messaging-and-environment-isolation.md)
 
 서비스 간 목표 Provider는 AWS SQS다. NATS 신규 구현과 Local NATS / Production SQS
@@ -4523,7 +4523,7 @@ Dev/Production Queue·DLQ·ARN/URL·IAM/Credential·구성·암호화·운영 �
 
 partial_supersedes: DEC-064 / ADR-0015의 JetStream 목표 및 내부 Job Broker 해석,
 DEC-070 / ADR-0021의 JetStream Provider·AU-G3 선택.
-이는 Owner 정책 방향의 범위 기록이며 공식 ADR 승인, formal Supersession 또는 발효 선언이 아니다.
+2026-10-19 Owner가 위 제한적 대체 범위를 공식 승인했다. Provider 부분 대체는 이 정본 PR 독립 리뷰 PASS 후 실제 main Merge 시 발효하며 이전에는 기존 ADR의 공식 권위를 유지한다. 실제 시각은 Merge 후 GitHub `merged_at`에 따라 ADR-0023 `effective_from` 정합화로 기록한다.
 remaining_valid_scope: HTTP/JSON·SSE, Audit 의미/Producer Contract, Durability/Outbox,
 Schema Ownership, Append Ledger, AU-G8 → AU-G7 및 전체 Gate 선후관계.
 superseded_by: []

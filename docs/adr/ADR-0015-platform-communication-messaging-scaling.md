@@ -43,8 +43,10 @@ evidence_refs:
 supersedes: []
 superseded_by:
   - ADR-0017
+  - "ADR-0023 (partial: JetStream provider and internal-job broker interpretation; effective on canonical PR merge)"
 superseded_scope:
   - "Shared Identity physical extraction 미승인 범위"
+  - "JetStream 목표 Provider 및 내부 Job 외부 Broker 기본 해석 — ADR-0023 조건부 부분 대체"
 remaining_valid_scope:
   - "HTTP/JSON, SSE, Gateway/Identity 호출 경계와 provider-neutral Delivery/Outbox 원칙"
   - "HTTP/JSON과 Direct internal call 기본값"
@@ -60,13 +62,13 @@ replacement_decision_refs:
 
 # ADR-0015: 공통 플랫폼 통신·메시징·확장 기준을 정의한다
 
-> **2026-10-13 Owner 정책 방향 (formal Supersession / 발효일 미확인):** [ADR-0023](./ADR-0023-sqs-messaging-and-environment-isolation.md) / DEC-072는
-> SQS 목표와 신규 NATS 구현 제외 방향을 기록한다. ADR-0023은 in_review이며 공식 최종 승인도 미확인이다.
+> **2026-10-19 Owner 공식 SQS 승인 (정본 PR Merge 시 제한적 부분 대체 발효):** [ADR-0023](./ADR-0023-sqs-messaging-and-environment-isolation.md) / DEC-072는
+> JetStream 목표 Provider와 내부 Job Broker 기본 해석만 대체한다. Merge 이전에는 이 ADR의 기존 공식 권위가 유지된다.
 > HTTP/JSON, SSE, Gateway / Identity 호출 경계와 provider-neutral Delivery / Outbox 원칙은 유지한다.
 > 아래 당시 승인 본문·날짜는 역사 기록이다. AWS Provisioning은 실행되거나 승인되지 않았다.
 
-> **Partial supersession:** Shared Identity physical extraction 미승인 범위만
-> [ADR-0017](./ADR-0017-shared-platform-gateway-identity-physicalization.md)로 대체됐다.
+> **서로 독립된 Partial Supersession:** Shared Identity physical extraction 미승인 범위는
+> [ADR-0017](./ADR-0017-shared-platform-gateway-identity-physicalization.md)로 대체됐다. JetStream Provider·내부 Job Broker 선택만 ADR-0023이 정본 PR Merge 시 대체한다.
 > HTTP/JSON, Direct internal call, Gateway ingress, Identity 호출 제한, NATS Trigger와
 > Shared AI/Product 경계는 계속 유효하다.
 
