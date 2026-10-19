@@ -123,10 +123,17 @@ product_release_status: not_released
 
 ### 2.1 Current implementation-status projection (non-historical)
 
-ADR-0021 remains the architecture decision for the complete Shared Audit boundary,
-transport, durability policy, and gate sequencing. Its historical
-`implementation_status: not_started` records the decision-time scope and is not the
-current status of every AU-G2 capability.
+ADR-0021 remains the accepted architecture record for Shared Audit semantics, the
+provider-neutral producer boundary and event contract, durability and ownership
+invariants, and gate sequencing. Its JetStream transport selection (ADR-0021 / DEC-070)
+is preserved as the 2026-09-08 approval record, not the current Owner policy direction
+for new implementation. ADR-0023 / DEC-072 conditionally select SQS for AU-G3 and exclude new
+JetStream implementation; ADR-0023 remains `in_review` with `approved_at: null`,
+`effective_from: null`, and `supersedes: []`, so the SQS direction is not formal ADR
+approval, recorded supersession, or an effective transport change. AU-G3 remains
+conditional on that formal approval; AWS Dev/Production Provisioning is unapproved
+and unexecuted. Its historical `implementation_status: not_started` records the
+decision-time scope and is not the current status of every AU-G2 capability.
 
 The verified current projection is `AU-G2B producer semantic publisher boundary
 implemented` at `ranikun-labs/platform-services/main@2009a46e68fb2289654b52065958a18313d9f6ce`.
