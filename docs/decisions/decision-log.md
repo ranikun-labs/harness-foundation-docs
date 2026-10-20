@@ -4511,7 +4511,7 @@ full_supersession: none
 **Owner / scope:** architecture / messaging, internal jobs, environment isolation
 **Decision date:** 2026-10-13
 **Approval source:** 2026-10-13 Owner Task/Additional Local Messaging Decision(정책 방향); 2026-10-19 Owner 공식 승인 결정의 [PR #43 별도 보존 기록](https://github.com/ranikun-labs/harness-foundation-docs/pull/43#issuecomment-6280719015) (Owner 채팅 지시를 연결 계정으로 전사; 원본 채팅을 독립 인증하는 자료는 아님)
-**Document review:** ADR-0023 / PR #43 독립 리뷰 PASS·별도 Owner Merge 승인 뒤 [실제 main 병합](https://github.com/ranikun-labs/harness-foundation-docs/pull/43) 2026-10-20T01:09:40Z (UTC) 확인. 사후 `effective_from` 기록 PR은 별도 Review·Merge Gate 진행; 구현·Runtime·Production 배포 승인 아님
+**Document review:** ADR-0023 / [PR #43 실제 main 병합](https://github.com/ranikun-labs/harness-foundation-docs/pull/43) 시각 `2026-10-20T01:09:40Z` (UTC) 및 Merge SHA는 GitHub 확인. 선행 독립 리뷰 PASS·별도 Owner Merge 승인 원문·URL은 미확인(`EVIDENCE_GAP`). 사후 `effective_from` 기록 PR #44는 별도 Review·Merge Gate 진행; 구현·Runtime·Production 배포 승인 아님
 **Related ADR:** [ADR-0023](../adr/ADR-0023-sqs-messaging-and-environment-isolation.md)
 
 서비스 간 목표 Provider는 AWS SQS다. NATS 신규 구현과 Local NATS / Production SQS
