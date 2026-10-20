@@ -205,7 +205,7 @@ sources:
     status:
       document_status: accepted
       decision_status: accepted_with_constraints
-    purpose: Shared Audit의 Architecture 경계, Transport 의미, Durability 정책과 Gate Sequencing의 근거를 제공한다. SQS 목표 Provider는 ADR-0023 / DEC-072의 2026-10-19 Owner 공식 승인에 따라 정본 PR 실제 main Merge 시 부분 대체 발효한다. 시각은 Merge 후 기록한다. Audit 의미·Durability·Ownership은 유지하며 Runtime 구현·배포·Migration·Identity 계측 완료를 의미하지 않는다.
+    purpose: Shared Audit의 Architecture 경계, Transport 의미, Durability 정책과 Gate Sequencing의 근거를 제공한다. SQS Provider는 ADR-0023 / DEC-072의 2026-10-19 Owner 공식 승인 뒤 PR #43 실제 main Merge 2026-10-20T01:09:40Z UTC에 JetStream Provider 선택만 부분 대체 발효했다. 현재 사후 메타데이터 정합화는 후속 PR 검수·Merge 대상으로 기록한다. Audit 의미·Durability·Ownership은 유지하며 Runtime 구현·배포·Migration·Identity 계측 완료를 의미하지 않는다.
 
   - id: src.adr-0023
     kind: repository_document
@@ -219,7 +219,7 @@ sources:
     status:
       document_status: accepted
       decision_status: accepted_with_constraints
-    purpose: DEC-072; Owner 2026-10-19 공식 SQS 승인, 본 정본 PR main Merge 시 Provider 선택 부분 대체 발효, effective_from 실제 시각은 Merge 후 기록; AWS Provisioning·Runtime 미실행·미승인
+    purpose: DEC-072; Owner SQS 공식 승인 2026-10-19, PR #43 실제 merged_at 2026-10-20T01:09:40Z UTC부터 JetStream Provider 선택만 부분 대체 발효; 본 메타데이터 후속 PR은 별도 검수·Merge Gate 대상. AWS Provisioning·Runtime 미실행·미승인
 
   - id: src.adr-0024
     kind: repository_document
@@ -1722,15 +1722,15 @@ architecture_gates:
     status: deferred
     adoption_decision: not_decided
     deferral_policy: accepted_with_constraints
-    current_state: Owner 정책 방향은 SQS를 목표로 승인하고 신규 NATS 구현을 제외한다. ADR-0023 / DEC-072는 2026-10-19 Owner 공식 승인됐으며 Provider 부분 대체는 정본 PR 실제 main Merge 시 발효한다. 시각은 Merge 후 기록한다. 과거 NATS 승인 기록은 보존하며 이 Gate로 신규 구현을 승인하지 않는다
-    why_deferred: 2026-10-19 공식 SQS 목표 승인에 따라 신규 NATS 구현은 제외; ADR-0023의 JetStream 부분 대체는 정본 PR 실제 main Merge 시점부터 발효
+    current_state: ADR-0023 SQS Provider는 2026-10-19 공식 승인 후 PR #43 실제 main Merge 2026-10-20T01:09:40Z UTC에 발효. 과거 NATS 승인은 역사 기록으로 보존하고 신규 도입은 제외. 메타데이터 후속 PR은 별도 검수·Merge Gate 대상이며 신규 구현 승인은 아니다
+    why_deferred: 신규 NATS 구현 제외; ADR-0023의 Provider 부분 대체는 PR #43 실제 main Merge 2026-10-20T01:09:40Z UTC에 발효했다
     required_evidence: []
     adoption_triggers: []
     owner: { kind: scope, scope: platform_foundation }
     blocked_work: [New NATS implementation]
     related_jira: [RPL-20, RPL-107, RPL-108]
     related_decisions: [DEC-064, DEC-070, DEC-072]
-    constraints: [당시 Audit 의미와 Durability 유지, 2026-10-19 Owner의 신규 NATS 구현 제외 승인, Provider 부분 대체는 PR #43 main Merge 시 발효, 실제 시각은 GitHub merged_at 기준 후속 정합화]
+    constraints: [당시 Audit 의미와 Durability 유지, 신규 NATS 구현 제외 승인 2026-10-19, JetStream Provider 부분 대체 발효 2026-10-20T01:09:40Z UTC PR #43 GitHub merged_at, 사후 메타데이터 기록은 별도 검수·병합 대상]
     source_refs: [src.adr-0015, src.adr-0021, src.adr-0023]
 
   - id: gate.sqs-introduction
@@ -1738,7 +1738,7 @@ architecture_gates:
     status: deferred
     adoption_decision: accepted_with_constraints
     deferral_policy: provisioning_gated_by_adr_0023
-    current_state: 2026-10-19 SQS Target 공식 승인; 부분 대체 효력은 정본 PR 실제 main Merge 시 발생, effective_from은 해당 시각 확인 후 기록. AWS Dev / Production 생성은 미실행·미승인
+    current_state: 2026-10-19 SQS Target 공식 승인; JetStream Provider 부분 대체는 PR #43 실제 main Merge 2026-10-20T01:09:40Z UTC 발효. 본 후속 메타데이터 기록 PR은 별도 리뷰·Merge 승인 대기. AWS Dev / Production 생성은 미실행·미승인
     why_deferred: Gate 1 설계 검토와 별도 Dev 생성 승인, Gate 2 실제 격리 Dev 검증, Gate 3 Production 준비 검토와 별도 Owner 승인이 필요
     required_evidence:
       - "Gate 1 — Use Case·설계·IAM 최소권한·비용·운영 검토와 격리된 Dev Queue/DLQ 생성에 한정한 Owner 승인"

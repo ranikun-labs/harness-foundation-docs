@@ -4511,7 +4511,7 @@ full_supersession: none
 **Owner / scope:** architecture / messaging, internal jobs, environment isolation
 **Decision date:** 2026-10-13
 **Approval source:** 2026-10-13 Owner Task/Additional Local Messaging Decision(정책 방향); 2026-10-19 Owner 공식 승인 결정의 [PR #43 별도 보존 기록](https://github.com/ranikun-labs/harness-foundation-docs/pull/43#issuecomment-6280719015) (Owner 채팅 지시를 연결 계정으로 전사; 원본 채팅을 독립 인증하는 자료는 아님)
-**Document review:** Owner 공식 승인 2026-10-19; ADR-0023 정본 PR 독립 리뷰·Merge Gate 대기. Provider 발효는 실제 main Merge 시점; 구현·Runtime·Production 배포 승인 아님
+**Document review:** ADR-0023 / PR #43 독립 리뷰 PASS·별도 Owner Merge 승인 뒤 [실제 main 병합](https://github.com/ranikun-labs/harness-foundation-docs/pull/43) 2026-10-20T01:09:40Z (UTC) 확인. 사후 `effective_from` 기록 PR은 별도 Review·Merge Gate 진행; 구현·Runtime·Production 배포 승인 아님
 **Related ADR:** [ADR-0023](../adr/ADR-0023-sqs-messaging-and-environment-isolation.md)
 
 서비스 간 목표 Provider는 AWS SQS다. NATS 신규 구현과 Local NATS / Production SQS
@@ -4523,7 +4523,7 @@ Dev/Production Queue·DLQ·ARN/URL·IAM/Credential·구성·암호화·운영 �
 
 partial_supersedes: DEC-064 / ADR-0015의 JetStream 목표 및 내부 Job Broker 해석,
 DEC-070 / ADR-0021의 JetStream Provider·AU-G3 선택.
-2026-10-19 Owner가 위 제한적 대체 범위를 공식 승인했다. Provider 부분 대체는 PR #43 독립 리뷰 PASS 및 별도 Owner Merge Gate 이후 실제 main Merge 시 발효한다. 이전에는 기존 ADR의 공식 권위를 유지한다. 실제 시각은 GitHub `merged_at` UTC 및 Merge SHA를 근거로 ADR-0023 §10.3의 **Owner Merge Operator 후속 정합화 필수 Gate**에 따라 기록한다. 기록 완료 전에는 메타데이터 Gate를 통과한 것으로 보고하지 않는다.
+2026-10-19 Owner가 제한적 대체 범위를 공식 승인했으며 Provider 선택의 부분 대체는 [PR #43](https://github.com/ranikun-labs/harness-foundation-docs/pull/43)이 `main`에 병합된 실제 시각 **2026-10-20T01:09:40Z (UTC)**에 발효했다. 그 이전 기존 ADR 권위는 유지됐다. [GitHub Merge Commit `a8a3b32acc80e1731033e90e01442d3fcd6e4a70`](https://github.com/ranikun-labs/harness-foundation-docs/commit/a8a3b32acc80e1731033e90e01442d3fcd6e4a70)과 `merged_at`을 근거로 ADR-0023 §10.3의 후속 메타데이터 정합화를 기록한다. 후속 PR의 독립 리뷰·별도 Owner Merge 승인·정본 반영 전에는 메타데이터 종료 Gate를 PASS로 주장하지 않는다.
 remaining_valid_scope: HTTP/JSON·SSE, Audit 의미/Producer Contract, Durability/Outbox,
 Schema Ownership, Append Ledger, AU-G8 → AU-G7 및 전체 Gate 선후관계.
 superseded_by: []
