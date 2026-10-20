@@ -37,7 +37,7 @@ affected_docs:
   - catalog/system-catalog.yaml
 evidence_refs:
   - "Owner task decision, 2026-10-13, including Additional Local Messaging Decision"
-  - "2026-10-19 Owner formal approval: see this ADR §10 Decision History/Acceptance Record and Owner-confirmed PR #43 scope at https://github.com/ranikun-labs/harness-foundation-docs/pull/43"
+  - "2026-10-19 Owner formal approval: archived Owner chat decision, stable PR conversation comment https://github.com/ranikun-labs/harness-foundation-docs/pull/43#issuecomment-6280719015; transcribed via connected GitHub account, not independently authenticated chat source"
   - "https://github.com/ranikun-labs/harness-foundation-docs/pull/32"
   - docs/testing/2026-10-13-shared-environment-acceptance.md
 supersedes:
@@ -231,7 +231,7 @@ Transaction과 작업 상태·Lease·재시도 상태의 영속성을 담당한�
 | Date | Previous Status | New Status | Reviewed By | Approved By | Reason | Reference |
 |---|---|---|---|---|---|---|
 | 2026-10-13 | proposed | in_review / owner_policy_direction_only | 문서 최초 검토 | 정책 방향 Owner | SQS 목표·로컬 Broker 미사용·환경 격리 방향 제안, 공식 ADR 승인 별개 | DEC-072; [PR #32](https://github.com/ranikun-labs/harness-foundation-docs/pull/32) |
-| 2026-10-19 | in_review / owner_policy_direction_only | accepted_with_constraints (Owner 공식 승인; Provider 대체 효력은 main Merge 대기) | 독립 리뷰 **미완료** (당시) | Ranikun Labs Owner | AWS SQS 목표 Provider 승인; ADR-0015·0021의 JetStream 선택 부분만 조건부 대체; AWS/Runtime 승인 아님 | [본 ADR §10.2](#102-acceptance-record), [PR #43](https://github.com/ranikun-labs/harness-foundation-docs/pull/43) |
+| 2026-10-19 | in_review / owner_policy_direction_only | accepted_with_constraints (Owner 공식 승인; Provider 대체 효력은 main Merge 대기) | 독립 리뷰 **미완료** (당시) | Ranikun Labs Owner | AWS SQS 목표 Provider 승인; ADR-0015·0021의 JetStream 선택만 조건부 대체; AWS/Runtime 승인 아님 | [Owner 결정 별도 보존 기록](https://github.com/ranikun-labs/harness-foundation-docs/pull/43#issuecomment-6280719015) (채팅 지시 전사, 원본 독립 인증 아님), [DEC-072](../decisions/decision-log.md#dec-072--sqs-목표-provider-worker--jpa-및-환경-격리) |
 | **PR #43 Merge 이후 실제 시점 기록 대기** | approved_not_effective | effective_at_main_merge | 별도 Independent Reviewer PASS 및 Owner Merge Gate 확인 필요 | Owner Merge Operator (사후 증거 기록 책임) | GitHub 관측 `merged_at`만으로 발효 시각 확정. **현재 미실행/미확인** | PR #43 `merged_at`, Merge SHA; §10.3 |
 
 이 표는 2026-10-19 Owner 승인 사건을 기록하며 **독립 리뷰 PASS 또는 Merge 완료를 주장하지 않는다**.
@@ -240,7 +240,7 @@ Transaction과 작업 상태·Lease·재시도 상태의 영속성을 담당한�
 ### 10.2 Acceptance Record
 
 - **Decision:** `accepted_with_constraints` — Owner가 2026-10-19 AWS SQS를 신규 서비스 간 비동기 메시징의 공식 목표 Provider로 승인
-- **Approved By:** Ranikun Labs Owner (2026-10-19 Owner Decision; 범위·근거를 [PR #43](https://github.com/ranikun-labs/harness-foundation-docs/pull/43) 및 본 §10에 기록)
+- **Approved By:** Ranikun Labs Owner (2026-10-19 명시적 채팅 결정; [별도로 보존된 Owner 결정 내용](https://github.com/ranikun-labs/harness-foundation-docs/pull/43#issuecomment-6280719015)에 원문 의미·범위·승인일 기록. 이 기록은 연결 GitHub 계정을 이용한 전사이며 원본 채팅의 독립 인증 자료라고 주장하지 않는다)
 - **Effective Scope:** ADR-0015의 JetStream 목표/내부 Job Broker 해석과 ADR-0021의 JetStream Provider/AU-G3 선택만 **본 PR이 독립 리뷰 PASS 후 main에 병합되는 순간**부터 부분 대체
 - **Constraints:** 기존 HTTP/JSON·SSE, Outbox·Idempotency, Shared Audit 의미·Schema/Producer Ownership·Ledger, AU-G8 → AU-G7 및 과거 JetStream 승인 이력 보존; Local Broker 기본 미사용, Worker+JPA; Dev/Production 격리
 - **Not Approved:** SQS Queue/IAM/Provisioning, AU-G3 구현, 배포·Production Cutover 또는 기존 Runtime의 전환

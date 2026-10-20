@@ -4447,7 +4447,7 @@ Connection Pool 최적화 전후를 비교한다. 4 Host는 운영 분리와 비
 - PostgreSQL 공통 Version은 Platform/Finance/Carelog JDBC 및 Flyway 호환성 확인 전 결정하지 않는다.
 - RDS Public Access는 금지한다. Multi-AZ, class, backups, recovery 목표는 비용·복구 Owner Gate다.
 - OAuth State GETDEL/TTL, JWT Blacklist, Lua Rate Limiter와 fail-closed 계약은 보존한다. Blacklist 복구/무효화 증거 전 Release를 막는다.
-- EKS/Kubernetes, ECS/Fargate, Lambda 전면 전환, Aurora Serverless v2, 신규 Broker를 V1에 추가하거나 AWS에 Provision하지 않는다. 이 DEC는 비동기 Provider Target을 결정하지 않는다. 현재 Owner 정책 방향은 SQS Target이며 ADR-0023 / DEC-072와 PR #37에서 검토 중이다. 공식 ADR 승인, Supersession 발효와 AWS Provisioning은 확인되지 않았다. 신규 NATS 구현은 현 Owner 목표에서 제외한다.
+- EKS/Kubernetes, ECS/Fargate, Lambda 전면 전환, Aurora Serverless v2, 신규 Broker를 V1에 추가하거나 AWS에 Provision하지 않는다. DEC-071 자체는 비동기 Provider Target을 결정하지 않는다. **별도 DEC-072 / ADR-0023의 AWS SQS 목표 Provider 선택은 Owner가 2026-10-19 공식 승인**했다. ADR-0015·ADR-0021의 JetStream Provider 선택에 관한 제한적 부분 대체는 **PR #43 독립 리뷰 PASS 및 별도 Owner Merge 승인 후 실제 `main` Merge 시점**에만 발효하고, Merge 이전에는 기존 ADR 공식 권위를 유지한다. 정확한 `effective_from`은 PR #43의 실제 GitHub `merged_at` UTC를 확인한 뒤 기록한다. 신규 NATS 구현은 제외되며 AWS Provisioning은 여전히 미승인·미실행이다. **ADR-0022 자체는 `in_review`**이며 ADR-0016의 부분 대체 발효는 여전히 미확정이다.
 - 최초 7일은 Owner 승인 Pilot 또는 Go-Live가 대표 트래픽을 제공한 뒤 수집하는 측정 목표다. Pilot 자료는 별도 표시하며 Owner가 Baseline 대표성/기간을 명시하지 않으면 7일에 산입하지 않는다. 이 baseline은 최초 Go-Live의 사전 Gate가 아니며, Pilot/Go-Live 시점과 대표성 기준은 미결정이다. 경과만으로 자동 변경·종료하지 않고, 저부하 실사용만으로 P95/P99를 판단하지 않는다.
 - V2의 4→2/1 EC2 전환은 동일 부하/데이터/이미지와 비용·Latency·오류·Memory·Recovery 비교 후 Owner가 별도 승인한다.
 - Terraform Destroy/Replace와 AWS Apply는 이 Decision으로 승인되지 않는다.
@@ -4510,7 +4510,7 @@ full_supersession: none
 **Status:** accepted_with_constraints
 **Owner / scope:** architecture / messaging, internal jobs, environment isolation
 **Decision date:** 2026-10-13
-**Approval source:** 2026-10-13 Owner Task/Additional Local Messaging Decision(정책 방향), 2026-10-19 Owner formal SQS approval([ADR-0023 §10](../adr/ADR-0023-sqs-messaging-and-environment-isolation.md#10-owner-승인-전환-이력과-발효-증거-gate-2026-10-19), [PR #43](https://github.com/ranikun-labs/harness-foundation-docs/pull/43))
+**Approval source:** 2026-10-13 Owner Task/Additional Local Messaging Decision(정책 방향); 2026-10-19 Owner 공식 승인 결정의 [PR #43 별도 보존 기록](https://github.com/ranikun-labs/harness-foundation-docs/pull/43#issuecomment-6280719015) (Owner 채팅 지시를 연결 계정으로 전사; 원본 채팅을 독립 인증하는 자료는 아님)
 **Document review:** Owner 공식 승인 2026-10-19; ADR-0023 정본 PR 독립 리뷰·Merge Gate 대기. Provider 발효는 실제 main Merge 시점; 구현·Runtime·Production 배포 승인 아님
 **Related ADR:** [ADR-0023](../adr/ADR-0023-sqs-messaging-and-environment-isolation.md)
 
