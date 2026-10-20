@@ -77,8 +77,10 @@ size, and dashboard/query link. Use the same test profile before and after a cha
 
 ### SQS 목표 (Standard / FIFO 선택 미정)
 
-- **Owner 정책 방향:** ADR-0023 / DEC-072는 서비스 간 메시징의 목표 Provider를 SQS로
-  정렬한다. ADR 문서는 `in_review`이며 공식 승인, Supersession과 발효일은 미확정이다.
+- **Owner 공식 결정 (2026-10-19):** ADR-0023 / DEC-072의 서비스 간 메시징 목표
+  Provider는 SQS다. JetStream Provider 선택의 제한적 부분 대체는 **PR #43 독립 리뷰 PASS
+  후 main 실제 Merge 시점**부터 발효한다. Merge 전 기존 공식 권위는 유지하며,
+  `effective_from` 시각은 GitHub `merged_at` 기반 후속 정합화로 기록한다.
 - **Provisioning:** SQS Queue/DLQ와 AWS 자원은 승인되거나 생성되지 않았다. Queue 종류,
   사용 사례, 이벤트량, 순서·중복 제거, 재시도·DLQ 정책과 비용은 별도 결정으로 남는다.
 - **Gate 1 — Dev 생성 승인:** 사용 사례와 일관성 계약, 설계, IAM, 비용을 검토하고

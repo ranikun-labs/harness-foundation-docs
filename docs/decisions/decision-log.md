@@ -4510,7 +4510,7 @@ full_supersession: none
 **Status:** accepted_with_constraints
 **Owner / scope:** architecture / messaging, internal jobs, environment isolation
 **Decision date:** 2026-10-13
-**Approval source:** 이번 Owner Task와 Additional Local Messaging Decision
+**Approval source:** 2026-10-13 Owner Task/Additional Local Messaging Decision(정책 방향), 2026-10-19 Owner formal SQS approval([ADR-0023 §10](../adr/ADR-0023-sqs-messaging-and-environment-isolation.md#10-owner-승인-전환-이력과-발효-증거-gate-2026-10-19), [PR #43](https://github.com/ranikun-labs/harness-foundation-docs/pull/43))
 **Document review:** Owner 공식 승인 2026-10-19; ADR-0023 정본 PR 독립 리뷰·Merge Gate 대기. Provider 발효는 실제 main Merge 시점; 구현·Runtime·Production 배포 승인 아님
 **Related ADR:** [ADR-0023](../adr/ADR-0023-sqs-messaging-and-environment-isolation.md)
 
@@ -4523,7 +4523,7 @@ Dev/Production Queue·DLQ·ARN/URL·IAM/Credential·구성·암호화·운영 �
 
 partial_supersedes: DEC-064 / ADR-0015의 JetStream 목표 및 내부 Job Broker 해석,
 DEC-070 / ADR-0021의 JetStream Provider·AU-G3 선택.
-2026-10-19 Owner가 위 제한적 대체 범위를 공식 승인했다. Provider 부분 대체는 이 정본 PR 독립 리뷰 PASS 후 실제 main Merge 시 발효하며 이전에는 기존 ADR의 공식 권위를 유지한다. 실제 시각은 Merge 후 GitHub `merged_at`에 따라 ADR-0023 `effective_from` 정합화로 기록한다.
+2026-10-19 Owner가 위 제한적 대체 범위를 공식 승인했다. Provider 부분 대체는 PR #43 독립 리뷰 PASS 및 별도 Owner Merge Gate 이후 실제 main Merge 시 발효한다. 이전에는 기존 ADR의 공식 권위를 유지한다. 실제 시각은 GitHub `merged_at` UTC 및 Merge SHA를 근거로 ADR-0023 §10.3의 **Owner Merge Operator 후속 정합화 필수 Gate**에 따라 기록한다. 기록 완료 전에는 메타데이터 Gate를 통과한 것으로 보고하지 않는다.
 remaining_valid_scope: HTTP/JSON·SSE, Audit 의미/Producer Contract, Durability/Outbox,
 Schema Ownership, Append Ledger, AU-G8 → AU-G7 및 전체 Gate 선후관계.
 superseded_by: []

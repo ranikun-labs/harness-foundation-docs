@@ -23,7 +23,7 @@ constraints:
   - "내부 서비스 호출은 외부 Gateway를 경유하지 않는다"
   - "일반 Product 요청마다 Shared Identity를 동기 호출하지 않는다"
   - "Shared AI는 Product Prompt·Workflow·Domain Policy를 소유하지 않는다"
-  - "Owner 정책 방향은 신규 NATS 구현을 제외한다 (formal Supersession / 발효일 미확인); gRPC, Kafka, Kubernetes는 각 Trigger 전 도입하지 않는다"
+  - "2026-10-19 Owner가 SQS 목표를 공식 승인했다. 신규 NATS는 제외하며 ADR-0023의 JetStream 선택 부분 대체는 정본 PR main Merge 시 발효; gRPC, Kafka, Kubernetes는 각 Trigger 전 미도입"
   - "실제 Secret 값과 Host·IP를 Architecture Repository에 저장하지 않는다"
 affected_docs:
   - docs/adr/README.md
@@ -51,7 +51,7 @@ remaining_valid_scope:
   - "HTTP/JSON, SSE, Gateway/Identity 호출 경계와 provider-neutral Delivery/Outbox 원칙"
   - "HTTP/JSON과 Direct internal call 기본값"
   - "Gateway ingress와 trusted authentication context 경계"
-  - "gRPC·Kafka·Kubernetes 도입 Trigger; NATS 신규 구현은 Owner 정책 방향에서 제외되며 formal Supersession / 발효일은 미확인"
+  - "gRPC·Kafka·Kubernetes 도입 Trigger; 신규 NATS 구현 제외와 ADR-0023 부분 대체는 2026-10-19 Owner 승인에 따라 정본 PR main Merge 시 발효, 이전 공식 승인 역사 보존"
   - "Shared AI와 Product 책임 경계"
 replacement_decision_refs:
   - ADR-0023

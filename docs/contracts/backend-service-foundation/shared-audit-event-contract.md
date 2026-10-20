@@ -485,7 +485,9 @@ In particular, `ID-AUD-05`, `ID-AUD-09`, and `ID-AUD-10` remain unable to claim 
 without the AU-G8 durability-capable capture. This contract preserves the ADR-0021 gate order;
 the following work remains deferred:
 
-- AU-G3: SQS Transport, 환경별 Queue/DLQ 매핑, 재시도·구성 값과 운영 설계를 남긴다. SQS는 ADR-0023 / DEC-072의 Owner 정책 방향이며 공식 Supersession·발효일은 미확인이다.
+- AU-G3: SQS Transport, 환경별 Queue/DLQ 매핑, 재시도·구성 값과 운영 설계를 남긴다. SQS는 ADR-0023 / DEC-072의 2026-10-19 공식 Owner 승인 대상이며,
+  JetStream Provider 선택의 부분 대체는 **PR #43 독립 리뷰 PASS 후 실제 main Merge 시점**부터 발효한다.
+  Merge 이전의 역사적 JetStream 승인은 유지되며 AU-G3 구현과 AWS Provisioning은 별도 미승인이다.
 - AU-G4: append store, fingerprint/dedup SQL, retention durations, and deletion policy
 - AU-G5: consumer
 - AU-G8: outbox/durable publication, replay, reconciliation, monitoring, and alerting mechanisms

@@ -63,7 +63,7 @@ remaining_valid_scope:
   - "ADR-0013 §8의 Product별 Audit Event 의미·생성 시점 소유권"
   - "ADR-0013 §8의 Shared Audit 동기 호출 강제 금지"
   - "ADR-0013 §7의 Audit Event가 Product Domain Entity에 물리 FK를 걸지 않는 규칙"
-  - "ADR-0015의 provider-neutral Delivery 기본값; SQS 목표는 Owner 정책 방향으로 기록됐으며 formal Supersession / 발효일은 미확인"
+  - "ADR-0015의 provider-neutral Delivery 기본값; 2026-10-19 공식 SQS 목표 승인 및 ADR-0023의 JetStream Provider 부분 대체는 정본 PR main Merge 시 발효, 이전 승인 기록은 보존"
   - "ADR-0020의 Schema Ownership과 Cross-service FK 금지"
 replacement_decision_refs:
   - ADR-0023

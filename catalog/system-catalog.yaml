@@ -1723,14 +1723,14 @@ architecture_gates:
     adoption_decision: not_decided
     deferral_policy: accepted_with_constraints
     current_state: Owner 정책 방향은 SQS를 목표로 승인하고 신규 NATS 구현을 제외한다. ADR-0023 / DEC-072는 2026-10-19 Owner 공식 승인됐으며 Provider 부분 대체는 정본 PR 실제 main Merge 시 발효한다. 시각은 Merge 후 기록한다. 과거 NATS 승인 기록은 보존하며 이 Gate로 신규 구현을 승인하지 않는다
-    why_deferred: Owner 정책 방향상 신규 NATS 구현은 제외됐으며 공식 Supersession 발효는 확인되지 않았다
+    why_deferred: 2026-10-19 공식 SQS 목표 승인에 따라 신규 NATS 구현은 제외; ADR-0023의 JetStream 부분 대체는 정본 PR 실제 main Merge 시점부터 발효
     required_evidence: []
     adoption_triggers: []
     owner: { kind: scope, scope: platform_foundation }
     blocked_work: [New NATS implementation]
     related_jira: [RPL-20, RPL-107, RPL-108]
     related_decisions: [DEC-064, DEC-070, DEC-072]
-    constraints: [당시 Audit 의미와 Durability 유지, Owner 정책 방향은 신규 NATS 구현 제외, 공식 Supersession / 발효일 미확인]
+    constraints: [당시 Audit 의미와 Durability 유지, 2026-10-19 Owner의 신규 NATS 구현 제외 승인, Provider 부분 대체는 PR #43 main Merge 시 발효, 실제 시각은 GitHub merged_at 기준 후속 정합화]
     source_refs: [src.adr-0015, src.adr-0021, src.adr-0023]
 
   - id: gate.sqs-introduction
