@@ -241,7 +241,7 @@ Transaction과 작업 상태·Lease·재시도 상태의 영속성을 담당한�
 
 - **Decision:** `accepted_with_constraints` — Owner가 2026-10-19 AWS SQS를 신규 서비스 간 비동기 메시징의 공식 목표 Provider로 승인
 - **Approved By:** Ranikun Labs Owner (2026-10-19 명시적 채팅 결정; [별도로 보존된 Owner 결정 내용](https://github.com/ranikun-labs/harness-foundation-docs/pull/43#issuecomment-6280719015)에 원문 의미·범위·승인일 기록. 이 기록은 연결 GitHub 계정을 이용한 전사이며 원본 채팅의 독립 인증 자료라고 주장하지 않는다)
-- **Effective Scope:** ADR-0015의 JetStream 목표/내부 Job Broker 해석과 ADR-0021의 JetStream Provider/AU-G3 선택만 **본 PR이 독립 리뷰 PASS 후 main에 병합되는 순간**부터 부분 대체
+- **Effective Scope:** ADR-0015의 JetStream 목표/내부 Job Broker 해석과 ADR-0021의 JetStream Provider/AU-G3 선택만 **독립 리뷰 PASS와 별도 Owner Merge 승인 후 PR #43이 실제 `main`에 병합된 2026-10-20T01:09:40Z (UTC)**부터 부분 대체했다. 발효일 메타데이터 기록은 본 후속 PR #44의 별도 검수·병합 Gate가 남아 있다.
 - **Constraints:** 기존 HTTP/JSON·SSE, Outbox·Idempotency, Shared Audit 의미·Schema/Producer Ownership·Ledger, AU-G8 → AU-G7 및 과거 JetStream 승인 이력 보존; Local Broker 기본 미사용, Worker+JPA; Dev/Production 격리
 - **Not Approved:** SQS Queue/IAM/Provisioning, AU-G3 구현, 배포·Production Cutover 또는 기존 Runtime의 전환
 - **Required Follow-up:** §10.3의 Merge 증거 기반 `effective_from` 기록과 정본 상태 검증
