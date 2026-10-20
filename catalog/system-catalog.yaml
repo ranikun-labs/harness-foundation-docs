@@ -1730,7 +1730,7 @@ architecture_gates:
     blocked_work: [New NATS implementation]
     related_jira: [RPL-20, RPL-107, RPL-108]
     related_decisions: [DEC-064, DEC-070, DEC-072]
-    constraints: [당시 Audit 의미와 Durability 유지, 신규 NATS 구현 제외 승인 2026-10-19, JetStream Provider 부분 대체 발효 2026-10-20T01:09:40Z UTC PR #43 GitHub merged_at, 사후 메타데이터 기록은 별도 검수·병합 대상]
+    constraints: [당시 Audit 의미와 Durability 유지, 신규 NATS 구현 제외 승인 2026-10-19, "JetStream Provider 부분 대체 발효 2026-10-20T01:09:40Z UTC PR #43 GitHub merged_at", 사후 메타데이터 기록은 별도 검수·병합 대상]
     source_refs: [src.adr-0015, src.adr-0021, src.adr-0023]
 
   - id: gate.sqs-introduction
