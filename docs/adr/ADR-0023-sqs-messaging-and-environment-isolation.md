@@ -12,7 +12,7 @@ approvers:
 created_at: "2026-10-13"
 reviewed_at: "2026-10-13"
 approved_at: "2026-10-19"
-effective_from: null
+effective_from: "2026-10-20T01:09:40Z"
 implementation_status: not_started
 runtime_support_status: not_supported
 product_release_status: not_released
@@ -57,11 +57,11 @@ replacement_decision_refs: [DEC-072]
 
 > **Owner 공식 승인 (2026-10-19):** 신규 서비스 간 비동기 메시징의 목표 Provider는 AWS SQS다.
 > ADR-0015·0021의 JetStream Provider 선택만 부분 대체한다. 과거 승인은 역사적으로 보존한다.
-> **발효:** 이 정본 PR의 독립 리뷰 PASS 후 `main` Merge **실제 시점**. Merge 이전에는 기존 ADR 권위가 유지된다.
-> 실제 Merge 시점은 PR 작성 중 알 수 없어 `effective_from: null`을 유지한다. Owner Merge Gate에서
-> GitHub PR #43의 `merged_at`(UTC)과 Merge Commit SHA를 조회해 Owner Merge Operator가
-> 병합 직후 별도 정합화 PR을 작성·검증해야 한다. 증거·책임·종료 조건은 §10에 기록하며,
-> 정합화 완료 전에는 metadata-effective Gate를 PASS로 보고하지 않는다.
+> **관측된 공식 발효:** [PR #43](https://github.com/ranikun-labs/harness-foundation-docs/pull/43)은 독립 Reviewer PASS·별도 Owner Merge 승인 후
+> **2026-10-20T01:09:40Z (UTC, 2026-10-20 10:09:40 KST)**에 `main`으로 실제 병합됐다.
+> [Merge Commit `a8a3b32acc80e1731033e90e01442d3fcd6e4a70`](https://github.com/ranikun-labs/harness-foundation-docs/commit/a8a3b32acc80e1731033e90e01442d3fcd6e4a70)은 이전 main과 검토된 HEAD를 부모로 갖는다.
+> `effective_from`은 커밋 작성 시각이나 추정치가 아닌 GitHub `merged_at` 원값이다.
+> 이 **사후 메타데이터 기록용 PR 자체**의 리뷰·별도 승인·정본 병합 전에는 기록 완료 Gate를 PASS라고 주장하지 않는다.
 > AWS Dev/Production Provisioning·AU-G3 구현·Runtime 전환은 승인되지 않았다.
 > 2026-10-13 `reviewed_at`은 과거 검토일이며 `approved_at`은 실제 Owner 승인일이다.
 
@@ -232,9 +232,9 @@ Transaction과 작업 상태·Lease·재시도 상태의 영속성을 담당한�
 |---|---|---|---|---|---|---|
 | 2026-10-13 | proposed | in_review / owner_policy_direction_only | 문서 최초 검토 | 정책 방향 Owner | SQS 목표·로컬 Broker 미사용·환경 격리 방향 제안, 공식 ADR 승인 별개 | DEC-072; [PR #32](https://github.com/ranikun-labs/harness-foundation-docs/pull/32) |
 | 2026-10-19 | in_review / owner_policy_direction_only | accepted_with_constraints (Owner 공식 승인; Provider 대체 효력은 main Merge 대기) | 독립 리뷰 **미완료** (당시) | Ranikun Labs Owner | AWS SQS 목표 Provider 승인; ADR-0015·0021의 JetStream 선택만 조건부 대체; AWS/Runtime 승인 아님 | [Owner 결정 별도 보존 기록](https://github.com/ranikun-labs/harness-foundation-docs/pull/43#issuecomment-6280719015) (채팅 지시 전사, 원본 독립 인증 아님), [DEC-072](../decisions/decision-log.md#dec-072--sqs-목표-provider-worker--jpa-및-환경-격리) |
-| **PR #43 Merge 이후 실제 시점 기록 대기** | approved_not_effective | effective_at_main_merge | 별도 Independent Reviewer PASS 및 Owner Merge Gate 확인 필요 | Owner Merge Operator (사후 증거 기록 책임) | GitHub 관측 `merged_at`만으로 발효 시각 확정. **현재 미실행/미확인** | PR #43 `merged_at`, Merge SHA; §10.3 |
+| 2026-10-20T01:09:40Z (UTC) | approved_not_effective | effective_at_main_merge (Provider 선택 부분 대체에 한정) | PR #43 검토 HEAD `5495b426e8457531df26e0dbb5c34c4f3738d64c` 독립 PASS_DELTA | Ranikun Labs Owner Merge 승인 / Owner Merge Operator 실행·재조회 | 실제 `merged_at` 관측, GitHub 병합 검증. SQS Runtime·AWS·Jira 변경 없음 | [PR #43](https://github.com/ranikun-labs/harness-foundation-docs/pull/43); [Merge Commit](https://github.com/ranikun-labs/harness-foundation-docs/commit/a8a3b32acc80e1731033e90e01442d3fcd6e4a70); 발효시각 기록용 [후속 PR 준비 브랜치](https://github.com/ranikun-labs/harness-foundation-docs/compare/main...docs/adr-0023-effective-from-20261020) |
 
-이 표는 2026-10-19 Owner 승인 사건을 기록하며 **독립 리뷰 PASS 또는 Merge 완료를 주장하지 않는다**.
+위 이력의 2026-10-19 행은 당시 Owner 승인 기록이며, 다음 행은 별도 독립 리뷰 PASS 및 2026-10-20 실제 병합 사건에 대한 사후 검증 기록이다. 이 기록을 담은 후속 PR 자체의 리뷰·병합 완료를 주장하지 않는다.
 과거 ADR-0015(2026-07-29)·ADR-0021(2026-09-08)의 승인 기록은 그대로 보존된다.
 
 ### 10.2 Acceptance Record
@@ -250,6 +250,6 @@ Transaction과 작업 상태·Lease·재시도 상태의 영속성을 담당한�
 
 1. **Responsible owner:** PR #43의 **Owner Merge Operator** (별도 Owner Merge 승인을 받아 실제 Merge를 수행하는 담당자). 이 담당자가 **같은 Merge 작업의 종료 Gate**로 후속 정합화의 작성·검증·상태 보고까지 책임진다. 원격 Merge 승인 없이 선행 실행하지 않는다.
 2. **Source of truth:** GitHub PR [#43](https://github.com/ranikun-labs/harness-foundation-docs/pull/43)의 실제 `merged_at` 값(**UTC ISO 8601**)과 `merge_commit_sha`; API 재조회로 `merged=true` 및 Merge SHA가 당시 `main` 이력에 포함됨을 확인한다. `approved_at`(2026-10-19), 사전 작성 시각, 추정 병합일은 절대 대체 입력이 아니다.
-3. **Follow-up write:** Merge **직후** 별도 문서 정합화 PR에 `effective_from: <observed merged_at UTC>`를 기입한다. 본 Decision History에 관측 시각, PR #43 URL, Merge Commit SHA, 확인 날짜/담당자, 후속 PR URL을 기록하고 ADR Index·System Catalog의 상태 표기와 일치시킨다. 리뷰어가 사전 수정 없이 이 절차로 충돌이 해소되는지 독립 검증해야 한다.
+3. **Follow-up evidence:** Owner Merge Operator(ChatGPT, 연결 GitHub 도구)가 PR #43의 `merged=true`, `merged_at=2026-10-20T01:09:40Z`, `merge_commit_sha=a8a3b32acc80e1731033e90e01442d3fcd6e4a70` 및 병합 후 `main=a8a3b32acc80e1731033e90e01442d3fcd6e4a70`를 확인했다. 본 후속 Draft PR은 `effective_from`·Decision History·ADR Index·System Catalog·DEC-072를 정합화한다. 실제 후속 PR 번호/URL과 독립 Reviewer/별도 Owner Merge 판정은 그 PR에서 추적한다.
 4. **Closure criteria:** 실제 `merged_at`과 메타데이터가 동일함을 확인하고 후속 정합화 PR이 별도 리뷰·승인 절차로 병합되기 전까지 **`EFFECTIVE_METADATA_RECONCILIATION_PENDING`** 상태로 보고한다. 기존 선택의 실질 부분 대체 효력은 Owner 결정대로 **PR #43 Merge 시점**이며, 이 작업은 해당 이미 발생한 사실의 정확한 기록이다.
-5. **Fail-closed:** 병합 직후 정합화 작업을 만들고 끝까지 확인할 담당자·도구·승인 절차가 사전에 확정되지 않거나, Reviewer가 이 사후 기록 방식을 인정하지 않으면 **PR #43 Merge 중단**. `effective_from`이 null인 상태에서 운영·Provisioning·Runtime 준비 완료를 주장하지 않는다.
+5. **Historical pre-merge gate:** PR #43 병합 전에는 담당자·도구·후속 정합화 및 독립 Reviewer PASS 확인 없이 Merge할 수 없었다. PR #43은 그 승인 Gate를 거쳐 병합됐다. 본 후속 정합화 PR은 별도로 독립 리뷰·Owner 병합 승인을 받아야 하며 운영·Provisioning·Runtime 준비 완료를 의미하지 않는다.
