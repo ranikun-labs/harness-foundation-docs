@@ -130,10 +130,12 @@ invariants, and gate sequencing. Its JetStream transport selection (ADR-0021 / D
 is preserved as the 2026-09-08 approval record, not the current Owner policy direction
 for new implementation. ADR-0023 / DEC-072 were formally approved as SQS target
 architecture by the Owner on 2026-10-19. Only JetStream Provider / AU-G3 selection
-is partially superseded upon this canonical PR's actual `main` merge, not before.
-Merge time is unknown while drafting, so ADR-0023's `effective_from` remains null
-pending GitHub `merged_at` reconciliation. AU-G3 implementation and AWS Dev/Production
-Provisioning remain separately unapproved and unexecuted. Its historical `implementation_status: not_started` records the
+was partially superseded when ADR-0023's canonical PR #43 merged into `main`
+on 2026-10-20T01:09:40Z (GitHub `merged_at`, UTC). Its `effective_from`
+is recorded in follow-up Draft PR #44, which still requires independent review
+and separate Owner Merge approval before that metadata becomes canonical.
+AU-G3 implementation and AWS Dev/Production Provisioning remain separately
+unapproved and unexecuted. Its historical `implementation_status: not_started` records the
 decision-time scope and is not the current status of every AU-G2 capability.
 
 The verified current projection is `AU-G2B producer semantic publisher boundary
