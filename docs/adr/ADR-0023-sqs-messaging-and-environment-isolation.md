@@ -57,7 +57,7 @@ replacement_decision_refs: [DEC-072]
 
 > **Owner 공식 승인 (2026-10-19):** 신규 서비스 간 비동기 메시징의 목표 Provider는 AWS SQS다.
 > ADR-0015·0021의 JetStream Provider 선택만 부분 대체한다. 과거 승인은 역사적으로 보존한다.
-> **관측된 공식 발효:** [PR #43](https://github.com/ranikun-labs/harness-foundation-docs/pull/43)은 독립 Reviewer PASS·별도 Owner Merge 승인 후
+> **관측된 공식 발효:** [PR #43](https://github.com/ranikun-labs/harness-foundation-docs/pull/43)의 실제 병합은 GitHub에서 확인됐다. 선행 독립 Reviewer PASS·별도 Owner Merge 승인 원문은 미확인(`EVIDENCE_GAP`)이다.
 > **2026-10-20T01:09:40Z (UTC, 2026-10-20 10:09:40 KST)**에 `main`으로 실제 병합됐다.
 > [Merge Commit `a8a3b32acc80e1731033e90e01442d3fcd6e4a70`](https://github.com/ranikun-labs/harness-foundation-docs/commit/a8a3b32acc80e1731033e90e01442d3fcd6e4a70)은 이전 main과 검토된 HEAD를 부모로 갖는다.
 > `effective_from`은 커밋 작성 시각이나 추정치가 아닌 GitHub `merged_at` 원값이다.
