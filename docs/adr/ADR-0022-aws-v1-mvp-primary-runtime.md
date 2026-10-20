@@ -58,13 +58,16 @@ replacement_decision_refs: []
 
 ## 0. 메시징·Identity·Commerce 정책 정렬
 
-ADR-0023 / DEC-072는 서비스 간 메시징의 SQS 목표 정책, 신규 NATS 구현 제외,
-Local Broker 없음과 내부 Worker + JPA를 기록한다. Dev / Production Queue·DLQ·IAM
-격리는 불변조건이다. 이 정책 방향은 AWS Queue Provisioning 승인이 아니다.
+ADR-0023 / DEC-072의 서비스 간 SQS 목표 Provider, 신규 NATS 구현 제외,
+Local Broker 없음과 내부 Worker + JPA는 2026-10-19 Owner가 **공식 승인**했다.
+JetStream Provider 선택만 **PR #43 독립 리뷰 PASS 후 main 실제 Merge 시점**부터 부분 대체하며,
+그 이전은 기존 공식 권위가 유지된다. Dev / Production Queue·DLQ·IAM 격리는 불변조건이다.
+이 결정은 AWS Queue Provisioning 승인이 아니다.
 ADR-0024 / DEC-073에 따라 Product Membership은 각 Product가 소유하고,
 Shared Identity는 PlatformAccount, Shared Commerce는 구독·결제·환불과 상업적
-Entitlement를 담당한다. 조직 결제는 MVP에서 제외한다. 두 신규 ADR 모두 문서 상태는
-`in_review`이며 공식 승인·Supersession·발효일을 확정하지 않는다.
+Entitlement를 담당한다. 조직 결제는 MVP에서 제외한다.
+**ADR-0024는 별도로 `in_review`**이며 공식 승인·Supersession·발효일은 미확인이다.
+**본 ADR-0022 또한 `in_review`로 유지**되고 ADR-0016 부분 대체의 발효는 미확정이다.
 
 ## 1. 결정
 
@@ -124,10 +127,11 @@ IPv4 비용과 노출면은 배포 전 승인한다.
 Cloudflare Tunnel은 Outbound 연결 방식의 우선 검증 후보이지 최종 채택이 아니다.
 검증 전에는 외부 Ingress 준비 완료로 표현하지 않는다. V1에서 Kubernetes/EKS,
 ECS/Fargate, Lambda 전면 전환, Aurora Serverless v2 및 신규 Broker Provisioning을
-요구하지 않는다. 새 NATS 구현은 현재 목표에서 제외되며, 현재 Owner 정책 방향은 SQS
-Target이다. SQS는 target 방향만을 뜻하며 Queue 유형·Use Case 승인·AWS Provisioning을
-뜻하지 않는다. 이 Provider 정책은 ADR-0023 / DEC-072와 함께 PR #37에서 검토 중이다.
-ADR-0023의 공식 문서 승인과 ADR-0021의 형식상 Supersession·발효일은 확인되지 않았다.
+요구하지 않는다. 새 NATS 구현은 현재 목표에서 제외되며, 2026-10-19 Owner는 SQS
+목표 Provider를 공식 승인했다. Queue 유형·Use Case 승인·AWS Provisioning을 뜻하지 않는다.
+ADR-0023 / DEC-072의 JetStream Provider 선택만 **PR #43 독립 리뷰 PASS 후 main Merge 시점**
+부터 부분 대체한다. Merge 전에는 ADR-0021의 당시 공식 선택이 유지되고, 실제 발효 시각은
+GitHub `merged_at`에 근거해 ADR-0023 후속 정합화로 기록한다.
 
 ## 4. Central Observability와 Baseline
 
@@ -184,8 +188,9 @@ in_review다. 공식 최종 문서 승인과 발효일이 확인될 때까지 AD
 ADR-0015의 HTTP/JSON, SSE와 Messaging 경계와 ADR-0020의 단일 Application Database,
 서비스별 Schema/Role/Migration 소유권은 유지한다. ADR-0021/DEC-070의 NATS JetStream
 승인은 역사적 결정 기록으로 보존하되, 새 NATS 구현 목표는 현재 Owner 방향에서 제외한다.
-SQS Target 정책은 ADR-0023 / DEC-072로 정렬하며 이 PR #37에서 검토 중이다. 이는 AWS
-Resource 생성 승인이 아니며, Queue/DLQ와 Worker는 아직 구현·배포되지 않았다.
+SQS Target은 ADR-0023 / DEC-072에 따른 2026-10-19 Owner 공식 승인이다. 해당 Provider
+부분 대체 효력은 **PR #43의 실제 main Merge 이후** 발생하며, PR #37의 기존 문서 검토와
+구분한다. 이는 AWS Resource 생성 승인이 아니며 Queue/DLQ와 Worker는 구현·배포되지 않았다.
 
 ## 7. 승인 Gate와 상태
 

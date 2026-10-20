@@ -3306,7 +3306,7 @@ Shared Platform 논리 경계와 물리 배포 명칭 구분, Module·Data·Migr
 
 ## DEC-064 — 공통 플랫폼 통신·메시징·확장 기준을 정의한다
 
-> **2026-10-13 scoped replacement: DEC-072.** JetStream 목표 Provider와 Broker 기반 내부 Job 해석은 ADR-0023으로 부분 대체한다. HTTP/JSON·SSE와 provider-neutral Delivery/Outbox 원칙은 유지한다.
+> **2026-10-13 정책 방향 / 2026-10-19 Owner 공식 승인 (정본 PR Merge 시 효력): DEC-072.** JetStream 목표 Provider 및 내부 Job Broker 기본 해석만 ADR-0023이 부분 대체한다. Merge 전 기존 공식 권위와 HTTP/JSON·SSE·Outbox는 유지한다.
 > 아래 본문은 당시 승인 기록이며 부분 대체된 Provider/Ownership을 현재 기준으로 적용하지 않는다.
 
 **Status:** accepted_with_constraints
@@ -3937,7 +3937,7 @@ RPL-55
 
 ## DEC-070 — Shared Audit Foundation Architecture와 첫 JetStream 활성화를 승인한다
 
-> **2026-10-13 scoped replacement: DEC-072.** JetStream Provider·AU-G3 선택은 ADR-0023으로 부분 대체한다. Shared Audit 의미·Producer Boundary·Durability·Ledger·Gate 선후관계는 유지한다.
+> **2026-10-13 정책 방향 / 2026-10-19 Owner 공식 승인 (정본 PR Merge 시 효력): DEC-072.** JetStream Provider·AU-G3 선택만 ADR-0023이 부분 대체한다. Merge 전 기존 공식 권위를 유지하며 Audit 의미·Producer Contract·Durability·Ledger·Gate 순서는 보존한다.
 > 아래 본문은 당시 승인 기록이며 부분 대체된 Provider/Ownership을 현재 기준으로 적용하지 않는다.
 
 **Status:** accepted_with_constraints
@@ -4447,7 +4447,7 @@ Connection Pool 최적화 전후를 비교한다. 4 Host는 운영 분리와 비
 - PostgreSQL 공통 Version은 Platform/Finance/Carelog JDBC 및 Flyway 호환성 확인 전 결정하지 않는다.
 - RDS Public Access는 금지한다. Multi-AZ, class, backups, recovery 목표는 비용·복구 Owner Gate다.
 - OAuth State GETDEL/TTL, JWT Blacklist, Lua Rate Limiter와 fail-closed 계약은 보존한다. Blacklist 복구/무효화 증거 전 Release를 막는다.
-- EKS/Kubernetes, ECS/Fargate, Lambda 전면 전환, Aurora Serverless v2, 신규 Broker를 V1에 추가하거나 AWS에 Provision하지 않는다. 이 DEC는 비동기 Provider Target을 결정하지 않는다. 현재 Owner 정책 방향은 SQS Target이며 ADR-0023 / DEC-072와 PR #37에서 검토 중이다. 공식 ADR 승인, Supersession 발효와 AWS Provisioning은 확인되지 않았다. 신규 NATS 구현은 현 Owner 목표에서 제외한다.
+- EKS/Kubernetes, ECS/Fargate, Lambda 전면 전환, Aurora Serverless v2, 신규 Broker를 V1에 추가하거나 AWS에 Provision하지 않는다. DEC-071 자체는 비동기 Provider Target을 결정하지 않는다. **별도 DEC-072 / ADR-0023의 AWS SQS 목표 Provider 선택은 Owner가 2026-10-19 공식 승인**했다. ADR-0015·ADR-0021의 JetStream Provider 선택에 관한 제한적 부분 대체는 **PR #43 독립 리뷰 PASS 및 별도 Owner Merge 승인 후 실제 `main` Merge 시점**에만 발효하고, Merge 이전에는 기존 ADR 공식 권위를 유지한다. 정확한 `effective_from`은 PR #43의 실제 GitHub `merged_at` UTC를 확인한 뒤 기록한다. 신규 NATS 구현은 제외되며 AWS Provisioning은 여전히 미승인·미실행이다. **ADR-0022 자체는 `in_review`**이며 ADR-0016의 부분 대체 발효는 여전히 미확정이다.
 - 최초 7일은 Owner 승인 Pilot 또는 Go-Live가 대표 트래픽을 제공한 뒤 수집하는 측정 목표다. Pilot 자료는 별도 표시하며 Owner가 Baseline 대표성/기간을 명시하지 않으면 7일에 산입하지 않는다. 이 baseline은 최초 Go-Live의 사전 Gate가 아니며, Pilot/Go-Live 시점과 대표성 기준은 미결정이다. 경과만으로 자동 변경·종료하지 않고, 저부하 실사용만으로 P95/P99를 판단하지 않는다.
 - V2의 4→2/1 EC2 전환은 동일 부하/데이터/이미지와 비용·Latency·오류·Memory·Recovery 비교 후 Owner가 별도 승인한다.
 - Terraform Destroy/Replace와 AWS Apply는 이 Decision으로 승인되지 않는다.
@@ -4510,8 +4510,8 @@ full_supersession: none
 **Status:** accepted_with_constraints
 **Owner / scope:** architecture / messaging, internal jobs, environment isolation
 **Decision date:** 2026-10-13
-**Approval source:** 이번 Owner Task와 Additional Local Messaging Decision
-**Document review:** in_review (PR); 구현·Runtime·Production 배포 승인 아님
+**Approval source:** 2026-10-13 Owner Task/Additional Local Messaging Decision(정책 방향); 2026-10-19 Owner 공식 승인 결정의 [PR #43 별도 보존 기록](https://github.com/ranikun-labs/harness-foundation-docs/pull/43#issuecomment-6280719015) (Owner 채팅 지시를 연결 계정으로 전사; 원본 채팅을 독립 인증하는 자료는 아님)
+**Document review:** Owner 공식 승인 2026-10-19; ADR-0023 정본 PR 독립 리뷰·Merge Gate 대기. Provider 발효는 실제 main Merge 시점; 구현·Runtime·Production 배포 승인 아님
 **Related ADR:** [ADR-0023](../adr/ADR-0023-sqs-messaging-and-environment-isolation.md)
 
 서비스 간 목표 Provider는 AWS SQS다. NATS 신규 구현과 Local NATS / Production SQS
@@ -4523,7 +4523,7 @@ Dev/Production Queue·DLQ·ARN/URL·IAM/Credential·구성·암호화·운영 �
 
 partial_supersedes: DEC-064 / ADR-0015의 JetStream 목표 및 내부 Job Broker 해석,
 DEC-070 / ADR-0021의 JetStream Provider·AU-G3 선택.
-이는 Owner 정책 방향의 범위 기록이며 공식 ADR 승인, formal Supersession 또는 발효 선언이 아니다.
+2026-10-19 Owner가 위 제한적 대체 범위를 공식 승인했다. Provider 부분 대체는 PR #43 독립 리뷰 PASS 및 별도 Owner Merge Gate 이후 실제 main Merge 시 발효한다. 이전에는 기존 ADR의 공식 권위를 유지한다. 실제 시각은 GitHub `merged_at` UTC 및 Merge SHA를 근거로 ADR-0023 §10.3의 **Owner Merge Operator 후속 정합화 필수 Gate**에 따라 기록한다. 기록 완료 전에는 메타데이터 Gate를 통과한 것으로 보고하지 않는다.
 remaining_valid_scope: HTTP/JSON·SSE, Audit 의미/Producer Contract, Durability/Outbox,
 Schema Ownership, Append Ledger, AU-G8 → AU-G7 및 전체 Gate 선후관계.
 superseded_by: []

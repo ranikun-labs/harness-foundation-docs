@@ -77,8 +77,10 @@ size, and dashboard/query link. Use the same test profile before and after a cha
 
 ### SQS 목표 (Standard / FIFO 선택 미정)
 
-- **Owner 정책 방향:** ADR-0023 / DEC-072는 서비스 간 메시징의 목표 Provider를 SQS로
-  정렬한다. ADR 문서는 `in_review`이며 공식 승인, Supersession과 발효일은 미확정이다.
+- **Owner 공식 결정 (2026-10-19):** ADR-0023 / DEC-072의 서비스 간 메시징 목표
+  Provider는 SQS다. JetStream Provider 선택의 제한적 부분 대체는 **PR #43 독립 리뷰 PASS
+  후 main 실제 Merge 시점**부터 발효한다. Merge 전 기존 공식 권위는 유지하며,
+  `effective_from` 시각은 GitHub `merged_at` 기반 후속 정합화로 기록한다.
 - **Provisioning:** SQS Queue/DLQ와 AWS 자원은 승인되거나 생성되지 않았다. Queue 종류,
   사용 사례, 이벤트량, 순서·중복 제거, 재시도·DLQ 정책과 비용은 별도 결정으로 남는다.
 - **Gate 1 — Dev 생성 승인:** 사용 사례와 일관성 계약, 설계, IAM, 비용을 검토하고
@@ -100,10 +102,12 @@ Application Worker + JPA로 실행하고, 작업 상태·제약조건·트랜잭
 ### NATS JetStream — 과거 승인 기록 보존
 
 - ADR-0021 / DEC-070의 JetStream Architecture 승인 기록은 역사로 보존한다.
-- 현재 Owner 정책 방향은 SQS를 목표로 정렬하며 신규 NATS 구현을 제외한다. 이를 V2
+- 2026-10-19 Owner는 AWS SQS 목표 Provider와 신규 NATS 구현 제외를 공식 승인했다. 신규 NATS를 V2
   구현 후보로 다시 포함하지 않는다.
-- ADR-0021의 공식 Supersession·발효일과 SQS ADR 최종 승인은 미확정이며, 관련 정책은
-  현재 PR #37에서 검토 중이다.
+- ADR-0021 / DEC-070의 JetStream Provider·AU-G3 선택만 ADR-0023 / DEC-072에 따라
+  **PR #43의 독립 리뷰 PASS 및 별도 Owner Merge 승인 후 실제 `main` Merge 시점**부터 부분 대체한다.
+  Merge 이전에는 과거 승인된 Provider 선택의 공식 권위를 유지한다. 실제 발효 시각은
+  PR #43의 GitHub `merged_at`(UTC)으로 병합 이후 기록한다. AWS Provisioning·AU-G3 구현은 미승인이다.
 - NATS Broker는 배포되지 않았다. 과거 승인 기록은 신규 구현이나 AWS 자원 생성을
   허가하지 않는다.
 

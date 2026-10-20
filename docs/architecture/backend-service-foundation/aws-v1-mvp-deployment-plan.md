@@ -345,9 +345,10 @@ Ingress needs a separate decision and revised cost/security evidence.
   events must be evidenced before calling Audit production-ready.
 - ADR-0021 / DEC-070의 NATS JetStream 승인 기록과 Shared Audit의 의미·내구성 원칙을
   보존한다. 신규 NATS 구현은 현재 Owner 목표에서 제외한다.
-- ADR-0023 / DEC-072는 SQS를 목표 Provider로 정렬한다. ADR은 `in_review`이며 공식 승인,
-  Supersession과 발효일은 미확정이다. Queue 종류와 구체 사용 사례도 미결정이고,
-  이 계획과 PR #37은 SQS/NATS AWS 자원 생성을 승인하지 않는다.
+- ADR-0023 / DEC-072의 SQS 목표 Provider는 2026-10-19 Owner가 **공식 승인**했다.
+  JetStream Provider 선택의 부분 대체는 **PR #43 독립 리뷰 PASS 후 main 실제 Merge 시점**부터
+  발효한다. Merge 전에는 이전 ADR의 Provider 승인 권위가 유지된다.
+  Queue 종류·구체 Use Case는 미결정이고 이 계획과 기존 PR #37은 SQS/NATS AWS 자원 생성을 승인하지 않는다.
 - 실제 V1 비동기 사용 사례가 확인되면 내구성·재시도·재생 요구, 설계, IAM, 비용을
   검토하고, 격리된 AWS Dev 리소스를 만들기 전 별도 Owner 승인을 받는다.
 
@@ -380,7 +381,7 @@ Snapshot at the branches and HEADs in ADR-0022:
 
 | Repository | Verified Evidence | Blocker |
 |---|---|---|
-| harness-foundation-docs | ADR-0016의 과거 승인 기록; ADR-0020의 단일 Application DB와 서비스별 Schema; ADR-0021 / DEC-070의 역사적 JetStream 승인. 신규 NATS 구현은 현재 목표에서 제외하며, ADR-0023 / DEC-072의 SQS 목표 정책을 이 PR #37에서 검토 중이고 AWS Provisioning은 미실행 | ADR-0022의 공식 승인·ADR-0016 부분 대체 발효는 미확정; ADR-0016 역사와 Human 승인 Fencing 원칙 보존 |
+| harness-foundation-docs | ADR-0016의 과거 승인 기록; ADR-0020의 단일 Application DB와 서비스별 Schema; ADR-0021 / DEC-070의 역사적 JetStream 승인. 신규 NATS 구현은 현재 목표에서 제외하며, ADR-0023 / DEC-072의 SQS 목표는 2026-10-19 Owner 공식 승인됐고 부분 대체는 PR #43 main Merge 시 발효하며 AWS Provisioning은 미실행 | ADR-0022의 공식 승인·ADR-0016 부분 대체 발효는 미확정; ADR-0016 역사와 Human 승인 Fencing 원칙 보존 |
 | platform-services | Compose runs Gateway, Platform Core, local postgres:16-alpine, redis:7-alpine; Gateway / Core Dockerfiles exist; current Compose publishes 8080 / 8081; shared-audit is included in platform-core/settings.gradle.kts and app/build.gradle.kts | First blocker: platform-core/app/Dockerfile omits shared-audit/build.gradle.kts and shared-audit/src even though the included project is an app dependency; Docker image build is expected to fail at Gradle configuration, but was not executed in this documentation task. Production image / network configuration absent; no CI workflow; local Compose is not production |
 | finance-harness-be | Java 21, Spring Boot 4.1.0, Flyway; Postgres 18.4 Testcontainers; configuration is environment-backed | No Dockerfile / Compose / GitHub Actions workflow; test uses finance_db and does not prove the ADR-0020 finance Schema / Role |
 | carelog-be | Java 17, Spring Boot 3.4.5, Flyway; PostgreSQL 16 + redis:7 development Compose; V1 baseline is public Schema | No application Dockerfile / CI workflow; Compose has a committed local password and publishes DB / Redis host ports; no Actuator dependency or Application health check; public-to-carelog migration needs rehearsal |

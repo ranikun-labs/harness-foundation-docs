@@ -57,11 +57,13 @@ replacement_decision_refs:
 
 # ADR-0013: 목표 Deployment Unit과 PostgreSQL 데이터 소유권 경계를 정의한다
 
-> **Owner 정책 방향 (formal Supersession / 발효일 미확인):** [ADR-0023](./ADR-0023-sqs-messaging-and-environment-isolation.md) / DEC-072는
-> SQS 목표와 NATS 신규 구현 제외 방향을 기록한다. ADR 문서 최종 승인은 미확인이다. 이 문서의
-> JetStream 활성화 인용은 당시 DEC-070 기록이다. 제품별 User/Membership은 각 Product가 소유하고,
-> [ADR-0024](./ADR-0024-identity-commerce-owner-policy-alignment.md) / DEC-073은 이 Owner 방향을 기록한다.
-> 공식 Supersession / 발효일은 미확인이다. 이 ADR의 독립 Data Ownership은 유지한다.
+> **메시징 정책 별도 승인 (2026-10-19):** [ADR-0023](./ADR-0023-sqs-messaging-and-environment-isolation.md) / DEC-072는
+> SQS 목표와 신규 NATS 구현 제외를 Owner가 공식 승인했으며 JetStream Provider 선택만
+> **PR #43의 독립 리뷰 PASS 후 실제 main Merge 시점부터** 부분 대체한다. 그 전 기존 ADR 권위 유지.
+> 이 문서의 JetStream 활성화 인용은 당시 DEC-070 역사 기록이다.
+> 제품별 User/Membership은 각 Product가 소유하며, [ADR-0024](./ADR-0024-identity-commerce-owner-policy-alignment.md)
+> / DEC-073의 **별도** 공식 ADR 승인·발효는 여전히 미확인이다.
+> ADR-0013 자체의 독립 Data Ownership 계약과 기존 다른 부분 대체 관계는 유지한다.
 
 ## 1. Decision Summary
 

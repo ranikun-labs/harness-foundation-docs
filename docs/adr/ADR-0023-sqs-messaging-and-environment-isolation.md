@@ -1,17 +1,17 @@
 ---
 title: "서비스 간 메시징 목표를 SQS로 변경하고 환경 격리를 불변조건으로 정한다"
 adr_id: "ADR-0023"
-document_status: in_review
+document_status: accepted
 decision_status: accepted_with_constraints
-decision_status_scope: owner_policy_direction_only
 decision_scope: architecture
 owner: architecture
 authors: [codex]
 reviewers: []
-approvers: []
+approvers:
+  - "Ranikun Labs Owner — formal SQS architecture approval, 2026-10-19"
 created_at: "2026-10-13"
 reviewed_at: "2026-10-13"
-approved_at: null
+approved_at: "2026-10-19"
 effective_from: null
 implementation_status: not_started
 runtime_support_status: not_supported
@@ -22,19 +22,30 @@ constraints:
   - "Local 기본값은 Broker 없음; 내부 Job은 Spring Boot Application Worker + JPA"
   - "Dev/Production Queue, DLQ, IAM 및 구성 경계를 격리한다"
   - "Standard/FIFO, SNS, 운영 수치와 AWS 계정 분리는 요구사항 기반 후속 결정이다"
-  - "Owner 승인은 SQS 목표 정책 방향에 한정하며 공식 문서 최종 승인과 Supersession / 발효일은 미확인이다"
+  - "2026-10-19 Owner는 SQS 목표 Provider와 ADR-0015·0021의 JetStream 선택만 부분 대체하도록 공식 승인했다. 발효는 독립 리뷰 PASS 및 본 정본 PR main Merge 시점"
   - "AWS Dev / Production Provisioning은 실행되지 않았고 승인되지 않았다"
 affected_docs:
+  - docs/adr/ADR-0013-target-deployment-and-data-boundaries.md
   - docs/adr/ADR-0015-platform-communication-messaging-scaling.md
   - docs/adr/ADR-0021-shared-audit-foundation-architecture.md
   - docs/adr/ADR-0022-aws-v1-mvp-primary-runtime.md
+  - docs/adr/README.md
+  - docs/contracts/backend-service-foundation/shared-audit-event-contract.md
+  - docs/architecture/backend-service-foundation/aws-v1-mvp-deployment-plan.md
+  - docs/architecture/backend-service-foundation/aws-v2-optimization-roadmap.md
   - docs/decisions/decision-log.md
   - catalog/system-catalog.yaml
 evidence_refs:
   - "Owner task decision, 2026-10-13, including Additional Local Messaging Decision"
+  - "2026-10-19 Owner formal approval: archived Owner chat decision, stable PR conversation comment https://github.com/ranikun-labs/harness-foundation-docs/pull/43#issuecomment-6280719015; transcribed via connected GitHub account, not independently authenticated chat source"
   - "https://github.com/ranikun-labs/harness-foundation-docs/pull/32"
   - docs/testing/2026-10-13-shared-environment-acceptance.md
-supersedes: []
+supersedes:
+  - "ADR-0015 (partial: JetStream target provider and internal-job broker interpretation)"
+  - "ADR-0021 (partial: JetStream provider and AU-G3 transport choice)"
+superseded_scope:
+  - "ADR-0015: JetStream target and internal job broker interpretation"
+  - "ADR-0021: JetStream provider and AU-G3 choice only"
 superseded_by: []
 remaining_valid_scope:
   - "HTTP/JSON, Direct internal call, Gateway ingress 및 SSE 계약"
@@ -44,18 +55,24 @@ replacement_decision_refs: [DEC-072]
 
 # ADR-0023: SQS 목표 Provider와 Dev / Production 격리
 
-> **Owner 승인 범위:** `decision_status: accepted_with_constraints`는 SQS 목표에 관한 정책 방향에만 적용한다.
-> ADR 문서는 `document_status: in_review`이며 공식 문서 최종 승인은 미확인이다. Formal
-> Supersession과 발효일도 미확인이라 `supersedes: []`, `effective_from: null`을 유지한다.
-> AWS Dev / Production Provisioning은 실행되지 않았고 승인되지 않았다. `reviewed_at`은 문서
-> 검토일이며 Owner 최종 승인일이 아니다.
+> **Owner 공식 승인 (2026-10-19):** 신규 서비스 간 비동기 메시징의 목표 Provider는 AWS SQS다.
+> ADR-0015·0021의 JetStream Provider 선택만 부분 대체한다. 과거 승인은 역사적으로 보존한다.
+> **발효:** 이 정본 PR의 독립 리뷰 PASS 후 `main` Merge **실제 시점**. Merge 이전에는 기존 ADR 권위가 유지된다.
+> 실제 Merge 시점은 PR 작성 중 알 수 없어 `effective_from: null`을 유지한다. Owner Merge Gate에서
+> GitHub PR #43의 `merged_at`(UTC)과 Merge Commit SHA를 조회해 Owner Merge Operator가
+> 병합 직후 별도 정합화 PR을 작성·검증해야 한다. 증거·책임·종료 조건은 §10에 기록하며,
+> 정합화 완료 전에는 metadata-effective Gate를 PASS로 보고하지 않는다.
+> AWS Dev/Production Provisioning·AU-G3 구현·Runtime 전환은 승인되지 않았다.
+> 2026-10-13 `reviewed_at`은 과거 검토일이며 `approved_at`은 실제 Owner 승인일이다.
 
 ## 1. 결정과 승인 범위
 
-Owner는 서비스 간 비동기 메시징의 목표 Provider를 **AWS SQS**로 선택하고, NATS JetStream 신규 구현과
-Local NATS / Production SQS 이중 운영을 정책 방향에서 제외했다. HTTP/JSON 동기 통신과 SSE 정책은 유지한다.
-이 범위는 Owner 정책 방향 승인이다. ADR 최종 문서 승인, 공식 Supersession 및 발효일은 미확인이다.
-AWS Dev / Production Provisioning은 승인되거나 실행되지 않았다.
+Owner는 2026-10-19 서비스 간 비동기 메시징의 공식 목표 Provider를 **AWS SQS**로 승인했다.
+신규 NATS JetStream과 Local NATS / Production SQS 이중 Provider 운영은 제외한다.
+ADR-0015의 JetStream 목표·내부 Job Broker 해석과 ADR-0021의 JetStream Provider·AU-G3 선택만 부분 대체한다.
+기존 HTTP/JSON·SSE, 조건부 Outbox, Idempotency, Shared Audit 의미·Producer Contract·Ledger·Gate 순서는 유지한다.
+Provider 부분 대체의 효력은 이 정본 PR의 독립 리뷰 PASS 후 실제 main Merge 시 발생하며, 이전에는 기존 공식 선택의 권위를 유지한다.
+AWS Dev / Production Provisioning 및 AU-G3 구현·배포는 여전히 승인되지 않았다.
 
 Local 개발은 기본적으로 Broker 없이 실행한다. 단위 테스트는 Port의 Test Double을
 사용할 수 있다. SQS 통합이 필요할 때만 호환 에뮬레이터를 검토한다. 에뮬레이터의
@@ -67,17 +84,17 @@ Local 개발은 기본적으로 Broker 없이 실행한다. 단위 테스트는 
 
 | 이전 결정 / 대안 | 이번 결정 | 유지 범위 / 근거 |
 |---|---|---|
-| ADR-0015 / DEC-064: 첫 Use Case 이후 JetStream | SQS 목표 Owner 정책 방향; 공식 Supersession / 발효일 미확인 | 동기 통신·Envelope·멱등성과 조건부 Outbox 유지 |
-| ADR-0021 / DEC-070: Shared Audit의 JetStream 승인 | SQS 목표 Owner 정책 방향; 공식 Supersession / 발효일 미확인 | Audit 의미·Producer Boundary·Ledger·Durability 유지 |
+| ADR-0015 / DEC-064: 첫 Use Case 이후 JetStream | 2026-10-19 SQS 공식 승인; 정본 PR Merge 시 해당 JetStream 선택 부분 대체 발효 | 동기 통신·Envelope·멱등성과 조건부 Outbox 유지 |
+| ADR-0021 / DEC-070: Shared Audit의 JetStream 승인 | 2026-10-19 SQS 공식 승인; 정본 PR Merge 시 해당 Provider·AU-G3 부분 대체 발효 | Audit 의미·Producer Boundary·Ledger·Durability 유지 |
 | Local NATS + Production SQS | 미채택 | 환경별 의미 차이와 두 Provider의 운영·테스트 부담 |
 | 모든 내부 Job도 외부 Broker 사용 | 미채택 | 서비스 내부 Worker + JPA로 단순한 실행·상태 복구 |
 | SQS를 AWS V1에 즉시 추가 | 미승인 | 구체 Use Case·보안·비용·운영 Gate가 먼저 필요 |
 
-이전 ADR의 당시 승인 본문과 날짜를 보존한다. 이 문서에는 formal supersession 관계나 발효일을 기록하지 않는다.
+이전 ADR의 당시 승인 본문·날짜는 역사 기록으로 보존한다. 부분 대체 관계는 본 ADR의 `supersedes`와 상대 ADR의 `superseded_by`에 양방향 기록한다. 실제 발효 시각은 Merge 후 확인·기록한다.
 [AWS V1 ADR-0022](./ADR-0022-aws-v1-mvp-primary-runtime.md)는 PR #32 병합 뒤에도
 `in_review`이며 공식 문서 승인은 미확인이다. 본 정책은 AWS V1의 Broker 미배포 경계를
 유지하면서 Provider 목표를 정렬한다. 기존 Gate 선후관계를 유지하고 AU-G3 SQS Transport는
-Owner 정책 방향으로 기록한다. 공식 Supersession과 발효일은 미확인이다.
+공식 목표로 기록한다. Provider 전환은 이 정본 PR Merge 전에는 발효하지 않는다.
 
 ## 3. Standard / FIFO와 구독 모델 — Use Case별 결정
 
@@ -171,7 +188,7 @@ CloudWatch, 데이터 전송과 Private Endpoint/NAT 비용을 함께 추정한�
 비용을 줄일 수 있으나 지연·부분 Batch 실패·Visibility와 정합성을 검토한다.
 현재 가격·실제 비용·용량은 미측정이며 Free Tier를 운영 예산 근거로 확정하지 않는다.
 
-Provisioning은 순서가 고정된 세 Gate로 나눈다. SQS Target 정책 방향만으로 리소스 생성 권한이 생기지 않는다.
+Provisioning은 순서가 고정된 세 Gate로 나눈다. 2026-10-19 공식 SQS 목표 승인만으로 리소스 생성 권한이 생기지 않는다.
 
 1. **Gate 1 — Use Case / 설계 / IAM / 비용 검토와 Dev 생성 승인.** 구체 Workflow, Producer·Consumer, SLO,
    Criticality, Standard/FIFO와 구독 구조, Retry·Visibility·DLQ, 최소권한 IAM, IaC 소유권, 비용·보존·관측과
@@ -196,7 +213,7 @@ Transaction과 작업 상태·Lease·재시도 상태의 영속성을 담당한�
 ## 9. 미결정과 검증 근거
 
 특정 Queue 종류·SNS·Timeout/시도/보존 수치·계정 분리·KMS 방식·Provisioning 시점은
-미결정이다. Owner 정책 방향은 AWS Dev 또는 Production Queue 생성을 승인하지 않는다.
+미결정이다. 2026-10-19 Owner의 공식 SQS 목표 승인은 AWS Dev 또는 Production Queue 생성을 승인하지 않는다.
 현재 Provisioning은 실행되지 않았고 승인되지 않았다. Repository Apply는 이 문서 PR에
 한정되며 AWS Apply·Merge·Production Release 권한을 추가하지 않는다.
 
@@ -206,3 +223,33 @@ Transaction과 작업 상태·Lease·재시도 상태의 영속성을 담당한�
 [DLQ](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-dead-letter-queues.html),
 [SNS → SQS](https://docs.aws.amazon.com/sns/latest/dg/sns-sqs-as-subscriber.html).
 이는 설계 참고이며 이번 Task의 AWS Runtime 검증 증거가 아니다.
+
+## 10. Owner 승인 전환 이력과 발효 증거 Gate (2026-10-19)
+
+### 10.1 Decision History
+
+| Date | Previous Status | New Status | Reviewed By | Approved By | Reason | Reference |
+|---|---|---|---|---|---|---|
+| 2026-10-13 | proposed | in_review / owner_policy_direction_only | 문서 최초 검토 | 정책 방향 Owner | SQS 목표·로컬 Broker 미사용·환경 격리 방향 제안, 공식 ADR 승인 별개 | DEC-072; [PR #32](https://github.com/ranikun-labs/harness-foundation-docs/pull/32) |
+| 2026-10-19 | in_review / owner_policy_direction_only | accepted_with_constraints (Owner 공식 승인; Provider 대체 효력은 main Merge 대기) | 독립 리뷰 **미완료** (당시) | Ranikun Labs Owner | AWS SQS 목표 Provider 승인; ADR-0015·0021의 JetStream 선택만 조건부 대체; AWS/Runtime 승인 아님 | [Owner 결정 별도 보존 기록](https://github.com/ranikun-labs/harness-foundation-docs/pull/43#issuecomment-6280719015) (채팅 지시 전사, 원본 독립 인증 아님), [DEC-072](../decisions/decision-log.md#dec-072--sqs-목표-provider-worker--jpa-및-환경-격리) |
+| **PR #43 Merge 이후 실제 시점 기록 대기** | approved_not_effective | effective_at_main_merge | 별도 Independent Reviewer PASS 및 Owner Merge Gate 확인 필요 | Owner Merge Operator (사후 증거 기록 책임) | GitHub 관측 `merged_at`만으로 발효 시각 확정. **현재 미실행/미확인** | PR #43 `merged_at`, Merge SHA; §10.3 |
+
+이 표는 2026-10-19 Owner 승인 사건을 기록하며 **독립 리뷰 PASS 또는 Merge 완료를 주장하지 않는다**.
+과거 ADR-0015(2026-07-29)·ADR-0021(2026-09-08)의 승인 기록은 그대로 보존된다.
+
+### 10.2 Acceptance Record
+
+- **Decision:** `accepted_with_constraints` — Owner가 2026-10-19 AWS SQS를 신규 서비스 간 비동기 메시징의 공식 목표 Provider로 승인
+- **Approved By:** Ranikun Labs Owner (2026-10-19 명시적 채팅 결정; [별도로 보존된 Owner 결정 내용](https://github.com/ranikun-labs/harness-foundation-docs/pull/43#issuecomment-6280719015)에 원문 의미·범위·승인일 기록. 이 기록은 연결 GitHub 계정을 이용한 전사이며 원본 채팅의 독립 인증 자료라고 주장하지 않는다)
+- **Effective Scope:** ADR-0015의 JetStream 목표/내부 Job Broker 해석과 ADR-0021의 JetStream Provider/AU-G3 선택만 **본 PR이 독립 리뷰 PASS 후 main에 병합되는 순간**부터 부분 대체
+- **Constraints:** 기존 HTTP/JSON·SSE, Outbox·Idempotency, Shared Audit 의미·Schema/Producer Ownership·Ledger, AU-G8 → AU-G7 및 과거 JetStream 승인 이력 보존; Local Broker 기본 미사용, Worker+JPA; Dev/Production 격리
+- **Not Approved:** SQS Queue/IAM/Provisioning, AU-G3 구현, 배포·Production Cutover 또는 기존 Runtime의 전환
+- **Required Follow-up:** §10.3의 Merge 증거 기반 `effective_from` 기록과 정본 상태 검증
+
+### 10.3 Mandatory post-merge effective_from reconciliation
+
+1. **Responsible owner:** PR #43의 **Owner Merge Operator** (별도 Owner Merge 승인을 받아 실제 Merge를 수행하는 담당자). 이 담당자가 **같은 Merge 작업의 종료 Gate**로 후속 정합화의 작성·검증·상태 보고까지 책임진다. 원격 Merge 승인 없이 선행 실행하지 않는다.
+2. **Source of truth:** GitHub PR [#43](https://github.com/ranikun-labs/harness-foundation-docs/pull/43)의 실제 `merged_at` 값(**UTC ISO 8601**)과 `merge_commit_sha`; API 재조회로 `merged=true` 및 Merge SHA가 당시 `main` 이력에 포함됨을 확인한다. `approved_at`(2026-10-19), 사전 작성 시각, 추정 병합일은 절대 대체 입력이 아니다.
+3. **Follow-up write:** Merge **직후** 별도 문서 정합화 PR에 `effective_from: <observed merged_at UTC>`를 기입한다. 본 Decision History에 관측 시각, PR #43 URL, Merge Commit SHA, 확인 날짜/담당자, 후속 PR URL을 기록하고 ADR Index·System Catalog의 상태 표기와 일치시킨다. 리뷰어가 사전 수정 없이 이 절차로 충돌이 해소되는지 독립 검증해야 한다.
+4. **Closure criteria:** 실제 `merged_at`과 메타데이터가 동일함을 확인하고 후속 정합화 PR이 별도 리뷰·승인 절차로 병합되기 전까지 **`EFFECTIVE_METADATA_RECONCILIATION_PENDING`** 상태로 보고한다. 기존 선택의 실질 부분 대체 효력은 Owner 결정대로 **PR #43 Merge 시점**이며, 이 작업은 해당 이미 발생한 사실의 정확한 기록이다.
+5. **Fail-closed:** 병합 직후 정합화 작업을 만들고 끝까지 확인할 담당자·도구·승인 절차가 사전에 확정되지 않거나, Reviewer가 이 사후 기록 방식을 인정하지 않으면 **PR #43 Merge 중단**. `effective_from`이 null인 상태에서 운영·Provisioning·Runtime 준비 완료를 주장하지 않는다.
