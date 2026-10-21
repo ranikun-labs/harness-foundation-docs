@@ -210,6 +210,18 @@ Jira **원격 쓰기**(Create, Update, Transition, Comment, Link, Bulk)가 예�
 
 ## 8. 적용 Gate와 전환기 Read/Write SSOT (F2)
 
+### 8.0 경량 G2/G3 실행 경로 (Fast Track)
+
+**적용 조건:** 단일 RPL 프로젝트에서 Owner가 **대상·필드·유형·적용 시점**을 명시 승인한 **소량·단일 Writer·직렬 실행·Owner 감독형 수동 작업 또는 Owner 승인형 AI Jira Writer 작업**에만 적용한다. 이 절은 문서 PR 병합만으로 Jira Write나 G3 Cutover 권한을 부여하지 않는다. 무인·동시·복수 Writer·대량 Create는 아래 §8.1의 완전한 Intent/Origin Registry 계약을 그대로 적용한다.
+
+1. **대상 확정:** 이미 완료된 과거 76건은 기본 이전 대상에서 제외한다. RPL-40 폐기, HOLD Owner 미결정, Subtask/Story 등 Target 미지원 유형은 강제 이전하지 않는다. 출처 불명 RPL-112/113/114는 권위를 추정하지 않고 격리한다. RPL-111 SQS 계약/Description 변경은 Jira 필드 이전과 별도 승인이다.
+2. **경량 증거 대장:** 버전 관리된 **단일 CSV/JSON 대장과 필요한 버전 관리 연결 근거**에 `IssueKey, IssueType, Origin(legacy_migration|target_create|unknown), Before/After Product·Component·Concern, Legacy SnapshotRef, OwnerApprovalRef, Jira ChangelogRef, TargetFieldIDs/OptionIDs, ImpactPreservationRef, Phase, VerifiedAt, ReadAuthority, WriteAuthority, RollbackRef, CutoverApprovalRef, Exception`을 남긴다. `target_create`에는 조건부로 `CreateRequestId`, `CreateActivationRef`, `ActivationRef/EffectiveFrom/EffectiveTo`와 생성 전 영속 `pending` Intent 근거를 연결하고, 기존 Legacy Snapshot은 `not_applicable`로 표시한다. 원본 Snapshot은 별도 보존하고 SHA/버전으로 참조한다. **별도의 Registry 서버·DB 설치를 수동 소량 작업의 선행조건으로 요구하지 않는다.** 대장이 없는 이슈의 신규 Target 권위는 허용하지 않는다.
+3. **G2 최소 안전 검증:** 적용 전 실제 Jira 현재값·수정 대상·Field/Option ID·필드 지원 여부를 확인하고 원본 Snapshot을 보관한다. 승인된 소량 배치만 수정하며, 저장 후 Target 값·Changelog·비대상 필드 불변·영향 보존을 **대상 전수 재조회**하고 그 근거를 대장에 연결한다. Description을 건드리지 않는 **필드 전용 업데이트에 전체 Native ADF 복구 번들을 일률 강제하지 않는다**. 실패 시 배치를 중단하고 자동 Rollback하지 않는다.
+4. **G3 승인형 Create/전환:** Jira Admin의 Legacy required/default와 Target option/required를 확인·조정한 뒤, 별도 승인된 **1~2건 시험 Create**, 실제 저장값 재조회, AI Writer·Reader/Board·Automation의 단일 권위 검증 및 복구 경로 확인을 거친 **지원 Issue Type만** 활성화한다. 기존 Legacy 이슈는 `Phase=staged|verified` 동안 `ReadAuthority=legacy`, 분류 `WriteAuthority=frozen`을 유지한다. Target 저장 후 값·영향 보존·원본 Snapshot을 재검증하고, 저장 승인이 아닌 별도 Owner `CutoverApprovalRef`가 있을 때만 `Phase=cutover`, `ReadAuthority=target`, `WriteAuthority=target`으로 전환한다. 신규 Target Create는 Jira 호출 전에 고유 `CreateRequestId`와 승인된 유형별 `ActivationRef/EffectiveFrom/EffectiveTo` 기간을 확인하고 `pending` Intent를 영속 등록한다. 응답 `IssueKey`를 연결하고 Target 저장값을 재조회한 뒤 `Origin=target_create`, `Phase=create_ready`, `ReadAuthority=target`, `WriteAuthority=target`, `Legacy SnapshotRef=not_applicable`을 대장에 영속 등록해야 성공 처리한다. 결과 불명확·재조회 불일치·Origin 등록 실패면 성공 보고나 재생성을 하지 않고 `create_pending`/`create_quarantined`, `ReadAuthority=none`, 분류 `WriteAuthority=frozen`, `UNKNOWN_ORIGIN`으로 격리한다. 승인된 Maintainer가 `CreateRequestId`와 알려진 IssueKey를 대조해 검증·권위 등록을 복구한다.
+5. **권위·종료:** Legacy 이슈의 G3 전환은 승인된 대상에만 적용한다. 미입증 Target Create는 `UNKNOWN_ORIGIN`으로 분류 Write/Read/집계에서 격리한다. 같은 이슈의 이중 SSOT, 무단 Legacy fallback, dual-write는 금지한다. G3 종료 후에도 **G4 Legacy 삭제는 별도 승인까지 보류**한다.
+
+**범위 우선순위:** 이 §8.0은 **Owner 감독형 소량·단일 Writer·직렬 실행**에서 아래 §8/§8.1의 별도 Registry 서버 구축 및 대형 Migration Manifest 시스템 구현 대신 버전 관리된 단일 대장과 연결 근거를 허용하는 경량 경로다. **경량화는 저장 형태만 대체하며, 아래 §8/§8.1의 권위·보존·승인·실패 격리 lifecycle을 생략하지 않는다.** 무인·동시·복수 Writer·대량 Create는 §8.1의 완전한 계약을 그대로 따른다. 승인·Jira Create 시험·Rollback 증거가 없으면 G3 활성화를 중단한다.
+
 **핵심: 정책의 승인·병합, Jira 신규 Field 생성, 개별 Issue 데이터 이전, Board/Filter Cutover는 각각 별도의 사건이다.** 코드와 문서의 승인만으로 신규 Jira 분류가 자동 활성화되지 않는다.
 
 | 단계 | 분류 Read 권위 | 신규 Create / 분류 Write | Comment·Transition·비분류 Update | 이동/복구 조건 |
@@ -238,6 +250,8 @@ Jira **원격 쓰기**(Create, Update, Transition, Comment, Link, Bulk)가 예�
 
 
 ### 8.1 신규 Target Create Issue의 권위 초기화 (N1)
+
+**운영 모드 구분:** 무인·동시·복수 Writer·대량 Create에는 아래 Intent/Origin Registry 전체 계약을 적용한다. 별도로 승인된 **소량·단일 Writer·직렬 실행·Owner 감독형 수동 작업 또는 Owner 승인형 AI Jira Writer 작업**은 §8.0의 버전 관리 대장과 연결 근거를 영속 Origin 근거로 사용할 수 있지만, 실제 Required/Default 확인·Create 검증·불명확한 결과 격리·단일 분류 권위는 생략할 수 없다.
 
 **구분:** 기존 레거시 Issue의 이전은 `Origin=legacy_migration`과 이슈별 승인·Snapshot을 따른다. **신규 Target Create Issue는 Legacy Snapshot이 없으므로** 별도 출처 기록(`Origin=target_create`)과 **생성 직후 개별 Issue 권위 초기화**를 사용한다. 두 경우 모두 이슈별 유효 권위가 있어야 읽고 쓸 수 있으며, 유형별 `ActiveCreateAuthority=target`만으로 과거 Issue를 Target으로 바꾸지 않는다.
 
