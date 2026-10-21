@@ -1,6 +1,6 @@
 ---
 title: "Jira G2 Migration — Current Status Projection (2026-10-21)"
-projection_status: draft_for_owner_review
+projection_status: point_in_time_record
 as_of: "2026-10-21 KST"
 governance_main_sha: "8afda5417957176e5c7a3cb8c0fc1b0017a7c7cd"
 source_authority: Jira current fields + archived issue-specific Library evidence
@@ -11,7 +11,7 @@ g3_cutover_approval: null
 
 # Jira G2 — Current Status Projection (2026-10-21)
 
-> **현재 관측 상태의 비파괴적 Projection 초안.** 2026-10-15 G0/Governance 승인 문서의 시점별 역사 기록·ADR의 `implementation_status`·정책적 의미를 덮어쓰지 않는다. GitHub Merge, Jira 새 Write, G3 권위 이전을 선언하는 문서가 아니다.
+> **2026-10-21 기준 Jira G2 상태를 기록한 비파괴적 Projection.** 2026-10-15 G0/Governance 승인 기록과 ADR의 `implementation_status`·정책적 의미는 보존한다. 문서의 GitHub Merge 여부와 Jira 새 Write·G3 권위 이전은 각각 별도 증거와 승인이 필요한 사건이며, 이 문서만으로 완료·승인됐다고 선언하지 않는다.
 
 ## 인원/범위
 
@@ -58,7 +58,7 @@ Jira RPL 전체 **118건**. Target Product+Component 동시 저장 **24건**, Ta
 5. Subtask/Story 등 6건 별도 Issue Type 정책/Owner 승인; RPL-40 폐기 제외 유지.
 6. Cutover 이전 Create Origin Registry 영속성, Reader/Board/Automation, Legacy required/default, Rollback 기술 증거는 G3로 넘긴다.
 
-## 정본/현재 Blob SHA
+## 작성 시점 정본 및 변경 전 Blob SHA (2026-10-21)
 
 - `harness-foundation-docs/main@8afda5417957176e5c7a3cb8c0fc1b0017a7c7cd`
 - Portfolio `b6ddad42489a1bfd3912572d60f36622d7555bdb`
@@ -69,4 +69,4 @@ Jira RPL 전체 **118건**. Target Product+Component 동시 저장 **24건**, Ta
 
 ## 검증/제약
 
-이 Projection은 Governance **Draft PR #45로 제출된 초안**이며, `main`에 Merge되지 않았다. 원본 Patch의 strict hunk-match 검사는 완료되었으나 실제 Repository에서의 `git apply --check`, 별도 Human/Agent 독립 Review, Jira G3 E2E는 현재 NOT_RUN. 문서 PR Merge는 별도 Owner 승인 필요.
+이 문서는 **2026-10-21 당시 Jira G2 현황**을 기록한다. PR #45의 독립 리뷰에서 과거·현재 상태 선언 충돌(MAJOR A-01)이 지적됐고, 수정 Delta(`fea091275ccababd5a055926c72d0ea2d84cbc81` → `45a76e9ea0d9b22045b4dd9ef9906aee2abc1523`)는 별도 Reviewer에게 **`PASS_A01_CLOSED`(잔여 Finding 없음)** 판정을 받았다. 이 판정은 해당 Delta에 한정되며 GitHub 공식 Review 등록과 구분한다. 실제 Repository의 `git apply --check`와 Jira G3 E2E는 검증 증거가 없어 **NOT_RUN**이다. **PR #45의 최종 Merge 여부와 Merge Commit은 [GitHub PR #45](https://github.com/ranikun-labs/harness-foundation-docs/pull/45)에서 확인한다.** 문서 Merge는 Jira Target 전환·Legacy 제거·AWS 리소스 생성 승인과 별개다.
