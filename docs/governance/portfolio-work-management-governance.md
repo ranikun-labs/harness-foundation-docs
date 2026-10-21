@@ -43,7 +43,7 @@ supporting_architecture_inputs:
   - source-inputs/Carelog-Finance-Dev-Harness-공통-MSA-플랫폼-설계-v2.md
 ---
 
-# Ranikun Labs Portfolio Work Management Governance v1.2 — main 발효 / Jira G1 미실행
+# Ranikun Labs Portfolio Work Management Governance v1.2 — main 발효 / Jira 실행 상태는 Current Projection 참조
 
 ## 1. 목적과 상태
 
@@ -61,8 +61,9 @@ supporting_architecture_inputs:
 최종 승인 메타데이터 HEAD `73873713`의 Sol 독립 Delta PASS와 별도 Owner Merge 승인을 거쳐
 [PR #38](https://github.com/ranikun-labs/harness-foundation-docs/pull/38)을 **2026-10-15 15:03 KST**에
 [일반 Merge Commit `3faf402a`](https://github.com/ranikun-labs/harness-foundation-docs/commit/3faf402a8603aa87449070ba0833b862df46bd3f)으로 `main`에 반영했다.
-현재 `decision_status: accepted` / `document_status: accepted` /
-`effective_from: "2026-10-15T15:03:00+09:00"`으로 정책은 발효됐지만 **Jira Admin·이슈 이전·Pilot은 미실행**이다.
+**2026-10-15 정책 발효 당시** `decision_status: accepted` / `document_status: accepted` /
+`effective_from: "2026-10-15T15:03:00+09:00"`이었고, **그 시점의 Jira Admin·이슈 이전·Pilot은 미실행**이었다.
+**2026-10-21 G1·G2 실행 현황은 [Current Status Projection](jira-g2-migration-status-projection-2026-10-21.md)을 따른다.**
 기존 v1.1의 승인 기록은 역사적 근거로 보존한다.
 
 Architecture 정책은 이 문서가 재정의하지 않는다. 적용 우선순위는 다음과
@@ -145,8 +146,9 @@ Workstream/Component/Area 계약의 중첩을 해소한다. 상세 옵션·이�
   [Taxonomy §2.1](jira-field-taxonomy.md)에 따라 보존한다. 제품별 집계 필요 시
   별도 `Affected Products` 필드를 승인한다. **RPL-51의 대표 Product는 G0 Owner
   승인으로 `platform-foundation`**, 영향 Product는 `gateway` / `identity` /
-  `carelog`로 기록한다. 이는 실제 Jira 이슈·필드 수정 승인이 아니며
-  RPL-51의 Component 대표값은 아직 결정되지 않았다.
+  `carelog`로 기록한다. **이 G0 승인만으로는** 실제 Jira 이슈·필드 수정이 승인되지 않았으며,
+  **2026-10-15 G0 당시** RPL-51 Component 대표값은 미결정이었다.
+  **2026-10-21 Batch 3**에서는 별도 Owner 승인 후 `backend`가 저장·검증됐다([현재 Projection](jira-g2-migration-status-projection-2026-10-21.md)).
 - Jira 프로젝트는 하나의 `RPL`을 유지하며, Product마다 프로젝트를 생성하지 않는다.
 - Subtask/Story/Tech Debt의 생성 메타데이터에 현행 Product·Component·Labels가 노출되지 않는다.
   모든 Issue Type에 전역 필수화를 가정하지 않으며, 유형별 지원 여부·Parent 해석 규칙은
@@ -378,7 +380,9 @@ Canonical Reference를 포함해야 한다. Confluence가 ADR, Contract, Jira
 
 ## 11. Jira Taxonomy Rollout Plan (정책 승인·실행 분리)
 
-**현재 상태: Owner 정책 승인·main 병합 완료(2026-10-15 15:03 KST) / Jira Admin·이슈 데이터 미변경.**
+**2026-10-15 정책 발효 시점의 역사적 상태:** Owner 정책 승인·main 병합 완료(2026-10-15 15:03 KST) / 당시 Jira Admin·이슈 데이터 미변경.
+
+> **2026-10-21 현재 실행 Projection:** G1 신규 Target 필드 생성·검증, G2 Target 24건 저장(이력 확인 21, UNKNOWN_ORIGIN 3), 미입력 94건(완료 76, 미완료 18). RPL-51의 대표 Component는 별도 Batch 3에서 `backend`로 검증. G3 Cutover 미승인·Legacy 권위 유지. 세부 결과는 [Jira G2 2026-10-21 Current Status Projection](jira-g2-migration-status-projection-2026-10-21.md)을 따른다.
 
 - **G0 Contract**: [G0 Owner 5개 결정](jira-taxonomy-g0-owner-decision-2026-10-15.md)과 [전체 정책 최종 승인](jira-governance-owner-approval-2026-10-15.md)은 별도 사건이다. 최종 Sol Delta PASS·Owner Merge 승인 후 [PR #38](https://github.com/ranikun-labs/harness-foundation-docs/pull/38)이 일반 Merge Commit으로 병합돼 정책은 발효됐다. **그러나 G1~G3 Cutover 이전 대상의 실제 Jira 분류 권위는 기존 Legacy 필드**이며, 문서 병합만으로 Jira Admin 설정이 변경되지 않는다.
 - **G1 Admin**: 실제 Jira Field·Option ID, Issue Type별 화면/필수 여부,
