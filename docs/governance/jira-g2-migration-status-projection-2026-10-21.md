@@ -69,4 +69,4 @@ Jira RPL 전체 **118건**. Target Product+Component 동시 저장 **24건**, Ta
 
 ## 검증/제약
 
-이 문서는 Source 변경 전 **초안**이다. GitHub 전체 텍스트 diff에 대한 `git apply --check`, 별도 Human/Agent 독립 Review, Jira G3 E2E는 현재 NOT_RUN. 문서 PR Merge는 별도 Owner 승인 필요.
+이 Projection은 Governance **Draft PR #45로 제출된 초안**이며, `main`에 Merge되지 않았다. 원본 Patch의 strict hunk-match 검사는 완료되었으나 실제 Repository에서의 `git apply --check`, 별도 Human/Agent 독립 Review, Jira G3 E2E는 현재 NOT_RUN. 문서 PR Merge는 별도 Owner 승인 필요.
