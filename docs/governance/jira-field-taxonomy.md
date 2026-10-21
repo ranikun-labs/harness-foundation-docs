@@ -24,9 +24,9 @@ related_documents:
   - docs/governance/jira-governance-owner-approval-2026-10-15.md
 ---
 
-# Jira Field Taxonomy & AI CRUD Gate — v1.0 (main 발효 / Jira G1 미실행)
+# Jira Field Taxonomy & AI CRUD Gate — v1.0 (정책 main 발효 / Jira 실행 상태는 Current Projection 참조)
 
-> **Owner 최종 승인과 Sol Delta PASS를 거쳐 [PR #38](https://github.com/ranikun-labs/harness-foundation-docs/pull/38)이 [Merge Commit `3faf402a`](https://github.com/ranikun-labs/harness-foundation-docs/commit/3faf402a8603aa87449070ba0833b862df46bd3f)으로 2026-10-15 15:03 KST `main`에 병합되어 정책 발효됐다.** [전체 Owner 승인](jira-governance-owner-approval-2026-10-15.md)과 [G0 승인](jira-taxonomy-g0-owner-decision-2026-10-15.md)은 별도 근거다. **정책 발효 ≠ Jira Field/Option 적용·Issue Migration·Pilot 완료.** `implementation_status: not_started` 및 G1~G4 Gate를 유지한다.
+> **Owner 최종 승인과 Sol Delta PASS를 거쳐 [PR #38](https://github.com/ranikun-labs/harness-foundation-docs/pull/38)이 [Merge Commit `3faf402a`](https://github.com/ranikun-labs/harness-foundation-docs/commit/3faf402a8603aa87449070ba0833b862df46bd3f)으로 2026-10-15 15:03 KST `main`에 병합되어 정책 발효됐다.** [전체 Owner 승인](jira-governance-owner-approval-2026-10-15.md)과 [G0 승인](jira-taxonomy-g0-owner-decision-2026-10-15.md)은 별도 근거다. **정책 발효 ≠ Jira Field/Option 적용·Issue Migration·Pilot 완료.** `implementation_status: not_started`는 **2026-10-15 승인 당시 정책 메타데이터의 역사 기록**으로 보존하며, G1~G4의 개별 승인 Gate는 유지한다. **2026-10-21 G1·G2 실행 결과는 [Current Status Projection](jira-g2-migration-status-projection-2026-10-21.md)을 따른다.**
 
 ## 1. 목적과 책임
 
@@ -40,7 +40,7 @@ related_documents:
 - **Area**는 기존 Governance의 기술·책임 영역 목록이다. `Component`·`Concern`과 중복하므로 별도 Jira 필수 필드로 확대하지 않고 기존 역사적 기록은 보존한다. 필요한 경우 기술 검색은 Component/Concern을 우선한다.
 - **Affected Products**의 별도 다중 선택 필드 신설은 보류한다. 대신 여러 제품에 걸친 Issue는 §2.1의 **기계적으로 판독 가능한 영향 기록 계약**을 사용한다. Issue Link는 실제 Task 관계만 표현하며, 그 자체로 Product 영향을 증명하지 않는다.
 
-## 2. Product: Owner 승인된 논리적 허용값 (Jira Dropdown 미적용)
+## 2. Product: Owner 승인된 논리적 허용값 (2026-10-15 G0 당시 Jira Dropdown 미적용)
 
 | 값 | 논리적 책임 | 유의사항 |
 |---|---|---|
@@ -79,10 +79,10 @@ Affected Products:
 - Affected Products는 **정규화된 Product 식별자 + 관계 의미 + 근거**를 최소 하나의 독립된 항목으로 기록하며, 중복을 제거한다. **Owner Product 자체는 Affected 목록에서 제외**한다.
 - Related Issue는 실제 구체적 의존·전환 Task가 존재할 때만 연결한다. 관계가 없어도 `none; reason`을 남겨 부재를 숨기지 않는다.
 - 변환/정리 시 원본 복수 Product 값이 나타낸 영향이 위 기록으로 전부 보존됐는지 확인한다. **원본 복수값 제거는 Human 승인 및 필드·Description 스냅샷, 보존 검증 이후만 허용**한다.
-- 대표 사례 `RPL-51`: **G0 Owner 결정에 의해 대표 Product는 `platform-foundation`으로 승인**됐다. 영향 Product는 `gateway`(`RPL-53`), `identity`(`RPL-54`), `carelog`(`RPL-55`)이며, 각 관계 의미·현행 Jira Link·Evidence는 실제 이전 시 재검증한다. 이는 **대표 Product 후보 승인이지 현행 `RPL-51` 이슈 수정/이전 승인이 아니다.** 현재 Product/Component 다중값과 Description을 보존하며 Pilot·스냅샷·Owner 승인 전 삭제하지 않는다. **RPL-51 Component 대표값은 미결정**. 다른 Cross-product Epic은 개별 Human Owner 결정이 필요하다.
-- 일반적인 Cross-product Issue의 Owner 결정이 아직 없는 경우 후보값은 제안이며 Jira에 쓰지 않는다. RPL-51의 승인된 대표값도 **현재 단계에서 Jira 원격 쓰기 권한을 부여하지 않는다.** 이는 추가 필드 생성 없이 시작할 수 있는 표현 계약 후보이고, 제품별 검색·정규 관계가 운영 필수로 확인되면 `Affected Products` 필드 도입을 별도 결정한다.
+- 대표 사례 `RPL-51`: **G0 Owner 결정에 의해 대표 Product는 `platform-foundation`으로 승인**됐다. 영향 Product는 `gateway`(`RPL-53`), `identity`(`RPL-54`), `carelog`(`RPL-55`)이며, 각 관계 의미·현행 Jira Link·Evidence는 실제 이전 시 재검증한다. **2026-10-15 G0 당시** 이는 대표 Product 후보 승인일 뿐 `RPL-51` Jira 수정/이전 승인이 아니었다. 당시 원본 Product/Component 다중값과 Description은 Pilot·Snapshot·별도 Owner 승인 없이 삭제할 수 없었으며 **Component 대표값도 미결정**이었다. **2026-10-21 Batch 3**에서는 별도 Owner 승인·Before/After 증거와 Changelog `10974`에 따라 `platform-foundation/backend` Target 저장·검증을 완료했다([현재 Projection](jira-g2-migration-status-projection-2026-10-21.md)). 다른 Cross-product Epic은 개별 Human Owner 결정이 필요하다.
+- 일반적인 Cross-product Issue의 Owner 결정이 아직 없는 경우 후보값은 제안이며 Jira에 쓰지 않는다. RPL-51의 **G0 대표값 승인 자체는** Jira 원격 쓰기 권한을 부여하지 않는다. 이는 추가 필드 생성 없이 시작할 수 있는 표현 계약 후보이고, 제품별 검색·정규 관계가 운영 필수로 확인되면 `Affected Products` 필드 도입을 별도 결정한다.
 
-## 3. Component: G0 Owner 승인 5개 (단일 Dropdown 미적용)
+## 3. Component: G0 Owner 승인 5개 (2026-10-15 G0 당시 단일 Dropdown 미적용)
 
 | 값 | 기준 |
 |---|---|
@@ -94,7 +94,7 @@ Affected Products:
 
 `gateway`, `identity`, `oauth`, `journal` 등 도메인/서브시스템 이름을 Component 옵션으로 추가하지 않는다. **AI 제품의 API 구현은 Component=backend**, 모델 평가·프롬프트 실험은 Component=ai로 분류한다. 한 Epic이 여러 영역을 포함하면 대표 영역을 택하거나 독립적으로 관리해야 하는 하위 Issue로 분리한다.
 
-## 4. Concern: G0 Owner 승인 14개 (다중 선택 미적용)
+## 4. Concern: G0 Owner 승인 14개 (2026-10-15 G0 당시 다중 선택 미적용)
 
 `auth`, `security`, `idempotency`, `concurrency`, `consistency`,
 `integration`, `migration`, `cutover`, `observability`, `reliability`,

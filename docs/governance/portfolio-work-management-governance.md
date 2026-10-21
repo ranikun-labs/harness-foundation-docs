@@ -43,7 +43,7 @@ supporting_architecture_inputs:
   - source-inputs/Carelog-Finance-Dev-Harness-공통-MSA-플랫폼-설계-v2.md
 ---
 
-# Ranikun Labs Portfolio Work Management Governance v1.2 — main 발효 / Jira G1 미실행
+# Ranikun Labs Portfolio Work Management Governance v1.2 — main 발효 / Jira 실행 상태는 Current Projection 참조
 
 ## 1. 목적과 상태
 
@@ -61,8 +61,9 @@ supporting_architecture_inputs:
 최종 승인 메타데이터 HEAD `73873713`의 Sol 독립 Delta PASS와 별도 Owner Merge 승인을 거쳐
 [PR #38](https://github.com/ranikun-labs/harness-foundation-docs/pull/38)을 **2026-10-15 15:03 KST**에
 [일반 Merge Commit `3faf402a`](https://github.com/ranikun-labs/harness-foundation-docs/commit/3faf402a8603aa87449070ba0833b862df46bd3f)으로 `main`에 반영했다.
-현재 `decision_status: accepted` / `document_status: accepted` /
-`effective_from: "2026-10-15T15:03:00+09:00"`으로 정책은 발효됐지만 **Jira Admin·이슈 이전·Pilot은 미실행**이다.
+**2026-10-15 정책 발효 당시** `decision_status: accepted` / `document_status: accepted` /
+`effective_from: "2026-10-15T15:03:00+09:00"`이었고, **그 시점의 Jira Admin·이슈 이전·Pilot은 미실행**이었다.
+**2026-10-21 G1·G2 실행 현황은 [Current Status Projection](jira-g2-migration-status-projection-2026-10-21.md)을 따른다.**
 기존 v1.1의 승인 기록은 역사적 근거로 보존한다.
 
 Architecture 정책은 이 문서가 재정의하지 않는다. 적용 우선순위는 다음과
@@ -145,8 +146,9 @@ Workstream/Component/Area 계약의 중첩을 해소한다. 상세 옵션·이�
   [Taxonomy §2.1](jira-field-taxonomy.md)에 따라 보존한다. 제품별 집계 필요 시
   별도 `Affected Products` 필드를 승인한다. **RPL-51의 대표 Product는 G0 Owner
   승인으로 `platform-foundation`**, 영향 Product는 `gateway` / `identity` /
-  `carelog`로 기록한다. 이는 실제 Jira 이슈·필드 수정 승인이 아니며
-  RPL-51의 Component 대표값은 아직 결정되지 않았다.
+  `carelog`로 기록한다. **이 G0 승인만으로는** 실제 Jira 이슈·필드 수정이 승인되지 않았으며,
+  **2026-10-15 G0 당시** RPL-51 Component 대표값은 미결정이었다.
+  **2026-10-21 Batch 3**에서는 별도 Owner 승인 후 `backend`가 저장·검증됐다([현재 Projection](jira-g2-migration-status-projection-2026-10-21.md)).
 - Jira 프로젝트는 하나의 `RPL`을 유지하며, Product마다 프로젝트를 생성하지 않는다.
 - Subtask/Story/Tech Debt의 생성 메타데이터에 현행 Product·Component·Labels가 노출되지 않는다.
   모든 Issue Type에 전역 필수화를 가정하지 않으며, 유형별 지원 여부·Parent 해석 규칙은
