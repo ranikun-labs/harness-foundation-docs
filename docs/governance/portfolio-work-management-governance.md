@@ -380,7 +380,7 @@ Canonical Reference를 포함해야 한다. Confluence가 ADR, Contract, Jira
 
 ## 11. Jira Taxonomy Rollout Plan (정책 승인·실행 분리)
 
-**경량 실행 경로(승인 전 제안):** 소규모 RPL의 **Owner 승인형 G2 이전·수동 G3 Create**에서는 [Taxonomy §8.0](jira-field-taxonomy.md)에 따라 별도 Registry 서비스 대신 **단일 버전 관리 CSV/JSON 대장, 사전 Snapshot, Jira Changelog, 저장 후 전수 검증**을 사용한다. 필드 Required/Default 조정·지원 유형·시험 Create·권위 전환·Rollback 검증은 유지한다. **이번 문서 PR 병합과 실제 Jira Write/G3 Cutover 승인은 별개**이며, RPL-111 계약 변경·완료 76건 Backfill·G4 Legacy 삭제는 범위 밖이다. 무인/대량 Create는 Taxonomy §8.1의 강화 계약을 따른다.
+**경량 실행 경로(승인 전 제안):** 소규모 RPL의 **소량·단일 Writer·직렬 실행·Owner 감독형 수동 작업 또는 Owner 승인형 AI Jira Writer 작업**에 의한 G2 이전·G3 Create에서는 [Taxonomy §8.0](jira-field-taxonomy.md)에 따라 별도 Registry 서비스 대신 **단일 버전 관리 CSV/JSON 대장, 사전 Snapshot, Jira Changelog, 저장 후 전수 검증**을 사용한다. 필드 Required/Default 조정·지원 유형·시험 Create·권위 전환·Rollback 검증은 유지한다. **이번 문서 PR 병합과 실제 Jira Write/G3 Cutover 승인은 별개**이며, RPL-111 계약 변경·완료 76건 Backfill·G4 Legacy 삭제는 범위 밖이다. 무인·동시·복수 Writer·대량 Create는 Taxonomy §8.1의 강화 계약을 따른다.
 
 **2026-10-15 정책 발효 시점의 역사적 상태:** Owner 정책 승인·main 병합 완료(2026-10-15 15:03 KST) / 당시 Jira Admin·이슈 데이터 미변경.
 
