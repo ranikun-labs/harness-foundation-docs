@@ -107,6 +107,8 @@ Affected Products:
 
 ## 5. Jira 현황과 마이그레이션 근거 (READ-ONLY, 2026-10-15)
 
+> 이 절의 **111개**는 2026-10-15 당시의 Historical Audit Snapshot으로 보존한다. 2026-10-21 실제 전체 118개, Target 24개(21 evidence-supported + 3 UNKNOWN_ORIGIN), G3 미승인 및 RPL-51 Batch 3 `backend` 검증은 [Current Status Projection](jira-g2-migration-status-projection-2026-10-21.md)에 기록한다. 과거 필드 개수·기본값·미결정 상태는 현재 결론으로 재해석하지 않는다.
+
 RPL 이슈 **111개** 조회 결과:
 
 | 현행 필드 | Field ID | 타입 / 실측 |

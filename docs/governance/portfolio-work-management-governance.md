@@ -378,7 +378,9 @@ Canonical Reference를 포함해야 한다. Confluence가 ADR, Contract, Jira
 
 ## 11. Jira Taxonomy Rollout Plan (정책 승인·실행 분리)
 
-**현재 상태: Owner 정책 승인·main 병합 완료(2026-10-15 15:03 KST) / Jira Admin·이슈 데이터 미변경.**
+**2026-10-15 정책 발효 시점의 역사적 상태:** Owner 정책 승인·main 병합 완료(2026-10-15 15:03 KST) / 당시 Jira Admin·이슈 데이터 미변경.
+
+> **2026-10-21 현재 실행 Projection:** G1 신규 Target 필드 생성·검증, G2 Target 24건 저장(이력 확인 21, UNKNOWN_ORIGIN 3), 미입력 94건(완료 76, 미완료 18). RPL-51의 대표 Component는 별도 Batch 3에서 `backend`로 검증. G3 Cutover 미승인·Legacy 권위 유지. 세부 결과는 [Jira G2 2026-10-21 Current Status Projection](jira-g2-migration-status-projection-2026-10-21.md)을 따른다.
 
 - **G0 Contract**: [G0 Owner 5개 결정](jira-taxonomy-g0-owner-decision-2026-10-15.md)과 [전체 정책 최종 승인](jira-governance-owner-approval-2026-10-15.md)은 별도 사건이다. 최종 Sol Delta PASS·Owner Merge 승인 후 [PR #38](https://github.com/ranikun-labs/harness-foundation-docs/pull/38)이 일반 Merge Commit으로 병합돼 정책은 발효됐다. **그러나 G1~G3 Cutover 이전 대상의 실제 Jira 분류 권위는 기존 Legacy 필드**이며, 문서 병합만으로 Jira Admin 설정이 변경되지 않는다.
 - **G1 Admin**: 실제 Jira Field·Option ID, Issue Type별 화면/필수 여부,
