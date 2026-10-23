@@ -18,6 +18,15 @@ source_inputs: []
 
 # Repository and Service Boundaries
 
+> **2026-10-23 구현 현황 Projection — Accepted ADR 불변**  
+> 현재 `platform-services`에는 독립 WebFlux Gateway와 단일 JVM Platform Core의 Identity·Shared AI 논리 모듈 소스가 구현돼 있다. RPL-53(Gateway 추출)·RPL-54(Identity 추출)는 Jira 완료, RPL-55(Carelog 실제 G4 Cutover/E2E)는 진행 중이다.  
+> **비운영 3서비스 결합 테스트:** 실제 Spring Gateway → Platform Core Identity → Carelog CRM을 독립 Docker에서 기동한 [RPL-55 PR #35](https://github.com/ranikun-labs/platform-services/pull/35) 고정 HEAD `ac5c6e8255a0274ddd227f3a06759cf909d6e7b3`의 [Actions #39918713612](https://github.com/ranikun-labs/platform-services/actions/runs/39918713612)에서 ID/PW 로그인, Product Claims, 고객 API, 타 조직 고객·위조 헤더 방어 등 **16개 PASS/0 FAIL**. 합성 사용자·Fake Kakao를 사용하며 별도 독립 리뷰와 PR 병합은 미완료다.  
+> **G4 BuildKit·Healthcheck 실패 교정 기록:** [Backend Foundation CI/Probe Playbook](./backend-service-foundation/runtime-healthcheck-ci-failure-playbook.md). 과거 Run FAIL 3건은 환경/Probe 문제로 분류되고 후속 성공; 운영 Healthcheck 안전성은 미검증.  
+> **G4 증거 보존·선택 실행:** [실제 E2E 기록 및 기능별 테스트 가이드](https://github.com/ranikun-labs/platform-services/blob/f2cc25f650203f22bef7e665cbe91ed76bfa22fd/docs/testing/evidence/rpl-55-g4-e2e-baseline-and-test-selection-20261023.md). E2E 기준선은 `ac5c6e8` / Run #39918713612 **16/16 PASS**(약 8분 43초). 이후 작은 기능 변경은 해당 Unit/Integration 테스트 우선; 전체 G4 E2E는 인증/계약 변경·여러 서비스 Fan-in·릴리스 준비 시 명시 실행. [선택 CI 검증 #39923556931](https://github.com/ranikun-labs/platform-services/actions/runs/39923556931)은 경량 검사 PASS·전체 E2E skipped로, G4 재실행 증거가 아니다.  
+> Finance F5 Shared Identity Consumer·Carelog 실 운영 Cutover·데이터 Freeze/복구·Shared AI Product Consumer/Production은 완료되지 않았다.  
+> [ADR-0017](../adr/ADR-0017-shared-platform-gateway-identity-physicalization.md) · [ADR-0018](../adr/ADR-0018-shared-ai-platform-core-placement.md) · [ADR-0020](../adr/ADR-0020-shared-platform-postgresql-schema-ownership.md)은 승인된 결정 정본이고, 본 문단은 `Source/Runtime/Production` 현황 투영일 뿐 Decision 변경이 아니다. [Confluence Shared Platform](https://ranikunlabs.atlassian.net/wiki/spaces/RLAB/pages/163944) / [System Landscape](https://ranikunlabs.atlassian.net/wiki/spaces/RLAB/pages/2129924)는 파생 탐색 문서다.
+
+
 ## 1. 문서 목적
 
 이 문서는 `oh-my-ai` 제품군의 논리적 도메인 경계와 목표 Git Repository, 배포 단위, 데이터 소유권을 정의한다.
@@ -712,7 +721,7 @@ Shared Identity의 독립 논리 경계는 채택한다.
 Finance Harness가 두 번째 실제 Product Consumer가 됨에 따라 물리 분리 Trigger는
 충족됐고 `ADR-0017`이 Target Repository와 Process를 승인했다. Repository container는
 존재하며 Platform Core Identity code가 있지만 RPL-54 cutover와 production Runtime은
-완료되지 않았고 RPL-54 전에는 추출 완료를 주장하지 않는다.
+완료되지 않았다. 2026-10-23 기준 RPL-54의 소스 추출은 완료됐지만 실제 Carelog Cutover/Production Runtime 검증은 RPL-55에서 남아 있다.
 
 Shared Identity 구현은 V1 또는 V2 Local Invocation PoC의 선결 조건이 아니다.
 
@@ -963,9 +972,8 @@ Target Repository and Deployment Units
 이는 executable Product route, Database schema/migration, Production deployment 또는
 traffic cutover 승인을 의미하지 않는다.
 
-Carelog CRM Server는 기존 Product Service이며 현재 Gateway와 Auth/OAuth/Identity의
-Implementation Host다. Shared Gateway·Identity 추출은 RPL-53·RPL-54의
-`planned / not_started` 작업이다.
+Carelog CRM Server는 기존 Product Service이며 구 Gateway/Auth 구현은 안전한 전환·롤백 근거 확보 전까지 유지한다.
+RPL-53 Shared Gateway와 RPL-54 Shared Identity의 소스 추출은 완료됐지만 RPL-55 Carelog 실런타임 Cutover와 회귀 검증은 진행 중이다.
 
 RPL-107은 `platform-core/shared-ai`의 첫 synchronous OpenAI model execution을
 `platform-services/main`에 구현한 별도 Slice다. 이는 independent AI Runtime
