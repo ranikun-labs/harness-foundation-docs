@@ -27,6 +27,12 @@ source_inputs: []
 
 # Product Architecture Master
 
+> **2026-10-23 구현 현황 Projection — Accepted ADR 불변**  
+> 현재 `platform-services`에는 독립 WebFlux Gateway와 단일 JVM Platform Core의 Identity·Shared AI 논리 모듈 소스가 구현돼 있다. RPL-53(Gateway 추출)·RPL-54(Identity 추출)는 Jira 완료, RPL-55(Carelog 실제 G4 Cutover/E2E)는 진행 중이다.  
+> Finance F5 Shared Identity Consumer·Carelog 실 운영 Cutover·Shared AI Product Consumer/Production은 완료되지 않았다.  
+> [ADR-0017](../adr/ADR-0017-shared-platform-gateway-identity-physicalization.md) · [ADR-0018](../adr/ADR-0018-shared-ai-platform-core-placement.md) · [ADR-0020](../adr/ADR-0020-shared-platform-postgresql-schema-ownership.md)은 승인된 결정 정본이고, 본 문단은 `Source/Runtime/Production` 현황 투영일 뿐 Decision 변경이 아니다. [Confluence Shared Platform](https://ranikunlabs.atlassian.net/wiki/spaces/RLAB/pages/163944) / [System Landscape](https://ranikunlabs.atlassian.net/wiki/spaces/RLAB/pages/2129924)는 파생 탐색 문서다.
+
+
 ## 1. 문서 목적
 
 이 문서는 `oh-my-ai` 제품군의 최상위 제품·아키텍처 기준본이다.
@@ -1679,7 +1685,7 @@ Finance Harness (Backend Service Foundation)
 
 Carelog
 = 기존 Product Service. §7.7(repository-service-boundaries.md)에 등록됨.
-  현재 Gateway·Auth/OAuth/Identity 구현 Host이며 RPL-53~55는 planned / not_started.
+  기존 Carelog Gateway/Auth 구현은 Cutover 이전 호환·롤백 경로로 남아 있다. RPL-53·RPL-54의 Shared Gateway·Identity 소스 추출은 완료됐고, RPL-55의 실런타임 Cutover/전체 회귀는 미완료다.
   oh-my-ai V1/V2/V3 Phase 1-6 타임라인(§26)과는 무관한 별도 현재 상태.
 ```
 

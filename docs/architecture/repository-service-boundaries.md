@@ -18,6 +18,12 @@ source_inputs: []
 
 # Repository and Service Boundaries
 
+> **2026-10-23 구현 현황 Projection — Accepted ADR 불변**  
+> 현재 `platform-services`에는 독립 WebFlux Gateway와 단일 JVM Platform Core의 Identity·Shared AI 논리 모듈 소스가 구현돼 있다. RPL-53(Gateway 추출)·RPL-54(Identity 추출)는 Jira 완료, RPL-55(Carelog 실제 G4 Cutover/E2E)는 진행 중이다.  
+> Finance F5 Shared Identity Consumer·Carelog 실 운영 Cutover·Shared AI Product Consumer/Production은 완료되지 않았다.  
+> [ADR-0017](../adr/ADR-0017-shared-platform-gateway-identity-physicalization.md) · [ADR-0018](../adr/ADR-0018-shared-ai-platform-core-placement.md) · [ADR-0020](../adr/ADR-0020-shared-platform-postgresql-schema-ownership.md)은 승인된 결정 정본이고, 본 문단은 `Source/Runtime/Production` 현황 투영일 뿐 Decision 변경이 아니다. [Confluence Shared Platform](https://ranikunlabs.atlassian.net/wiki/spaces/RLAB/pages/163944) / [System Landscape](https://ranikunlabs.atlassian.net/wiki/spaces/RLAB/pages/2129924)는 파생 탐색 문서다.
+
+
 ## 1. 문서 목적
 
 이 문서는 `oh-my-ai` 제품군의 논리적 도메인 경계와 목표 Git Repository, 배포 단위, 데이터 소유권을 정의한다.
@@ -712,7 +718,7 @@ Shared Identity의 독립 논리 경계는 채택한다.
 Finance Harness가 두 번째 실제 Product Consumer가 됨에 따라 물리 분리 Trigger는
 충족됐고 `ADR-0017`이 Target Repository와 Process를 승인했다. Repository container는
 존재하며 Platform Core Identity code가 있지만 RPL-54 cutover와 production Runtime은
-완료되지 않았고 RPL-54 전에는 추출 완료를 주장하지 않는다.
+완료되지 않았다. 2026-10-23 기준 RPL-54의 소스 추출은 완료됐지만 실제 Carelog Cutover/Production Runtime 검증은 RPL-55에서 남아 있다.
 
 Shared Identity 구현은 V1 또는 V2 Local Invocation PoC의 선결 조건이 아니다.
 
@@ -963,9 +969,8 @@ Target Repository and Deployment Units
 이는 executable Product route, Database schema/migration, Production deployment 또는
 traffic cutover 승인을 의미하지 않는다.
 
-Carelog CRM Server는 기존 Product Service이며 현재 Gateway와 Auth/OAuth/Identity의
-Implementation Host다. Shared Gateway·Identity 추출은 RPL-53·RPL-54의
-`planned / not_started` 작업이다.
+Carelog CRM Server는 기존 Product Service이며 구 Gateway/Auth 구현은 안전한 전환·롤백 근거 확보 전까지 유지한다.
+RPL-53 Shared Gateway와 RPL-54 Shared Identity의 소스 추출은 완료됐지만 RPL-55 Carelog 실런타임 Cutover와 회귀 검증은 진행 중이다.
 
 RPL-107은 `platform-core/shared-ai`의 첫 synchronous OpenAI model execution을
 `platform-services/main`에 구현한 별도 Slice다. 이는 independent AI Runtime
