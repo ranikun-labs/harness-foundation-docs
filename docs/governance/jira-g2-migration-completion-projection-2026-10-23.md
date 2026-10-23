@@ -52,7 +52,7 @@ RPL 전체 **118개 Jira 이슈의 신규 Target Product·Component가 모두 �
 |---|---|---|
 | **G2 데이터 저장** | **PASS — 118/118** | 별도 관리자·증거 검수 후 G2 Governance Closure |
 | **관리자 Create 메타데이터** | **REVIEW_PENDING** | Story/Subtask `issuetype.required` 전후 `true→false` 원인·실제 생성 의미 확인. 사용자 조작으로 Required/Default를 변경했다는 증거 없음 |
-| **G3 Task Target-only Create** | **BLOCKED** | Task 현행 Legacy Product/Component/Labels `required=true`; 기존 Product·Component 다중 기본값 존재. 시작일·담당자·기한 등 별도 필수 조건도 남음. Admin 범위·영향·승인 Gate 필요 |
+| **G3 Task Target-only Create** | **BLOCKED** | Task 현행 Legacy Product/Component/Labels `required=true`; Legacy Product·Component에 복수 기본값 있음. **신규 Target Product/Component도 `required=false`여서 현재 G3 Trusted Gate가 요구하는 `required=true`와 불일치**. 시작일·담당자·기한 등 별도 필수 조건도 남음. Task Work Type 한정 Admin 범위·다른 유형 영향·승인 Gate 필요 |
 | **G3 Connector 실연동** | **CHANGES_REQUIRED_BEFORE_LIVE** | 기존 PR [#83](https://github.com/ranikun-labs/oh-my-ai/pull/83) → [#84](https://github.com/ranikun-labs/oh-my-ai/pull/84) Draft. 이전에는 실제 Atlassian Rovo `structuredContent.issues.nodes/pageInfo`, API `self` 도메인·`webUrl` 정규화가 누락됐으나, [PR #84 최신 HEAD `9484ff2`](https://github.com/ranikun-labs/oh-my-ai/commit/9484ff255fab87790be837bc304fb797e8c4b1a7)에서 해당 2개 파일을 보완. Codex Cloud 실행 보고 기준 Native 5 Suite·회귀 118개 PASS. **실제 운영 Jira Connector 인증/InvokeTool E2E·Create는 계속 NOT_VERIFIED** |
 | **Read Authority / G3 Cutover** | **NOT_APPROVED** | 기존 Legacy가 Read Authority. `RPL-112/113/114`는 출처 미증명으로 격리. Story/Subtask 포함 118건 전체 신규 권위 전환은 별도 Reader 타입 지원·Origin·증거 Gate 필요 |
 | **G4 Legacy 삭제** | **NOT_APPROVED** | 신규 생성·Reader/Board/Automation 전환·복구 검증 이후 별도 승인 |
