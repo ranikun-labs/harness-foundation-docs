@@ -20,7 +20,8 @@ source_inputs: []
 
 > **2026-10-23 구현 현황 Projection — Accepted ADR 불변**  
 > 현재 `platform-services`에는 독립 WebFlux Gateway와 단일 JVM Platform Core의 Identity·Shared AI 논리 모듈 소스가 구현돼 있다. RPL-53(Gateway 추출)·RPL-54(Identity 추출)는 Jira 완료, RPL-55(Carelog 실제 G4 Cutover/E2E)는 진행 중이다.  
-> Finance F5 Shared Identity Consumer·Carelog 실 운영 Cutover·Shared AI Product Consumer/Production은 완료되지 않았다.  
+> **비운영 3서비스 결합 테스트:** 실제 Spring Gateway → Platform Core Identity → Carelog CRM을 독립 Docker에서 기동한 [RPL-55 PR #35](https://github.com/ranikun-labs/platform-services/pull/35) 고정 HEAD `ac5c6e8255a0274ddd227f3a06759cf909d6e7b3`의 [Actions #39918713612](https://github.com/ranikun-labs/platform-services/actions/runs/39918713612)에서 ID/PW 로그인, Product Claims, 고객 API, 타 조직 고객·위조 헤더 방어 등 **16개 PASS/0 FAIL**. 합성 사용자·Fake Kakao를 사용하며 별도 독립 리뷰와 PR 병합은 미완료다.  
+> Finance F5 Shared Identity Consumer·Carelog 실 운영 Cutover·데이터 Freeze/복구·Shared AI Product Consumer/Production은 완료되지 않았다.  
 > [ADR-0017](../adr/ADR-0017-shared-platform-gateway-identity-physicalization.md) · [ADR-0018](../adr/ADR-0018-shared-ai-platform-core-placement.md) · [ADR-0020](../adr/ADR-0020-shared-platform-postgresql-schema-ownership.md)은 승인된 결정 정본이고, 본 문단은 `Source/Runtime/Production` 현황 투영일 뿐 Decision 변경이 아니다. [Confluence Shared Platform](https://ranikunlabs.atlassian.net/wiki/spaces/RLAB/pages/163944) / [System Landscape](https://ranikunlabs.atlassian.net/wiki/spaces/RLAB/pages/2129924)는 파생 탐색 문서다.
 
 
