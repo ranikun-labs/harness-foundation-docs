@@ -35,6 +35,7 @@ related_decisions:
   - DEC-064
   - DEC-065
   - DEC-067
+  - DEC-074
 source_inputs:
   - source-inputs/ranikun-platform-enterprise-work-management-governance.md
   - source-inputs/ranikun-platform-ai-session-prompt-pack.md
