@@ -2,9 +2,9 @@
 title: Ranikun Labs Portfolio Work Management Governance
 version: "1.3-proposed"
 document_status: proposed
-decision_status: proposed
-owner_approval_status: pending
-owner_approval_ref: null
+decision_status: approved_pending_effective
+owner_approval_status: approved
+owner_approval_ref: "https://github.com/ranikun-labs/harness-foundation-docs/pull/49#issuecomment-6435342600"
 g0_owner_classification_status: approved
 g0_owner_classification_date: "2026-10-15"
 g0_owner_classification_ref: docs/governance/jira-taxonomy-g0-owner-decision-2026-10-15.md
@@ -17,8 +17,8 @@ reviewers:
 approvers:
   - 박성환
 created_at: "2026-07-29"
-reviewed_at: null
-approved_at: null
+reviewed_at: "2026-10-27"
+approved_at: "2026-10-27"
 effective_from: null
 merge_commit_sha: null
 merged_at: null
@@ -44,9 +44,9 @@ supporting_architecture_inputs:
   - source-inputs/Carelog-Finance-Dev-Harness-공통-MSA-플랫폼-설계-v2.md
 ---
 
-# Ranikun Labs Portfolio Work Management Governance v1.3 — PROPOSED (main v1.2 유효)
+# Ranikun Labs Portfolio Work Management Governance v1.3 — OWNER APPROVED / NOT_EFFECTIVE (main v1.2 유효)
 
-> **개정 제안, 미발효.** 이 Branch의 v1.3 Pending 메타데이터는 새 제안에만 적용된다. 아래 v1.2의 2026-10-15 승인·병합·발효 기록은 유효한 역사적 근거로 유지한다. 본 Draft는 별도 독립 Reviewer, Owner 최종 승인, Source Merge 및 실제 발효 기록 전까지 효력이 없다.
+> **정책 채택 승인·미발효.** Owner는 2026-10-27 대화에서 v1.3 개정 정책의 최종 채택을 승인했다([승인 범위 및 인계 기록](https://github.com/ranikun-labs/harness-foundation-docs/pull/49#issuecomment-6435342600)). 이 Branch는 승인된 정책의 **아직 미병합 Draft**이며 최신 메타데이터 HEAD 독립 재검수, 별도 Source Merge 승인, 실제 Merge SHA·발효 시각 확인 전까지 효력이 없다. 아래 v1.2의 2026-10-15 승인·병합·발효 이력은 그대로 유지한다.
 > **부분 대체 후보:** DEC-074 (proposed)가 DEC-065의 전사 WIP 상한 3건 항목만 부분 대체한다. 기존 Jira 소유권·세션 안전·독립 검수·Merge/Production Gate는 변경하지 않는다.
 
 ## 1. 목적과 상태
