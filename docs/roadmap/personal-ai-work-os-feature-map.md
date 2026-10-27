@@ -55,6 +55,33 @@ source_refs:
 
 **F6 Full — 통합 업무 오케스트레이션:** F2의 요청 파악·F3의 실행 검수·F4의 승인 범위 내 연속 운영·F5의 도구 연결을 조정해 실제 업무를 진전시킨다. F6 Lite와 달리 실행과 변경이 포함되므로 각각의 Owner·Governance·Writer Gate가 필요하다. **완료 기준:** 복수 업무의 의존·차단·PR 검증·다음 우선순위를 증거로 보고하고, 승인된 범위의 실행과 통합 결과를 명확히 구분해 재현한다.
 
+## 2-3. F4 — AI-driven 연속 운영 (Codex Cloud 우선)
+
+**앞으로 이 운영 방식을 부르는 이름은 F4. AI-driven 연속 운영이다.** 사용자 약속은 “승인된 목표 안에서는 AI가 독립 업무를 이어서 처리하고, Owner는 다른 일을 하다가 30~60분 간격으로 핵심 성과·차단·중요 결정만 확인한다”이다. 여러 Writer를 동시에 돌리는 `/async-batch`는 **F4 안의 병렬 모드**이고, 여러 프로젝트 전체를 조정하는 **F6 통합 업무 오케스트레이션과는 구분**한다.
+
+**권장 실행 방식:** 현재 지원·권한이 확인된 경우 **Codex Cloud의 격리된 작업 공간**을 우선 실행 후보로 사용한다. 한 Objective의 독립된 Primary Jira 작업마다 **별도 작업 공간·작업 지시·변경 파일 영역**을 할당한다. Cloud에서 실제 Subagent 생성 API가 있는지 여부는 환경별로 확인하며, **Cloud의 복수 작업 공간과 한 세션 내부 Subagent 자동 위임은 동일한 기능이라고 가정하지 않는다**. 지원된다면 Cloud 작업 내부의 읽기/분석 및 충돌 없는 세부 작업만 Subagent로 Fan-out한다. 비용·작업량이 작거나 Cloud 도구가 없으면 지원 가능한 현재 실행기 또는 명시적 Handoff를 사용한다.
+
+| 사용자 기준 운영 단계 | 반드시 지킬 조건 | 완료 확인 |
+| --- | --- | --- |
+| **목표 승인** | 기존 Governance·Owner가 승인한 Objective와 범위, Primary Jira 식별. 현재 발효 v1.2 WIP 한도 적용 | Objective·Issue·승인 범위·지원 Runtime 확인 |
+| **병렬 배정** | Git Worktree/Branch/수정 경로가 겹치지 않는 READY만 별도 Writer에 배정. 공유 API·DB·Auth는 Owner·순서 선확정 | 충돌 없는 작업별 Assignment |
+| **연속 처리** | 완료 슬롯에 같은 승인 범위의 다음 READY를 배정. 막힌 업무는 BLOCKED로 격리하고 다른 READY는 진행 | 다음 배정 근거·Checkpoint |
+| **독립 검수** | Writer 자체 PASS, CI PASS, 독립 Reviewer PASS, 통합 E2E PASS를 따로 판단. 변경 HEAD는 재검수 | HEAD·테스트·Finding·Reviewer Evidence |
+| **Owner 검토** | 실제 성과/검증 → 진행/차단 → 다음 READY → 승인 필요한 결정으로 짧게 보고. Merge·정본 승격·배포는 별도 Owner 승인 | 사람이 바로 판단할 한국어 브리핑 |
+
+### 실제 Codex Cloud 첫 검증 작업 (RPL-115, 구현과 검증 별개)
+
+**Pilot 전제:** 현재 ChatGPT 메인 세션의 연결 도구에는 Codex Cloud Task 생성·실행 상태 조회가 없다. **Cloud 환경의 리포지터리 접근·실제 Tool 지원·Owner의 실행 Scope를 확인해야** Cloud Pilot을 시작할 수 있다. 이번 문서나 스케줄 생성만으로 Cloud Task가 실행된 것은 아니다. 별도 Cloud 환경에서 승인된 Pilot이 수행되면 다음 독립 작업으로 나눠 증거를 모은다.
+
+1. **읽기 전용 Runner-A — F4 실행 능력 확인:** Codex Cloud가 `ranikun-labs/oh-my-ai`를 읽고 Node 테스트·환경 정보·Skill Index를 확인할 수 있는지 실측. Runtime·버전·Source SHA·PASS/NOT_RUN 기록. 코드 수정 금지.
+2. **읽기 전용 Runner-B — 충돌·의존성 점검:** RPL-115, 현재 발효 v1.2, 관련 PR의 Branch/Writer/파일 소유권을 확인하고 READY/REVIEW_ONLY/BLOCKED 후보를 작성. Jira/PR 수정 금지.
+3. **구현 Runner-C (별도 착수 Gate 이후):** 기존 RPL-115 Local Fixture/Queue 구현의 Source를 확보하고 **기존 코드 재사용**을 우선한다. 작업별 Writer가 배정된 별도 Branch/Worktree에서 다음 READY 재배정·BLOCKED 격리·Checkpoint/Resume·Fan-in 검증. 소스 없는 상태에서 중복 Engine 작성 금지.
+4. **Independent Reviewer (구현 완료 후 별도 Session):** 실제 HEAD/Base·테스트 증거 검수. Writer·Reviewer 같은 작업 공간 혼용 금지. Verdict와 잔여 Risk를 Main에 인계한다.
+
+**F4 완료 기준:** 실제 지원된 Cloud/Runtime에서 승인된 작업의 충돌 없는 병렬 배정 1회, 완료 후 다음 READY 재배정 1회, BLOCKED 격리 1회, Checkpoint/Resume 1회 및 고정 HEAD의 독립 Reviewer/Fan-in을 재현한다. 외부 도구 미지원·승인 미충족은 NOT_RUN/BLOCKED이며 모의 테스트 PASS로 대체할 수 없다.
+
+**30~60분 Owner 검토와 정기 자동화의 차이:** [현재 시간별 점검 자동화]는 한 시간마다 별도로 소스를 조회·점검하는 기능일 뿐 상주 코딩 Worker, Cloud Task 배정, 세션 종료 후 무인 Resume를 보장하지 않는다. Codex Cloud 작업이 실제로 만들어진 뒤 해당 작업의 실행·진행 여부를 별도 실측해야 한다.
+
 ## 3. 지금 우선 처리할 기능 순서
 
 1. **P0 — F1 한글화·핵심정리의 실제 작성 적용:** #86 §5 초안을 기준으로 기존 PR 템플릿/작성 경로에 최소 점검 연결, Commit·PR·MD 실제 Before/After 검증. Skill 중복 여부 감사 후 최소 구현 결정.
