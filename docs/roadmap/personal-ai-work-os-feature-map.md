@@ -57,7 +57,7 @@ source_refs:
 
 ## 2-3. F4 — AI-driven 연속 운영 (Codex Cloud 우선)
 
-**앞으로 이 운영 방식을 부르는 이름은 F4. AI-driven 연속 운영이다.** 사용자 약속은 “승인된 목표 안에서는 AI가 독립 업무를 이어서 처리하고, Owner는 다른 일을 하다가 30~60분 간격으로 핵심 성과·차단·중요 결정만 확인한다”이다. 여러 Writer를 동시에 돌리는 `/async-batch`는 **F4 안의 병렬 모드**이고, 여러 프로젝트 전체를 조정하는 **F6 통합 업무 오케스트레이션과는 구분**한다.
+**앞으로 이 운영 방식을 부르는 이름은 F4. AI-driven 연속 운영이다.** 사용자 약속은 “승인된 목표 안에서는 AI가 독립 업무를 이어서 처리하고, Owner는 협업 모드에서는 대략 1시간, 집중/장기 위임 모드에서는 3~6시간 등 선택한 검토 시점에 핵심 성과·차단·중요 결정만 확인한다”이다. 여러 Writer를 동시에 돌리는 `/async-batch`는 **F4 안의 병렬 모드**이고, 여러 프로젝트 전체를 조정하는 **F6 통합 업무 오케스트레이션과는 구분**한다.
 
 **권장 실행 방식:** 현재 지원·권한이 확인된 경우 **Codex Cloud의 격리된 작업 공간**을 우선 실행 후보로 사용한다. 한 Objective의 독립된 Primary Jira 작업마다 **별도 작업 공간·작업 지시·변경 파일 영역**을 할당한다. Cloud에서 실제 Subagent 생성 API가 있는지 여부는 환경별로 확인하며, **Cloud의 복수 작업 공간과 한 세션 내부 Subagent 자동 위임은 동일한 기능이라고 가정하지 않는다**. 지원된다면 Cloud 작업 내부의 읽기/분석 및 충돌 없는 세부 작업만 Subagent로 Fan-out한다. 비용·작업량이 작거나 Cloud 도구가 없으면 지원 가능한 현재 실행기 또는 명시적 Handoff를 사용한다.
 
@@ -68,6 +68,22 @@ source_refs:
 | **연속 처리** | 완료 슬롯에 같은 승인 범위의 다음 READY를 배정. 막힌 업무는 BLOCKED로 격리하고 다른 READY는 진행 | 다음 배정 근거·Checkpoint |
 | **독립 검수** | Writer 자체 PASS, CI PASS, 독립 Reviewer PASS, 통합 E2E PASS를 따로 판단. 변경 HEAD는 재검수 | HEAD·테스트·Finding·Reviewer Evidence |
 | **Owner 검토** | 실제 성과/검증 → 진행/차단 → 다음 READY → 승인 필요한 결정으로 짧게 보고. Merge·정본 승격·배포는 별도 Owner 승인 | 사람이 바로 판단할 한국어 브리핑 |
+
+### 위임 시간에 따라 바뀌는 세 가지 운영 모드
+
+F4의 **운영 모드**는 단순 Scheduler 주기가 아니다. Owner가 복귀하기까지의 `review_horizon`과 승인된 `execution_scope`·`risk_limit`·`cost_budget`·`max_parallel_tasks`·`stop_conditions`·`handoff_requirements`를 조합하는 사용자 경험이다. 1/3/6시간은 우선 제공할 **프리셋**이며, 실제 제품화 후 다른 시간으로 확장할 수 있다. 사용자가 자리를 비운다고 신규 승인이나 전사 WIP 예외가 생기지 않는다.
+
+| 공식 모드 | Owner 상황 | AI가 할 일 | Owner가 돌아올 때 받는 것 |
+| --- | --- | --- | --- |
+| **F4-1H / 협업 모드** | 대화하며 일하고 빠르게 검토 | 이미 승인된 작은 작업 묶음, 1시간 내외 체크포인트 | 핵심 결과·현재 차단·필요 결정 간단 브리핑 |
+| **F4-3H / 집중 위임 모드** | 다른 업무·외출·집중 시간 | 독립 READY의 연속 배정, 완료별 Evidence와 Checkpoint 축적 | 완료한 PR/Commit·검증·실패·다음 READY·중요 결정의 중간 깊이 인계 |
+| **F4-6H / 장기 위임 모드** | 휴식·취침·장시간 부재 | 승인 범위 내 여러 작업을 연결해 진행. 위험 작업은 중단하고 다른 안전한 READY 수행 | 변경 순서, 작업별 HEAD/테스트/독립 Review, 실패·재시도·차단·남은 승인과 다음 추천을 확인하는 상세 복귀 리포트 |
+
+**시간 정책:** 시간은 Owner **검토·인계 시점**의 프리셋이며, 작업이 무조건 해당 시간 동안 지속되거나 시간이 끝났다는 이유로 현재 작업을 강제 취소한다는 뜻이 아니다. 중간 Checkpoint는 실제 Task 완료·의존성/위험 변화·Runtime 이벤트 기준으로 남긴다. Owner 부재 중에도 별도의 정책 위험·비용 한도·토큰/Tool 제한·실패 누적·예산 초과·Shared Contract 충돌이 발생하면 즉시 안전하게 중단한다. 오류 때문에 중단돼도 이미 검증된 결과는 보존하고 자동 재시도는 신뢰할 수 있는 멱등 조건에서만 한다.
+
+**Owner 복귀 프로토콜:** (1) 지금까지 **실제로 완료한 업무**, (2) PR/HEAD와 테스트·Reviewer·통합 상태, (3) 막힌 업무와 영향, (4) 다음 승인 범위의 READY, (5) 결정이 필요한 사항을 구분해 기록한다. 리뷰 시 Owner가 `계속 진행 / 방향 수정 / 승인 보류 / 중단 / 모드 변경(F4-1H↔3H↔6H)`을 선택하면 **그 시점의 Checkpoint를 기준으로 새 승인 범위**를 재평가한다. Owner가 부재하는 동안 미응답 승인을 자동 긍정하지 않는다.
+
+**실제 지원 경계:** 현재 활성화된 **매시간 자동 점검**은 별도 실행으로 소스를 조회·브리핑할 뿐 F4-3H·F4-6H의 3/6시간 상주 개발을 실현하지 않는다. Codex Cloud Task/내부 Subagent의 생성·실행·상태 추적/재개가 검증되어야 해당 모드를 실제 E2E PASS로 선언할 수 있다. 예약 자동화 주기와 위임 기간은 별도 설정이다. 현재 즉시 운용 중인 설정은 1시간 간격 상태 점검이며 3/6시간 모드는 설계·미구현 상태다.
 
 ### 실제 Codex Cloud 첫 검증 작업 (RPL-115, 구현과 검증 별개)
 
@@ -80,7 +96,7 @@ source_refs:
 
 **F4 완료 기준:** 실제 지원된 Cloud/Runtime에서 승인된 작업의 충돌 없는 병렬 배정 1회, 완료 후 다음 READY 재배정 1회, BLOCKED 격리 1회, Checkpoint/Resume 1회 및 고정 HEAD의 독립 Reviewer/Fan-in을 재현한다. 외부 도구 미지원·승인 미충족은 NOT_RUN/BLOCKED이며 모의 테스트 PASS로 대체할 수 없다.
 
-**30~60분 Owner 검토와 정기 자동화의 차이:** [현재 시간별 점검 자동화]는 한 시간마다 별도로 소스를 조회·점검하는 기능일 뿐 상주 코딩 Worker, Cloud Task 배정, 세션 종료 후 무인 Resume를 보장하지 않는다. Codex Cloud 작업이 실제로 만들어진 뒤 해당 작업의 실행·진행 여부를 별도 실측해야 한다.
+**Owner 복귀 주기와 정기 자동화의 차이:** [현재 시간별 점검 자동화]는 한 시간마다 별도로 소스를 조회·점검하는 기능일 뿐 상주 코딩 Worker, Cloud Task 배정, 세션 종료 후 무인 Resume를 보장하지 않는다. Codex Cloud 작업이 실제로 만들어진 뒤 해당 작업의 실행·진행 여부를 별도 실측해야 한다.
 
 ## 3. 지금 우선 처리할 기능 순서
 
@@ -97,7 +113,7 @@ source_refs:
 
 - Main Personal AI 세션은 F1~F6 통합 설계·검증과 [Governance #49](https://github.com/ranikun-labs/harness-foundation-docs/pull/49)를 조정한다. Jira Legacy G2/G3/G4 이전 및 필드 정리는 별도 세션이 수행하며, [Foundation G2 #47](https://github.com/ranikun-labs/harness-foundation-docs/pull/47)은 Closure 증거만 연계한다.
 - 현재 발효된 Foundation Governance **v1.2**를 따른다. [v1.3 PR #49](https://github.com/ranikun-labs/harness-foundation-docs/pull/49)의 Workstream별 Active Objective/병렬 실행 정책은 아직 Draft/NOT_EFFECTIVE다. Personal AI `/async-batch` 범위도 현재 승인된 개인 사이드프로젝트로 한정된다.
-- Owner의 30~60분 확인은 목표 운영 주기이며, 백그라운드 상주·세션 종료 후 자동 재시작/알림·자동 Git Merge/Production을 약속하지 않는다.
+- Owner의 1/3/6시간 확인은 선택 가능한 검토 주기 목표이며, 백그라운드 상주·세션 종료 후 자동 재시작/알림·자동 Git Merge/Production을 약속하지 않는다.
 - 별도 승인 없이 Jira/Confluence/Git의 데이터·정본 자동 변경, 신규 중앙 Scheduler, 제품·상용 V2/V3 아키텍처 변경을 진행하지 않는다.
 
 **관련 증거:** [RPL-112](https://ranikunlabs.atlassian.net/browse/RPL-112), [#86](https://github.com/ranikun-labs/oh-my-ai/pull/86), [#85](https://github.com/ranikun-labs/oh-my-ai/pull/85), [Private #2](https://github.com/aixion1506/ai-instructions/pull/2). 34/34는 별도 세션이 제공한 보고이며 이 문서 작성에서 재실행하지 않았다.
