@@ -4557,16 +4557,17 @@ C 중심 Lean Hybrid는 Owner 방향이다. 탈퇴·법정 보존 상세, 보존
 
 ---
 
-## DEC-074 — Workstream별 Active Objective 1개·Objective 내부 AI 병렬 실행 (제안)
+## DEC-074 — Workstream별 Active Objective 1개·Objective 내부 AI 병렬 실행 (Owner 채택 승인·미발효)
 
-**Status:** proposed / NOT_EFFECTIVE
+**Status:** owner_approved_pending_source_merge / NOT_EFFECTIVE
 **Owner / scope:** governance / portfolio-work-management, ai-session coordination
 **Decision direction date:** 2026-10-26
-**Approval scope:** Owner가 운영 방향의 개정안 작성을 지시함. **최종 정책 발효·Source Merge 승인 아님.**
+**Approval scope:** Owner가 2026-10-27에 v1.3/DEC-074의 **정책 내용 최종 채택**을 승인함. **Source Merge·발효·새 Writer/Jira 변경 승인 아님.**
+**Owner approval evidence:** [2026-10-27 대화 기반 승인 기록](https://github.com/ranikun-labs/harness-foundation-docs/pull/49#issuecomment-6435342600)
 **Canonical proposal:** [Portfolio Work Management Governance v1.3 — §4](../governance/portfolio-work-management-governance.md)
-**Independent review / final merge gate:** NOT_RUN / PENDING
+**Independent review / final merge gate:** PASS_WITH_NOTES at `c1d819ada0eca62059883acd83a025948a532f73`, 0 BLOCKER/MAJOR/MINOR (Owner-provided separate Codex Reviewer); **new approval-metadata HEAD re-review NOT_RUN** / SOURCE MERGE PENDING
 
-### Decision proposed
+### Owner-approved decision (not yet effective)
 
 전사 `진행 중 + 검토 중 ≤3` 상한을 대체한다.
 
@@ -4587,7 +4588,7 @@ C 중심 Lean Hybrid는 Owner 방향이다. 탈퇴·법정 보존 상세, 보존
 - **Proposed partial supersession:** DEC-065의 Consequences 중 `진행 중 + 검토 중` Portfolio WIP 최대 3개 제한과 이를 그대로 구현한 Governance v1.2 §4만 대체.
 - **Remain valid:** DEC-065의 Jira/Git/GitHub/Confluence/AI Session별 정본, One Writer/Primary Jira, Scope·권한 경계, Independent Review, Human Merge/Production 및 Jira Taxonomy/Rollout.
 - **Preservation:** DEC-065 원문과 2026-10-15 Governance v1.2 승인/병합 이력은 소급 수정하지 않는다.
-- **Effective status:** 정책 Draft PR의 독립 검수, 별도 최종 Owner 승인, Source Merge 및 발효 메타데이터가 완료될 때까지 NOT_EFFECTIVE.
+- **Effective status:** Owner의 정책 채택은 2026-10-27 승인됨. **새 메타데이터 HEAD의 독립 Reviewer 재검수·별도 Source Merge 승인·정본 Merge SHA/실제 발효시각 메타데이터 확인** 전까지 NOT_EFFECTIVE; 그전에는 기존 v1.2 및 DEC-065 WIP≤3 적용.
 - **Jira migration:** 새 Objective Custom Field, 대량 Status 변경, Local Hook 자동 실행 및 타 Product 코드 수정은 본 Decision으로 승인하지 않는다.
 
 
