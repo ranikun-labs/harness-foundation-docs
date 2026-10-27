@@ -258,6 +258,8 @@ Supporting Input의 물리 배치 그림이나 `현재` 표현만으로 Runtime 
 4. 명시 승인된 Scope와 현재 도구·Runtime Capability 내에서만 Writer를 실행한다. 기존 `work-start`/`jira-work` Explicit-only Skill 계약은 자동 실행으로 전환하지 않는다. 위험한 쓰기·원격 실행·설치에는 별도 기존 승인 Gate가 있다.
 5. 각 Writer의 변경은 독립 Reviewer가 고정 Base/HEAD로 검수한다. 수정 HEAD는 재검수한다. Integrator는 각 PR의 의존관계·병합 순서·합쳐진 결과의 E2E 및 Regression을 검증한다. 개별 Writer/CI PASS는 통합 E2E, Source Merge 또는 Production Ready가 아니다.
 6. 보안·권한·데이터 소유권·승인된 ADR, Human Merge·Production Gate는 기존 §§5–7 및 AI Session Governance에 따른다. 충돌·미승인 경계만 HOLD하고 무관한 안전 작업을 무조건 직렬화하지 않는다.
+7. **F4 READY-first/Checkpoint:** 승인된 Objective의 READY부터 배정하며, 완료 슬롯에는 같은 승인 범위·충돌 검사를 통과한 다음 READY를 재배정한다. 개별 BLOCKED는 사유·재개 조건을 Checkpoint에 격리하고 무관한 READY를 계속 처리한다. 기존 Context·고정 Source SHA·테스트 Evidence는 출처와 유효성을 확인해 재사용하되, 새 HEAD의 검증을 생략하거나 검증 결과를 승격하지 않는다. 작은 READY마다 Owner 재승인을 요구하지 않지만 승인 밖 변경, 공통 API·DB·Auth 계약, Merge·Production·정본 Cutover Gate에서는 중단한다.
+8. **가변 병렬 슬롯:** 실제 Runtime의 능력·독립 Writer/Worktree·승인된 Objective의 Scope, 비용·시간·리소스·위험 한도 및 Stop 조건을 먼저 확인한다. 가능하면 Objective당 **초기 2~3개 슬롯을 권장**하되 상황에 맞게 조정하고, 이를 새로운 전사 고정 WIP 상한이나 자동 Write 승인으로 해석하지 않는다.
 
 ### 4.3 예시 — 로그인 하나를 User/Auth 병렬 개발
 
@@ -275,6 +277,8 @@ Supporting Input의 물리 배치 그림이나 `현재` 표현만으로 Runtime 
 ### 4.4 운영 관측·변경 Gate
 
 Workstream별 단일 Objective 여부, 각 Primary Jira와 Writer·Branch/Worktree 독점성, 공통 변경 충돌, Blocker/Review Queue, Integration Owner·Gate를 점검한다. 별도의 Registry·Jira Custom Field·Worker Scheduler 도입은 필수가 아니다. 기존 Jira Description/Issue Links, PR, Handoff로 먼저 기록한다.
+
+**Owner 검토와 실행의 분리:** 협업 시 약 1시간, 집중·장기 위임 시 3·6시간 등의 Owner 확인 주기는 보고·결정 시점이며 Agent 내부 Checkpoint/재배정이나 작업 지속성을 보장하지 않는다. 일정 기반 READ-ONLY 점검의 PASS와 실제 Codex Cloud Task·서브에이전트 자동 실행/재개의 E2E PASS를 구별한다. Runtime 미지원·미연결이면 실행은 `NOT_RUN`으로 기록한다.
 
 신규 정책은 Governance 문서 및 신규 DEC-074의 독립 Review·Owner 승인·정본 Merge가 완료되고 발효 시각이 검증된 후에만 적용한다. v1.2 및 DEC-065의 기존 기록은 보존한다.
 
