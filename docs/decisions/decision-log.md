@@ -4559,7 +4559,9 @@ C 중심 Lean Hybrid는 Owner 방향이다. 탈퇴·법정 보존 상세, 보존
 
 ## DEC-074 — Workstream별 Active Objective 1개·Objective 내부 AI 병렬 실행 (Owner 채택 승인·미발효)
 
-**Status:** owner_approved_pending_source_merge / NOT_EFFECTIVE
+**Status:** accepted / NOT_EFFECTIVE
+**Document lifecycle:** in_review (Draft Source)
+**Owner approval status:** approved (policy adoption only; separate Source Merge gate pending)
 **Owner / scope:** governance / portfolio-work-management, ai-session coordination
 **Decision direction date:** 2026-10-26
 **Approval scope:** Owner가 2026-10-27에 v1.3/DEC-074의 **정책 내용 최종 채택**을 승인함. **Source Merge·발효·새 Writer/Jira 변경 승인 아님.**
