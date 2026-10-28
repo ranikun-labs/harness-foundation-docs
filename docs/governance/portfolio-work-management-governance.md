@@ -46,7 +46,7 @@ supporting_architecture_inputs:
 
 # Ranikun Labs Portfolio Work Management Governance v1.3 — OWNER APPROVED / NOT_EFFECTIVE (main v1.2 유효)
 
-> **정책 채택 승인·미발효.** `decision_status: accepted`는 Owner의 **정책 내용 채택**을, `document_status: in_review`는 Draft 문서 검수 진행을 뜻한다. **이 상태값만으로 실행·발효 권한은 발생하지 않으며** `effective_from: null`, `merge_gate_status: pending`, 실제 Source Merge 여부를 함께 확인해야 한다. Owner는 2026-10-27 대화에서 v1.3 개정 정책의 최종 채택을 승인했다([승인 범위 및 인계 기록](https://github.com/ranikun-labs/harness-foundation-docs/pull/49#issuecomment-6435342600)). PR #49의 **Source Merge는 2026-10-28에 완료**되었으나 현재 `effective_from: null`이고 후속 발효 메타데이터의 독립 검수·정본 반영은 대기 중이므로 아직 새 정책의 실행 효력이 없다. 아래 v1.2의 2026-10-15 승인·병합·발효 이력은 그대로 유지한다.
+> **정책 채택 승인·미발효.** `decision_status: accepted`는 Owner의 **정책 내용 채택**을, `document_status: in_review`는 Draft 문서 검수 진행을 뜻한다. **이 상태값만으로 실행·발효 권한은 발생하지 않으며** `effective_from: null`, `merge_gate_status: completed` 및 후속 발효 메타데이터 독립 검수·정본 반영 여부를 함께 확인해야 한다. Owner는 2026-10-27 대화에서 v1.3 개정 정책의 최종 채택을 승인했다([승인 범위 및 인계 기록](https://github.com/ranikun-labs/harness-foundation-docs/pull/49#issuecomment-6435342600)). PR #49의 **Source Merge는 2026-10-28에 완료**되었으나 현재 `effective_from: null`이고 후속 발효 메타데이터의 독립 검수·정본 반영은 대기 중이므로 아직 새 정책의 실행 효력이 없다. 아래 v1.2의 2026-10-15 승인·병합·발효 이력은 그대로 유지한다.
 > **부분 대체 후보:** DEC-074 (accepted / NOT_EFFECTIVE)는 정본 발효 후 DEC-065의 전사 WIP 상한 3건 항목만 부분 대체한다. 기존 Jira 소유권·세션 안전·독립 검수·Merge/Production Gate는 변경하지 않는다.
 
 ## 1. 목적과 상태
