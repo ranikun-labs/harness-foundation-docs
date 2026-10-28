@@ -1,7 +1,7 @@
 ---
 title: Ranikun Labs Portfolio Work Management Governance
-version: "1.3-proposed"
-document_status: in_review
+version: "1.3"
+document_status: accepted
 decision_status: accepted
 owner_approval_status: approved
 owner_approval_ref: "https://github.com/ranikun-labs/harness-foundation-docs/pull/49#issuecomment-6435342600"
@@ -19,12 +19,18 @@ approvers:
 created_at: "2026-07-29"
 reviewed_at: "2026-10-27"
 approved_at: "2026-10-27"
-effective_from: null
+effective_from: "2026-10-28T17:20:26+09:00"
 merge_commit_sha: "256d0ec89f25770c0c0c15de2e6fe206675a549b"
 merged_at: "2026-10-28T12:23:26+09:00"
-final_metadata_review_status: not_run
-final_metadata_reviewed_head: null
+final_metadata_review_status: pass_with_notes
+final_metadata_reviewed_head: "b8382aba1f012166c7a58f7aeb95fa39a349c9d6"
 merge_gate_status: completed
+activation_closure_pr: 51
+activation_closure_merge_commit_sha: "769ff99309a266c677b30104015672cc07e3df83"
+activation_closure_merged_at: "2026-10-28T17:19:34+09:00"
+activation_reviewer_effective_settings: UNKNOWN
+activation_record_independent_review: NOT_RUN
+activation_owner_authorization_ref: "https://github.com/ranikun-labs/harness-foundation-docs/pull/51#issuecomment-6464130290"
 related_decisions:
   - DEC-010
   - DEC-025
@@ -44,10 +50,10 @@ supporting_architecture_inputs:
   - source-inputs/Carelog-Finance-Dev-Harness-공통-MSA-플랫폼-설계-v2.md
 ---
 
-# Ranikun Labs Portfolio Work Management Governance v1.3 — OWNER APPROVED / NOT_EFFECTIVE (main v1.2 유효)
+# Ranikun Labs Portfolio Work Management Governance v1.3 — EFFECTIVE (2026-10-28)
 
-> **정책 채택 승인·미발효.** `decision_status: accepted`는 Owner의 **정책 내용 채택**을, `document_status: in_review`는 Draft 문서 검수 진행을 뜻한다. **이 상태값만으로 실행·발효 권한은 발생하지 않으며** `effective_from: null`, `merge_gate_status: completed` 및 후속 발효 메타데이터 독립 검수·정본 반영 여부를 함께 확인해야 한다. Owner는 2026-10-27 대화에서 v1.3 개정 정책의 최종 채택을 승인했다([승인 범위 및 인계 기록](https://github.com/ranikun-labs/harness-foundation-docs/pull/49#issuecomment-6435342600)). PR #49의 **Source Merge는 2026-10-28에 완료**되었으나 현재 `effective_from: null`이고 후속 발효 메타데이터의 독립 검수·정본 반영은 대기 중이므로 아직 새 정책의 실행 효력이 없다. 아래 v1.2의 2026-10-15 승인·병합·발효 이력은 그대로 유지한다.
-> **부분 대체 후보:** DEC-074 (accepted / NOT_EFFECTIVE)는 정본 발효 후 DEC-065의 전사 WIP 상한 3건 항목만 부분 대체한다. 기존 Jira 소유권·세션 안전·독립 검수·Merge/Production Gate는 변경하지 않는다.
+> **v1.3 발효 · 2026-10-28 17:20:26 KST.** Owner의 최종 발효 지시와 PR #49(원 정책), [PR #51](https://github.com/ranikun-labs/harness-foundation-docs/pull/51)(병합 이력 검증)의 실제 Source Merge를 확인했다. #51 고정 HEAD `b8382aba1f012166c7a58f7aeb95fa39a349c9d6` 별도 읽기 전용 기술 검수는 `PASS_WITH_NOTES / B0 M0 m0`이며 요청 Reviewer 모델·Reasoning·Fast 실효값은 **UNKNOWN**으로 Owner가 제한을 수용했다. 이 후속 활성화 기록 자체의 독립 검수는 `NOT_RUN`이고, 기술 검수 PASS로 승격하지 않는다. `implementation_status: not_started`는 Runtime 자동화가 구현됐다는 뜻이 아니다. 신규 Jira 일괄 상태 변경·자동 Writer 생성·별도 Source Merge·Production 변경은 승인하지 않는다.
+> **부분 대체 발효:** DEC-074에 따라 DEC-065의 전사 WIP 최대 3건 제한과 Governance v1.2 §4의 해당 상한만 대체한다. Jira·Git/GitHub·Confluence 정본, One Writer/Primary Jira, Independent Review, Human Merge/Production 및 기존 권한 경계는 유지한다.
 
 ## 1. 목적과 상태
 
@@ -239,9 +245,9 @@ Governance Metadata와 Jira 예시는 다음 상태를 혼합하지 않는다.
 Supporting Input의 물리 배치 그림이나 `현재` 표현만으로 Runtime 배포·지원
 상태를 만들지 않는다.
 
-## 4. Workstream별 Active Objective·병렬 실행 (v1.3 제안 — 미발효)
+## 4. Workstream별 Active Objective·병렬 실행 (v1.3 발효)
 
-**기존 전사 `진행 중 + 검토 중 ≤3` 상한은 개정 정본이 발효되면 폐지한다.** 대체 운영 원칙: **One Active Objective per Workstream, Parallel Execution within Objective.** Jira ACTIVE 총수는 관찰 지표이지 단독 제한이나 자동 상태 변경 이유가 아니다. 발효 전에는 기존 v1.2가 유효하다.
+**v1.3 발효에 따라 기존 전사 `진행 중 + 검토 중 ≤3` 상한은 부분 대체됐다.** 운영 원칙: **One Active Objective per Workstream, Parallel Execution within Objective.** Jira ACTIVE 총수는 관찰 지표이지 단독 제한이나 자동 상태 변경 이유가 아니다. 다른 v1.2/DEC-065 운영·권한 Gate는 유지한다.
 
 ### 4.1 Objective 및 Jira 상태
 
@@ -280,7 +286,7 @@ Workstream별 단일 Objective 여부, 각 Primary Jira와 Writer·Branch/Worktr
 
 **Owner 검토와 실행의 분리:** 협업 시 약 1시간, 집중·장기 위임 시 3·6시간 등의 Owner 확인 주기는 보고·결정 시점이며 Agent 내부 Checkpoint/재배정이나 작업 지속성을 보장하지 않는다. 일정 기반 READ-ONLY 점검의 PASS와 실제 Codex Cloud Task·서브에이전트 자동 실행/재개의 E2E PASS를 구별한다. Runtime 미지원·미연결이면 실행은 `NOT_RUN`으로 기록한다.
 
-PR #49의 Source Merge는 완료됐다. **그러나 발효 메타데이터 정본 반영·검수와 실제 발효 시각 확인 전에는** v1.2 및 DEC-065의 기존 WIP≤3이 적용된다. 이전 승인·Merge 이력은 보존한다.
+PR #49 원 정책 Source Merge `256d0ec89f25770c0c0c15de2e6fe206675a549b`와 PR #51 메타데이터 Closure Merge `769ff99309a266c677b30104015672cc07e3df83`를 확인했다. **v1.3 Owner 발효 결정 시각: 2026-10-28T17:20:26+09:00**. DEC-065의 전사 WIP≤3 항목만 부분 대체하고 나머지 정본·Reviewer·Owner Merge·Production Gate와 역사 기록은 유지한다.
 
 ## 5. Session Ownership과 역할
 
