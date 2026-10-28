@@ -1,10 +1,10 @@
 ---
 title: Ranikun Labs Portfolio Work Management Governance
-version: "1.2"
-document_status: accepted
+version: "1.3-proposed"
+document_status: in_review
 decision_status: accepted
 owner_approval_status: approved
-owner_approval_ref: docs/governance/jira-governance-owner-approval-2026-10-15.md
+owner_approval_ref: "https://github.com/ranikun-labs/harness-foundation-docs/pull/49#issuecomment-6435342600"
 g0_owner_classification_status: approved
 g0_owner_classification_date: "2026-10-15"
 g0_owner_classification_ref: docs/governance/jira-taxonomy-g0-owner-decision-2026-10-15.md
@@ -17,14 +17,14 @@ reviewers:
 approvers:
   - 박성환
 created_at: "2026-07-29"
-reviewed_at: null
-approved_at: "2026-10-15"
-effective_from: "2026-10-15T15:03:00+09:00"
-merge_commit_sha: "3faf402a8603aa87449070ba0833b862df46bd3f"
-merged_at: "2026-10-15T15:03:00+09:00"
-final_metadata_review_status: passed_independent_sol_user_reported
-final_metadata_reviewed_head: "7387371319bb7c5b841e4363e05f3bb848f8ed4b"
-merge_gate_status: completed
+reviewed_at: "2026-10-27"
+approved_at: "2026-10-27"
+effective_from: null
+merge_commit_sha: null
+merged_at: null
+final_metadata_review_status: not_run
+final_metadata_reviewed_head: null
+merge_gate_status: pending
 related_decisions:
   - DEC-010
   - DEC-025
@@ -35,6 +35,7 @@ related_decisions:
   - DEC-064
   - DEC-065
   - DEC-067
+  - DEC-074
 source_inputs:
   - source-inputs/ranikun-platform-enterprise-work-management-governance.md
   - source-inputs/ranikun-platform-ai-session-prompt-pack.md
@@ -43,7 +44,10 @@ supporting_architecture_inputs:
   - source-inputs/Carelog-Finance-Dev-Harness-공통-MSA-플랫폼-설계-v2.md
 ---
 
-# Ranikun Labs Portfolio Work Management Governance v1.2 — main 발효 / Jira 실행 상태는 Current Projection 참조
+# Ranikun Labs Portfolio Work Management Governance v1.3 — OWNER APPROVED / NOT_EFFECTIVE (main v1.2 유효)
+
+> **정책 채택 승인·미발효.** `decision_status: accepted`는 Owner의 **정책 내용 채택**을, `document_status: in_review`는 Draft 문서 검수 진행을 뜻한다. **이 상태값만으로 실행·발효 권한은 발생하지 않으며** `effective_from: null`, `merge_gate_status: pending`, 실제 Source Merge 여부를 함께 확인해야 한다. Owner는 2026-10-27 대화에서 v1.3 개정 정책의 최종 채택을 승인했다([승인 범위 및 인계 기록](https://github.com/ranikun-labs/harness-foundation-docs/pull/49#issuecomment-6435342600)). 이 Branch는 승인된 정책의 **아직 미병합 Draft**이며 최신 메타데이터 HEAD 독립 재검수, 별도 Source Merge 승인, 실제 Merge SHA·발효 시각 확인 전까지 효력이 없다. 아래 v1.2의 2026-10-15 승인·병합·발효 이력은 그대로 유지한다.
+> **부분 대체 후보:** DEC-074 (accepted / NOT_EFFECTIVE)는 정본 발효 후 DEC-065의 전사 WIP 상한 3건 항목만 부분 대체한다. 기존 Jira 소유권·세션 안전·독립 검수·Merge/Production Gate는 변경하지 않는다.
 
 ## 1. 목적과 상태
 
@@ -235,18 +239,48 @@ Governance Metadata와 Jira 예시는 다음 상태를 혼합하지 않는다.
 Supporting Input의 물리 배치 그림이나 `현재` 표현만으로 Runtime 배포·지원
 상태를 만들지 않는다.
 
-## 4. WIP 정책
+## 4. Workstream별 Active Objective·병렬 실행 (v1.3 제안 — 미발효)
 
-Portfolio WIP는 `진행 중 + 검토 중` 합계 최대 3개다.
+**기존 전사 `진행 중 + 검토 중 ≤3` 상한은 개정 정본이 발효되면 폐지한다.** 대체 운영 원칙: **One Active Objective per Workstream, Parallel Execution within Objective.** Jira ACTIVE 총수는 관찰 지표이지 단독 제한이나 자동 상태 변경 이유가 아니다. 발효 전에는 기존 v1.2가 유효하다.
 
-```text
-Portfolio WIP = In Progress + In Review ≤ 3
-```
+### 4.1 Objective 및 Jira 상태
 
-새 작업을 시작하기 전에 진행 중 작업의 Next Action과 Blocker를 정리한다.
-긴급 보안·장애 대응은 예외가 될 수 있으나, 이유와 종료 조건을 Jira에
-기록한다. 완료된 과거 Jira 전체를 일괄 Backfill하지 않는다. 활성화되거나
-다시 참조되는 Issue만 점진적으로 보정한다.
+- 각 Workstream은 Owner가 선정한 **Active Objective 하나**, 대표 Jira, Coordinator, 완료 조건, 영향 Workstream 및 다음 Gate를 갖는다. Workstream은 운영 조정 단위이고 기존 Jira Product/Component/Concern/Parent의 정본 분류를 대체하지 않는다.
+- 하나의 Objective 아래 여러 하위 Primary Jira, AI Writer 및 Reviewer가 동시 진행할 수 있다. 상위 Epic과 하위 Task가 함께 `진행 중`인 상태는 실제 실행에 부합한다면 허용된다.
+- 별도 Objective를 추가 활성화하려면 기존 Objective의 종료·인계·보류와 우선순위에 대한 Owner 결정을 기록한다. 서로 다른 Workstream에 걸친 공통 계약·코드의 변경 Owner는 한 곳에 지정하고 다른 쪽은 소비자·의존성으로 연결한다.
+- Jira는 실제 상태를 기록한다. 상한을 맞추기 위한 `할 일`/WAIT/`완료` 조작을 금지한다. 실제 선행조건·차단·중단이 있는 작업만 해당 이유와 재개 조건을 남긴다. 과거 상태나 완료 기록은 정책 변경을 명목으로 일괄 보정하지 않는다.
+
+### 4.2 `/async-batch` 안전한 병렬 실행
+
+1. Coordinator는 하나의 Objective를 독립적 **Primary Jira** 작업으로 분할하고 각 작업의 Owner, Sole Writer Session, Repository, Branch, Worktree, 수정 파일/모듈, API/DB 계약, Reviewer 및 의존성을 명시한다.
+2. **One Writer Session = One Primary Jira**, **One Writable Worktree = One Writer** 계약을 유지한다. 다른 Writer의 Dirty Changes, Branch, Worktree, 수정 중인 동일 파일을 침범하거나 덮어쓰지 않는다.
+3. 병렬 실행 전 공통 API/DTO, User Identity·Auth Contract, DB Schema/Migration, 공용 Hook, CI/Build 설정의 중복과 충돌 가능성을 검사한다. 계약 소유 Owner를 먼저 지정하고 필요한 결정/인터페이스를 고정한다. 동일 파일/공통 Migration은 한 Writer에게 배정하거나 선행 순서를 둔다. Branch 분리만으로 동일 파일 동시 수정이 안전해지는 것은 아니다.
+4. 명시 승인된 Scope와 현재 도구·Runtime Capability 내에서만 Writer를 실행한다. 기존 `work-start`/`jira-work` Explicit-only Skill 계약은 자동 실행으로 전환하지 않는다. 위험한 쓰기·원격 실행·설치에는 별도 기존 승인 Gate가 있다.
+5. 각 Writer의 변경은 독립 Reviewer가 고정 Base/HEAD로 검수한다. 수정 HEAD는 재검수한다. Integrator는 각 PR의 의존관계·병합 순서·합쳐진 결과의 E2E 및 Regression을 검증한다. 개별 Writer/CI PASS는 통합 E2E, Source Merge 또는 Production Ready가 아니다.
+6. 보안·권한·데이터 소유권·승인된 ADR, Human Merge·Production Gate는 기존 §§5–7 및 AI Session Governance에 따른다. 충돌·미승인 경계만 HOLD하고 무관한 안전 작업을 무조건 직렬화하지 않는다.
+7. **F4 READY-first/Checkpoint:** 승인된 Objective의 READY부터 배정하며, 완료 슬롯에는 같은 승인 범위·충돌 검사를 통과한 다음 READY를 재배정한다. 개별 BLOCKED는 사유·재개 조건을 Checkpoint에 격리하고 무관한 READY를 계속 처리한다. 기존 Context·고정 Source SHA·테스트 Evidence는 출처와 유효성을 확인해 재사용하되, 새 HEAD의 검증을 생략하거나 검증 결과를 승격하지 않는다. 작은 READY마다 Owner 재승인을 요구하지 않지만 승인 밖 변경, 공통 API·DB·Auth 계약, Merge·Production·정본 Cutover Gate에서는 중단한다.
+8. **가변 병렬 슬롯:** 실제 Runtime의 능력·독립 Writer/Worktree·승인된 Objective의 Scope, 비용·시간·리소스·위험 한도 및 Stop 조건을 먼저 확인한다. 가능하면 Objective당 **초기 2~3개 슬롯을 권장**하되 상황에 맞게 조정하고, 이를 새로운 전사 고정 WIP 상한이나 자동 Write 승인으로 해석하지 않는다.
+
+### 4.3 예시 — 로그인 하나를 User/Auth 병렬 개발
+
+| 단위 | 실행 매핑 예시 (신규 Jira/Writer를 자동 생성하는 승인 아님) |
+|---|---|
+| Active Objective | 로그인 기능 완성 (대표 Jira 한 개, Coordinator 한 명) |
+| Writer A | User 등록·프로필/계정 계약 — 별도 Primary Jira·Branch·Worktree |
+| Writer B | Auth 로그인·세션·토큰 — 별도 Primary Jira·Branch·Worktree |
+| Writer C (선택) | 별도 E2E Fixture·계약 검증 — 독립 변경 영역과 Primary Jira |
+| 공통 선행 계약 | User/Principal ID, 토큰 Claim, API/오류 형식, 인가, DB Migration의 소유자와 변경 순서 확정 |
+| Fan-in | 계약 확정 → 개별 구현·독립 검수 → Integrator 조합/회귀 검증 → Owner Merge/Production 별도 승인 |
+
+**Shared Identity처럼 Auth Core가 다른 Workstream의 정본이라면 해당 Owner의 Primary Jira로 분리하여 의존성만 연결한다.** Product Writer가 소유권 밖의 Auth를 중복 구현하지 않는다. 목표가 하나라는 이유로 저장소·권한·제품 Owner 경계를 합치지 않는다.
+
+### 4.4 운영 관측·변경 Gate
+
+Workstream별 단일 Objective 여부, 각 Primary Jira와 Writer·Branch/Worktree 독점성, 공통 변경 충돌, Blocker/Review Queue, Integration Owner·Gate를 점검한다. 별도의 Registry·Jira Custom Field·Worker Scheduler 도입은 필수가 아니다. 기존 Jira Description/Issue Links, PR, Handoff로 먼저 기록한다.
+
+**Owner 검토와 실행의 분리:** 협업 시 약 1시간, 집중·장기 위임 시 3·6시간 등의 Owner 확인 주기는 보고·결정 시점이며 Agent 내부 Checkpoint/재배정이나 작업 지속성을 보장하지 않는다. 일정 기반 READ-ONLY 점검의 PASS와 실제 Codex Cloud Task·서브에이전트 자동 실행/재개의 E2E PASS를 구별한다. Runtime 미지원·미연결이면 실행은 `NOT_RUN`으로 기록한다.
+
+신규 정책은 Governance 문서 및 신규 DEC-074의 독립 Review·Owner 승인·정본 Merge가 완료되고 발효 시각이 검증된 후에만 적용한다. v1.2 및 DEC-065의 기존 기록은 보존한다.
 
 ## 5. Session Ownership과 역할
 
