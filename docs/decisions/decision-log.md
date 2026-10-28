@@ -4561,11 +4561,12 @@ C 중심 Lean Hybrid는 Owner 방향이다. 탈퇴·법정 보존 상세, 보존
 
 **Status:** accepted / NOT_EFFECTIVE
 **Document lifecycle:** in_review (Draft Source)
-**Owner approval status:** approved (policy adoption and later Source Merge separately approved; activation pending)
+**Owner approval status:** approved (policy adoption only; #49 Source Merge completed, #51 Source Merge approval pending)
 **Owner / scope:** governance / portfolio-work-management, ai-session coordination
 **Decision direction date:** 2026-10-26
 **Approval scope:** Owner가 2026-10-27에 v1.3/DEC-074의 **정책 내용 최종 채택**을 승인함. **별도 Source Merge는 2026-10-28 완료, 발효·새 Writer/Jira 변경 승인은 포함되지 않음.**
-**Owner approval evidence:** [2026-10-27 정책 채택 기록](https://github.com/ranikun-labs/harness-foundation-docs/pull/49#issuecomment-6435342600); [2026-10-28 별도 검수 결과 전달](https://github.com/ranikun-labs/harness-foundation-docs/pull/49#issuecomment-6459790459)
+**Policy adoption evidence (not Source Merge approval):** [2026-10-27 정책 채택 기록](https://github.com/ranikun-labs/harness-foundation-docs/pull/49#issuecomment-6435342600). 이 기록은 #49 Source Merge를 별도로 승인하지 않는다. [2026-10-28 별도 검수 결과 인계](https://github.com/ranikun-labs/harness-foundation-docs/pull/49#issuecomment-6459790459) 역시 검수 증거일 뿐 Merge 승인 근거가 아니다.
+**Source Merge approval trace:** 2026-10-28 Owner 대화의 별도 진행 지시에 따라 #49가 병합됐으나, GitHub에서 별도 Owner Source Merge 승인 메시지의 직접 링크는 확인되지 않았다 (`APPROVAL_LINK_UNKNOWN`). 아래 GitHub Merge SHA·시각은 실제 실행 증거이며 승인 기록을 대신하지 않는다. **#51의 Source Merge 및 v1.3 발효는 별도 Gate다.**
 **Source Merge:** [PR #49](https://github.com/ranikun-labs/harness-foundation-docs/pull/49) 일반 Merge Commit `256d0ec89f25770c0c0c15de2e6fe206675a549b`, 2026-10-28 12:23:26 KST. **정책 발효 아님.**
 **Canonical proposal:** [Portfolio Work Management Governance v1.3 — §4](../governance/portfolio-work-management-governance.md)
 **Independent review / final merge gate:** 별도 ChatGPT 세션이 `f0f428f9d34309701de1807151861c2ee76230cf`에 `STATIC_PASS_WITH_NOTES` / B0 M0 m0로 검수했다고 Owner가 전달함. Reviewer의 Sol/High/Fast OFF 실효 준수는 `UNKNOWN`이며 Owner가 이 제한을 수용한 뒤 PR #49 Source Merge 승인. 새 발효 메타데이터 HEAD 독립 검수는 아직 NOT_RUN.
