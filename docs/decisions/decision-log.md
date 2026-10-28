@@ -4557,21 +4557,21 @@ C 중심 Lean Hybrid는 Owner 방향이다. 탈퇴·법정 보존 상세, 보존
 
 ---
 
-## DEC-074 — Workstream별 Active Objective 1개·Objective 내부 AI 병렬 실행 (Source Merge 완료·미발효)
+## DEC-074 — Workstream별 Active Objective 1개·Objective 내부 AI 병렬 실행 (v1.3 발효)
 
-**Status:** accepted / NOT_EFFECTIVE
-**Document lifecycle:** in_review (PR #49 Source Merge 완료, 후속 발효 메타데이터 검토 중)
-**Owner approval status:** approved (policy adoption only; #49 Source Merge completed, #51 Source Merge approval pending)
+**Status:** accepted / EFFECTIVE
+**Document lifecycle:** accepted (v1.3 발효 기록 반영)
+**Owner approval status:** approved (2026-10-27 정책 채택 · 2026-10-28 별도 Source Merge 및 발효 진행 지시)
 **Owner / scope:** governance / portfolio-work-management, ai-session coordination
 **Decision direction date:** 2026-10-26
-**Approval scope:** Owner가 2026-10-27에 v1.3/DEC-074의 **정책 내용 최종 채택**을 승인함. **별도 Source Merge는 2026-10-28 완료, 발효·새 Writer/Jira 변경 승인은 포함되지 않음.**
+**Approval scope:** Owner가 2026-10-27 v1.3/DEC-074 정책 채택을 승인하고 2026-10-28 #51 Source Merge와 문제없는 경우 즉시 발효를 지시했다. **발효는 새 Writer 생성·Jira 일괄 수정·개별 PR Merge·Production 실행 승인이 아니다.**
 **Policy adoption evidence (not Source Merge approval):** [2026-10-27 정책 채택 기록](https://github.com/ranikun-labs/harness-foundation-docs/pull/49#issuecomment-6435342600). 이 기록은 #49 Source Merge를 별도로 승인하지 않는다. [2026-10-28 별도 검수 결과 인계](https://github.com/ranikun-labs/harness-foundation-docs/pull/49#issuecomment-6459790459) 역시 검수 증거일 뿐 Merge 승인 근거가 아니다.
-**Source Merge approval trace:** 2026-10-28 Owner 대화의 별도 진행 지시에 따라 #49가 병합됐으나, GitHub에서 별도 Owner Source Merge 승인 메시지의 직접 링크는 확인되지 않았다 (`APPROVAL_LINK_UNKNOWN`). 아래 GitHub Merge SHA·시각은 실제 실행 증거이며 승인 기록을 대신하지 않는다. **#51의 Source Merge 및 v1.3 발효는 별도 Gate다.**
-**Source Merge:** [PR #49](https://github.com/ranikun-labs/harness-foundation-docs/pull/49) 일반 Merge Commit `256d0ec89f25770c0c0c15de2e6fe206675a549b`, 2026-10-28 12:23:26 KST. **정책 발효 아님.**
-**Canonical proposal:** [Portfolio Work Management Governance v1.3 — §4](../governance/portfolio-work-management-governance.md)
-**Independent review / final merge gate:** 별도 ChatGPT 세션이 `f0f428f9d34309701de1807151861c2ee76230cf`에 `STATIC_PASS_WITH_NOTES` / B0 M0 m0로 검수했다고 Owner가 전달함. Reviewer의 Sol/High/Fast OFF 실효 준수는 `UNKNOWN`이며 Owner가 이 제한을 수용한 뒤 PR #49 Source Merge 승인. 새 발효 메타데이터 HEAD 독립 검수는 아직 NOT_RUN.
+**Source Merge approval trace:** #49의 직접 Owner 승인 링크는 여전히 `APPROVAL_LINK_UNKNOWN`이며 역사 기록을 소급 보정하지 않는다. #51 별도 Owner 조건부 Source Merge 및 발효 지시는 [#51 Owner 승인·검수 근거 기록](https://github.com/ranikun-labs/harness-foundation-docs/pull/51#issuecomment-6464130290)에서 범위를 구분해 보존한다(사용자 원 대화는 공개 URL 없음). 승인 근거와 실제 Merge 증거는 구분한다.
+**Source Merge:** [PR #49](https://github.com/ranikun-labs/harness-foundation-docs/pull/49) 원 정책 Merge `256d0ec89f25770c0c0c15de2e6fe206675a549b` / 2026-10-28 12:23:26 KST; [PR #51](https://github.com/ranikun-labs/harness-foundation-docs/pull/51) 메타데이터 Closure Merge `769ff99309a266c677b30104015672cc07e3df83` / 2026-10-28 17:19:34 KST. **Owner 발효 결정 시각: 2026-10-28T17:20:26+09:00** (#49 Merge 시점으로 소급하지 않음).
+**Canonical effective policy:** [Portfolio Work Management Governance v1.3 — §4](../governance/portfolio-work-management-governance.md)
+**Independent technical review / final merge gate:** PR #49 기존 검수는 `f0f428f9… / STATIC_PASS_WITH_NOTES`; PR #51 고정 Base `256d0ec8…`/HEAD `b8382aba1f012166c7a58f7aeb95fa39a349c9d6`의 별도 READ-ONLY 검수는 `PASS_WITH_NOTES / BLOCKER 0 / MAJOR 0 / MINOR 0`라고 Owner가 전달했다. 요청 `gpt-6-sol / high / Fast OFF`의 실효값은 **UNKNOWN**이며 모델 설정 준수 PASS는 아니다. 발효 기록 후속 변경 자체의 별도 독립 Reviewer 검수는 **NOT_RUN**이며, Coordinator 정적 검증과 구분한다.
 
-### Owner-approved decision (not yet effective)
+### Effective decision (2026-10-28)
 
 전사 `진행 중 + 검토 중 ≤3` 상한을 대체한다.
 
@@ -4587,12 +4587,12 @@ C 중심 Lean Hybrid는 Owner 방향이다. 탈퇴·법정 보존 상세, 보존
 
 로그인 Active Objective 한 개 아래 User Writer / Auth Writer / 독립 E2E Writer를 각 Primary Jira·Branch·Worktree로 분할한다. User/Principal ID, Token/Session, 인가, API/DB Migration의 소유권은 선행 합의하며, 공통 파일/Schema는 한 Writer에 지정하거나 직렬화한다. 다른 Workstream 소유 Shared Identity는 별도 Owner의 Primary Jira와 명시적 Dependency를 통해 사용한다. 각 PR PASS와 결합 로그인 E2E PASS는 별개다.
 
-### Supersession scope (on effective merge only)
+### Partial supersession scope (effective 2026-10-28)
 
-- **Proposed partial supersession:** DEC-065의 Consequences 중 `진행 중 + 검토 중` Portfolio WIP 최대 3개 제한과 이를 그대로 구현한 Governance v1.2 §4만 대체.
+- **Effective partial supersession:** DEC-065의 Consequences 중 `진행 중 + 검토 중` Portfolio WIP 최대 3개 제한과 이를 그대로 구현한 Governance v1.2 §4만 대체.
 - **Remain valid:** DEC-065의 Jira/Git/GitHub/Confluence/AI Session별 정본, One Writer/Primary Jira, Scope·권한 경계, Independent Review, Human Merge/Production 및 Jira Taxonomy/Rollout.
 - **Preservation:** DEC-065 원문과 2026-10-15 Governance v1.2 승인/병합 이력은 소급 수정하지 않는다.
-- **Effective status:** Owner의 정책 채택은 2026-10-27 승인됨. **PR #49 Source Merge는 완료**되었으나, 해당 병합 SHA를 포함하는 **새 발효 메타데이터의 독립 검수·정본 반영 및 실제 발효시각 확인** 전까지 NOT_EFFECTIVE. 그전에는 기존 v1.2 및 DEC-065 WIP≤3 적용.
+- **Effective status:** v1.3/DEC-074는 **2026-10-28T17:20:26+09:00** Owner 발효 결정에 따라 EFFECTIVE. #49·#51 실 Merge SHA와 Owner 승인 근거를 분리 기록했다. DEC-065 중 전사 WIP≤3 항목만 대체하며 기존 Writer/Reviewer/Merge/Production Gate는 보존한다. 이 후속 활성화 기록의 별도 독립 Reviewer 검수는 NOT_RUN으로 남기며 수행됐다고 주장하지 않는다.
 - **Jira migration:** 새 Objective Custom Field, 대량 Status 변경, Local Hook 자동 실행 및 타 Product 코드 수정은 본 Decision으로 승인하지 않는다.
 
 
