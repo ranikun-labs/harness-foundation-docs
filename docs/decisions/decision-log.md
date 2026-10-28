@@ -4557,17 +4557,18 @@ C 중심 Lean Hybrid는 Owner 방향이다. 탈퇴·법정 보존 상세, 보존
 
 ---
 
-## DEC-074 — Workstream별 Active Objective 1개·Objective 내부 AI 병렬 실행 (Owner 채택 승인·미발효)
+## DEC-074 — Workstream별 Active Objective 1개·Objective 내부 AI 병렬 실행 (Source Merge 완료·미발효)
 
 **Status:** accepted / NOT_EFFECTIVE
 **Document lifecycle:** in_review (Draft Source)
-**Owner approval status:** approved (policy adoption only; separate Source Merge gate pending)
+**Owner approval status:** approved (policy adoption and later Source Merge separately approved; activation pending)
 **Owner / scope:** governance / portfolio-work-management, ai-session coordination
 **Decision direction date:** 2026-10-26
-**Approval scope:** Owner가 2026-10-27에 v1.3/DEC-074의 **정책 내용 최종 채택**을 승인함. **Source Merge·발효·새 Writer/Jira 변경 승인 아님.**
-**Owner approval evidence:** [2026-10-27 대화 기반 승인 기록](https://github.com/ranikun-labs/harness-foundation-docs/pull/49#issuecomment-6435342600)
+**Approval scope:** Owner가 2026-10-27에 v1.3/DEC-074의 **정책 내용 최종 채택**을 승인함. **별도 Source Merge는 2026-10-28 완료, 발효·새 Writer/Jira 변경 승인은 포함되지 않음.**
+**Owner approval evidence:** [2026-10-27 정책 채택 기록](https://github.com/ranikun-labs/harness-foundation-docs/pull/49#issuecomment-6435342600); [2026-10-28 별도 검수 결과 전달](https://github.com/ranikun-labs/harness-foundation-docs/pull/49#issuecomment-6459790459)
+**Source Merge:** [PR #49](https://github.com/ranikun-labs/harness-foundation-docs/pull/49) 일반 Merge Commit `256d0ec89f25770c0c0c15de2e6fe206675a549b`, 2026-10-28 12:23:26 KST. **정책 발효 아님.**
 **Canonical proposal:** [Portfolio Work Management Governance v1.3 — §4](../governance/portfolio-work-management-governance.md)
-**Independent review / final merge gate:** PASS_WITH_NOTES at `c1d819ada0eca62059883acd83a025948a532f73`, 0 BLOCKER/MAJOR/MINOR (Owner-provided separate Codex Reviewer); **new approval-metadata HEAD re-review NOT_RUN** / SOURCE MERGE PENDING
+**Independent review / final merge gate:** 별도 ChatGPT 세션이 `f0f428f9d34309701de1807151861c2ee76230cf`에 `STATIC_PASS_WITH_NOTES` / B0 M0 m0로 검수했다고 Owner가 전달함. Reviewer의 Sol/High/Fast OFF 실효 준수는 `UNKNOWN`이며 Owner가 이 제한을 수용한 뒤 PR #49 Source Merge 승인. 새 발효 메타데이터 HEAD 독립 검수는 아직 NOT_RUN.
 
 ### Owner-approved decision (not yet effective)
 
@@ -4590,7 +4591,7 @@ C 중심 Lean Hybrid는 Owner 방향이다. 탈퇴·법정 보존 상세, 보존
 - **Proposed partial supersession:** DEC-065의 Consequences 중 `진행 중 + 검토 중` Portfolio WIP 최대 3개 제한과 이를 그대로 구현한 Governance v1.2 §4만 대체.
 - **Remain valid:** DEC-065의 Jira/Git/GitHub/Confluence/AI Session별 정본, One Writer/Primary Jira, Scope·권한 경계, Independent Review, Human Merge/Production 및 Jira Taxonomy/Rollout.
 - **Preservation:** DEC-065 원문과 2026-10-15 Governance v1.2 승인/병합 이력은 소급 수정하지 않는다.
-- **Effective status:** Owner의 정책 채택은 2026-10-27 승인됨. **새 메타데이터 HEAD의 독립 Reviewer 재검수·별도 Source Merge 승인·정본 Merge SHA/실제 발효시각 메타데이터 확인** 전까지 NOT_EFFECTIVE; 그전에는 기존 v1.2 및 DEC-065 WIP≤3 적용.
+- **Effective status:** Owner의 정책 채택은 2026-10-27 승인됨. **PR #49 Source Merge는 완료**되었으나, 해당 병합 SHA를 포함하는 **새 발효 메타데이터의 독립 검수·정본 반영 및 실제 발효시각 확인** 전까지 NOT_EFFECTIVE. 그전에는 기존 v1.2 및 DEC-065 WIP≤3 적용.
 - **Jira migration:** 새 Objective Custom Field, 대량 Status 변경, Local Hook 자동 실행 및 타 Product 코드 수정은 본 Decision으로 승인하지 않는다.
 
 
