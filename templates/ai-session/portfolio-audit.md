@@ -31,7 +31,7 @@
 
 ## Verification
 
-> **v1.3 제안 — 미발효:** 새 Governance §4와 DEC-074가 독립 검수·최종 Owner 승인·Source Merge를 거치고 **발효 시각·승인 메타데이터의 정본 반영 및 유효성이 확인되기 전까지**는 `진행 중 + 검토 중 ≤ 3` 현행 v1.2 점검을 유지한다. 아래 항목은 개정 후 사용할 점검안이다.
+> **v1.3 Source Merge 완료·발효 대기:** PR #49는 일반 Merge Commit `256d0ec89f25770c0c0c15de2e6fe206675a549b`로 병합됐다. 그러나 `effective_from` 및 최종 발효 메타데이터의 정본 반영·독립 검증이 끝나기 전에는 **`진행 중 + 검토 중 ≤ 3` 기존 v1.2** 점검을 유지한다. 아래는 발효 후 사용할 점검안이다.
 
 - Workstream별 **Active Objective 1개**, 대표 Jira·Owner·Coordinator·완료 조건·다른 Workstream 의존성
 - Objective별 Primary Jira, 실제 진행·검토·WAIT·완료 상태; 상위 Epic/하위 Task 동시 ACTIVE는 그 자체로 오류가 아님
