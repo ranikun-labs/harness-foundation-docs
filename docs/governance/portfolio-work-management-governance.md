@@ -47,7 +47,7 @@ supporting_architecture_inputs:
 # Ranikun Labs Portfolio Work Management Governance v1.3 — OWNER APPROVED / NOT_EFFECTIVE (main v1.2 유효)
 
 > **정책 채택 승인·미발효.** `decision_status: accepted`는 Owner의 **정책 내용 채택**을, `document_status: in_review`는 Draft 문서 검수 진행을 뜻한다. **이 상태값만으로 실행·발효 권한은 발생하지 않으며** `effective_from: null`, `merge_gate_status: pending`, 실제 Source Merge 여부를 함께 확인해야 한다. Owner는 2026-10-27 대화에서 v1.3 개정 정책의 최종 채택을 승인했다([승인 범위 및 인계 기록](https://github.com/ranikun-labs/harness-foundation-docs/pull/49#issuecomment-6435342600)). 이 Branch는 승인된 정책의 **아직 미병합 Draft**이며 최신 메타데이터 HEAD 독립 재검수, 별도 Source Merge 승인, 실제 Merge SHA·발효 시각 확인 전까지 효력이 없다. 아래 v1.2의 2026-10-15 승인·병합·발효 이력은 그대로 유지한다.
-> **부분 대체 후보:** DEC-074 (proposed)가 DEC-065의 전사 WIP 상한 3건 항목만 부분 대체한다. 기존 Jira 소유권·세션 안전·독립 검수·Merge/Production Gate는 변경하지 않는다.
+> **부분 대체 후보:** DEC-074 (accepted / NOT_EFFECTIVE)는 정본 발효 후 DEC-065의 전사 WIP 상한 3건 항목만 부분 대체한다. 기존 Jira 소유권·세션 안전·독립 검수·Merge/Production Gate는 변경하지 않는다.
 
 ## 1. 목적과 상태
 
