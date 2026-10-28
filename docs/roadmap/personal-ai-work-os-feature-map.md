@@ -71,7 +71,7 @@ source_refs:
 
 ### 위임 시간에 따라 바뀌는 세 가지 운영 모드
 
-F4의 **운영 모드**는 단순 Scheduler 주기가 아니다. Owner가 복귀하기까지의 `review_horizon`과 승인된 `execution_scope`·`risk_limit`·`cost_budget`·`max_parallel_tasks`·`stop_conditions`·`handoff_requirements`를 조합하는 사용자 경험이다. 1/3/6시간은 우선 제공할 **프리셋**이며, 실제 제품화 후 다른 시간으로 확장할 수 있다. 사용자가 자리를 비운다고 신규 승인이나 전사 WIP 예외가 생기지 않는다.
+F4의 **운영 모드**는 단순 Scheduler 주기가 아니다. Owner 복귀·확인 간격을 나타내는 `review_horizon`과 작업별 `execution_budget`, 승인된 `execution_scope`·`risk_limit`·`cost_budget`·`max_parallel_tasks`·`stop_conditions`·`handoff_requirements`를 별도로 조합한다. `review_horizon` 프리셋 `1h/3h/6h`는 체크인·보고 시점이며 `execution_budget`가 아니다. 해당 시간 동안의 연속 실행, 자동 재개 또는 Runtime capability를 뜻하지 않는다. 사용자가 자리를 비워도 새 승인이나 전사 WIP 예외는 생기지 않는다.
 
 | 공식 모드 | Owner 상황 | AI가 할 일 | Owner가 돌아올 때 받는 것 |
 | --- | --- | --- | --- |
@@ -79,7 +79,7 @@ F4의 **운영 모드**는 단순 Scheduler 주기가 아니다. Owner가 복귀
 | **F4-3H / 집중 위임 모드** | 다른 업무·외출·집중 시간 | 독립 READY의 연속 배정, 완료별 Evidence와 Checkpoint 축적 | 완료한 PR/Commit·검증·실패·다음 READY·중요 결정의 중간 깊이 인계 |
 | **F4-6H / 장기 위임 모드** | 휴식·취침·장시간 부재 | 승인 범위 내 여러 작업을 연결해 진행. 위험 작업은 중단하고 다른 안전한 READY 수행 | 변경 순서, 작업별 HEAD/테스트/독립 Review, 실패·재시도·차단·남은 승인과 다음 추천을 확인하는 상세 복귀 리포트 |
 
-**시간 정책:** 시간은 Owner **검토·인계 시점**의 프리셋이며, 작업이 무조건 해당 시간 동안 지속되거나 시간이 끝났다는 이유로 현재 작업을 강제 취소한다는 뜻이 아니다. 중간 Checkpoint는 실제 Task 완료·의존성/위험 변화·Runtime 이벤트 기준으로 남긴다. Owner 부재 중에도 별도의 정책 위험·비용 한도·토큰/Tool 제한·실패 누적·예산 초과·Shared Contract 충돌이 발생하면 즉시 안전하게 중단한다. 오류 때문에 중단돼도 이미 검증된 결과는 보존하고 자동 재시도는 신뢰할 수 있는 멱등 조건에서만 한다.
+**체크인·실행 예산 정책:** `review_horizon` `1h/3h/6h`는 Owner 복귀·보고 주기이고 실제 코딩 시간과 별도다. 각 무인 코딩 실행의 `execution_budget`은 실행 상한이다. 초기 실행 예산은 `30m`와 `1h`; `3h`/`6h` 실행은 해당 Runtime의 무인 실행 E2E Evidence와 별도 Owner 승인이 모두 갖춰진 뒤에만 허용한다. `CUSTOM`에는 Owner가 `execution_scope`, `risk_limit`, `cost_budget`, `max_parallel_tasks`, `stop_conditions`, `checkpoint_ref` 및 `evidence_refs` 요건을 구체적으로 승인해야 한다. 이 사용자용 Projection은 예산 설정의 Runtime 지원이나 F4 완료를 증명하지 않으며, 실제 지원과 effective budget은 실행 Evidence로 별도 확인한다. 어떤 예산도 Task가 해당 시간 내내 실행된다는 보장은 아니다. 중간 Checkpoint는 실제 Task 완료·의존성/위험 변화·Runtime 이벤트 기준으로 남긴다. Owner 부재 중에도 별도의 정책 위험·비용 한도·토큰/Tool 제한·실패 누적·예산 초과·Shared Contract 충돌이 발생하면 즉시 안전하게 중단한다. 오류 때문에 중단돼도 이미 검증된 결과는 보존하고 자동 재시도는 신뢰할 수 있는 멱등 조건에서만 한다.
 
 **Owner 복귀 프로토콜:** (1) 지금까지 **실제로 완료한 업무**, (2) PR/HEAD와 테스트·Reviewer·통합 상태, (3) 막힌 업무와 영향, (4) 다음 승인 범위의 READY, (5) 결정이 필요한 사항을 구분해 기록한다. 리뷰 시 Owner가 `계속 진행 / 방향 수정 / 승인 보류 / 중단 / 모드 변경(F4-1H↔3H↔6H)`을 선택하면 **그 시점의 Checkpoint를 기준으로 새 승인 범위**를 재평가한다. Owner가 부재하는 동안 미응답 승인을 자동 긍정하지 않는다.
 
@@ -112,7 +112,7 @@ F4의 **운영 모드**는 단순 Scheduler 주기가 아니다. Owner가 복귀
 ## 4. Governance·책임·오해 방지
 
 - Main Personal AI 세션은 F1~F6 통합 설계·검증과 [Governance #49](https://github.com/ranikun-labs/harness-foundation-docs/pull/49)를 조정한다. Jira Legacy G2/G3/G4 이전 및 필드 정리는 별도 세션이 수행하며, [Foundation G2 #47](https://github.com/ranikun-labs/harness-foundation-docs/pull/47)은 Closure 증거만 연계한다.
-- 현재 발효된 Foundation Governance **v1.2**를 따른다. [v1.3 PR #49](https://github.com/ranikun-labs/harness-foundation-docs/pull/49)의 Workstream별 Active Objective/병렬 실행 정책은 아직 Draft/NOT_EFFECTIVE다. Personal AI `/async-batch` 범위도 현재 승인된 개인 사이드프로젝트로 한정된다.
+- 현재 발효된 Foundation Governance **v1.2**와 전사 WIP≤3 상한을 따른다. [v1.3 PR #49](https://github.com/ranikun-labs/harness-foundation-docs/pull/49)의 Source Merge는 완료됐지만 병합만으로 v1.3이 발효되지는 않았다. [후속 발효 메타데이터 PR #51](https://github.com/ranikun-labs/harness-foundation-docs/pull/51)은 아직 열려 있고 미병합이며, 현재 `main`의 `effective_from`은 `null`이다. Governance v1.3은 #51 메타데이터가 승인·병합되고 `effective_from`이 검증될 때까지 **NOT_EFFECTIVE**이며, 그동안 v1.2의 WIP≤3이 계속 적용된다. 이 기능 지도는 사람용 reference projection이며 정책 권한이나 발효 근거가 아니다.
 - Owner의 1/3/6시간 확인은 선택 가능한 검토 주기 목표이며, 백그라운드 상주·세션 종료 후 자동 재시작/알림·자동 Git Merge/Production을 약속하지 않는다.
 - 별도 승인 없이 Jira/Confluence/Git의 데이터·정본 자동 변경, 신규 중앙 Scheduler, 제품·상용 V2/V3 아키텍처 변경을 진행하지 않는다.
 
