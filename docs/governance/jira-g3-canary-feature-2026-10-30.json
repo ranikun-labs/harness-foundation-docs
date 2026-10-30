@@ -43,8 +43,8 @@
   "create_request": {
     "CreateRequestId": "RPL-G3-20261030-FEATURE-CANARY-01",
     "Origin": "target_create",
-    "Phase": "pending",
-    "IssueKey": null,
+    "Phase": "create_ready",
+    "IssueKey": "RPL-128",
     "project_key": "RPL",
     "project_id": "10001",
     "issue_type": "Feature",
@@ -83,12 +83,36 @@
     "required_defaults": {
       "assignee": "Jira Create metadata default",
       "reporter": "Jira Create metadata default"
-    }
+    },
+    "CreateActivationRef": "OWNER_APPROVED_FEATURE_CANARY_20261030",
+    "VerifiedAt": "2026-10-30"
   },
   "authority": {
-    "ReadAuthority": "none",
-    "WriteAuthority": "frozen",
+    "Origin": "target_create",
+    "Phase": "create_ready",
+    "IssueKey": "RPL-128",
+    "ReadAuthority": "target",
+    "WriteAuthority": "target",
     "LegacySnapshotRef": "not_applicable_new_target_create",
+    "OwnerApprovalRef": "Owner instruction in the current Jira Migration F4 RESUME conversation, dated 2026-10-30; approval is limited to the exact Feature canary below, one create only.",
+    "JiraChangelogRef": "https://ranikunlabs.atlassian.net/browse/RPL-128 (Activity → History shows issue creation; REST expand=changelog returned total=0 change histories)",
+    "TargetFieldIDsOptionIDs": {
+      "Product": {
+        "field_id": "customfield_10108",
+        "option_id": "10026"
+      },
+      "Component": {
+        "field_id": "customfield_10109",
+        "option_id": "10030"
+      },
+      "Concern": {
+        "field_id": "customfield_10110",
+        "option_id": "10039"
+      }
+    },
+    "ImpactPreservationRef": "not_applicable_new_issue_no_cross_product_relationship_requested",
+    "VerifiedAt": "2026-10-30",
+    "RollbackRef": "this-file#/rollback",
     "CutoverApprovalRef": "not_applicable_new_target_create"
   },
   "preflight": {
@@ -124,17 +148,105 @@
     }
   },
   "evidence": {
-    "pending_intent_persisted_at": null,
-    "jira_create_response": null,
-    "get_verification": null,
-    "jql_verification": null,
-    "changelog_ref": null,
-    "post_create_g2_118_preservation": null
+    "pending_intent_persisted_at": "2026-10-30; confirmed by remote fetch before Jira Create",
+    "pending_intent_commit_sha": "0b1f4526eb32ed7744f6a47d664b8faff22b59f2",
+    "pending_intent_blob_sha": "3ee9e93c7ea28de588cb18fa9a87850cd7a4ecb4",
+    "jira_create_response": {
+      "issue_key": "RPL-128",
+      "browser_success_confirmation": "Jira UI success alert: 업무 항목 기능 RPL-128을(를) 만듦",
+      "created_issue_url": "https://ranikunlabs.atlassian.net/browse/RPL-128"
+    },
+    "get_verification": {
+      "checked_date": "2026-10-30",
+      "issue_type_id": "10009",
+      "summary": "[MIGRATION-G3-CANARY-20261030] Target 분류 검증",
+      "description": "Jira G3/G4 신규 업무 생성·저장값·조회 검증용 시험 이슈",
+      "target_fields": {
+        "Product": {
+          "field_id": "customfield_10108",
+          "value": "platform-foundation",
+          "option_id": "10026"
+        },
+        "Component": {
+          "field_id": "customfield_10109",
+          "value": "infra",
+          "option_id": "10030"
+        },
+        "Concern": {
+          "field_id": "customfield_10110",
+          "value": "migration",
+          "option_id": "10039"
+        }
+      },
+      "legacy_fields": {
+        "customfield_10042": null,
+        "customfield_10043": null,
+        "customfield_10044": null
+      },
+      "start_date": "2026-10-30",
+      "due_date": "2026-11-02",
+      "assignee": "Jira's default assignee 박성환",
+      "reporter": "Jira's default reporter 박성환",
+      "status": "할 일",
+      "web_url": "https://ranikunlabs.atlassian.net/browse/RPL-128"
+    },
+    "jql_verification": {
+      "by_issue_key": {
+        "query": "project = RPL AND key = RPL-128",
+        "match_count": 1,
+        "issue_keys": [
+          "RPL-128"
+        ]
+      },
+      "by_unique_summary_token": {
+        "query": "project = RPL AND summary ~ \"MIGRATION-G3-CANARY-20261030\"",
+        "match_count": 1,
+        "issue_keys": [
+          "RPL-128"
+        ]
+      },
+      "exact_summary_equality_attempt": {
+        "match_count": 0,
+        "interpretation": "Jira summary equality returned no row; the key query and unique-token query each returned the same single RPL-128 record. No retry or second Create was issued."
+      }
+    },
+    "changelog_ref": "https://ranikunlabs.atlassian.net/browse/RPL-128 — UI Activity > History displays the creation event; REST GET expand=changelog returned total=0.",
+    "post_create_g2_118_preservation": {
+      "baseline_ref": "ranikun-labs/platform-services@530dd0f88e5819158362b620ca1591779a50cba5:governance/jira-g2-full-118/final118-verification-20261023.json",
+      "baseline_blob_sha": "aea968a4dca76194b0de96db6fe20c1c20648470",
+      "baseline_count": 118,
+      "live_jql_count": 118,
+      "live_unique_count": 118,
+      "missing": 0,
+      "extra": 0,
+      "target_classification_differences": 0,
+      "legacy_classification_differences": 0
+    },
+    "existing_issue_cutover_review": {
+      "candidate_manifest_state": "READ_ONLY_PROPOSED_CANDIDATES",
+      "candidate_manifest_date": "2026-10-29",
+      "candidate_count": 103,
+      "candidate_cutover_ready": 0,
+      "owner_approved_cutovers": 0,
+      "live_comment_rechecks": [
+        {
+          "issue_key": "RPL-63",
+          "comment_count": 11,
+          "matching_cutover_approval_comments": 0
+        },
+        {
+          "issue_key": "RPL-88",
+          "comment_count": 0,
+          "matching_cutover_approval_comments": 0
+        }
+      ],
+      "action": "No existing-issue authority cutover performed; retain existing authority and quarantine unapproved/origin-unknown items."
+    }
   },
   "rollback": {
     "ref": "this-file#/rollback",
     "no_create_if_pending_write_not_verified": true,
-    "ambiguous_or_lost_create_response": "Do not retry Create. Search by exact summary and correlate the known CreateRequestId; preserve create_pending until a unique Jira issue is identified, otherwise set create_quarantined with ReadAuthority=none and WriteAuthority=frozen.",
+    "ambiguous_or_lost_create_response": "Never retry Create. Search JQL by the unique canary summary token and compare the returned issue's creation window and requested fields with this pre-create ledger; CreateRequestId is stored here, not in Jira. If exactly one candidate matches, bind its IssueKey. If none or multiple candidates match, keep create_pending/create_quarantined with ReadAuthority=none and WriteAuthority=frozen.",
     "known_issue_with_mismatch_or_origin_write_failure": "Keep the known issue; set create_quarantined, ReadAuthority=none, WriteAuthority=frozen. Retry only read verification or the ledger update after reconciliation; never recreate or delete the issue.",
     "pre_submit_abort": "If Create was never submitted, record not_created/cancelled and keep Jira unchanged.",
     "deletion": "No issue deletion or Legacy field deletion.",
