@@ -1,0 +1,143 @@
+{
+  "record_type": "jira_g3_feature_canary_origin_ledger",
+  "schema_version": "1.0",
+  "repository": "ranikun-labs/harness-foundation-docs",
+  "branch": "audit/jira-g3-feature-canary-20261030",
+  "base_ref": "main",
+  "base_sha": "86b5bea721a54029886119f62757db3f89809db5",
+  "path": "docs/governance/jira-g3-canary-feature-2026-10-30.json",
+  "policy_refs": {
+    "portfolio_work_management_governance": {
+      "version": "1.3",
+      "document_status": "accepted",
+      "owner_approval_status": "approved",
+      "effective_from": "2026-10-28T17:20:26+09:00",
+      "blob_sha": "bf2c67e36566557e3288554deeeb573a7e39b40a"
+    },
+    "ai_session_governance": {
+      "version": "1.1",
+      "document_status": "accepted",
+      "decision_status": "accepted_with_constraints",
+      "effective_from": "2026-07-29",
+      "blob_sha": "d923ddcc77fc39348760d5934c88a971e7f72833"
+    },
+    "jira_field_taxonomy": {
+      "version": "1.0",
+      "document_status": "accepted",
+      "decision_status": "accepted",
+      "owner_approval_status": "approved",
+      "effective_from": "2026-10-15T15:03:00+09:00",
+      "blob_sha": "0c3bc9d7a7b71ff072696c33d21e372d20d76b29",
+      "fast_track_section": "§8.0",
+      "create_lifecycle_section": "§8.1"
+    }
+  },
+  "activation": {
+    "issue_type": "Feature",
+    "issue_type_id": "10009",
+    "ActivationRef": "OWNER_APPROVED_FEATURE_CANARY_20261030",
+    "EffectiveFrom": "2026-10-30",
+    "EffectiveTo": "2026-10-30",
+    "OwnerApprovalRef": "Owner instruction in the current Jira Migration F4 RESUME conversation, dated 2026-10-30; approval is limited to the exact Feature canary below, one create only."
+  },
+  "create_request": {
+    "CreateRequestId": "RPL-G3-20261030-FEATURE-CANARY-01",
+    "Origin": "target_create",
+    "Phase": "pending",
+    "IssueKey": null,
+    "project_key": "RPL",
+    "project_id": "10001",
+    "issue_type": "Feature",
+    "issue_type_id": "10009",
+    "summary": "[MIGRATION-G3-CANARY-20261030] Target 분류 검증",
+    "description": "Jira G3/G4 신규 업무 생성·저장값·조회 검증용 시험 이슈",
+    "dates": {
+      "start_date": "2026-10-30",
+      "due_date": "2026-11-02"
+    },
+    "target_fields": {
+      "Product": {
+        "field_id": "customfield_10108",
+        "value": "platform-foundation",
+        "option_id": "10026"
+      },
+      "Component": {
+        "field_id": "customfield_10109",
+        "value": "infra",
+        "option_id": "10030"
+      },
+      "Concern": {
+        "field_id": "customfield_10110",
+        "value": "migration",
+        "option_id": "10039"
+      }
+    },
+    "legacy_fields": {
+      "fields_not_sent": [
+        "customfield_10042",
+        "customfield_10043",
+        "customfield_10044"
+      ],
+      "expected": "empty_or_absent"
+    },
+    "required_defaults": {
+      "assignee": "Jira Create metadata default",
+      "reporter": "Jira Create metadata default"
+    }
+  },
+  "authority": {
+    "ReadAuthority": "none",
+    "WriteAuthority": "frozen",
+    "LegacySnapshotRef": "not_applicable_new_target_create",
+    "CutoverApprovalRef": "not_applicable_new_target_create"
+  },
+  "preflight": {
+    "observed_date": "2026-10-30",
+    "current_main_sha": "86b5bea721a54029886119f62757db3f89809db5",
+    "owner_approved_repository_write": true,
+    "target_branch_absent_before_creation": true,
+    "target_path_absent_on_main": true,
+    "feature_create_metadata": {
+      "total_fields": 19,
+      "target_product_required": true,
+      "target_component_required": true,
+      "target_concern_required": false,
+      "target_option_ids_match": true,
+      "legacy_fields_absent_from_create_metadata": true,
+      "required_start_and_due_dates": true
+    },
+    "duplicate_searches": {
+      "exact_summary_jql_matches": 0,
+      "canary_token_jql_matches": 0
+    },
+    "existing_g2_118_evidence": {
+      "repository": "ranikun-labs/platform-services",
+      "ref": "530dd0f88e5819158362b620ca1591779a50cba5",
+      "path": "governance/jira-g2-full-118/final118-verification-20261023.json",
+      "blob_sha": "aea968a4dca76194b0de96db6fe20c1c20648470",
+      "total": 118,
+      "target_both": 118,
+      "missing": 0,
+      "partial": 0,
+      "non_target_diffs": 0,
+      "original_snapshot_diffs": 0
+    }
+  },
+  "evidence": {
+    "pending_intent_persisted_at": null,
+    "jira_create_response": null,
+    "get_verification": null,
+    "jql_verification": null,
+    "changelog_ref": null,
+    "post_create_g2_118_preservation": null
+  },
+  "rollback": {
+    "ref": "this-file#/rollback",
+    "no_create_if_pending_write_not_verified": true,
+    "ambiguous_or_lost_create_response": "Do not retry Create. Search by exact summary and correlate the known CreateRequestId; preserve create_pending until a unique Jira issue is identified, otherwise set create_quarantined with ReadAuthority=none and WriteAuthority=frozen.",
+    "known_issue_with_mismatch_or_origin_write_failure": "Keep the known issue; set create_quarantined, ReadAuthority=none, WriteAuthority=frozen. Retry only read verification or the ledger update after reconciliation; never recreate or delete the issue.",
+    "pre_submit_abort": "If Create was never submitted, record not_created/cancelled and keep Jira unchanged.",
+    "deletion": "No issue deletion or Legacy field deletion.",
+    "future_feature_create_route": "Any rollback of Feature Create configuration affects future creates only. This target_create issue stays Target-owned and is not copied back to Legacy."
+  }
+}
