@@ -270,6 +270,17 @@ Jira **원격 쓰기**(Create, Update, Transition, Comment, Link, Bulk)가 예�
 
 **문서 PR Merge ≠ Jira Admin 적용 ≠ 티켓 분류 이전 ≠ Board Cutover ≠ Runtime 배포.**
 
+### 8.2 Jira Native 운영 화면과 소비처별 권위 검증 범위 (G3/G4)
+
+**운영 대상:** RPL 프로젝트의 Jira Native Issue 화면·Board·Filter·JQL·Automation을 사용자 운영 인터페이스로 우선 채택한다. 본 절은 Owner 감독형 Jira Migration의 **소비처 검증 범위**를 명시하며, §8.0/§8.1의 이슈별 Origin·Intent·원본 보존·Cutover 승인·실패 격리 계약을 대체하지 않는다. AI Jira 자동 생성 Runtime/Origin Registry 구현은 별도 승인된 제품 책임이다.
+
+1. **Native와 원장 권위의 차이:** Jira Native 화면·JQL은 저장된 Legacy/Target 필드를 표시·조회할 뿐 외부 `Origin`, `ReadAuthority`, `CutoverApprovalRef`를 해석하거나 조회를 차단하지 않는다. 따라서 Target 필드의 표시·JQL 조회 성공은 공식 권위 전환의 증거가 아니다. 기존 `legacy_migration` 이슈의 `ReadAuthority=legacy` 상태에서 보이는 Target 값은 **비권위 미리보기(preview)**다. 실제 Jira Native UI가 이를 자동으로 구분해 표시하는 것은 아니므로, 이 한계·사용자 오인 위험·운영 안내 방식은 Owner가 명시적으로 수용·기록해야 한다.
+2. **소비처별 검증:** 운영 중인 소비처를 구체적인 설정 Revision·Owner·조회 계정·접근 범위·JQL/화면 근거와 함께 `LEGACY_CLASSIFICATION_CONSUMER`(Legacy 분류 사용), `TARGET_CLASSIFICATION_CONSUMER`(Target 분류 사용), `NO_CLASSIFICATION_CONSUMER`(분류 필드 미사용), `TARGET_EXPOSURE`(분류 기준 선택 없이 Target 필드 표시·편집 가능), `ACCESS_UNKNOWN`(검증 권한 또는 실제 사용 근거 없음)으로 구분한다. 한 Board나 Automation이 분류를 쓰지 않아도 Issue 화면의 `TARGET_EXPOSURE`는 별도로 남는다. 비공개 Filter·외부 소비처의 부재를 조회 실패나 현재 계정의 목록 0건만으로 추정하지 않는다.
+3. **실제 소비처가 없는 범위:** 정확히 식별된 `NO_CLASSIFICATION_CONSUMER`에 한하여, 실증된 설정·영향·Owner 승인 Ref를 남긴 경우 해당 소비처만의 Manifest-aware Reader 연결 및 소비처 전용 전환·복구 Drill을 `NOT_APPLICABLE_BY_APPROVED_SCOPE`으로 판정할 수 있다. 실재하지 않는 Reader 서버를 만들거나 가짜 소비처/승인/Drill로 PASS를 구성하지 않는다. 이 예외는 `TARGET_EXPOSURE`·확인되지 않은 소비처·이슈별 권위와 Origin 검증·복구 의무를 면제하지 않는다.
+4. **사용자 조회 및 혼합 Origin 제약:** 공식 분류 기반 집계·자동화·검색 결과가 이슈별 `ReadAuthority`를 반영해야 한다면, Native 단독 JQL로는 검증된 `legacy_migration`·`target_create`·`UNKNOWN_ORIGIN`을 안전하게 분리하거나 fail-closed 강제할 수 없다. 실제 사용되는 소비처에 대해서는 승인된 원장 인식 경로와 검증이 필요하며, 구축·배포되지 않은 기능을 지원한다고 주장하지 않는다. 기존 비분류 업무 흐름은 승인된 역할·권한 계약에 따라 지속할 수 있다.
+5. **복구 검증:** 실제 분류 소비처를 변경한다면 적용 전후 분류 결과와 승인된 복구 후 유효값까지 해당 소비처에서 검증한다. 특정 범위에 변경할 소비처가 없으면 그 사실을 근거로 기록하고, 기존 Snapshot·원장 Revision·실제 Jira Before/After 재조회 및 조건부 복구 절차를 준비한다. 소비처 복구 Drill을 수행하지 않았다면 `NOT_RUN`으로 기록하며, 별도 Owner가 한정 적용 제외를 승인한 경우에만 해당 범위의 `NOT_APPLICABLE_BY_APPROVED_SCOPE`으로 구분한다. 오프라인 시뮬레이션만으로 운영 복구 PASS를 주장하지 않는다.
+6. **독립 승인 Gate:** 본 절의 Source Review·Owner 채택·Merge·발효, 소비처별 적용 제외 승인, 이슈별 `CutoverApprovalRef`와 실제 `Phase=cutover / ReadAuthority=target / WriteAuthority=target` 기록은 각각 별개 사건이다. 해당 이슈·Primary Jira·Sole Writer·실제 계정·적용 기간·원본 Snapshot·검증/복구 조건을 확인한 뒤 **별도 Cutover 승인**이 있어야 전환한다. 미승인 상태에서는 기존 `verified/legacy/frozen`을 유지한다. G4 Legacy Hide·Delete 역시 별도 Owner 승인 전 금지한다.
+
 ## 9. AI 세션에서 짧게 참조하는 규칙
 
 ```text
