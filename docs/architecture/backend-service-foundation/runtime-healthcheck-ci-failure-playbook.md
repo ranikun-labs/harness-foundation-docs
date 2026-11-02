@@ -84,6 +84,7 @@ GitHub Actions 자체 경고(구버전 checkout/setup-java)는 **실패 원인�
 - 일반 개발은 변경 기능의 Unit/Component/Integration 우선. Auth·신뢰 헤더·조직 격리 계약 변경, 다중 서비스 Fan-in, Production 출시·전환 Gate 때만 전체 E2E 검토한다.
 - 비운영 E2E PASS ≠ 독립 Reviewer PASS ≠ Source Merge ≠ Production Readiness/Go-Live.
 - RPL-55 Source Merge와 운영 Actuator/포트/보안 Role·데이터·롤백 변경은 별도 Owner 승인을 요구한다.
+- G4 실행 또는 secure-run Push는 별도 Owner 승인만으로 허용되지 않는다. 과거 노출 Credential의 폐기·회전 증거, 해당 Actions 로그 접근 검토, 승인된 Runner, 정확한 후보 SHA에 대한 독립 보안 검수, 해당 SHA/1회 실행을 지정한 Owner 승인이 모두 확인돼야 한다. Credential 원문은 로그·보고서에 출력하지 않는다.
 
 ## 6. 저장소 단위 실측 조회 경계
 
