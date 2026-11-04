@@ -19,7 +19,7 @@ related_adrs:
 
 CI가 빨간색이라는 사실만으로 **제품 코드 장애**로 결론 내리면 안 된다. 이번 문서는 부팅/의존성/포트/Healthcheck/제품 테스트 실패를 구분하고 다음 기능 개발에도 **동일한 검수 기준**을 적용하도록 하는 **Draft Architecture/운영 검증 지침**이다.
 
-- **제품 증거 정본:** [RPL-55 G4 원인·해결·검사 로그](https://github.com/ranikun-labs/platform-services/blob/def052bc5f7d3c7d477cc1f3c594f5d7fea7f770/docs/testing/evidence/rpl-55-g4-ci-failure-analysis-20261023.md) / [E2E 16/16 기준선과 선택 실행 계약](https://github.com/ranikun-labs/platform-services/blob/f2cc25f650203f22bef7e665cbe91ed76bfa22fd/docs/testing/evidence/rpl-55-g4-e2e-baseline-and-test-selection-20261023.md)
+- **제품 증거 정본:** [RPL-55 G4 원인·해결·검사 로그](https://github.com/ranikun-labs/platform-services/blob/def052bc5f7d3c7d477cc1f3c594f5d7fea7f770/docs/testing/evidence/rpl-55-g4-ci-failure-analysis-20261023.md) / [E2E 16/16 기준선과 선택 실행 계약](https://github.com/ranikun-labs/platform-services/blob/eeac873afdb51beb1676f215dbd2baa0ae71957d/docs/testing/evidence/rpl-55-g4-e2e-baseline-and-test-selection-20261023.md)
 - **Jira:** [RPL-55](https://ranikunlabs.atlassian.net/browse/RPL-55)는 진행 중이며 완료/운영 전환 승인 아니다.
 - **Confluence:** Shared Platform/Shared Identity/Carelog는 이해를 돕는 최신 아키텍처 Projection이다.
 - **기존 승인 Architecture:** [ADR-0017](../../adr/ADR-0017-shared-platform-gateway-identity-physicalization.md)·[ADR-0020](../../adr/ADR-0020-shared-platform-postgresql-schema-ownership.md). 본 문서는 기존 ADR을 변경하지 않는다.
@@ -72,6 +72,7 @@ CI가 빨간색이라는 사실만으로 **제품 코드 장애**로 결론 내�
 | App 시작·Flyway | `APP_BOOT` | Migration 순서/Owner Schema·Env·프로파일·실행 포트 | Startup/DB 표적 테스트 |
 | 컨테이너 unhealthy | `PROBE_CONFIG` | Liveness vs Readiness, Healthcheck Port/Path/Timeout, 관리 리스너 활성화 | 환경별 Probe 계약 정렬 뒤 표적 재검증 |
 | PostgreSQL/Valkey/Claims 연동 | `DEPENDENCY` | Connection, Healthcheck, Timeout, Retry, Fail-closed | 의존성 통합 테스트 |
+| Docker daemon/Testcontainers client 불일치 | `DEPENDENCY_COMPATIBILITY` | Docker Engine minimum API와 Testcontainers가 사용하는 docker-java API 비교 (Engine 29.4.2 min 1.40, Testcontainers 1.20.6은 API 1.32 사용) | 호환되는 Testcontainers/docker-java 버전으로 올리고 통합 테스트를 재검증한다 (검증된 수정: Testcontainers 1.21.4). CI 전용 API pin은 원인 격리용으로만 쓰고 daemon API를 낮추지 않는다. |
 | HTTP/API Assertion | `PRODUCT_REGRESSION` | Token Issuer/Audience, Header sanitization, Tenant Owner, API Contract | 기능별 테스트 및 Finding 수정 |
 | 재현·로그 부족 | `UNKNOWN` | Run ID·고정 SHA·로그·Active Profile | PASS/FAIL 원인 확정 유보 |
 
@@ -80,12 +81,14 @@ GitHub Actions 자체 경고(구버전 checkout/setup-java)는 **실패 원인�
 ## 5. 증거·재검증·운영 승격 규칙
 
 - 반드시 **Issue/PR, SHA, Run ID, 실패 Step, 기대·관측 값, Active Profile·Probe 계약, Root Cause, 수정 Commit, 후속 성공 Run, 남은 위험**을 연결한다.
-- 한 번 실패한 Run은 기록에서 지우지 않는다. 대신 `historical_failed → root_cause_identified → fixed_in_test_overlay → verified_success`로 **Finding Lifecycle**을 보존한다.
-- 일반 개발은 변경 기능의 Unit/Component/Integration 우선. Auth·신뢰 헤더·조직 격리 계약 변경, 다중 서비스 Fan-in, Production 출시·전환 Gate 때만 전체 E2E 검토한다.
+- 한 번 실패한 Run은 기록에서 지우지 않는다. 대신 `historical_failed → root_cause_identified → fix_applied → verified_success`로 **Finding Lifecycle**을 보존한다.
+- 일반 개발은 변경 기능의 Unit/Component/Integration 우선. Auth·신뢰 헤더·조직 격리 계약 변경, 다중 서비스 Fan-in, 마지막 E2E 기준선 이후 독립 변경이 누적돼 상당한 차이가 생긴 경우, 인증 사고·보안 회귀·장애 재현으로 해당 경계 전체 검증이 필요한 경우, Production 출시·전환 Gate 때 전체 E2E를 검토한다. 일정 경과만으로 자동 실행하지 않는다.
 - 비운영 E2E PASS ≠ 독립 Reviewer PASS ≠ Source Merge ≠ Production Readiness/Go-Live.
 - RPL-55 Source Merge와 운영 Actuator/포트/보안 Role·데이터·롤백 변경은 별도 Owner 승인을 요구한다.
 - G4 실행 또는 secure-run Push는 별도 Owner 승인만으로 허용되지 않는다. 과거 노출 Credential의 폐기·회전 증거, 해당 Actions 로그 접근 검토, 승인된 Runner, 정확한 후보 SHA에 대한 독립 보안 검수, 해당 SHA/1회 실행을 지정한 Owner 승인이 모두 확인돼야 한다. Credential 원문은 로그·보고서에 출력하지 않는다.
 
 ## 6. 저장소 단위 실측 조회 경계
 
-2026-10-23 GitHub에서 접근 가능한 Ranikun Labs **14개 저장소, 총 15개 Actions Run** 확인. 실패 3건 모두 위의 과거 Platform 실행이며 후속 성공 기록 존재. Carelog BE·Finance BE·oh-my-ai·Shared AI FastAPI PoC에서 조회된 Run은 성공. **9개 저장소에서 조회 Run 0건**은 CI 미설정/미실행/미검증 상태이지 PASS가 아니다. GitHub Actions가 아닌 Jenkins·Codex Cloud·외부 CI 전체 감사는 별도 범위다.
+**역사적 GitHub Actions 인벤토리 스냅샷 — 2026-10-23 (정확한 수집 시각 미기록):** 당시 접근 가능했던 Ranikun Labs 14개 저장소에서 확인한 15개 Actions Run 범위에서 실패 3건이 확인됐으며, 그 세 건은 위의 Platform BuildKit/Probe 사례였다. 이는 당시의 조회 결과이지 2026-10-23 전체 Run 인벤토리가 아니다. Carelog BE·Finance BE·oh-my-ai·Shared AI FastAPI PoC에서 당시 조회된 Run은 성공했다. **9개 저장소에서 조회 Run 0건**은 CI 미설정/미실행/미검증 상태이지 PASS가 아니다. 범위는 접근 가능한 GitHub Actions 기록뿐이며 Jenkins·Codex Cloud·외부 CI는 포함하지 않는다.
+
+**후속 레거시 Carelog CI 호환성 사례 — 2026-10-23:** [실패 Run #39934148119](https://github.com/ranikun-labs/carelog-be/actions/runs/39934148119)에서는 Docker CLI/Socket은 정상이었으나 Docker Engine 29.4.2 (minimum API 1.40)에 Testcontainers 1.20.6에 포함된 docker-java가 API 1.32로 접속해 HTTP 400이 발생했고, Spring Boot Test Context 생성 전에 종료돼 제품 Assertion은 실행되지 않았다. [비운영 격리 Run #39934724113](https://github.com/ranikun-labs/carelog-be/actions/runs/39934724113)은 CI 한정 `docker-java.properties api.version=1.44`로 기존 매니저 가입·로그인과 실패 롤백 2/2 Job PASS를 확인했다. [Draft Carelog PR #54](https://github.com/ranikun-labs/carelog-be/pull/54)는 Testcontainers `testcontainers`/`postgresql` 1.21.4를 사용해 우회 pin 없이 [Run #39935257193](https://github.com/ranikun-labs/carelog-be/actions/runs/39935257193)에서 PostgreSQL 통합 테스트 성공을 확인했다. 이들은 레거시 Carelog 가입·로그인·롤백 회귀 증거이며 Shared Identity G4 Orphan E2E나 RPL-55 E2E/DoD/Production PASS가 아니다.
