@@ -24,6 +24,8 @@ related_decisions:
 
 # Backend Service Foundation — Architecture
 
+> 2026-10-23 비운영 실패 원인·Healthcheck 구분·재발 방지 기준: [Runtime Healthcheck·CI 실패 분류](./runtime-healthcheck-ci-failure-playbook.md). 이 문서는 Accepted ADR 변경이나 운영 Probe 수정 지시가 아니다.
+
 > **Owner policy alignment — 2026-10-13:** [ADR-0023](../../adr/ADR-0023-sqs-messaging-and-environment-isolation.md) / DEC-072가
 > JetStream 목표를 SQS로 부분 대체하고 Worker + JPA·Local Broker 없음·Dev/Production
 > 보안 격리를 기록한다. [ADR-0024](../../adr/ADR-0024-identity-commerce-owner-policy-alignment.md) / DEC-073은 공통 Account·제품별
