@@ -11,6 +11,8 @@ g3_cutover_approval: null
 
 # Jira G2 — Current Status Projection (2026-10-21)
 
+> **최신 상태 별도 공시(2026-10-23):** [G2 전체 118/118 데이터 이전 완료 Projection](jira-g2-migration-completion-projection-2026-10-23.md). 이 문서는 **2026-10-21 당시 24/118** 시점 기록이므로 새로운 운영 상태로 사용하지 않는다. 과거 감사 근거·이슈 판정은 변경하지 않는다.
+
 > **2026-10-21 기준 Jira G2 상태를 기록한 비파괴적 Projection.** 2026-10-15 G0/Governance 승인 기록과 ADR의 `implementation_status`·정책적 의미는 보존한다. 문서의 GitHub Merge 여부와 Jira 새 Write·G3 권위 이전은 각각 별도 증거와 승인이 필요한 사건이며, 이 문서만으로 완료·승인됐다고 선언하지 않는다.
 
 ## 인원/범위

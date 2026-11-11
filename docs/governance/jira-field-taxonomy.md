@@ -26,6 +26,8 @@ related_documents:
 
 # Jira Field Taxonomy & AI CRUD Gate — v1.0 (정책 main 발효 / Jira 실행 상태는 Current Projection 참조)
 
+> **2026-10-23 최신 G2 실행 Projection:** [RPL 전체 118/118 데이터 이전 완료](jira-g2-migration-completion-projection-2026-10-23.md). 이 문서에 남아 있는 2026-10-15·2026-10-21 수치와 `implementation_status: not_started`는 당시 승인/실행 기록이며 소급 변경하지 않는다. **현재 G3 신규 생성·권위 전환은 별도 승인 전까지 OFF**다.
+
 > **Owner 최종 승인과 Sol Delta PASS를 거쳐 [PR #38](https://github.com/ranikun-labs/harness-foundation-docs/pull/38)이 [Merge Commit `3faf402a`](https://github.com/ranikun-labs/harness-foundation-docs/commit/3faf402a8603aa87449070ba0833b862df46bd3f)으로 2026-10-15 15:03 KST `main`에 병합되어 정책 발효됐다.** [전체 Owner 승인](jira-governance-owner-approval-2026-10-15.md)과 [G0 승인](jira-taxonomy-g0-owner-decision-2026-10-15.md)은 별도 근거다. **정책 발효 ≠ Jira Field/Option 적용·Issue Migration·Pilot 완료.** `implementation_status: not_started`는 **2026-10-15 승인 당시 정책 메타데이터의 역사 기록**으로 보존하며, G1~G4의 개별 승인 Gate는 유지한다. **2026-10-21 G1·G2 실행 결과는 [Current Status Projection](jira-g2-migration-status-projection-2026-10-21.md)을 따른다.**
 
 ## 1. 목적과 책임
