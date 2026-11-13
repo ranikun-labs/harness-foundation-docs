@@ -48,19 +48,22 @@ Epic: 사용자가 업무를 안전하게 완료하고 결과를 확인한다
 
 2026-11-13에 RPL 프로젝트의 Issue Type 메타데이터를 조회했다.
 
-| Jira 유형 | 조회된 계층 단계 | 현재 부모 관계 |
-|---|---:|---|
-| Epic | 1 | 상위 목표 |
-| Story | 0 | Epic 아래에 배치 가능 |
-| Feature | 0 | Epic 아래에 배치 가능 |
-| Sub-task | -1 | 일반 이슈 아래의 실행 하위 단계 |
+| Jira 유형 | 조회된 기본 계층 단계 |
+|---|---:|
+| Epic | 1 |
+| Story | 0 |
+| Feature | 0 |
+| Sub-task | -1 |
 
-현재 Jira에서는 Epic→Story와 Epic→Feature는 표현할 수 있지만 **Story→Feature를 실제 Parent 관계로 표현할 수 없다.** Story와 Feature가 같은 계층 단계이기 때문이다.
+이 값만으로 RPL에서 Story→Feature Parent가 가능한지 판정할 수 없다. Jira의 Work Type Scheme 순서가 업무 유형 사이의 부모·자식 구조를 정할 수 있다는 공식 문서가 있다. 하지만 이번 조회에서는 RPL에 연결된 Scheme의 이름·사용 프로젝트·유형 순서를 확인하지 못했다. 따라서 현재 RPL에서 Story→Feature를 저장할 수 있는지는 **UNKNOWN**이다.
+
+[Atlassian Work Type Scheme 문서](https://support.atlassian.com/jira-cloud-administration/docs/add-edit-and-delete-an-issue-type-scheme/)와 [계층 설정 문서](https://support.atlassian.com/jira-cloud-administration/docs/configure-the-issue-type-hierarchy/)를 참고한다. Site-level hierarchy 변경은 여러 company-managed project와 기존 Parent 관계에 영향을 줄 수 있으므로 Scheme 확인보다 먼저 적용하지 않는다.
 
 ## 설정이 맞춰질 때까지의 처리
 
-- 실제 의미가 맞으면 Epic→Feature로 기록한다.
-- Story가 꼭 필요한 업무는 Story→Feature 관계가 지원되는 설정이나 Owner가 승인한 대체 방식을 확인하기 전까지 그 관계를 실제 Jira 계층처럼 기록하지 않는다.
+- 실제 RPL Work Type Scheme을 확인하기 전에는 Story→Feature 지원 여부를 단정하지 않는다.
+- Scheme이 관계를 지원하고 실제 Parent로 재조회할 수 있으면 승인된 쓰기 절차에서 사용한다.
+- 지원하지 않는 것이 확인되면 Epic→Feature로 의미를 보존할 수 있는 경우에만 직접 연결하고, Story가 꼭 필요한 업무는 승인된 대안을 정하기 전까지 Parent 계층 미지원으로 표시한다.
 - Issue Link나 Sub-task를 Story→Feature의 대체 Parent 관계라고 부르지 않는다.
 - Jira 전역 계층·프로젝트 Issue Type 설정은 이 문서 변경에 포함되지 않는다. 관리자 설정 변경은 별도 영향 검토와 Owner 승인 대상이다.
 - 기존 티켓·브랜치·Owner·완료 기준을 새 계층에 맞춘다는 이유로 소급 변경하지 않는다.
@@ -72,7 +75,7 @@ Epic: 사용자가 업무를 안전하게 완료하고 결과를 확인한다
 1. 기존 Epic·Story·Feature를 검색해 중복과 현재 Parent를 확인한다.
 2. 독립적인 완료 기준이 있는 일을 Feature로 분리하고, 필요할 때만 Story 묶음을 제안한다.
 3. 한국어 F1 미리보기에 티켓 유형, 제목, 목적, 범위, 수락 기준, 검증 방법, Parent 후보, 의존성을 함께 표시한다.
-4. Jira가 현재 계층을 저장할 수 있는지 확인하고, 저장할 수 없는 관계는 불일치로 표시한다.
+4. Jira가 현재 Project에 연결된 Work Type Scheme에서 관계를 저장할 수 있는지 확인한다. Scheme을 읽지 못했다면 가능 여부는 UNKNOWN으로 표시한다.
 5. 기존 Jira 쓰기 권한 경계에 따라 승인된 티켓만 생성하고, 생성 후 Issue Type·Parent·내용을 다시 읽어 확인한다.
 6. 티켓 생성은 코드 수정·브랜치 생성·PR·병합·종료 승인을 대신하지 않는다.
 
