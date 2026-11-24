@@ -210,11 +210,11 @@ Jira **원격 쓰기**(Create, Update, Transition, Comment, Link, Bulk)가 예�
 
 ## 8. 적용 Gate와 전환기 Read/Write SSOT (F2)
 
-승인·발효된 §8.3의 일반 RPL Task에는 해당 생성 계약이 우선한다. 기존 이슈와 Migration/Cutover 작업은 §8.0–8.2를 따른다.
+**적용 우선순위:** §8.3은 현재 `PROPOSED / NOT_EFFECTIVE`이며 채택·발효 전에는 기존 §8.0–8.2를 따른다. 채택·발효 후 §8.3 범위의 신규 일반 RPL Task에는 §8.3 생성·권위 계약이 우선한다. 기존 Migration·Origin·격리 이슈와 다른 유형 및 고위험 변경에는 각 기존 계약을 유지한다.
 
 ### 8.0 경량 G2/G3 실행 경로 (Fast Track)
 
-**적용 조건:** 단일 RPL 프로젝트에서 Owner가 **대상·필드·유형·적용 시점**을 명시 승인한 **소량·단일 Writer·직렬 실행·Owner 감독형 수동 작업 또는 Owner 승인형 AI Jira Writer 작업**에만 적용한다. 이 절은 문서 PR 병합만으로 Jira Write나 G3 Cutover 권한을 부여하지 않는다. 무인·동시·복수 Writer·대량 Create는 아래 §8.1의 완전한 Intent/Origin Registry 계약을 그대로 적용한다.
+**적용 조건:** 단일 RPL 프로젝트에서 Owner가 **대상·필드·유형·적용 시점**을 명시 승인한 **소량·단일 Writer·직렬 실행·Owner 감독형 수동 작업 또는 Owner 승인형 AI Jira Writer 작업**에만 적용한다. 이 절은 문서 PR 병합만으로 Jira Write나 G3 Cutover 권한을 부여하지 않는다. 승인·발효된 §8.3의 일반 Task를 제외한 무인·동시·복수 Writer·대량 Create에는 아래 §8.1의 완전한 Intent/Origin Registry 계약을 적용한다.
 
 1. **대상 확정:** 이미 완료된 과거 76건은 기본 이전 대상에서 제외한다. RPL-40 폐기, HOLD Owner 미결정, Subtask/Story 등 Target 미지원 유형은 강제 이전하지 않는다. 출처 불명 RPL-112/113/114는 권위를 추정하지 않고 격리한다. RPL-111 SQS 계약/Description 변경은 Jira 필드 이전과 별도 승인이다.
 2. **경량 증거 대장:** 버전 관리된 **단일 CSV/JSON 대장과 필요한 버전 관리 연결 근거**에 `IssueKey, IssueType, Origin(legacy_migration|target_create|unknown), Before/After Product·Component·Concern, Legacy SnapshotRef, OwnerApprovalRef, Jira ChangelogRef, TargetFieldIDs/OptionIDs, ImpactPreservationRef, Phase, VerifiedAt, ReadAuthority, WriteAuthority, RollbackRef, CutoverApprovalRef, Exception`을 남긴다. `target_create`에는 조건부로 `CreateRequestId`, `CreateActivationRef`, `ActivationRef/EffectiveFrom/EffectiveTo`와 생성 전 영속 `pending` Intent 근거를 연결하고, 기존 Legacy Snapshot은 `not_applicable`로 표시한다. 원본 Snapshot은 별도 보존하고 SHA/버전으로 참조한다. **별도의 Registry 서버·DB 설치를 수동 소량 작업의 선행조건으로 요구하지 않는다.** 대장이 없는 이슈의 신규 Target 권위는 허용하지 않는다.
@@ -222,7 +222,7 @@ Jira **원격 쓰기**(Create, Update, Transition, Comment, Link, Bulk)가 예�
 4. **G3 승인형 Create/전환:** Jira Admin의 Legacy required/default와 Target option/required를 확인·조정한 뒤, 별도 승인된 **1~2건 시험 Create**, 실제 저장값 재조회, AI Writer·Reader/Board·Automation의 단일 권위 검증 및 복구 경로 확인을 거친 **지원 Issue Type만** 활성화한다. 기존 Legacy 이슈는 `Phase=staged|verified` 동안 `ReadAuthority=legacy`, 분류 `WriteAuthority=frozen`을 유지한다. Target 저장 후 값·영향 보존·원본 Snapshot을 재검증하고, 저장 승인이 아닌 별도 Owner `CutoverApprovalRef`가 있을 때만 `Phase=cutover`, `ReadAuthority=target`, `WriteAuthority=target`으로 전환한다. 신규 Target Create는 Jira 호출 전에 고유 `CreateRequestId`와 승인된 유형별 `ActivationRef/EffectiveFrom/EffectiveTo` 기간을 확인하고 `pending` Intent를 영속 등록한다. 응답 `IssueKey`를 연결하고 Target 저장값을 재조회한 뒤 `Origin=target_create`, `Phase=create_ready`, `ReadAuthority=target`, `WriteAuthority=target`, `Legacy SnapshotRef=not_applicable`을 대장에 영속 등록해야 성공 처리한다. 결과 불명확·재조회 불일치·Origin 등록 실패면 성공 보고나 재생성을 하지 않고 `create_pending`/`create_quarantined`, `ReadAuthority=none`, 분류 `WriteAuthority=frozen`, `UNKNOWN_ORIGIN`으로 격리한다. 승인된 Maintainer가 `CreateRequestId`와 알려진 IssueKey를 대조해 검증·권위 등록을 복구한다.
 5. **권위·종료:** Legacy 이슈의 G3 전환은 승인된 대상에만 적용한다. 미입증 Target Create는 `UNKNOWN_ORIGIN`으로 분류 Write/Read/집계에서 격리한다. 같은 이슈의 이중 SSOT, 무단 Legacy fallback, dual-write는 금지한다. G3 종료 후에도 **G4 Legacy 삭제는 별도 승인까지 보류**한다.
 
-**범위 우선순위:** 이 §8.0은 **Owner 감독형 소량·단일 Writer·직렬 실행**에서 아래 §8/§8.1의 별도 Registry 서버 구축 및 대형 Migration Manifest 시스템 구현 대신 버전 관리된 단일 대장과 연결 근거를 허용하는 경량 경로다. **경량화는 저장 형태만 대체하며, 아래 §8/§8.1의 권위·보존·승인·실패 격리 lifecycle을 생략하지 않는다.** 무인·동시·복수 Writer·대량 Create는 §8.1의 완전한 계약을 그대로 따른다. 승인·Jira Create 시험·Rollback 증거가 없으면 G3 활성화를 중단한다.
+**범위 우선순위:** 이 §8.0은 **Owner 감독형 소량·단일 Writer·직렬 실행**에서 아래 §8/§8.1의 별도 Registry 서버 구축 및 대형 Migration Manifest 시스템 구현 대신 버전 관리된 단일 대장과 연결 근거를 허용하는 경량 경로다. **경량화는 저장 형태만 대체하며, 아래 §8/§8.1의 권위·보존·승인·실패 격리 lifecycle을 생략하지 않는다.** 승인·발효된 §8.3의 일반 Task를 제외한 무인·동시·복수 Writer·대량 Create는 §8.1의 완전한 계약을 따른다. 승인·Jira Create 시험·Rollback 증거가 없으면 G3 활성화를 중단한다.
 
 **핵심: 정책의 승인·병합, Jira 신규 Field 생성, 개별 Issue 데이터 이전, Board/Filter Cutover는 각각 별도의 사건이다.** 코드와 문서의 승인만으로 신규 Jira 분류가 자동 활성화되지 않는다.
 
@@ -231,7 +231,7 @@ Jira **원격 쓰기**(Create, Update, Transition, Comment, Link, Bulk)가 예�
 | **G0 문서 제안/승인** | 기존 `customfield_10042/10043/10044` 및 기존 승인 정책. 신규 계약은 검토용 | **기존 현행 Field만**; 새 옵션/새 필드 사용 금지 | 기존 승인 Writer/Role/Workflow로 수행 가능 | 문서 승인/병합은 Admin 적용 아님 |
 | **G1 신규 Admin Field 설정** | **기존 레거시 Field가 유효 권위**. 새 Field는 시험 대상 | 승인된 Pilot 전에는 신규 Field 쓰기 금지. Legacy Create는 실제 Issue Type 스키마 준수 | 계속 가능. Target 미존재/미전환 이유로 정지 금지 | Field ID·Option ID·Context·타입/필수/default·권한 실측 및 Snapshot, Pilot 승인 |
 | **G2 승인 Pilot Issue 한정** | Pilot Manifest에 등재되어도 **Cutover 승인 + 재조회 검증 + `ReadAuthority=target` 확인 전까지 Legacy가 권위**. 승인·검증 완료된 Issue만 Target | Pilot Maintainer가 승인된 Target Field에 단방향 기록·검증. 완료 전 다른 분류 Writer는 정지; 일반 신규 Create는 G1 계약 | 역할/증거 Gate를 지키는 일반 Comment·Transition은 계속 가능 | Target 저장 → 재조회·원본/영향 보존 검증 → Human Cutover 승인 → Manifest 권위 전환 |
-| **G3 활성 Issue 단계적 Cutover** | 기존 Issue는 승인·검증된 Migration Manifest, **신규 Target Create Issue는 검증된 Create Origin Manifest**를 기준으로 분류 권위 결정. 출처 불명은 분류 Read/Write 중단 | 승인된 Issue Type만 Target Create. **요청 사전 등록 → IssueKey 연결 → Target 필드 재조회 → 이슈별 권위 초기화**를 완료해야 성공 | 기존 승인 Workflow의 비분류 작업은 지속 | 기존 required/default·필드 시험뿐 아니라 Origin Registry/Reader·Rollback 검증 및 유형별 승인 |
+| **G3 활성 Issue 단계적 Cutover** | 기존 Issue는 승인·검증된 Migration Manifest, **신규 Target Create Issue는 §8.1의 검증된 Create Origin Manifest 또는 승인·발효된 일반 Task의 §8.3**을 기준으로 분류 권위 결정. 출처 불명은 분류 Read/Write 중단 | 승인된 Issue Type만 Target Create. **요청 사전 등록 → IssueKey 연결 → Target 필드 재조회 → 이슈별 권위 초기화**를 완료해야 성공 | 기존 승인 Workflow의 비분류 작업은 지속 | 기존 required/default·필드 시험뿐 아니라 Origin Registry/Reader·Rollback 검증 및 유형별 승인 |
 
 | **G4 레거시 Cleanup 검토** | 승인된 범위는 Target; 미전환 과거 기록은 Legacy 이력 보존 | 대상 유형별 검증된 Target 경로만 | 기존 증거/링크 계속 유지 | 원본 보존·의존성 제거 확인 후 별도 Owner 승인. 자동 레거시 삭제 금지 |
 
@@ -242,7 +242,7 @@ Jira **원격 쓰기**(Create, Update, Transition, Comment, Link, Bulk)가 예�
 - **기존 Legacy Issue의 검증 실패/승인 대기:** `Origin=legacy_migration`이고 `Phase=staged` 또는 `verified`면 **ReadAuthority=legacy**, 분류 `WriteAuthority=frozen`을 유지한다. 실패한 Target 기록을 격리하고 기존 Snapshot을 권위로 보존한다. 저장 성공·`VerifiedAt`·`CutoverApprovalRef` 중 하나만으로 Cutover를 추론하지 않는다. **이 Legacy fallback 규칙을 신규 `Origin=target_create`에 적용하지 않는다.**
 - **Create 전환 Manifest/Checklist는 개별 Issue Manifest와 별도이다.** Issue Type별 `TypeId`, `LegacyRequired/DefaultState`, `TargetRequired/DefaultState`, `OptionIDs`, `VerifiedCreateRef`, `Writer/Board/AutomationReadinessRef`, `CreateOriginRegistryReadinessRef`, `CutoverApprovalRef`, `ActiveCreateAuthority:legacy|target`, `ActivationRef/EffectiveFrom/EffectiveTo`(전환 기간 이력), `RollbackRef`를 기록한다. 현재 테스트·Owner 승인 전까지 `legacy`이다. 유형별 CreateAuthority는 **미래 생성 경로**를 정할 뿐 기존 또는 이미 생성된 Issue의 ReadAuthority를 자동 변경하지 않는다.
 
-- **이슈별 명시적 라우팅:** 기존 레거시 Issue의 `Phase=cutover` 승인·검증 전에는 Legacy 권위를 유지한다. **신규 Target Issue는 §8.1의 Create Origin·권위 초기화 규칙이 우선**한다. Manifest 미등재 이슈를 일률적으로 Legacy로 단정하거나 숨은 fallback/dual-write하지 않는다.
+- **이슈별 명시적 라우팅:** 기존 레거시 Issue의 `Phase=cutover` 승인·검증 전에는 Legacy 권위를 유지한다. **신규 Target Issue는 §8.1을 따르되, 승인·발효된 일반 RPL Task는 §8.3을 따른다.** Manifest 미등재 이슈를 일률적으로 Legacy로 단정하거나 숨은 fallback/dual-write하지 않는다.
 - **Issue Type별 Create 전환:** 실험·생성 경로 변경은 별도 Human 승인으로 대상 유형의 신규 Create를 일시 정지하거나 격리해 시행한다. **기존 Legacy required/default 정리 → 신규 Target required/option 확인 → Target-only 시험 Create·Origin 등록·Reader 재조회까지 검증 → 자동화·Writer/Board 경로 검증 → Create 전환 승인** 순서다. 기존 미이전 Legacy Issue와 새로운 Target Issue를 구분하는지 포함한다. 전환 중에는 분류 Create를 멈추고, 실패 시 승인된 이전 구성 복구 및 Create 재검증 없이 재개하지 않는다. 동일 유형의 Legacy/Target Create 동시 활성화 금지.
 - **같은 Issue에서 분류 SSOT 두 개를 동시에 활성화하지 않는다.** 기존 Label은 Migration 도중 변동·삭제하지 않으며, Target 쓰기는 승인된 Maintainer가 수행한다. Legacy↔Target 값 차이는 `DRIFT`로 보고하고, 권위 미확인 상태에서는 **분류 수정만 WRITE STOP**. 일반 Comment/Transition은 역할·상태 기준을 독립 검증한다.
 - **Rollback:** 기존 레거시 Issue의 Pilot을 철회하면 원본 Snapshot을 유지해 승인된 방식으로 권위를 전환하고 Target 기록을 격리한다. **신규 Target Create의 유형별 Rollback은 미래 Create만 바꾸며 이미 생성된 Target Issue를 자동 Legacy로 이전하지 않는다(§8.1).** 변경된 Jira 필수·기본값은 별도 Admin 복구 및 Create/Read 재검증 필요. Legacy 값 자동 재동기화 금지.
@@ -252,6 +252,8 @@ Jira **원격 쓰기**(Create, Update, Transition, Comment, Link, Bulk)가 예�
 
 
 ### 8.1 신규 Target Create Issue의 권위 초기화 (N1)
+
+**적용 범위:** 이 절은 승인·발효된 §8.3 일반 RPL Task를 제외한 신규 Target Create 및 기존 Origin·격리 이슈에 적용한다. §8.3 채택·발효 전에는 일반 Task에도 이 절이 그대로 적용된다.
 
 **운영 모드 구분:** 무인·동시·복수 Writer·대량 Create에는 아래 Intent/Origin Registry 전체 계약을 적용한다. 별도로 승인된 **소량·단일 Writer·직렬 실행·Owner 감독형 수동 작업 또는 Owner 승인형 AI Jira Writer 작업**은 §8.0의 버전 관리 대장과 연결 근거를 영속 Origin 근거로 사용할 수 있지만, 실제 Required/Default 확인·Create 검증·불명확한 결과 격리·단일 분류 권위는 생략할 수 없다.
 
@@ -283,13 +285,21 @@ Jira **원격 쓰기**(Create, Update, Transition, Comment, Link, Bulk)가 예�
 5. **복구 검증:** 실제 분류 소비처를 변경한다면 적용 전후 분류 결과와 승인된 복구 후 유효값까지 해당 소비처에서 검증한다. 특정 범위에 변경할 소비처가 없으면 그 사실을 근거로 기록하고, 기존 Snapshot·원장 Revision·실제 Jira Before/After 재조회 및 조건부 복구 절차를 준비한다. 소비처 복구 Drill을 수행하지 않았다면 `NOT_RUN`으로 기록하며, 별도 Owner가 한정 적용 제외를 승인한 경우에만 해당 범위의 `NOT_APPLICABLE_BY_APPROVED_SCOPE`으로 구분한다. 오프라인 시뮬레이션만으로 운영 복구 PASS를 주장하지 않는다.
 6. **독립 승인 Gate:** 본 절의 Source Review·Owner 채택·Merge·발효, 소비처별 적용 제외 승인, 이슈별 `CutoverApprovalRef`와 실제 `Phase=cutover / ReadAuthority=target / WriteAuthority=target` 기록은 각각 별개 사건이다. 해당 이슈·Primary Jira·Sole Writer·실제 계정·적용 기간·원본 Snapshot·검증/복구 조건을 확인한 뒤 **별도 Cutover 승인**이 있어야 전환한다. 미승인 상태에서는 기존 `verified/legacy/frozen`을 유지한다. G4 Legacy Hide·Delete 역시 별도 Owner 승인 전 금지한다.
 
-### 8.3 일반 RPL Task 생성 (변경 후보)
+### 8.3 일반 RPL Task 생성 — PROPOSED / NOT_EFFECTIVE
 
-- 승인된 연결 계정과 명확한 Task 등록 요청 또는 승인된 상시 범위를 확인한다. 설명·계획·인용은 생성 근거로 사용하지 않는다. 등록 권한은 코드 작업권을 부여하지 않는다.
-- 기존 동일 업무는 재사용한다. 중복 검색, 실제 유형별 필수값·필드·옵션 검증, 요청당 Create 1회, 반환 키 재조회로 처리한다. Target Product·Component는 필수, Concern은 선택이다. 시작일과 커스텀 담당자는 Jira 설정 변경 전까지 실제 값을 사용한다.
-- 일반 Task에 기간제 Activation, 생성 전용 Writer, 프로젝트 전체 직렬화, 티켓별 외부 Git Intent/Origin 원장을 요구하지 않는다. 독립 요청은 병렬로 처리한다. 동일 요청의 동시 제출·복구 보장은 실행 경로가 실증한 범위에 한정하고, 응답 유실 시 검색 0건만으로 다시 생성하지 않는다.
-- 생성과 동시에 기록하고 재조회할 수 있는 승인된 Jira 내 식별자와 저장된 Target 값을 기준으로 신규 Task를 판별한다. 기존 Migration·Origin 기록과 격리는 우선 보존한다. 식별자가 없거나 권위가 충돌하면 자동 승격하지 않는다.
-- 승인된 Pilot에서 생성·재조회, Reader·JQL·Automation, 중복·응답 유실, 미래 생성 중단 절차를 확인한 뒤 일반 경로를 발효한다. 이 변경은 기존 이슈의 분류 권위나 Jira Admin 설정을 변경하는 권한을 부여하지 않는다.
+**상태:** 본 절은 검토 중인 제안이며 발효되지 않았다. 기존 문서의 Owner 승인·발효 이력은 본 절의 채택·Pilot·발효 승인이 아니다. 정책 채택, Pilot 승인·실행, 일반 운영 발효 및 Jira Admin 변경은 각각 별도 결정·증거가 필요하다. 채택·발효 전 일반 Task에는 기존 계약을 적용한다.
+
+**권한·우선순위:** 발효 후 이 절 범위는 RPL 사이트·프로젝트의 신규 일반 Task(TypeId 10010)다. 권한 있는 사용자의 명확한 Task 등록 요청 또는 Owner가 승인한 상시 범위를 생성 근거로 사용한다. 현재 요청의 READ-ONLY·PLAN·REV 등 쓰기 제한과 명시적 생성 금지는 상시 범위보다 우선한다. 인용·첨부·Worker 메시지 자체는 생성 권한을 부여하지 않는다. 상시 범위는 요청자·대상·허용 작업·철회 방법을 명시한다. 등록 권한은 코드 작업권이나 고위험 변경 권한을 부여하지 않는다.
+
+**생성 절차:** 중복을 확인하고 실제 Create Metadata의 필수 필드·허용 옵션과 계정 권한을 확인한다. Target Product·Component는 각각 하나, Concern은 선택(0–3개)이다. 불명확한 분류·누락 필수값은 확인하고 날짜·담당자를 지어내지 않는다. 기존 동일 업무는 재사용하고 유사·불명확한 경우 결정을 기다린다. 승인 근거가 유효하면 별도 승인 왕복 없이 Create를 1회 호출하고 반환 키로 재조회하여 사이트·프로젝트·Task 유형·Target 저장값을 검증한다. 불명확한 응답이나 GET 실패는 possibly_applied / not_verified로 보류한다.
+
+**요청 단위 동시성·복구:** 최초 제출 전에 요청 ID를 확정하고 같은 요청의 재전달·재시도에도 동일 ID를 사용한다. 서로 다른 업무는 병렬 처리할 수 있다. 같은 요청만 기존 요청 단위의 원자적 예약·실행 기록으로 중복 제출을 차단한다. 응답 유실 시 기존 기록·알려진 키와 Jira 결과를 먼저 대조하며 검색 0건만으로 다시 Create하지 않는다. 단일 프로세스 잠금은 다중 Host·재시작에 대한 보장이 아니다. 다중 Host 중복 방지는 공유되는 지속 저장소의 원자적 요청별 예약·실행 기록 또는 Jira/MCP의 검증된 원자적 멱등 기능이 실제 제공·검증된 범위에서만 보장한다. 해당 보장이 없거나 기록을 확인할 수 없으면 동일 요청의 자동 재호출을 중단하고 대조한다. 서로 다른 업무를 단지 내용이 같다는 이유로 동일 요청으로 합치지 않는다.
+
+**일반 Task 예외:** 이 범위의 신규 Create에는 기간제 Activation, 생성 전용 Writer, 프로젝트 전체 직렬화, 티켓별 외부 Git Intent/Origin 원장을 의무로 요구하지 않는다. 기존 Migration·Origin·격리 이슈, 다른 유형 및 고위험 변경에는 해당 기존 계약을 유지한다.
+
+**신규 분류 판정:** 승인된 경로가 최초 Create 시 Jira에 기록한 식별자, 사이트·프로젝트·Task 유형, 요청 및 식별자의 유일성, 재조회한 Target 값, 기존 Migration/Origin/격리 기록과의 충돌 부재를 모두 확인한 경우에만 신규 일반 Task로 인정하고 저장된 Target 값을 분류 권위로 읽는다. 사후 입력, 복제, 유형 변경, 중복 식별자 또는 생성 당시 기록을 입증할 수 없는 식별자는 자동으로 인정하지 않는다. 불명확·충돌 시 기존 기록을 보존하고 분류 판정을 보류한다. 식별자는 생성과 함께 원자적으로 기록·재조회 가능해야 한다. Jira Short Text 필드는 후보이며 Create 시 원자 기록·변조 방지·유일성·JQL 인덱싱 및 Reader/Board/Filter/Automation 지원은 **NOT_VERIFIED**다. 후보가 검증되지 않으면 다른 식별 수단을 결정·시험하기 전 해당 소비처에 대한 활성화를 하지 않는다.
+
+**Pilot·복구:** 승인된 Pilot에서 생성·재조회, 소비처 판정, 병렬·중복·응답 유실, 생성 중단 및 복구를 검증한다. 정책 채택이나 Pilot 통과가 자동으로 일반 운영 발효 또는 Jira Admin 변경을 승인하지 않는다. 기존 Legacy·완료 이슈의 이력과 권위, UNKNOWN_ORIGIN 격리, G4 별도 승인 및 고위험 변경 통제는 유지한다. 신규 일반 Task의 Target을 자동 Legacy로 바꾸지 않는다.
 
 ## 9. AI 세션에서 짧게 참조하는 규칙
 
