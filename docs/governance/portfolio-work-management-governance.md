@@ -420,7 +420,7 @@ Canonical Reference를 포함해야 한다. Confluence가 ADR, Contract, Jira
 
 ## 11. Jira Taxonomy Rollout Plan (정책 승인·실행 분리)
 
-**경량 실행 경로(승인 전 제안):** 소규모 RPL의 **소량·단일 Writer·직렬 실행·Owner 감독형 수동 작업 또는 Owner 승인형 AI Jira Writer 작업**에 의한 G2 이전·G3 Create에서는 [Taxonomy §8.0](jira-field-taxonomy.md)에 따라 별도 Registry 서비스 대신 **단일 버전 관리 CSV/JSON 대장, 사전 Snapshot, Jira Changelog, 저장 후 전수 검증**을 사용한다. 필드 Required/Default 조정·지원 유형·시험 Create·권위 전환·Rollback 검증은 유지한다. **이번 문서 PR 병합과 실제 Jira Write/G3 Cutover 승인은 별개**이며, RPL-111 계약 변경·완료 76건 Backfill·G4 Legacy 삭제는 범위 밖이다. 무인·동시·복수 Writer·대량 Create는 Taxonomy §8.1의 강화 계약을 따른다.
+**경량 실행 경로(승인 전 제안):** 소규모 RPL의 **소량·단일 Writer·직렬 실행·Owner 감독형 수동 작업 또는 Owner 승인형 AI Jira Writer 작업**에 의한 G2 이전·G3 Create에서는 [Taxonomy §8.0](jira-field-taxonomy.md)에 따라 별도 Registry 서비스 대신 **단일 버전 관리 CSV/JSON 대장, 사전 Snapshot, Jira Changelog, 저장 후 전수 검증**을 사용한다. 필드 Required/Default 조정·지원 유형·시험 Create·권위 전환·Rollback 검증은 유지한다. **이번 문서 PR 병합과 실제 Jira Write/G3 Cutover 승인은 별개**이며, RPL-111 계약 변경·완료 76건 Backfill·G4 Legacy 삭제는 범위 밖이다. 무인·동시·복수 Writer·대량 Create는 승인·발효된 일반 RPL Task 경로를 제외하고 Taxonomy §8.1의 강화 계약을 따른다. 승인·발효된 일반 RPL Task만 Taxonomy §8.3을 따른다. §8.3은 현재 PROPOSED / NOT_EFFECTIVE이다.
 
 **2026-10-15 정책 발효 시점의 역사적 상태:** Owner 정책 승인·main 병합 완료(2026-10-15 15:03 KST) / 당시 Jira Admin·이슈 데이터 미변경.
 
@@ -438,13 +438,14 @@ Canonical Reference를 포함해야 한다. Confluence가 ADR, Contract, Jira
   유지한다. 준비·검증 중에는 해당 Issue의 분류 쓰기를 `frozen`으로 제한하며,
   Comment·Transition 등 비분류 작업에는 영향을 주지 않는다.
 - **G3 Active Issues**: 기존 Issue는 **개별 Migration Manifest의 Cutover 승인·검증**
-  후에만 Target 권위다. 신규 `Target Create` Issue는 유형별 승인된 Create 경로에서
+  후에만 Target 권위다. 승인·발효된 일반 RPL Task를 제외한 신규 `Target Create` Issue는 유형별 승인된 Create 경로에서
   생성된 뒤 [Taxonomy §8.1](jira-field-taxonomy.md)에 따라 **Create Intent →
   IssueKey 연결 → Target 저장값 재조회 → 개별 Origin Manifest `create_ready`/
   `ReadAuthority=target` 초기화**를 마쳐야 Target 권위다.
   신규 Create 활성화 전에 Legacy required/default 정리·신규 필드/옵션 검증뿐 아니라
   **Origin Registry, Writer/Reader·Board/Automation 경로와 격리 시험**을 검증하고
   별도 승인한다. 동일 유형의 Legacy/Target 신규 Create는 동시 활성화하지 않는다.
+  승인·발효된 일반 RPL Task의 신규 권위는 Taxonomy §8.3의 최초 생성 식별자·유일성·사이트/프로젝트/유형·저장값 및 기존 Origin 충돌 검증을 따른다. §8.3 발효 전에는 기존 §8.1을 따른다.
   유형별 Rollback은 미래 Create 경로만 변경하며 기존 Target-created 이슈의 권위를
   자동 Legacy로 되돌리지 않는다.
 - **G4 Cleanup**: 이력·권한·자동화 검증 후에만 레거시 필드 비활성화/삭제를 별도 결정.
@@ -452,7 +453,7 @@ Canonical Reference를 포함해야 한다. Confluence가 ADR, Contract, Jira
 **전환기 SSOT:** **기존 Legacy Issue의 이전**은 [Taxonomy §8](jira-field-taxonomy.md)의
 개별 Migration Manifest가 승인·재조회 검증된 뒤 `Phase=cutover`·
 `ReadAuthority=target`으로 전환될 때만 Target 권위다. **새로운 Target Create
-Issue는 §8.1의 생성 출처·검증·개별 권위 초기화(`Origin=target_create`,
+Issue는 승인·발효된 일반 RPL Task의 §8.3을 제외하고 §8.1의 생성 출처·검증·개별 권위 초기화(`Origin=target_create`,
 `Phase=create_ready`)로 구분한다.** 등록 대기·실패·누락·출처가 불명확한 신규
 이슈를 Legacy 권위로 대체하지 않고 `UNKNOWN_ORIGIN`으로 분류 Read/Write 및
 분류 집계를 중단한다. 검증된 기존 미이전 Legacy 이슈만 Legacy 권위이고 임의
