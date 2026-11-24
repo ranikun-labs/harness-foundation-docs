@@ -261,6 +261,8 @@ AI Runtime은 Assignee가 아니다. Assignee는 사람이며, Session은 수행
 Evidence 또는 사용 Tool로 기록한다. Writer Session은 Primary Issue만
 수정하고 Merge 전 완료 처리하지 않는다.
 
+일반 RPL Task 등록은 승인·발효된 Taxonomy §8.3의 별도 생성 권한을 따른다. 티켓 등록은 구현 Writer나 기존 이슈 갱신 권한을 부여하지 않는다.
+
 Independent Review는 Jira를 읽을 수 있지만 수정하지 않는다.
 
 ## 9. Model과 Reasoning

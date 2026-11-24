@@ -210,6 +210,8 @@ Jira **원격 쓰기**(Create, Update, Transition, Comment, Link, Bulk)가 예�
 
 ## 8. 적용 Gate와 전환기 Read/Write SSOT (F2)
 
+승인·발효된 §8.3의 일반 RPL Task에는 해당 생성 계약이 우선한다. 기존 이슈와 Migration/Cutover 작업은 §8.0–8.2를 따른다.
+
 ### 8.0 경량 G2/G3 실행 경로 (Fast Track)
 
 **적용 조건:** 단일 RPL 프로젝트에서 Owner가 **대상·필드·유형·적용 시점**을 명시 승인한 **소량·단일 Writer·직렬 실행·Owner 감독형 수동 작업 또는 Owner 승인형 AI Jira Writer 작업**에만 적용한다. 이 절은 문서 PR 병합만으로 Jira Write나 G3 Cutover 권한을 부여하지 않는다. 무인·동시·복수 Writer·대량 Create는 아래 §8.1의 완전한 Intent/Origin Registry 계약을 그대로 적용한다.
@@ -281,6 +283,14 @@ Jira **원격 쓰기**(Create, Update, Transition, Comment, Link, Bulk)가 예�
 5. **복구 검증:** 실제 분류 소비처를 변경한다면 적용 전후 분류 결과와 승인된 복구 후 유효값까지 해당 소비처에서 검증한다. 특정 범위에 변경할 소비처가 없으면 그 사실을 근거로 기록하고, 기존 Snapshot·원장 Revision·실제 Jira Before/After 재조회 및 조건부 복구 절차를 준비한다. 소비처 복구 Drill을 수행하지 않았다면 `NOT_RUN`으로 기록하며, 별도 Owner가 한정 적용 제외를 승인한 경우에만 해당 범위의 `NOT_APPLICABLE_BY_APPROVED_SCOPE`으로 구분한다. 오프라인 시뮬레이션만으로 운영 복구 PASS를 주장하지 않는다.
 6. **독립 승인 Gate:** 본 절의 Source Review·Owner 채택·Merge·발효, 소비처별 적용 제외 승인, 이슈별 `CutoverApprovalRef`와 실제 `Phase=cutover / ReadAuthority=target / WriteAuthority=target` 기록은 각각 별개 사건이다. 해당 이슈·Primary Jira·Sole Writer·실제 계정·적용 기간·원본 Snapshot·검증/복구 조건을 확인한 뒤 **별도 Cutover 승인**이 있어야 전환한다. 미승인 상태에서는 기존 `verified/legacy/frozen`을 유지한다. G4 Legacy Hide·Delete 역시 별도 Owner 승인 전 금지한다.
 
+### 8.3 일반 RPL Task 생성 (변경 후보)
+
+- 승인된 연결 계정과 명확한 Task 등록 요청 또는 승인된 상시 범위를 확인한다. 설명·계획·인용은 생성 근거로 사용하지 않는다. 등록 권한은 코드 작업권을 부여하지 않는다.
+- 기존 동일 업무는 재사용한다. 중복 검색, 실제 유형별 필수값·필드·옵션 검증, 요청당 Create 1회, 반환 키 재조회로 처리한다. Target Product·Component는 필수, Concern은 선택이다. 시작일과 커스텀 담당자는 Jira 설정 변경 전까지 실제 값을 사용한다.
+- 일반 Task에 기간제 Activation, 생성 전용 Writer, 프로젝트 전체 직렬화, 티켓별 외부 Git Intent/Origin 원장을 요구하지 않는다. 독립 요청은 병렬로 처리한다. 동일 요청의 동시 제출·복구 보장은 실행 경로가 실증한 범위에 한정하고, 응답 유실 시 검색 0건만으로 다시 생성하지 않는다.
+- 생성과 동시에 기록하고 재조회할 수 있는 승인된 Jira 내 식별자와 저장된 Target 값을 기준으로 신규 Task를 판별한다. 기존 Migration·Origin 기록과 격리는 우선 보존한다. 식별자가 없거나 권위가 충돌하면 자동 승격하지 않는다.
+- 승인된 Pilot에서 생성·재조회, Reader·JQL·Automation, 중복·응답 유실, 미래 생성 중단 절차를 확인한 뒤 일반 경로를 발효한다. 이 변경은 기존 이슈의 분류 권위나 Jira Admin 설정을 변경하는 권한을 부여하지 않는다.
+
 ## 9. AI 세션에서 짧게 참조하는 규칙
 
 ```text
@@ -290,7 +300,7 @@ ai-session-governance.md의 SHA·역할을 확인한다.
 jira-field-taxonomy.md는 승인·발효 및 해당 이슈의
 G0~G4 Cutover 상태를 확인한 경우에만 적용한다.
 신규 Create/분류 수정은 Issue Type의 실제 지원·Field/Option을 검증한다.
-Target Create 이슈는 Origin 등록·재조회 검증 전 분류 Read/Write를 중단한다.
+Target Create 이슈는 §8.1 또는 승인·발효된 §8.3의 출처·재조회 기준을 따른다.
 미전환 이슈의 Comment/Transition은 기존 승인 계약으로 진행할 수 있다.
 권위 불명확·미승인 소유권 변경·대량 수정·삭제는 중단한다.
 ```
