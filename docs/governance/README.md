@@ -23,6 +23,7 @@ supporting_architecture_inputs:
 ```text
 docs/governance/
 ├── portfolio-work-management-governance.md
+├── jira-work-item-hierarchy.md
 ├── ai-session-governance.md
 ├── jira-field-taxonomy.md
 ├── jira-taxonomy-g0-owner-decision-2026-10-15.md
@@ -32,10 +33,13 @@ docs/governance/
 | 문서 | 책임 |
 |---|---|
 | [Portfolio Work Management Governance](portfolio-work-management-governance.md) | Jira·Git·GitHub·Confluence의 Concern별 소유권, 작업 분류, Lifecycle, WIP, Rollout |
+| [Jira Work Item Hierarchy](jira-work-item-hierarchy.md) | Epic→선택적 Story→Feature 분류와 RPL Work Type Scheme 확인 필요. **문서 제안·설정 미변경** |
 | [AI Session Governance](ai-session-governance.md) | Session Role, 읽기·쓰기 권한, Primary Issue, 진실성, Git 안전, 종료 보고 |
 | [Jira Field Taxonomy & AI CRUD Gate](jira-field-taxonomy.md) | **v1.0 Owner 승인·main 발효 / Jira G1 미실행**: 허용값, 이관·CRUD Gate |
 | [Jira G0 Owner 분류 결정 기록](jira-taxonomy-g0-owner-decision-2026-10-15.md) | 2026-10-15 G0 분류·RPL-51 Owner 승인 이력 |
 | [Jira Governance 전체 Owner 승인 기록](jira-governance-owner-approval-2026-10-15.md) | **v1.2 Portfolio + v1.0 Taxonomy Owner 승인·Merge 증거**, Jira 적용은 별도 G1~G4 |
+
+새 계층 문서는 사용자 방향을 기록한 제안이다. 이 문서의 병합 전에는 기존 발효 Governance를 대체하지 않으며, Jira 전역 설정도 변경하지 않는다.
 
 **승인 계보:** [Portfolio v1.1 고정 원문](https://github.com/ranikun-labs/harness-foundation-docs/blob/bf5667d7853f155715ebb4b0096cbd1cbe3deac7/docs/governance/portfolio-work-management-governance.md)의 이력은 보존한다.
 [G0 결정 기록](jira-taxonomy-g0-owner-decision-2026-10-15.md)과 [v1.2/v1.0 전체 정책 승인](jira-governance-owner-approval-2026-10-15.md)은 별도 Owner 결정이다.
