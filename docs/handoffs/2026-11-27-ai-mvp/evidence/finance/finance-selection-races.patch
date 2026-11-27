@@ -1,0 +1,150 @@
+diff --git a/integration-fixtures/conversation/README.md b/integration-fixtures/conversation/README.md
+index 10e17f7..2b5222d 100644
+--- a/integration-fixtures/conversation/README.md
++++ b/integration-fixtures/conversation/README.md
+@@ -7,3 +7,5 @@ The route uses the isolated synthetic PostgreSQL prototype `/workspace/work/fina
+ From the FE repository, `node integration-fixtures/conversation/verify.mjs` starts disposable local PostgreSQL, backend and loopback Vite, navigates from `/app`, and runs Chromium temporary/opt-in/save/backend restart/resume/delete, then removes the container. It requires the referenced backend candidate with `npm ci` in `local-conversation`, Docker image `postgres:16-alpine`, installed FE dependencies and `/usr/bin/chromium`; it binds Vite port 5179. `node integration-fixtures/conversation/verify-disabled.mjs` checks flag-off navigation and direct route on port 5180. The browser checks switching between synthetic owners and tenants and synthetic logout; the backend verifier additionally covers fixture scope and idempotency. In the shared dependency test environment font files generated Vite filesystem warnings; the functionality test passed.
+ 
+ This does not establish real identity authorization, production migration or retention, provider validation, recovery, or production readiness. The test proxy and route must remain unavailable in production.
++
++On fixture identity switch or fixture logout, the UI aborts its pending requests and stops subsequent request steps. The browser test holds a message response after its database commit, switches actors and verifies no completion is dispatched and no old content appears for the new actor. Client abort cannot undo a server-committed message or cancel work already processed; the synthetic backend may leave the original owner's run pending with no automatic recovery. This does not establish server-side revocation or production cancellation semantics.
+diff --git a/integration-fixtures/conversation/verify.mjs b/integration-fixtures/conversation/verify.mjs
+index 82bac41..a628bb2 100644
+--- a/integration-fixtures/conversation/verify.mjs
++++ b/integration-fixtures/conversation/verify.mjs
+@@ -22,5 +22,15 @@ try{
+  await page.getByLabel('로컬 합성 사용자').selectOption('fixture-c');await page.waitForTimeout(200);assert.equal(await page.getByRole('button',{name:'저장된 대화'}).count(),0);
+  await page.getByRole('button',{name:'합성 사용자 로그아웃'}).click();await page.getByText('합성 사용자를 선택하세요.').waitFor();await page.reload();await page.getByText('합성 사용자를 선택하세요.').waitFor();assert.equal(await page.getByRole('button',{name:'저장된 대화'}).count(),0);
+  await page.getByLabel('로컬 합성 사용자').selectOption('fixture-a');await stop(server);server=null;await startServer(port);await page.reload();await page.getByRole('button',{name:'저장된 대화'}).click();await page.getByText('나: 금리와 채권의 관계는?').waitFor();await page.getByRole('button',{name:'삭제'}).click();await page.getByText('대화를 삭제했습니다.').waitFor();assert.equal(await page.getByRole('button',{name:'저장된 대화'}).count(),0);
++ // Hold a successful message response after the backend commits it, then switch identity.
++ // The old run must not dispatch completion or display its result under the new actor.
++ await page.getByLabel('이 대화를 저장할게요').check();await page.getByRole('button',{name:'새 대화'}).click();await page.getByText('저장할 대화를 만들었습니다.').waitFor();
++ let release;const paused=new Promise(r=>{release=r;});let observed;const captured=new Promise(r=>{observed=r;});let completions=0;
++ await page.route('**/synthetic-conversations/*/complete', async route=>{completions++;await route.continue();});
++ await page.route('**/synthetic-conversations/*/messages', async route=>{const response=await route.fetch();observed();await paused;try{await route.fulfill({response});}catch{}});
++ await page.getByLabel('질문').fill('지연된 합성 질문');await page.getByRole('button',{name:'보내기'}).click();await captured;
++ await page.getByLabel('로컬 합성 사용자').selectOption('fixture-b');await page.getByRole('heading',{name:'대화 합성 실험'}).waitFor();release();await page.waitForTimeout(500);
++ assert.equal(completions,0);assert.equal(await page.getByText('나: 지연된 합성 질문').count(),0);assert.equal(await page.getByRole('button',{name:'저장된 대화'}).count(),0);
++ console.log('Identity switch after admitted mutation: stale completion not dispatched and content not exposed PASS');
+  console.log('Finance app route/React/Vite proxy → local PostgreSQL: temporary, opt-in, identity switch/logout isolation, restart/resume, delete PASS');
+ }finally{if(browser)await browser.close();if(vite)await stop(vite);if(server)await stop(server);try{docker('rm','-f',name);}catch{}}
+diff --git a/src/features/journal-review/SyntheticJournalAiReview.test.tsx b/src/features/journal-review/SyntheticJournalAiReview.test.tsx
+index 6f07597..ff4f8bc 100644
+--- a/src/features/journal-review/SyntheticJournalAiReview.test.tsx
++++ b/src/features/journal-review/SyntheticJournalAiReview.test.tsx
+@@ -1,4 +1,4 @@
+-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
++import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+ import { afterEach, describe, expect, it, vi } from 'vitest';
+ import { SyntheticJournalAiReview } from './SyntheticJournalAiReview';
+ 
+@@ -16,6 +16,34 @@ afterEach(() => {
+ });
+ 
+ describe('synthetic journal review', () => {
++  it('does not replace a newer result when an aborted earlier selection returns last', async () => {
++    let resolveOld: (value: Response) => void = () => {};
++    const oldResponse = new Promise<Response>((resolve) => {
++      resolveOld = resolve;
++    });
++    const fetcher = vi
++      .fn()
++      .mockReturnValueOnce(oldResponse)
++      .mockResolvedValueOnce({
++        ok: true,
++        json: async () => ({ ...review, evidenceNote: '새 결과' }),
++      });
++    vi.stubGlobal('fetch', fetcher);
++    const view = render(<SyntheticJournalAiReview journalId="journal-a" revision={4} />);
++    fireEvent.click(screen.getByRole('button', { name: 'AI 복기 시작' }));
++    const oldSignal = fetcher.mock.calls[0][1].signal as AbortSignal;
++    view.rerender(<SyntheticJournalAiReview journalId="journal-b" revision={4} />);
++    expect(oldSignal.aborted).toBe(true);
++    view.rerender(<SyntheticJournalAiReview journalId="journal-a" revision={4} />);
++    fireEvent.click(screen.getByRole('button', { name: 'AI 복기 시작' }));
++    await screen.findByText('새 결과');
++    await act(async () => {
++      resolveOld({ ok: true, json: async () => review } as Response);
++      await oldResponse;
++    });
++    expect(screen.getByText('새 결과')).toBeInTheDocument();
++    expect(screen.queryByText('출처 revision 4')).not.toBeInTheDocument();
++  });
+   it('discards a response arriving after the selected revision changes', async () => {
+     let resolveResponse: (value: Response) => void = () => {};
+     const pending = new Promise<Response>((resolve) => {
+diff --git a/src/features/journal-review/SyntheticJournalAiReview.tsx b/src/features/journal-review/SyntheticJournalAiReview.tsx
+index dbf0219..63612d6 100644
+--- a/src/features/journal-review/SyntheticJournalAiReview.tsx
++++ b/src/features/journal-review/SyntheticJournalAiReview.tsx
+@@ -33,6 +33,16 @@ export function SyntheticJournalAiReview({
+   journalId: string;
+   revision: number;
+ }) {
++  return (
++    <SelectedJournalReview
++      key={JSON.stringify([journalId, revision])}
++      journalId={journalId}
++      revision={revision}
++    />
++  );
++}
++
++function SelectedJournalReview({ journalId, revision }: { journalId: string; revision: number }) {
+   const identity = JSON.stringify([journalId, revision]);
+   const [view, setView] = useState<{
+     identity: string;
+diff --git a/src/features/synthetic-conversation/SyntheticConversationPage.tsx b/src/features/synthetic-conversation/SyntheticConversationPage.tsx
+index ba4b11d..5bd5303 100644
+--- a/src/features/synthetic-conversation/SyntheticConversationPage.tsx
++++ b/src/features/synthetic-conversation/SyntheticConversationPage.tsx
+@@ -1,31 +1,38 @@
+-import { useEffect, useState } from 'react';
++import { useEffect, useRef, useState } from 'react';
+ 
+ type Message = {role: 'user' | 'assistant'; text: string};
+ type Conversation = {id: string; title: string};
+ const base = '/synthetic-conversations';
+-async function api<T>(actor: string, path: string, method = 'GET', body?: unknown): Promise<T> {
+-  const res = await fetch(base + path, {method, headers: {'content-type':'application/json', 'x-fixture-actor':actor}, body: body === undefined ? undefined : JSON.stringify(body)});
++async function api<T>(actor: string, signal: AbortSignal, path: string, method = 'GET', body?: unknown): Promise<T> {
++  signal.throwIfAborted();
++  const res = await fetch(base + path, {method, signal, headers: {'content-type':'application/json', 'x-fixture-actor':actor}, body: body === undefined ? undefined : JSON.stringify(body)});
++  signal.throwIfAborted();
+   if (!res.ok) throw new Error('요청을 완료하지 못했습니다.');
+-  return (res.status === 204 ? null : await res.json()) as T;
++  const result = (res.status === 204 ? null : await res.json()) as T;
++  signal.throwIfAborted();
++  return result;
+ }
+ export function SyntheticConversationPage() {
+   const [actor, setActor] = useState(() => { const saved = sessionStorage.getItem('syntheticConversationActor') ?? ''; return ['fixture-a', 'fixture-b', 'fixture-c'].includes(saved) ? saved : ''; });
++  const controller = useRef(new AbortController());
+   function switchActor(value: string) {
++    controller.current.abort();
++    controller.current = new AbortController();
+     if (['fixture-a', 'fixture-b', 'fixture-c'].includes(value)) sessionStorage.setItem('syntheticConversationActor', value);
+     else sessionStorage.removeItem('syntheticConversationActor');
+     setActor(value);
+   }
+-  return <><div className="px-5 pt-5"><label>로컬 합성 사용자 <select aria-label="로컬 합성 사용자" value={actor} onChange={e => switchActor(e.target.value)}><option value="">선택 안 함</option><option value="fixture-a">사용자 A</option><option value="fixture-b">사용자 B</option><option value="fixture-c">다른 조직 사용자</option></select></label> <button onClick={() => switchActor('')}>합성 사용자 로그아웃</button></div>{actor ? <Conversation key={actor} actor={actor} /> : <p className="px-5">합성 사용자를 선택하세요.</p>}</>;
++  return <><div className="px-5 pt-5"><label>로컬 합성 사용자 <select aria-label="로컬 합성 사용자" value={actor} onChange={e => switchActor(e.target.value)}><option value="">선택 안 함</option><option value="fixture-a">사용자 A</option><option value="fixture-b">사용자 B</option><option value="fixture-c">다른 조직 사용자</option></select></label> <button onClick={() => switchActor('')}>합성 사용자 로그아웃</button></div>{actor ? <Conversation key={actor} actor={actor} signal={controller.current.signal} /> : <p className="px-5">합성 사용자를 선택하세요.</p>}</>;
+ }
+-function Conversation({actor}: {actor: string}) {
++function Conversation({actor, signal}: {actor: string; signal: AbortSignal}) {
+   const [saved, setSaved] = useState(false); const [id, setId] = useState<string | null>(null);
+   const [conversations, setConversations] = useState<Conversation[]>([]); const [messages, setMessages] = useState<Message[]>([]);
+   const [text,setText] = useState(''); const [status,setStatus] = useState(''); const [busy,setBusy] = useState(false);
+-  const refresh = async () => setConversations(await api<Conversation[]>(actor, ''));
++  const refresh = async () => setConversations(await api<Conversation[]>(actor, signal, ''));
+   useEffect(() => { void refresh().catch(() => setStatus('저장된 대화를 불러오지 못했습니다.')); }, []);
+-  async function create() { try { setMessages([]);setId(null); if (saved) {const c=await api<Conversation>(actor, '', 'POST', {save:true});setId(c.id);await refresh();setStatus('저장할 대화를 만들었습니다.');} else setStatus('저장하지 않는 임시 대화입니다.'); } catch {setStatus('대화를 만들지 못했습니다.');} }
+-  async function open(c: Conversation) { try {const data=await api<{messages: Message[]}>(actor, '/' +c.id);setId(c.id);setMessages(data.messages);setStatus('저장된 대화를 열었습니다.');}catch{setStatus('대화를 열지 못했습니다.');} }
+-  async function remove(c: Conversation) {try {await api(actor, '/'+c.id,'DELETE');if(id===c.id){setId(null);setMessages([]);}await refresh();setStatus('대화를 삭제했습니다.');}catch{setStatus('대화를 삭제하지 못했습니다.');}}
+-  async function submit(e: React.FormEvent) { e.preventDefault(); const input=text.trim();if(!input||busy)return;setText('');setBusy(true);try { if (!id) {setMessages(v=>[...v,{role:'user',text:input},{role:'assistant',text:'합성 예시 답변입니다. 실제 금융 분석이 아닙니다.'}]);} else {const key=crypto.randomUUID();await api(actor, '/'+id+'/messages','POST',{key,text:input});await api(actor, '/'+id+'/complete','POST',{key});setMessages((await api<{messages:Message[]}>(actor, '/'+id)).messages);} }catch{setStatus('질문을 처리하지 못했습니다.');}finally{setBusy(false);} }
++  async function create() { try { setMessages([]);setId(null); if (saved) {const c=await api<Conversation>(actor, signal, '', 'POST', {save:true});setId(c.id);await refresh();setStatus('저장할 대화를 만들었습니다.');} else setStatus('저장하지 않는 임시 대화입니다.'); } catch {setStatus('대화를 만들지 못했습니다.');} }
++  async function open(c: Conversation) { try {const data=await api<{messages: Message[]}>(actor, signal, '/' +c.id);setId(c.id);setMessages(data.messages);setStatus('저장된 대화를 열었습니다.');}catch{setStatus('대화를 열지 못했습니다.');} }
++  async function remove(c: Conversation) {try {await api(actor, signal, '/'+c.id,'DELETE');if(id===c.id){setId(null);setMessages([]);}await refresh();setStatus('대화를 삭제했습니다.');}catch{setStatus('대화를 삭제하지 못했습니다.');}}
++  async function submit(e: React.FormEvent) { e.preventDefault(); const input=text.trim();if(!input||busy)return;setText('');setBusy(true);try { if (!id) {setMessages(v=>[...v,{role:'user',text:input},{role:'assistant',text:'합성 예시 답변입니다. 실제 금융 분석이 아닙니다.'}]);} else {const key=crypto.randomUUID();await api(actor, signal, '/'+id+'/messages','POST',{key,text:input});await api(actor, signal, '/'+id+'/complete','POST',{key});setMessages((await api<{messages:Message[]}>(actor, signal, '/'+id)).messages);} }catch{setStatus('질문을 처리하지 못했습니다.');}finally{setBusy(false);} }
+   return <div style={{maxWidth:700, margin:'3rem auto',padding:'0 1rem',fontFamily:'system-ui'}}><h1>대화 합성 실험</h1><p>로컬 시험용 합성 답변입니다. 저장한 대화는 로컬 시험 데이터베이스에 남습니다.</p><label><input type="checkbox" checked={saved} onChange={e=>setSaved(e.target.checked)}/> 이 대화를 저장할게요 (로컬 합성 시험)</label> <button disabled={busy} onClick={()=>void create()}>새 대화</button><h2>저장된 대화</h2><ul>{conversations.map(c=><li key={c.id}><button disabled={busy} onClick={()=>void open(c)}>{c.title}</button> <button disabled={busy} onClick={()=>void remove(c)}>삭제</button></li>)}</ul><h2>현재 대화</h2><div>{messages.map((m,i)=><p key={i}>{m.role==='user'?'나: ':'답변: '}{m.text}</p>)}</div><form onSubmit={e=>void submit(e)}><label>질문 <input value={text} maxLength={2000} required onChange={e=>setText(e.target.value)} /></label> <button disabled={busy}>보내기</button></form><p role="status">{status}</p></div>;
+ }

@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="carelog.carelog.preparation.AiMemoLoopbackHttpIntegrationTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-11-27T14:50:20.346Z" hostname="ad27729e0681" time="1.903">
+  <properties/>
+  <testcase name="authenticatesAndProtectsSaveAcrossActualHttp()" classname="carelog.carelog.preparation.AiMemoLoopbackHttpIntegrationTest" time="1.903"/>
+  <system-out><![CDATA[
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.4.5)
+
+2026-11-27T23:50:06.207+09:00  INFO 117530 --- [carelog] [    Test worker] c.c.p.AiMemoLoopbackHttpIntegrationTest  : Starting AiMemoLoopbackHttpIntegrationTest using Java 17.0.16 with PID 117530 (started by agent in /workspace/work/carelog-preparation-candidate/carelog-be)
+2026-11-27T23:50:06.231+09:00  INFO 117530 --- [carelog] [    Test worker] c.c.p.AiMemoLoopbackHttpIntegrationTest  : The following 1 profile is active: "test"
+2026-11-27T23:50:07.746+09:00  INFO 117530 --- [carelog] [    Test worker] .s.d.r.c.RepositoryConfigurationDelegate : Multiple Spring Data modules found, entering strict repository configuration mode
+2026-11-27T23:50:07.748+09:00  INFO 117530 --- [carelog] [    Test worker] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-11-27T23:50:07.926+09:00  INFO 117530 --- [carelog] [    Test worker] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 170 ms. Found 10 JPA repository interfaces.
+2026-11-27T23:50:07.939+09:00  INFO 117530 --- [carelog] [    Test worker] .s.d.r.c.RepositoryConfigurationDelegate : Multiple Spring Data modules found, entering strict repository configuration mode
+2026-11-27T23:50:07.940+09:00  INFO 117530 --- [carelog] [    Test worker] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2026-11-27T23:50:07.963+09:00  INFO 117530 --- [carelog] [    Test worker] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface carelog.carelog.auth.domain.ProductClientRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2026-11-27T23:50:07.964+09:00  INFO 117530 --- [carelog] [    Test worker] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface carelog.carelog.auth.domain.RefreshTokenRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2026-11-27T23:50:07.967+09:00  INFO 117530 --- [carelog] [    Test worker] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface carelog.carelog.customerevent.domain.CustomerEventRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2026-11-27T23:50:07.967+09:00  INFO 117530 --- [carelog] [    Test worker] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface carelog.carelog.identity.domain.ExternalIdentityRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2026-11-27T23:50:07.968+09:00  INFO 117530 --- [carelog] [    Test worker] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface carelog.carelog.identity.domain.PasswordCredentialRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2026-11-27T23:50:07.968+09:00  INFO 117530 --- [carelog] [    Test worker] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface carelog.carelog.identity.domain.PlatformAccountRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2026-11-27T23:50:07.969+09:00  INFO 117530 --- [carelog] [    Test worker] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface carelog.carelog.journal.domain.JournalTemplateRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2026-11-27T23:50:07.969+09:00  INFO 117530 --- [carelog] [    Test worker] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface carelog.carelog.journal.domain.RelationJournalRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2026-11-27T23:50:07.971+09:00  INFO 117530 --- [carelog] [    Test worker] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface carelog.carelog.relation.domain.RelationRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2026-11-27T23:50:07.971+09:00  INFO 117530 --- [carelog] [    Test worker] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface carelog.carelog.user.domain.UserRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2026-11-27T23:50:07.972+09:00  INFO 117530 --- [carelog] [    Test worker] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 23 ms. Found 0 Redis repository interfaces.
+2026-11-27T23:50:08.258+09:00  INFO 117530 --- [carelog] [    Test worker] ptablePropertiesBeanFactoryPostProcessor : Post-processing PropertySource instances
+2026-11-27T23:50:08.259+09:00  INFO 117530 --- [carelog] [    Test worker] c.u.j.EncryptablePropertySourceConverter : Skipping PropertySource configurationProperties [class org.springframework.boot.context.properties.source.ConfigurationPropertySourcesPropertySource
+2026-11-27T23:50:08.261+09:00  INFO 117530 --- [carelog] [    Test worker] c.u.j.EncryptablePropertySourceConverter : Converting PropertySource test [org.springframework.core.env.MapPropertySource] to EncryptableMapPropertySourceWrapper
+2026-11-27T23:50:08.261+09:00  INFO 117530 --- [carelog] [    Test worker] c.u.j.EncryptablePropertySourceConverter : Converting PropertySource Inlined Test Properties [org.springframework.core.env.MapPropertySource] to EncryptableMapPropertySourceWrapper
+2026-11-27T23:50:08.261+09:00  INFO 117530 --- [carelog] [    Test worker] c.u.j.EncryptablePropertySourceConverter : Converting PropertySource active-test-profiles [org.springframework.core.env.MapPropertySource] to EncryptableMapPropertySourceWrapper
+2026-11-27T23:50:08.261+09:00  INFO 117530 --- [carelog] [    Test worker] c.u.j.EncryptablePropertySourceConverter : Skipping PropertySource servletConfigInitParams [class org.springframework.core.env.PropertySource$StubPropertySource
+2026-11-27T23:50:08.261+09:00  INFO 117530 --- [carelog] [    Test worker] c.u.j.EncryptablePropertySourceConverter : Skipping PropertySource servletContextInitParams [class org.springframework.core.env.PropertySource$StubPropertySource
+2026-11-27T23:50:08.261+09:00  INFO 117530 --- [carelog] [    Test worker] c.u.j.EncryptablePropertySourceConverter : Converting PropertySource systemProperties [org.springframework.core.env.PropertiesPropertySource] to EncryptableMapPropertySourceWrapper
+2026-11-27T23:50:08.262+09:00  INFO 117530 --- [carelog] [    Test worker] c.u.j.EncryptablePropertySourceConverter : Converting PropertySource systemEnvironment [org.springframework.boot.env.SystemEnvironmentPropertySourceEnvironmentPostProcessor$OriginAwareSystemEnvironmentPropertySource] to EncryptableSystemEnvironmentPropertySourceWrapper
+2026-11-27T23:50:08.262+09:00  INFO 117530 --- [carelog] [    Test worker] c.u.j.EncryptablePropertySourceConverter : Converting PropertySource random [org.springframework.boot.env.RandomValuePropertySource] to EncryptablePropertySourceWrapper
+2026-11-27T23:50:08.262+09:00  INFO 117530 --- [carelog] [    Test worker] c.u.j.EncryptablePropertySourceConverter : Converting PropertySource Config resource 'class path resource [application-test.yml]' via location 'optional:classpath:/' [org.springframework.boot.env.OriginTrackedMapPropertySource] to EncryptableMapPropertySourceWrapper
+2026-11-27T23:50:08.262+09:00  INFO 117530 --- [carelog] [    Test worker] c.u.j.EncryptablePropertySourceConverter : Converting PropertySource Config resource 'class path resource [application.yml]' via location 'optional:classpath:/' [org.springframework.boot.env.OriginTrackedMapPropertySource] to EncryptableMapPropertySourceWrapper
+2026-11-27T23:50:08.262+09:00  INFO 117530 --- [carelog] [    Test worker] c.u.j.EncryptablePropertySourceConverter : Converting PropertySource applicationInfo [org.springframework.boot.ApplicationInfoPropertySource] to EncryptableMapPropertySourceWrapper
+2026-11-27T23:50:08.610+09:00  INFO 117530 --- [carelog] [    Test worker] c.u.j.filter.DefaultLazyPropertyFilter   : Property Filter custom Bean not found with name 'encryptablePropertyFilter'. Initializing Default Property Filter
+2026-11-27T23:50:08.632+09:00  INFO 117530 --- [carelog] [    Test worker] c.u.j.r.DefaultLazyPropertyResolver      : Property Resolver custom Bean not found with name 'encryptablePropertyResolver'. Initializing Default Property Resolver
+2026-11-27T23:50:08.634+09:00  INFO 117530 --- [carelog] [    Test worker] c.u.j.d.DefaultLazyPropertyDetector      : Property Detector custom Bean not found with name 'encryptablePropertyDetector'. Initializing Default Property Detector
+2026-11-27T23:50:08.979+09:00  INFO 117530 --- [carelog] [    Test worker] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 0 (http)
+2026-11-27T23:50:08.989+09:00  INFO 117530 --- [carelog] [    Test worker] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-11-27T23:50:08.989+09:00  INFO 117530 --- [carelog] [    Test worker] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.40]
+2026-11-27T23:50:09.045+09:00  INFO 117530 --- [carelog] [    Test worker] o.a.c.c.C.[.[localhost].[/api/v1]        : Initializing Spring embedded WebApplicationContext
+2026-11-27T23:50:09.046+09:00  INFO 117530 --- [carelog] [    Test worker] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 2791 ms
+2026-11-27T23:50:09.392+09:00  INFO 117530 --- [carelog] [    Test worker] org.testcontainers.images.PullPolicy     : Image pull policy will be performed by: DefaultPullPolicy()
+2026-11-27T23:50:09.394+09:00  INFO 117530 --- [carelog] [    Test worker] o.t.utility.ImageNameSubstitutor         : Image name substitution will be performed by: DefaultImageNameSubstitutor (composite of 'ConfigurationFileImageNameSubstitutor' and 'PrefixingImageNameSubstitutor')
+2026-11-27T23:50:09.406+09:00  INFO 117530 --- [carelog] [    Test worker] org.testcontainers.DockerClientFactory   : Testcontainers version: 1.21.4
+2026-11-27T23:50:09.733+09:00  INFO 117530 --- [carelog] [    Test worker] o.t.d.DockerClientProviderStrategy       : Found Docker environment with local Unix socket (unix:///var/run/docker.sock)
+2026-11-27T23:50:09.735+09:00  INFO 117530 --- [carelog] [    Test worker] org.testcontainers.DockerClientFactory   : Docker host IP address is localhost
+2026-11-27T23:50:09.753+09:00  INFO 117530 --- [carelog] [    Test worker] org.testcontainers.DockerClientFactory   : Connected to docker: 
+  Server Version: 28.4.0
+  API Version: 1.51
+  Operating System: Debian GNU/Linux 13 (trixie) (containerized)
+  Total Memory: 18007 MB
+2026-11-27T23:50:09.772+09:00  INFO 117530 --- [carelog] [    Test worker] tc.testcontainers/ryuk:0.12.0            : Creating container for image: testcontainers/ryuk:0.12.0
+2026-11-27T23:50:10.115+09:00  INFO 117530 --- [carelog] [    Test worker] tc.testcontainers/ryuk:0.12.0            : Container testcontainers/ryuk:0.12.0 is starting: e7d187cfec493e54261d52924c0c63580242f8fd9bdba6e6b0fcc27273655044
+2026-11-27T23:50:10.349+09:00  INFO 117530 --- [carelog] [    Test worker] tc.testcontainers/ryuk:0.12.0            : Container testcontainers/ryuk:0.12.0 started in PT0.576802306S
+2026-11-27T23:50:10.359+09:00  INFO 117530 --- [carelog] [    Test worker] o.t.utility.RyukResourceReaper           : Ryuk started - will monitor and terminate Testcontainers containers on JVM exit
+2026-11-27T23:50:10.359+09:00  INFO 117530 --- [carelog] [    Test worker] org.testcontainers.DockerClientFactory   : Checking the system...
+2026-11-27T23:50:10.360+09:00  INFO 117530 --- [carelog] [    Test worker] org.testcontainers.DockerClientFactory   : ✔︎ Docker server version should be at least 1.6.0
+2026-11-27T23:50:10.362+09:00  INFO 117530 --- [carelog] [    Test worker] tc.postgres:16-alpine                    : Creating container for image: postgres:16-alpine
+2026-11-27T23:50:10.816+09:00  INFO 117530 --- [carelog] [    Test worker] tc.postgres:16-alpine                    : Container postgres:16-alpine is starting: 8d827dcee68ad4c53031835ffa8cfeb3f2b8afcd781abc3c1d7223c7abca8348
+2026-11-27T23:50:12.192+09:00  INFO 117530 --- [carelog] [    Test worker] tc.postgres:16-alpine                    : Container postgres:16-alpine started in PT1.829884759S
+2026-11-27T23:50:12.193+09:00  INFO 117530 --- [carelog] [    Test worker] tc.postgres:16-alpine                    : Container is started (JDBC URL: jdbc:postgresql://localhost:32971/test?loggerLevel=OFF)
+2026-11-27T23:50:12.776+09:00  INFO 117530 --- [carelog] [    Test worker] org.flywaydb.core.FlywayExecutor         : Database: jdbc:postgresql://localhost:32971/test?loggerLevel=OFF (PostgreSQL 16.15)
+2026-11-27T23:50:12.817+09:00  INFO 117530 --- [carelog] [    Test worker] o.f.c.i.s.JdbcTableSchemaHistory         : Schema history table "public"."flyway_schema_history" does not exist yet
+2026-11-27T23:50:12.830+09:00  INFO 117530 --- [carelog] [    Test worker] o.f.core.internal.command.DbValidate     : Successfully validated 11 migrations (execution time 00:00.028s)
+2026-11-27T23:50:12.842+09:00  INFO 117530 --- [carelog] [    Test worker] o.f.c.i.s.JdbcTableSchemaHistory         : Creating Schema History table "public"."flyway_schema_history" ...
+2026-11-27T23:50:12.914+09:00  INFO 117530 --- [carelog] [    Test worker] o.f.core.internal.command.DbMigrate      : Current version of schema "public": << Empty Schema >>
+2026-11-27T23:50:12.939+09:00  INFO 117530 --- [carelog] [    Test worker] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "1 - baseline current schema"
+2026-11-27T23:50:12.980+09:00  INFO 117530 --- [carelog] [    Test worker] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "2 - identity foundation"
+2026-11-27T23:50:13.000+09:00  INFO 117530 --- [carelog] [    Test worker] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "3 - backfill identity principals"
+2026-11-27T23:50:13.031+09:00  INFO 117530 --- [carelog] [    Test worker] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "4 - identity constraints"
+2026-11-27T23:50:13.056+09:00  INFO 117530 --- [carelog] [    Test worker] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "5 - refresh token account id"
+2026-11-27T23:50:13.068+09:00  INFO 117530 --- [carelog] [    Test worker] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "6 - product client registry"
+2026-11-27T23:50:13.076+09:00  INFO 117530 --- [carelog] [    Test worker] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "7 - customer product contract"
+2026-11-27T23:50:13.082+09:00  INFO 117530 --- [carelog] [    Test worker] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "8 - customer events"
+2026-11-27T23:50:13.094+09:00  INFO 117530 --- [carelog] [    Test worker] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "9 - external account projection"
+2026-11-27T23:50:13.132+09:00  INFO 117530 --- [carelog] [    Test worker] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "10 - customer event revision"
+2026-11-27T23:50:13.144+09:00  INFO 117530 --- [carelog] [    Test worker] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "11 - customer event memo intents"
+2026-11-27T23:50:13.165+09:00  INFO 117530 --- [carelog] [    Test worker] o.f.core.internal.command.DbMigrate      : Successfully applied 11 migrations to schema "public", now at version v11 (execution time 00:00.093s)
+2026-11-27T23:50:13.366+09:00  INFO 117530 --- [carelog] [    Test worker] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-11-27T23:50:13.404+09:00  INFO 117530 --- [carelog] [    Test worker] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.6.13.Final
+2026-11-27T23:50:13.456+09:00  INFO 117530 --- [carelog] [    Test worker] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2026-11-27T23:50:13.540+09:00  INFO 117530 --- [carelog] [    Test worker] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-11-27T23:50:13.566+09:00  INFO 117530 --- [carelog] [    Test worker] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@236a6a2a
+2026-11-27T23:50:13.568+09:00  INFO 117530 --- [carelog] [    Test worker] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-11-27T23:50:13.621+09:00  INFO 117530 --- [carelog] [    Test worker] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [Connecting through datasource 'carelog.carelog.common.metrics.JdbcMetricsDataSource@6ddeeb78']
+	Database driver: undefined/unknown
+	Database version: 16.15
+	Autocommit mode: undefined/unknown
+	Isolation level: undefined/unknown
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-11-27T23:50:13.782+09:00  INFO 117530 --- [carelog] [    Test worker] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-11-27T23:50:14.970+09:00  INFO 117530 --- [carelog] [    Test worker] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-11-27T23:50:15.079+09:00  INFO 117530 --- [carelog] [    Test worker] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-11-27T23:50:16.156+09:00  INFO 117530 --- [carelog] [    Test worker] o.s.d.j.r.query.QueryEnhancerFactory     : Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-11-27T23:50:18.909+09:00  INFO 117530 --- [carelog] [    Test worker] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 1 endpoint beneath base path '/actuator'
+2026-11-27T23:50:20.248+09:00  INFO 117530 --- [carelog] [    Test worker] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 33593 (http) with context path '/api/v1'
+2026-11-27T23:50:20.249+09:00  INFO 117530 --- [carelog] [    Test worker] u.j.c.RefreshScopeRefreshedEventListener : Refreshing cached encryptable property sources on ServletWebServerInitializedEvent
+2026-11-27T23:50:20.249+09:00  INFO 117530 --- [carelog] [    Test worker] CachingDelegateEncryptablePropertySource : Property Source test refreshed
+2026-11-27T23:50:20.249+09:00  INFO 117530 --- [carelog] [    Test worker] CachingDelegateEncryptablePropertySource : Property Source Inlined Test Properties refreshed
+2026-11-27T23:50:20.249+09:00  INFO 117530 --- [carelog] [    Test worker] CachingDelegateEncryptablePropertySource : Property Source active-test-profiles refreshed
+2026-11-27T23:50:20.249+09:00  INFO 117530 --- [carelog] [    Test worker] CachingDelegateEncryptablePropertySource : Property Source systemProperties refreshed
+2026-11-27T23:50:20.249+09:00  INFO 117530 --- [carelog] [    Test worker] CachingDelegateEncryptablePropertySource : Property Source systemEnvironment refreshed
+2026-11-27T23:50:20.250+09:00  INFO 117530 --- [carelog] [    Test worker] CachingDelegateEncryptablePropertySource : Property Source random refreshed
+2026-11-27T23:50:20.250+09:00  INFO 117530 --- [carelog] [    Test worker] CachingDelegateEncryptablePropertySource : Property Source Config resource 'class path resource [application-test.yml]' via location 'optional:classpath:/' refreshed
+2026-11-27T23:50:20.250+09:00  INFO 117530 --- [carelog] [    Test worker] CachingDelegateEncryptablePropertySource : Property Source Config resource 'class path resource [application.yml]' via location 'optional:classpath:/' refreshed
+2026-11-27T23:50:20.250+09:00  INFO 117530 --- [carelog] [    Test worker] CachingDelegateEncryptablePropertySource : Property Source applicationInfo refreshed
+2026-11-27T23:50:20.250+09:00  INFO 117530 --- [carelog] [    Test worker] c.u.j.EncryptablePropertySourceConverter : Converting PropertySource testcontainersPropertySource [org.springframework.boot.testcontainers.properties.TestcontainersPropertySource] to EncryptableMapPropertySourceWrapper
+2026-11-27T23:50:20.250+09:00  INFO 117530 --- [carelog] [    Test worker] c.u.j.EncryptablePropertySourceConverter : Skipping PropertySource configurationProperties [class org.springframework.boot.context.properties.source.ConfigurationPropertySourcesPropertySource
+2026-11-27T23:50:20.250+09:00  INFO 117530 --- [carelog] [    Test worker] c.u.j.EncryptablePropertySourceConverter : Skipping PropertySource servletConfigInitParams [class org.springframework.core.env.PropertySource$StubPropertySource
+2026-11-27T23:50:20.250+09:00  INFO 117530 --- [carelog] [    Test worker] c.u.j.EncryptablePropertySourceConverter : Converting PropertySource servletContextInitParams [org.springframework.web.context.support.ServletContextPropertySource] to EncryptableEnumerablePropertySourceWrapper
+2026-11-27T23:50:20.250+09:00  INFO 117530 --- [carelog] [    Test worker] c.u.j.EncryptablePropertySourceConverter : Converting PropertySource Management Server [org.springframework.boot.actuate.autoconfigure.web.server.ManagementContextAutoConfiguration$SameManagementContextConfiguration$1] to EncryptablePropertySourceWrapper
+2026-11-27T23:50:20.266+09:00  INFO 117530 --- [carelog] [    Test worker] c.c.p.AiMemoLoopbackHttpIntegrationTest  : Started AiMemoLoopbackHttpIntegrationTest in 14.664 seconds (process running for 16.157)
+2026-11-27T23:50:21.385+09:00  INFO 117530 --- [carelog] [1-auto-1-exec-1] o.a.c.c.C.[.[localhost].[/api/v1]        : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-11-27T23:50:21.386+09:00  INFO 117530 --- [carelog] [1-auto-1-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-11-27T23:50:21.394+09:00  INFO 117530 --- [carelog] [1-auto-1-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 8 ms
+2026-11-27T23:50:21.564+09:00 ERROR 117530 --- [carelog] [1-auto-1-exec-1] c.c.common.config.aop.LoggingAspect      : ❌ [Exception] AiMemoAppendService.prepare - CustomException: 접근 권한이 없습니다.
+2026-11-27T23:50:21.566+09:00 ERROR 117530 --- [carelog] [1-auto-1-exec-1] c.c.common.config.aop.LoggingAspect      : ❌ [Exception] AiMemoAppendController.prepare - CustomException: 접근 권한이 없습니다.
+2026-11-27T23:50:21.570+09:00  WARN 117530 --- [carelog] [1-auto-1-exec-1] c.c.c.w.e.GlobalExceptionHandler         : CustomException occurred: 접근 권한이 없습니다.
+2026-11-27T23:50:21.735+09:00 ERROR 117530 --- [carelog] [1-auto-1-exec-4] c.c.common.config.aop.LoggingAspect      : ❌ [Exception] AiMemoAppendService.append - CustomException: 접근 권한이 없습니다.
+2026-11-27T23:50:21.738+09:00 ERROR 117530 --- [carelog] [1-auto-1-exec-4] c.c.common.config.aop.LoggingAspect      : ❌ [Exception] AiMemoAppendController.append - CustomException: 접근 권한이 없습니다.
+2026-11-27T23:50:21.739+09:00  WARN 117530 --- [carelog] [1-auto-1-exec-4] c.c.c.w.e.GlobalExceptionHandler         : CustomException occurred: 접근 권한이 없습니다.
+2026-11-27T23:50:21.989+09:00 ERROR 117530 --- [carelog] [1-auto-1-exec-6] c.c.common.config.aop.LoggingAspect      : ❌ [Exception] AiMemoAppendService.append - CustomException: 이벤트가 변경되었습니다. 다시 확인해 주세요.
+2026-11-27T23:50:21.991+09:00 ERROR 117530 --- [carelog] [1-auto-1-exec-6] c.c.common.config.aop.LoggingAspect      : ❌ [Exception] AiMemoAppendController.append - CustomException: 이벤트가 변경되었습니다. 다시 확인해 주세요.
+2026-11-27T23:50:21.991+09:00  WARN 117530 --- [carelog] [1-auto-1-exec-6] c.c.c.w.e.GlobalExceptionHandler         : CustomException occurred: 이벤트가 변경되었습니다. 다시 확인해 주세요.
+2026-11-27T23:50:22.090+09:00  INFO 117530 --- [carelog] [1-auto-1-exec-8] c.c.common.config.aop.LoggingAspect      : =====> [PATCH] /api/v1/customer-events/34916b6f-da52-4914-8dcf-c2758c045fe6 - CustomerEventController.update
+2026-11-27T23:50:22.139+09:00  INFO 117530 --- [carelog] [1-auto-1-exec-8] c.c.common.config.aop.LoggingAspect      : <===== [PATCH] /api/v1/customer-events/34916b6f-da52-4914-8dcf-c2758c045fe6 - ✅ SUCCESS (49ms)
+2026-11-27T23:50:22.194+09:00 ERROR 117530 --- [carelog] [1-auto-1-exec-9] c.c.common.config.aop.LoggingAspect      : ❌ [Exception] AiMemoAppendService.append - CustomException: 이벤트가 변경되었습니다. 다시 확인해 주세요.
+2026-11-27T23:50:22.195+09:00 ERROR 117530 --- [carelog] [1-auto-1-exec-9] c.c.common.config.aop.LoggingAspect      : ❌ [Exception] AiMemoAppendController.append - CustomException: 이벤트가 변경되었습니다. 다시 확인해 주세요.
+2026-11-27T23:50:22.198+09:00  WARN 117530 --- [carelog] [1-auto-1-exec-9] c.c.c.w.e.GlobalExceptionHandler         : CustomException occurred: 이벤트가 변경되었습니다. 다시 확인해 주세요.
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

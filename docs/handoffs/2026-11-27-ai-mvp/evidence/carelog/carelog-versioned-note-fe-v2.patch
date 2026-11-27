@@ -1,0 +1,311 @@
+diff --git a/local-proof.html b/local-proof.html
+new file mode 100644
+index 0000000..ef58d8f
+--- /dev/null
++++ b/local-proof.html
+@@ -0,0 +1 @@
++<!doctype html><html lang="ko"><head><meta charset="UTF-8"><title>합성 방문 준비</title></head><body><div id="root"></div><script type="module" src="/src/local-proof.tsx"></script></body></html>
+diff --git a/src/components/assistant/AssistantSurface.tsx b/src/components/assistant/AssistantSurface.tsx
+index 97be98c..21de46a 100644
+--- a/src/components/assistant/AssistantSurface.tsx
++++ b/src/components/assistant/AssistantSurface.tsx
+@@ -108,7 +108,8 @@ export function AssistantSurface({
+       context.navigation.context.kind === 'customer'
+         ? context.customer.customerMemo
+         : context.event?.note;
+-    setMemoDraft(existingMemo?.trim() ? `${existingMemo.trim()}\n\n${resultText}` : resultText);
++    const synthetic = import.meta.env.DEV && import.meta.env.MODE === 'test' && import.meta.env.VITE_SYNTHETIC_PANEL === 'enabled';
++    setMemoDraft(synthetic ? resultText : existingMemo?.trim() ? `${existingMemo.trim()}\n\n${resultText}` : resultText);
+     setSaveFailed(false);
+     setIsMemoSaving(false);
+     setSavedMessage(null);
+diff --git a/src/components/schedule/EventDetail.revision.test.tsx b/src/components/schedule/EventDetail.revision.test.tsx
+new file mode 100644
+index 0000000..9608a6a
+--- /dev/null
++++ b/src/components/schedule/EventDetail.revision.test.tsx
+@@ -0,0 +1,19 @@
++import { render, fireEvent, waitFor } from '@testing-library/react';
++import { MemoryRouter } from 'react-router';
++import { expect, it, vi } from 'vitest';
++import { EventDetail } from '@/components/schedule/EventDetail';
++import { I18nProvider } from '@/i18n/I18nContext';
++import type { CustomerEvent } from '@/domain/customerEvent';
++
++it('keeps the opened event revision after a refreshed event arrives', async () => {
++  const original: CustomerEvent = { id: 'event', customerId: 'customer', status: 'PLANNED', scheduledAt: '2026-12-01T10:00:00Z', note: '처음', revision: 1 };
++  const onEdit = vi.fn().mockResolvedValue(original);
++  const view = (event: CustomerEvent) => <MemoryRouter><I18nProvider locale="ko"><EventDetail event={event} customerName="합성 고객" customerPath="/" now={new Date('2026-11-27T00:00:00Z')} onEdit={onEdit} /></I18nProvider></MemoryRouter>;
++  const { container, rerender } = render(view(original));
++  fireEvent.click(container.querySelector('[data-event-action="edit"]')!);
++  rerender(view({ ...original, note: '다른 사용자 변경', revision: 2 }));
++  fireEvent.change(container.querySelector('[data-event-field="note"]')!, { target: { value: '나의 편집' } });
++  fireEvent.submit(container.querySelector('[data-event-form]')!);
++  await waitFor(() => expect(onEdit).toHaveBeenCalled());
++  expect(onEdit.mock.calls[0][1]).toMatchObject({ revision: 1, note: '처음' });
++});
+diff --git a/src/components/schedule/EventDetail.tsx b/src/components/schedule/EventDetail.tsx
+index 1fb7b7a..6b54041 100644
+--- a/src/components/schedule/EventDetail.tsx
++++ b/src/components/schedule/EventDetail.tsx
+@@ -28,7 +28,7 @@ interface EventDetailProps {
+   onOpenCustomer?: () => void;
+   onOpenAssistant?: () => void;
+   onEdit?: (
+-    values: EventFormSubmitValues,
++    values: EventFormSubmitValues, snapshot: CustomerEvent,
+   ) => CustomerEvent | undefined | Promise<CustomerEvent | undefined>;
+   onCancelEvent?: () => CustomerEvent | undefined | Promise<CustomerEvent | undefined>;
+   onOccurEvent?: (
+@@ -49,6 +49,7 @@ export function EventDetail({
+ }: EventDetailProps) {
+   const { locale, t } = useTranslation();
+   const [isEditing, setIsEditing] = useState(false);
++  const [editSnapshot, setEditSnapshot] = useState<CustomerEvent | null>(null);
+   const [isConfirmingOccurrence, setIsConfirmingOccurrence] = useState(false);
+   const [isActionPending, setIsActionPending] = useState(false);
+   const [actionError, setActionError] = useState<string | null>(null);
+@@ -165,7 +166,7 @@ export function EventDetail({
+                 variant="outline"
+                 size="sm"
+                 data-event-action="edit"
+-                onClick={() => setIsEditing(true)}
++                onClick={() => { setEditSnapshot(event); setIsEditing(true); }}
+                 disabled={isActionPending}
+               >
+                 {t('eventDetail.edit')}
+@@ -275,14 +276,14 @@ export function EventDetail({
+         ) : null}
+       </div>
+ 
+-      {isEditing && onEdit ? (
++      {isEditing && onEdit && editSnapshot ? (
+         <EventForm
+           mode="edit"
+-          event={event}
++          event={editSnapshot}
+           customerName={customerName}
+           now={now}
+           onSubmit={async (values) => {
+-            await onEdit(values);
++            await onEdit(values, editSnapshot);
+             setIsEditing(false);
+           }}
+           onCancel={() => setIsEditing(false)}
+diff --git a/src/domain/customerEvent.ts b/src/domain/customerEvent.ts
+index ace7deb..01c06d2 100644
+--- a/src/domain/customerEvent.ts
++++ b/src/domain/customerEvent.ts
+@@ -3,6 +3,7 @@ export const CUSTOMER_EVENT_STATUSES = ['PLANNED', 'OCCURRED', 'CANCELLED'] as c
+ export type CustomerEventStatus = (typeof CUSTOMER_EVENT_STATUSES)[number];
+ 
+ interface CustomerEventBase {
++  revision?: number;
+   id: string;
+   customerId: string;
+   descriptor?: string;
+@@ -44,6 +45,7 @@ export interface CreateOccurredCustomerEventInput {
+ }
+ 
+ export type CustomerEventEdit = {
++  expectedRevision?: number;
+   descriptor?: string | null;
+   note?: string | null;
+   scheduledAt?: string;
+diff --git a/src/integrations/carelog/mappers.test.ts b/src/integrations/carelog/mappers.test.ts
+index fc665d4..af4e9c6 100644
+--- a/src/integrations/carelog/mappers.test.ts
++++ b/src/integrations/carelog/mappers.test.ts
+@@ -47,6 +47,7 @@ describe('Carelog wire mappers', () => {
+         scheduledAt: '2026-08-20T10:00:00+09:00',
+         descriptor: null,
+         note: ' 메모 ',
++        revision: 7,
+       }),
+     ).toEqual({
+       id: eventId,
+@@ -54,6 +55,7 @@ describe('Carelog wire mappers', () => {
+       status: 'PLANNED',
+       scheduledAt: '2026-08-20T10:00:00+09:00',
+       note: '메모',
++      revision: 7,
+     });
+ 
+     expect(
+@@ -126,12 +128,16 @@ describe('Carelog wire mappers', () => {
+       toCustomerEventPatchBody(event, {
+         descriptor: ' 기존 제목 ',
+         note: '  ',
++        expectedRevision: 4,
+         scheduledAt: event.scheduledAt,
+       }),
+-    ).toEqual({ note: null });
+-    expect(toCustomerEventPatchBody(event, { descriptor: '새 제목', note: '새 메모' })).toEqual({
++    ).toEqual({ note: null, expectedRevision: 4 });
++    expect(toCustomerEventPatchBody(event, { descriptor: '새 제목', note: '새 메모', expectedRevision: 4 })).toEqual({
+       descriptor: '새 제목',
+       note: '새 메모',
++      expectedRevision: 4,
+     });
++    expect(() => toCustomerEventPatchBody(event, { note: '새 메모' })).toThrow();
++    expect(toCustomerEventPatchBody(event, { descriptor: '새 제목', note: '기존 메모' })).toEqual({ descriptor: '새 제목' });
+   });
+ });
+diff --git a/src/integrations/carelog/mappers.ts b/src/integrations/carelog/mappers.ts
+index 8064715..5bd0820 100644
+--- a/src/integrations/carelog/mappers.ts
++++ b/src/integrations/carelog/mappers.ts
+@@ -20,6 +20,7 @@ export interface CustomerEventResponseWire {
+   occurredAt?: unknown;
+   descriptor?: unknown;
+   note?: unknown;
++  revision?: unknown;
+ }
+ 
+ export type CustomerEventCreateInput =
+@@ -39,6 +40,7 @@ export type CustomerEventCreateInput =
+     };
+ 
+ export type CustomerEventPatchBody = {
++  expectedRevision?: number;
+   descriptor?: string | null;
+   note?: string | null;
+   scheduledAt?: string;
+@@ -85,12 +87,15 @@ export function mapCustomerEventResponse(value: unknown): CustomerEvent {
+   const occurredAt = mapOptionalTimestamp(candidate.occurredAt, 'occurredAt');
+   const descriptor = mapOptionalText(candidate.descriptor, 'descriptor');
+   const note = mapOptionalText(candidate.note, 'note');
++  const revision = candidate.revision;
++  if (revision !== undefined && (typeof revision !== 'number' || !Number.isSafeInteger(revision) || revision < 0)) throw new CarelogProtocolError('Invalid event revision.', revision);
+ 
+   if (status === 'PLANNED') {
+     if (!scheduledAt || occurredAt !== undefined) throw invalidEventInvariant();
+     return {
+       id,
+       customerId,
++      ...(revision === undefined ? {} : { revision }),
+       status,
+       scheduledAt,
+       ...(descriptor === undefined ? {} : { descriptor }),
+@@ -102,6 +107,7 @@ export function mapCustomerEventResponse(value: unknown): CustomerEvent {
+     return {
+       id,
+       customerId,
++      ...(revision === undefined ? {} : { revision }),
+       status,
+       occurredAt,
+       ...(scheduledAt === undefined ? {} : { scheduledAt }),
+@@ -114,6 +120,7 @@ export function mapCustomerEventResponse(value: unknown): CustomerEvent {
+     return {
+       id,
+       customerId,
++      ...(revision === undefined ? {} : { revision }),
+       status,
+       scheduledAt,
+       ...(descriptor === undefined ? {} : { descriptor }),
+@@ -160,6 +167,10 @@ export function toCustomerEventPatchBody(
+   } else if (changes.note !== undefined && nextNote === undefined) {
+     body.note = null;
+   }
++  if ('note' in body) {
++    if (changes.expectedRevision === undefined) throw new CarelogProtocolError('Note update requires the revision captured when editing began.', changes);
++    body.expectedRevision = changes.expectedRevision;
++  }
+   if (changes.scheduledAt !== undefined && changes.scheduledAt !== current.scheduledAt) {
+     body.scheduledAt = normalizeRequiredTimestamp(changes.scheduledAt, 'scheduledAt');
+   }
+diff --git a/src/local-proof.tsx b/src/local-proof.tsx
+new file mode 100644
+index 0000000..bdab218
+--- /dev/null
++++ b/src/local-proof.tsx
+@@ -0,0 +1,21 @@
++import { useState } from 'react';
++import { createRoot } from 'react-dom/client';
++
++function LocalProof() {
++  const [summary, setSummary] = useState('');
++  const [status, setStatus] = useState('');
++  async function call(path: string) {
++    const response = await fetch(`/synthetic/${path}`, { method: 'POST' });
++    const text = await response.text();
++    if (path === 'prepare') setSummary(response.ok ? text : '');
++    else { if (response.status === 403) setSummary(''); setStatus(text); }
++  }
++  return <main><h1>합성 방문 준비</h1><button id="prepare" onClick={() => void call('prepare')}>방문 준비</button>
++    {summary && <p id="summary">{summary}</p>}
++    <button id="save" disabled={!summary} onClick={() => void call('save')}>명시 저장</button>
++    <button id="stale" disabled={!summary} onClick={() => void call('stale')}>오래된 저장 확인</button>
++    <button id="denied" onClick={() => void call('denied')}>권한 없음 확인</button><output id="result">{status}</output></main>;
++}
++if (import.meta.env.DEV && import.meta.env.VITE_SYNTHETIC_PANEL === 'enabled') {
++  createRoot(document.getElementById('root')!).render(<LocalProof />);
++}
+diff --git a/src/main.tsx b/src/main.tsx
+index a587cf7..062ab38 100644
+--- a/src/main.tsx
++++ b/src/main.tsx
+@@ -37,6 +37,15 @@ async function startApplication() {
+     authPort = getProductionCarelogAuthRuntime().authPort;
+   }
+ 
++  if (import.meta.env.DEV && import.meta.env.MODE === 'test' && import.meta.env.VITE_SYNTHETIC_PANEL === 'enabled') {
++    assistantAdapter = { request: async ({ context }) => {
++      if (context.kind !== 'planned-event') throw new Error('Unsupported synthetic context');
++      const response = await fetch('/synthetic/prepare', { method: 'POST' });
++      if (!response.ok) throw new Error('Synthetic preparation unavailable');
++      return { summary: await response.text(), nextSteps: [] };
++    } };
++  }
++
+   const initialization: AppInitialization | undefined = testInitialization
+     ? {
+         initialCustomers: testInitialization.initialCustomers,
+diff --git a/src/pages/AssistantPage.tsx b/src/pages/AssistantPage.tsx
+index f83989b..a3e899c 100644
+--- a/src/pages/AssistantPage.tsx
++++ b/src/pages/AssistantPage.tsx
+@@ -65,6 +65,12 @@ export function AssistantPage() {
+   }
+ 
+   function saveEventMemo(memo: string) {
++    if (import.meta.env.DEV && import.meta.env.MODE === 'test' && import.meta.env.VITE_SYNTHETIC_PANEL === 'enabled') {
++      return fetch('/synthetic/save', { method: 'POST', body: memo }).then((response) => {
++        if (!response.ok) throw new Error('Synthetic save rejected');
++        return response.text();
++      });
++    }
+     if (!eventStore || !currentContext.event) return undefined;
+     const currentEvent = eventStore.events.find((event) => event.id === currentContext.event?.id);
+     if (!currentEvent) return undefined;
+diff --git a/src/pages/EventDetailPage.tsx b/src/pages/EventDetailPage.tsx
+index dfdbdd4..a5e0bb1 100644
+--- a/src/pages/EventDetailPage.tsx
++++ b/src/pages/EventDetailPage.tsx
+@@ -151,11 +151,11 @@ export function EventDetailPage({
+     });
+   }
+ 
+-  async function handleEdit(values: EventFormSubmitValues): Promise<CustomerEvent | undefined> {
++  async function handleEdit(values: EventFormSubmitValues, snapshot: CustomerEvent): Promise<CustomerEvent | undefined> {
+     if (!editEvent) return undefined;
+     const changes: CustomerEventEdit = {
+       descriptor: values.descriptor,
+-      note: values.note,
++      ...(values.note.trim() !== (snapshot.note ?? '').trim() ? { note: values.note, expectedRevision: snapshot.revision } : {}),
+       ...(values.scheduledAt ? { scheduledAt: values.scheduledAt } : {}),
+       ...(values.occurredAt ? { occurredAt: values.occurredAt } : {}),
+     };
+diff --git a/vite.synthetic.config.ts b/vite.synthetic.config.ts
+new file mode 100644
+index 0000000..1c75052
+--- /dev/null
++++ b/vite.synthetic.config.ts
+@@ -0,0 +1,7 @@
++import { defineConfig } from 'vite';
++import path from 'node:path';
++import react from '@vitejs/plugin-react';
++
++const backend = process.env.SYNTHETIC_BACKEND_URL;
++if (!backend || !/^http:\/\/127\.0\.0\.1:\d+$/.test(backend)) throw new Error('A loopback synthetic backend is required');
++export default defineConfig({ plugins: [react()], resolve: { alias: { '@': path.resolve(__dirname, './src') } }, server: { host: '127.0.0.1', proxy: { '/synthetic': { target: backend, rewrite: p => p.replace(/^\/synthetic/, '') } } } });

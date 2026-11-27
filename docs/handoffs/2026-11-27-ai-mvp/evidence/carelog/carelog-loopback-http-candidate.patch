@@ -1,0 +1,1063 @@
+diff --git a/carelog-be/src/main/java/carelog/carelog/common/web/exception/ExceptionStatus.java b/carelog-be/src/main/java/carelog/carelog/common/web/exception/ExceptionStatus.java
+index 99ddc2c..c55a080 100644
+--- a/carelog-be/src/main/java/carelog/carelog/common/web/exception/ExceptionStatus.java
++++ b/carelog-be/src/main/java/carelog/carelog/common/web/exception/ExceptionStatus.java
+@@ -28,6 +28,7 @@ public enum ExceptionStatus {
+         JOURNAL_TEMPLATE_NOT_FOUND(HttpStatus.NOT_FOUND, "일지 양식을 찾을 수 없습니다."),
+ 
+         // 409 CONFLICT
++        CUSTOMER_EVENT_REVISION_CONFLICT(HttpStatus.CONFLICT, "이벤트가 변경되었습니다. 다시 확인해 주세요."),
+         DUPLICATE_USER_ID(HttpStatus.CONFLICT, "이미 존재하는 사용자 ID입니다."),
+         DUPLICATE_EMAIL(HttpStatus.CONFLICT, "이미 존재하는 이메일입니다."),
+         RELATION_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 존재하는 관계입니다."),
+diff --git a/carelog-be/src/main/java/carelog/carelog/customerevent/ai/AiMemoAppendController.java b/carelog-be/src/main/java/carelog/carelog/customerevent/ai/AiMemoAppendController.java
+new file mode 100644
+index 0000000..83da1bc
+--- /dev/null
++++ b/carelog-be/src/main/java/carelog/carelog/customerevent/ai/AiMemoAppendController.java
+@@ -0,0 +1,31 @@
++package carelog.carelog.customerevent.ai;
++
++import carelog.carelog.auth.app.UserPrincipal;
++import carelog.carelog.common.web.dto.response.ApiResponse;
++import java.util.UUID;
++import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
++import org.springframework.context.annotation.Profile;
++import org.springframework.http.ResponseEntity;
++import org.springframework.security.access.prepost.PreAuthorize;
++import org.springframework.security.core.annotation.AuthenticationPrincipal;
++import org.springframework.web.bind.annotation.*;
++
++/** 비활성 출시 후보: 별도 결과 검증 및 보존 승인 전 운영 활성화 금지. */
++@RestController
++@RequestMapping("/customer-events")
++@PreAuthorize("hasRole('MANAGER')")
++@Profile("test")
++@ConditionalOnProperty(name="carelog.ai-memo.enabled", havingValue="true")
++public class AiMemoAppendController {
++    private final AiMemoAppendService service;
++    public AiMemoAppendController(AiMemoAppendService service) { this.service=service; }
++    public record PrepareRequest(UUID customerId, UUID sessionId) {}
++    @PostMapping("/{eventId}/synthetic-prepare")
++    public ResponseEntity<ApiResponse<AiMemoAppendService.Preparation>> prepare(@AuthenticationPrincipal UserPrincipal principal,@PathVariable UUID eventId,@RequestBody PrepareRequest request) {
++        return ApiResponse.ok(service.prepare(principal,eventId,request.customerId(),request.sessionId()));
++    }
++    @PostMapping("/{eventId}/ai-memo-append")
++    public ResponseEntity<ApiResponse<AiMemoAppendService.Receipt>> append(@AuthenticationPrincipal UserPrincipal principal,@PathVariable UUID eventId,@RequestBody AiMemoAppendService.Request request) {
++        return ApiResponse.ok(service.append(principal,eventId,request));
++    }
++}
+diff --git a/carelog-be/src/main/java/carelog/carelog/customerevent/ai/AiMemoAppendService.java b/carelog-be/src/main/java/carelog/carelog/customerevent/ai/AiMemoAppendService.java
+new file mode 100644
+index 0000000..44f9c5f
+--- /dev/null
++++ b/carelog-be/src/main/java/carelog/carelog/customerevent/ai/AiMemoAppendService.java
+@@ -0,0 +1,95 @@
++package carelog.carelog.customerevent.ai;
++
++import carelog.carelog.auth.app.UserPrincipal;
++import carelog.carelog.common.web.exception.CustomException;
++import carelog.carelog.common.web.exception.ExceptionStatus;
++import carelog.carelog.customerevent.domain.*;
++import carelog.carelog.relation.domain.*;
++import carelog.carelog.user.domain.*;
++import java.util.*;
++import java.util.concurrent.ConcurrentHashMap;
++import java.util.concurrent.TimeUnit;
++import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
++import org.springframework.context.annotation.Profile;
++import org.springframework.jdbc.core.JdbcTemplate;
++import org.springframework.stereotype.Service;
++import org.springframework.transaction.annotation.Transactional;
++
++/** 출시 비활성 후보. 원본/결과 결속, 보존 정책은 별도 승인 전 활성화 금지. */
++@Service
++@Profile("test")
++@ConditionalOnProperty(name="carelog.ai-memo.enabled", havingValue="true")
++public class AiMemoAppendService {
++    private final UserRepository users;
++    private final RelationRepository relations;
++    private final CustomerEventRepository events;
++    private final JdbcTemplate jdbc;
++    public AiMemoAppendService(UserRepository users, RelationRepository relations, CustomerEventRepository events, JdbcTemplate jdbc) {
++        this.users=users; this.relations=relations; this.events=events; this.jdbc=jdbc;
++    }
++    public record Request(UUID customerId, UUID intentId, Long expectedRevision, String addition, UUID sessionId, UUID token) {}
++    public record Preparation(UUID token, long revision, String summary) {}
++    private record SessionKey(UUID actor, UUID org, UUID session) {}
++    private record Bound(UUID token, UUID customer, UUID event, long revision, long expires) {}
++    private final Map<SessionKey, Bound> prepared = new ConcurrentHashMap<>();
++    // 합성 시험의 수명만 정의한다. 운영 보존 정책이 아니다.
++    private static final long TEST_LIFETIME = TimeUnit.MINUTES.toNanos(2);
++    @Transactional
++    public Preparation prepare(UserPrincipal principal, UUID eventId, UUID customerId, UUID sessionId) {
++        if (sessionId==null) throw denied();
++        lockSession(principal,sessionId);
++        CustomerEvent event = authorize(principal,eventId,customerId);
++        UUID token=UUID.randomUUID();
++        SessionKey key=new SessionKey(principal.getAccountId(),principal.getOrganizationId(),sessionId);
++        prepared.put(key,new Bound(token,customerId,eventId,event.getRevision(),System.nanoTime()+TEST_LIFETIME));
++        String descriptor=event.getDescriptor();
++        return new Preparation(token,event.getRevision(),descriptor==null?"방문 목적: 기록 없음":"방문 목적: "+descriptor);
++    }
++    // 만료 동작을 대기 없이 검증하기 위한 테스트 프로필 전용 훅이다.
++    public void expireSynthetic(UserPrincipal principal, UUID sessionId) {
++        SessionKey key=new SessionKey(principal.getAccountId(),principal.getOrganizationId(),sessionId);
++        prepared.computeIfPresent(key,(k,b)->new Bound(b.token(),b.customer(),b.event(),b.revision(),System.nanoTime()-1));
++    }
++    public record Receipt(boolean replayed, long revision) {}
++    private record Intent(UUID org, UUID customer, UUID event, long revision, String addition) {}
++    @Transactional
++    public Receipt append(UserPrincipal principal, UUID eventId, Request request) {
++        if (request==null || request.intentId()==null || request.expectedRevision()==null || request.expectedRevision()<0 || request.addition()==null || request.addition().isBlank() || request.sessionId()==null || request.token()==null) throw denied();
++        lockSession(principal,request.sessionId());
++        CustomerEvent event=authorize(principal,eventId,request.customerId());
++        UUID actor=principal.getAccountId(), org=principal.getOrganizationId();
++        SessionKey session=new SessionKey(actor,org,request.sessionId());
++        Bound bound=prepared.get(session);
++        if (bound==null || !bound.token().equals(request.token()) || !bound.customer().equals(request.customerId()) || !bound.event().equals(eventId) || bound.revision()!=request.expectedRevision()) throw denied();
++        if (System.nanoTime()-bound.expires()>=0) { prepared.remove(session,bound); throw denied(); }
++        jdbc.queryForObject("SELECT pg_advisory_xact_lock(hashtextextended(?, 0)) IS NULL",Boolean.class,actor+":"+request.intentId());
++        String addition=request.addition().trim();
++        Intent desired=new Intent(org,request.customerId(),eventId,request.expectedRevision(),addition);
++        List<Intent> prior=jdbc.query("SELECT organization_id, customer_id, event_id, expected_revision, addition FROM customer_event_memo_intents WHERE actor_id=? AND intent_id=?",(rs,n)->new Intent(rs.getObject(1,UUID.class),rs.getObject(2,UUID.class),rs.getObject(3,UUID.class),rs.getLong(4),rs.getString(5)),actor,request.intentId());
++        if (!prior.isEmpty()) { if (!prior.get(0).equals(desired)) throw conflict(); return new Receipt(true,event.getRevision()); }
++        if (event.getRevision()!=request.expectedRevision()) { prepared.remove(session,bound); throw conflict(); }
++        String note=event.getNote(); event.updateNote(note==null?addition:note+"\n"+addition); events.flush();
++        jdbc.update("INSERT INTO customer_event_memo_intents(actor_id,intent_id,organization_id,customer_id,event_id,expected_revision,addition) VALUES (?,?,?,?,?,?,?)",actor,request.intentId(),org,request.customerId(),eventId,request.expectedRevision(),addition);
++        return new Receipt(false,event.getRevision());
++    }
++    private void lockSession(UserPrincipal principal, UUID sessionId) {
++        if (principal==null || principal.getAccountId()==null || principal.getOrganizationId()==null || sessionId==null) throw denied();
++        String key="synthetic-session:"+principal.getAccountId()+":"+principal.getOrganizationId()+":"+sessionId;
++        jdbc.queryForObject("SELECT pg_advisory_xact_lock(hashtextextended(?, 0)) IS NULL",Boolean.class,key);
++    }
++    private CustomerEvent authorize(UserPrincipal principal, UUID eventId, UUID customerId) {
++        if (principal==null || principal.getAccountId()==null || principal.getOrganizationId()==null || principal.getPublicId()==null || !"MANAGER".equals(principal.getRole()) || eventId==null || customerId==null) throw denied();
++        UUID actor=principal.getAccountId(), org=principal.getOrganizationId();
++        Optional<User> ext=users.findByExternalAccountId(actor);
++        Optional<User> resolved=ext.isPresent()?ext:users.externalAccountExistsIncludingDeleted(actor)?Optional.empty():users.findByAccountId(actor);
++        User manager=resolved.filter(m->m.getRole()==UserRole.MANAGER && org.equals(m.getOrganizationId()) && principal.getPublicId().equals(m.getPublicId())).orElseThrow(AiMemoAppendService::denied);
++        User customer=users.findByOrganizationIdAndRoleAndPublicId(org,UserRole.CUSTOMER,customerId).orElseThrow(AiMemoAppendService::denied);
++        Relation relation=relations.findByManagerAndCustomerForUpdate(manager,customer).orElseThrow(AiMemoAppendService::denied);
++        if (relation.getStatus()!=RelationStatus.ACTIVE || !org.equals(relation.getOrganizationId())) throw denied();
++        CustomerEvent event=events.findByOrganizationIdAndPublicIdForUpdate(org,eventId).orElseThrow(AiMemoAppendService::denied);
++        if (event.getStatus()!=CustomerEventStatus.PLANNED || !event.getCustomer().getPublicId().equals(customerId)) throw denied();
++        return event;
++    }
++    private static CustomException denied() { return new CustomException(ExceptionStatus.ACCESS_DENIED); }
++    private static CustomException conflict() { return new CustomException(ExceptionStatus.CUSTOMER_EVENT_REVISION_CONFLICT); }
++}
+diff --git a/carelog-be/src/main/java/carelog/carelog/customerevent/app/CustomerEventServiceImpl.java b/carelog-be/src/main/java/carelog/carelog/customerevent/app/CustomerEventServiceImpl.java
+index 935bd05..6c054bf 100644
+--- a/carelog-be/src/main/java/carelog/carelog/customerevent/app/CustomerEventServiceImpl.java
++++ b/carelog-be/src/main/java/carelog/carelog/customerevent/app/CustomerEventServiceImpl.java
+@@ -116,6 +116,9 @@ public class CustomerEventServiceImpl implements CustomerEventService {
+             event.updateDescriptor(request.descriptor());
+         }
+         if (request.notePresent()) {
++            if (request.expectedRevision() == null || request.expectedRevision() != event.getRevision()) {
++                throw new CustomException(ExceptionStatus.CUSTOMER_EVENT_REVISION_CONFLICT);
++            }
+             event.updateNote(request.note());
+         }
+         if (request.scheduledAtPresent()) {
+@@ -124,6 +127,7 @@ public class CustomerEventServiceImpl implements CustomerEventService {
+         if (request.occurredAtPresent()) {
+             event.updateOccurredAt(parseRequiredTime(request.occurredAt()));
+         }
++        customerEventRepository.flush();
+         return CustomerEventResponse.from(event);
+     }
+ 
+@@ -132,6 +136,7 @@ public class CustomerEventServiceImpl implements CustomerEventService {
+     public CustomerEventResponse occur(UUID organizationId, UUID eventId, OffsetDateTime occurredAt) {
+         CustomerEvent event = findEventForUpdate(organizationId, eventId);
+         event.occur(occurredAt);
++        customerEventRepository.flush();
+         return CustomerEventResponse.from(event);
+     }
+ 
+@@ -140,6 +145,7 @@ public class CustomerEventServiceImpl implements CustomerEventService {
+     public CustomerEventResponse cancel(UUID organizationId, UUID eventId) {
+         CustomerEvent event = findEventForUpdate(organizationId, eventId);
+         event.cancel();
++        customerEventRepository.flush();
+         return CustomerEventResponse.from(event);
+     }
+ 
+diff --git a/carelog-be/src/main/java/carelog/carelog/customerevent/domain/CustomerEvent.java b/carelog-be/src/main/java/carelog/carelog/customerevent/domain/CustomerEvent.java
+index cfa7698..f061348 100644
+--- a/carelog-be/src/main/java/carelog/carelog/customerevent/domain/CustomerEvent.java
++++ b/carelog-be/src/main/java/carelog/carelog/customerevent/domain/CustomerEvent.java
+@@ -15,6 +15,7 @@ import jakarta.persistence.Id;
+ import jakarta.persistence.JoinColumn;
+ import jakarta.persistence.ManyToOne;
+ import jakarta.persistence.Table;
++import jakarta.persistence.Version;
+ import lombok.AccessLevel;
+ import lombok.Getter;
+ import lombok.NoArgsConstructor;
+@@ -56,6 +57,10 @@ public class CustomerEvent extends TenantBaseEntity {
+     @Column(name = "note", columnDefinition = "text")
+     private String note;
+ 
++    @Version
++    @Column(name = "revision", nullable = false)
++    private long revision;
++
+     private CustomerEvent(
+             User customer,
+             CustomerEventStatus status,
+diff --git a/carelog-be/src/main/java/carelog/carelog/customerevent/web/dto/CustomerEventResponse.java b/carelog-be/src/main/java/carelog/carelog/customerevent/web/dto/CustomerEventResponse.java
+index d8e2fb6..8dd2d8e 100644
+--- a/carelog-be/src/main/java/carelog/carelog/customerevent/web/dto/CustomerEventResponse.java
++++ b/carelog-be/src/main/java/carelog/carelog/customerevent/web/dto/CustomerEventResponse.java
+@@ -15,7 +15,8 @@ public record CustomerEventResponse(
+         OffsetDateTime scheduledAt,
+         OffsetDateTime occurredAt,
+         String descriptor,
+-        String note
++        String note,
++        long revision
+ ) {
+     public static CustomerEventResponse from(CustomerEvent event) {
+         return new CustomerEventResponse(
+@@ -25,6 +26,7 @@ public record CustomerEventResponse(
+                 event.getScheduledAt(),
+                 event.getOccurredAt(),
+                 event.getDescriptor(),
+-                event.getNote());
++                event.getNote(),
++                event.getRevision());
+     }
+ }
+diff --git a/carelog-be/src/main/java/carelog/carelog/customerevent/web/dto/CustomerEventUpdateRequest.java b/carelog-be/src/main/java/carelog/carelog/customerevent/web/dto/CustomerEventUpdateRequest.java
+index 8fc3da3..8ef43f7 100644
+--- a/carelog-be/src/main/java/carelog/carelog/customerevent/web/dto/CustomerEventUpdateRequest.java
++++ b/carelog-be/src/main/java/carelog/carelog/customerevent/web/dto/CustomerEventUpdateRequest.java
+@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonSetter;
+ 
+ public class CustomerEventUpdateRequest {
+ 
++    private Long expectedRevision;
+     private boolean descriptorPresent;
+     private String descriptor;
+     private boolean notePresent;
+@@ -13,6 +14,11 @@ public class CustomerEventUpdateRequest {
+     private boolean occurredAtPresent;
+     private String occurredAt;
+ 
++    @JsonSetter("expectedRevision")
++    public void setExpectedRevision(Long expectedRevision) { this.expectedRevision = expectedRevision; }
++
++    public Long expectedRevision() { return expectedRevision; }
++
+     @JsonSetter("descriptor")
+     public void setDescriptor(String descriptor) {
+         this.descriptorPresent = true;
+diff --git a/carelog-be/src/main/java/carelog/carelog/preparation/PlannedVisitExperiment.java b/carelog-be/src/main/java/carelog/carelog/preparation/PlannedVisitExperiment.java
+new file mode 100644
+index 0000000..bcabcac
+--- /dev/null
++++ b/carelog-be/src/main/java/carelog/carelog/preparation/PlannedVisitExperiment.java
+@@ -0,0 +1,35 @@
++package carelog.carelog.preparation;
++
++import java.util.Objects;
++import java.util.Optional;
++
++/** 합성 실험 전용. 실제 인증, 영속화, HTTP 또는 모델과 연결하지 않는다. */
++final class PlannedVisitExperiment {
++    record Scope(String workspace, String customer, String event) {}
++    record Visit(Scope scope, String revision, boolean planned, String note) {}
++    record SaveIntent(String id, Scope scope, String confirmedRevision, String addition) {}
++    enum SaveResult { APPLIED, REPLAYED, CONFLICT, UNAVAILABLE }
++
++    /** 각 호출은 현재 권한과 대상 관계를 확인하고, 실패 시 내용을 반환하지 않는다. */
++    interface VisitAccess { Optional<Visit> authorizedRead(Scope scope); }
++    /** 권한 확인·이전 의도 조회·버전 비교·추가·의도 기록을 하나의 원자 연산으로 수행한다. */
++    interface AtomicSave { SaveResult appendIfAuthorized(SaveIntent intent); }
++    private final VisitAccess access;
++    private final AtomicSave save;
++    PlannedVisitExperiment(VisitAccess access, AtomicSave save) { this.access = access; this.save = save; }
++
++    Optional<String> prepare(Scope scope) {
++        Optional<Visit> before = access.authorizedRead(scope);
++        if (before.isEmpty() || !before.get().planned() || !scope.equals(before.get().scope())) return Optional.empty();
++        // 이 실험은 정해진 합성 레코드만 사용한다.
++        if (!new Visit(new Scope("W1", "C1", "E1"), "v1", true, "이전 상담 내용 확인").equals(before.get())) return Optional.empty();
++        String text = "방문 목적: 이전 상담 내용 확인";
++        Optional<Visit> after = access.authorizedRead(scope);
++        return after.filter(before.get()::equals).map(ignored -> text);
++    }
++    SaveResult save(SaveIntent intent) {
++        if (intent == null || intent.scope() == null || blank(intent.id()) || blank(intent.confirmedRevision()) || blank(intent.addition())) return SaveResult.UNAVAILABLE;
++        return Objects.requireNonNull(save.appendIfAuthorized(intent));
++    }
++    private static boolean blank(String value) { return value == null || value.isBlank(); }
++}
+diff --git a/carelog-be/src/main/java/carelog/carelog/preparation/SyntheticPreparation.java b/carelog-be/src/main/java/carelog/carelog/preparation/SyntheticPreparation.java
+new file mode 100644
+index 0000000..b12286b
+--- /dev/null
++++ b/carelog-be/src/main/java/carelog/carelog/preparation/SyntheticPreparation.java
+@@ -0,0 +1,73 @@
++package carelog.carelog.preparation;
++
++import java.util.*;
++
++/** 고정 합성 데이터 전용 비연결 실험. 운영 인가나 CRM 연동 계약이 아니다. */
++final class SyntheticPreparation {
++    record Scope(String workspace, String customer, String event) {}
++    record Source(String id, String version, String text) {}
++    record Snapshot(Scope scope, boolean authorized, boolean planned, Source event, List<Source> history) {
++        Snapshot { history = List.copyOf(history); }
++    }
++    record Briefing(String purpose, String context, String check, String question, List<Source> evidence) {}
++    interface FixtureAccess { Snapshot read(Scope scope); }
++    interface Generator { Briefing generate(Snapshot snapshot); }
++
++    static final Scope SCOPE = new Scope("W1", "C1", "E1");
++    static final Source EVENT = new Source("E1.purpose", "v1", "이전 상담 내용 확인");
++    static final Source HISTORY = new Source("H1.note", "v1", "일정 변경 요청, 다음 방문에서 이전 상담 내용 재확인");
++    static final Snapshot GOOD = new Snapshot(SCOPE, true, true, EVENT, List.of(HISTORY));
++    static final Briefing EXPECTED = new Briefing("방문 목적: 이전 상담 내용 확인", "지난 기록에는 일정 변경 요청과 다음 방문의 상담 내용 재확인이 남아 있습니다.", "일정 변경 요청의 확정 여부를 확인해 보세요.", "달라진 요청 사항이 있나요?", List.of(EVENT, HISTORY));
++
++    // 허용된 단일 합성 원본에 대한 고정 출력만 수락한다. 임의 텍스트는 실행하지 않는다.
++    static Briefing deterministic(Snapshot snapshot) {
++        if (!GOOD.equals(snapshot)) throw new IllegalStateException("unsupported fixture");
++        return EXPECTED;
++    }
++    static final class Session {
++        private final FixtureAccess access;
++        private final Generator generator;
++        private long generation;
++        private Scope selected;
++        private Snapshot source;
++        private Briefing latest;
++        private boolean active = true;
++        Session(FixtureAccess access, Generator generator) { this.access = access; this.generator = generator; }
++        synchronized void select(Scope scope) { generation++; selected = scope; source = null; latest = null; }
++        synchronized void close() { generation++; active = false; selected = null; source = null; latest = null; }
++        synchronized void cancel() { generation++; source = null; latest = null; }
++        private Snapshot checked(Scope scope) {
++            Snapshot s = access.read(scope);
++            if (s == null || !s.authorized() || !s.planned() || !scope.equals(s.scope())) throw new IllegalStateException("unavailable");
++            return s;
++        }
++        Optional<Briefing> prepare(Scope scope) {
++            final long ticket;
++            final Snapshot before;
++            synchronized (this) {
++                if (!active || scope == null || !scope.equals(selected)) return Optional.empty();
++                generation++; ticket = generation; source = null; latest = null;
++                try { before = checked(scope); } catch (RuntimeException e) { return Optional.empty(); }
++                if (!GOOD.equals(before)) return Optional.empty();
++            }
++            final Briefing result;
++            try { result = generator.generate(before); } catch (RuntimeException e) { return Optional.empty(); }
++            synchronized (this) {
++                if (!active || generation != ticket || !scope.equals(selected)) return Optional.empty();
++                try {
++                    if (!before.equals(checked(scope)) || !GOOD.equals(before) || !EXPECTED.equals(result)) return Optional.empty();
++                } catch (RuntimeException e) { return Optional.empty(); }
++                source = before; latest = result;
++                return Optional.of(result);
++            }
++        }
++        synchronized Optional<Briefing> reopen() {
++            if (!active || latest == null) return Optional.empty();
++            try {
++                if (source.equals(checked(selected))) return Optional.of(latest);
++            } catch (RuntimeException ignored) { }
++            generation++; source = null; latest = null;
++            return Optional.empty();
++        }
++    }
++}
+diff --git a/carelog-be/src/main/resources/db/migration/V10__customer_event_revision.sql b/carelog-be/src/main/resources/db/migration/V10__customer_event_revision.sql
+new file mode 100644
+index 0000000..d7c2890
+--- /dev/null
++++ b/carelog-be/src/main/resources/db/migration/V10__customer_event_revision.sql
+@@ -0,0 +1 @@
++ALTER TABLE customer_events ADD COLUMN revision bigint NOT NULL DEFAULT 0;
+diff --git a/carelog-be/src/test/java/carelog/carelog/customerevent/CustomerEventProductApiIntegrationTest.java b/carelog-be/src/test/java/carelog/carelog/customerevent/CustomerEventProductApiIntegrationTest.java
+index 95437d4..9944d1a 100644
+--- a/carelog-be/src/test/java/carelog/carelog/customerevent/CustomerEventProductApiIntegrationTest.java
++++ b/carelog-be/src/test/java/carelog/carelog/customerevent/CustomerEventProductApiIntegrationTest.java
+@@ -145,10 +145,13 @@ class CustomerEventProductApiIntegrationTest {
+                 .andExpect(jsonPath("$.data.note").value("초기 메모"));
+         assertEventRow(eventPublicId, organizationA, customerA.getPublicId(), "PLANNED", "초기 메모");
+ 
++        mockMvc.perform(withManager(patch("/customer-events/" + eventId), organizationA)
++                        .contentType(MediaType.APPLICATION_JSON).content("{\"note\":\"누락\"}"))
++                .andExpect(status().isConflict());
+         // PLANNED event reschedule은 API 응답뿐 아니라 독립 JDBC 조회에서도 확인한다.
+         mockMvc.perform(withManager(patch("/customer-events/" + eventId), organizationA)
+                         .contentType(MediaType.APPLICATION_JSON)
+-                        .content("{\"scheduledAt\":\"2026-08-20T10:15:00+09:00\",\"note\":\"재예약 메모\"}"))
++                        .content("{\"scheduledAt\":\"2026-08-20T10:15:00+09:00\",\"note\":\"재예약 메모\",\"expectedRevision\":1}"))
+                 .andExpect(status().isOk())
+                 .andExpect(jsonPath("$.data.scheduledAt").value("2026-08-20T10:15:00+09:00"))
+                 .andExpect(jsonPath("$.data.note").value("재예약 메모"));
+diff --git a/carelog-be/src/test/java/carelog/carelog/preparation/AiMemoLoopbackHttpIntegrationTest.java b/carelog-be/src/test/java/carelog/carelog/preparation/AiMemoLoopbackHttpIntegrationTest.java
+new file mode 100644
+index 0000000..6d2f434
+--- /dev/null
++++ b/carelog-be/src/test/java/carelog/carelog/preparation/AiMemoLoopbackHttpIntegrationTest.java
+@@ -0,0 +1,56 @@
++package carelog.carelog.preparation;
++
++import carelog.carelog.CarelogApplication;
++import com.fasterxml.jackson.databind.ObjectMapper;
++import carelog.carelog.PostgreSqlTestContainerConfiguration;
++import carelog.carelog.customerevent.domain.*;
++import carelog.carelog.relation.domain.*;
++import carelog.carelog.user.domain.*;
++import org.junit.jupiter.api.Test;
++import org.springframework.beans.factory.annotation.Autowired;
++import org.springframework.boot.test.context.SpringBootTest;
++import org.springframework.boot.test.web.client.TestRestTemplate;
++import org.springframework.boot.test.web.server.LocalServerPort;
++import org.springframework.context.annotation.Import;
++import org.springframework.http.*;
++import org.springframework.test.context.ActiveProfiles;
++import java.time.OffsetDateTime;
++import java.util.*;
++import static org.junit.jupiter.api.Assertions.*;
++
++/** 루프백과 합성 Testcontainers DB 전용 HTTP 검증이다. */
++@SpringBootTest(classes=CarelogApplication.class,webEnvironment=SpringBootTest.WebEnvironment.RANDOM_PORT,properties={"carelog.ai-memo.enabled=true","server.address=127.0.0.1"})
++@ActiveProfiles("test") @Import(PostgreSqlTestContainerConfiguration.class)
++class AiMemoLoopbackHttpIntegrationTest {
++    @Autowired UserRepository users; @Autowired RelationRepository relations; @Autowired CustomerEventRepository events;
++    @Autowired TestRestTemplate http; @Autowired ObjectMapper json; @LocalServerPort int port;
++    @Test void authenticatesAndProtectsSaveAcrossActualHttp() throws Exception {
++        UUID org=UUID.randomUUID(), actor=UUID.randomUUID();
++        User m=User.externalManager(actor,"s-"+actor,actor+"@example.test","합성 관리자",org); users.saveAndFlush(m);
++        User c=User.builder().name("합성 고객").role(UserRole.CUSTOMER).build(); c.assignOrganization(org); users.saveAndFlush(c);
++        Relation r=Relation.create(m,c); r.assignOrganization(org); relations.saveAndFlush(r);
++        CustomerEvent e=CustomerEvent.createPlanned(c,OffsetDateTime.parse("2026-12-01T10:00:00Z"),"합성 상담","기존 메모"); e.assignOrganization(org); events.saveAndFlush(e);
++        String root="http://127.0.0.1:"+port+"/api/v1/customer-events/"+e.getPublicId();
++        HttpHeaders h=new HttpHeaders(); h.setContentType(MediaType.APPLICATION_JSON); h.set("X-Gateway-Secret","test-gateway-internal-secret"); h.set("X-User-Id",actor.toString()); h.set("X-Organization-Id",org.toString()); h.set("X-Role","MANAGER"); h.set("X-Public-Id",m.getPublicId().toString());
++        UUID session=UUID.randomUUID(), intent=UUID.randomUUID(); Map<String,Object> prep=Map.of("customerId",c.getPublicId(),"sessionId",session);
++        HttpHeaders wrong=new HttpHeaders(); wrong.putAll(h); wrong.set("X-Organization-Id",UUID.randomUUID().toString());
++        assertEquals(HttpStatus.FORBIDDEN,http.postForEntity(root+"/synthetic-prepare",new HttpEntity<>(prep,wrong),String.class).getStatusCode());
++        var prepared=http.postForEntity(root+"/synthetic-prepare",new HttpEntity<>(prep,h),String.class); assertEquals(HttpStatus.OK,prepared.getStatusCode());
++        var data=json.readTree(Objects.requireNonNull(prepared.getBody())).get("data"); assertEquals("방문 목적: 합성 상담",data.get("summary").asText());
++        Map<String,Object> append=Map.of("customerId",c.getPublicId(),"sessionId",session,"token",data.get("token").asText(),"expectedRevision",data.get("revision").asLong(),"intentId",intent,"addition","확인 내용");
++        assertEquals(HttpStatus.FORBIDDEN,http.postForEntity(root+"/ai-memo-append",new HttpEntity<>(append,wrong),String.class).getStatusCode());
++        assertEquals("기존 메모",events.findByOrganizationIdAndPublicId(org,e.getPublicId()).orElseThrow().getNote());
++        assertEquals(HttpStatus.OK,http.postForEntity(root+"/ai-memo-append",new HttpEntity<>(append,h),String.class).getStatusCode());
++        assertEquals(HttpStatus.OK,http.postForEntity(root+"/ai-memo-append",new HttpEntity<>(append,h),String.class).getStatusCode());
++        Map<String,Object> changed=new HashMap<>(append); changed.put("addition","다른 내용");
++        assertEquals(HttpStatus.CONFLICT,http.postForEntity(root+"/ai-memo-append",new HttpEntity<>(changed,h),String.class).getStatusCode());
++        assertEquals("기존 메모\n확인 내용",events.findByOrganizationIdAndPublicId(org,e.getPublicId()).orElseThrow().getNote());
++        var again=http.postForEntity(root+"/synthetic-prepare",new HttpEntity<>(prep,h),String.class); assertEquals(HttpStatus.OK,again.getStatusCode());
++        var fresh=json.readTree(Objects.requireNonNull(again.getBody())).get("data");
++        var request=java.net.http.HttpRequest.newBuilder(java.net.URI.create(root)).header("Content-Type","application/json").header("X-Gateway-Secret","test-gateway-internal-secret").header("X-User-Id",actor.toString()).header("X-Organization-Id",org.toString()).header("X-Role","MANAGER").header("X-Public-Id",m.getPublicId().toString()).method("PATCH",java.net.http.HttpRequest.BodyPublishers.ofString("{\"note\":\"다른 편집\",\"expectedRevision\":"+fresh.get("revision").asLong()+"}")).build();
++        assertEquals(200,java.net.http.HttpClient.newHttpClient().send(request,java.net.http.HttpResponse.BodyHandlers.ofString()).statusCode());
++        Map<String,Object> stale=Map.of("customerId",c.getPublicId(),"sessionId",session,"token",fresh.get("token").asText(),"expectedRevision",fresh.get("revision").asLong(),"intentId",UUID.randomUUID(),"addition","오래된 추가");
++        assertEquals(HttpStatus.CONFLICT,http.postForEntity(root+"/ai-memo-append",new HttpEntity<>(stale,h),String.class).getStatusCode());
++        assertEquals("다른 편집",events.findByOrganizationIdAndPublicId(org,e.getPublicId()).orElseThrow().getNote());
++    }
++}
+diff --git a/carelog-be/src/test/java/carelog/carelog/preparation/AiMemoProductionPathIntegrationTest.java b/carelog-be/src/test/java/carelog/carelog/preparation/AiMemoProductionPathIntegrationTest.java
+new file mode 100644
+index 0000000..a908f28
+--- /dev/null
++++ b/carelog-be/src/test/java/carelog/carelog/preparation/AiMemoProductionPathIntegrationTest.java
+@@ -0,0 +1,133 @@
++package carelog.carelog.preparation;
++
++import carelog.carelog.CarelogApplication;
++import carelog.carelog.PostgreSqlTestContainerConfiguration;
++import carelog.carelog.auth.app.*;
++import carelog.carelog.customerevent.ai.AiMemoAppendService;
++import carelog.carelog.customerevent.app.CustomerEventService;
++import carelog.carelog.customerevent.domain.*;
++import carelog.carelog.customerevent.web.dto.CustomerEventUpdateRequest;
++import carelog.carelog.relation.domain.*;
++import carelog.carelog.user.domain.*;
++import org.junit.jupiter.api.*;
++import org.springframework.beans.factory.annotation.Autowired;
++import org.springframework.boot.test.context.SpringBootTest;
++import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
++import org.springframework.test.web.servlet.MockMvc;
++import org.springframework.http.MediaType;
++import org.springframework.jdbc.core.JdbcTemplate;
++import org.springframework.transaction.support.TransactionTemplate;
++import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
++import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
++import org.springframework.context.annotation.Import;
++import org.springframework.test.context.ActiveProfiles;
++import java.time.OffsetDateTime;
++import java.util.*;
++import java.util.concurrent.*;
++import static org.junit.jupiter.api.Assertions.*;
++
++@SpringBootTest(classes=CarelogApplication.class,properties="carelog.ai-memo.enabled=true")
++@AutoConfigureMockMvc
++@ActiveProfiles("test") @Import(PostgreSqlTestContainerConfiguration.class)
++class AiMemoProductionPathIntegrationTest {
++    @Autowired UserRepository users; @Autowired RelationRepository relations; @Autowired CustomerEventRepository events;
++    @Autowired AiMemoAppendService ai; @Autowired CustomerEventService normal;
++    @Autowired MockMvc mvc; @Autowired JdbcTemplate jdbc; @Autowired TransactionTemplate tx;
++    UUID org, customer, event, actorId, managerId, sessionId, token; UserPrincipal principal;
++    @BeforeEach void setup() {
++        org=UUID.randomUUID(); UUID actor=UUID.randomUUID(); actorId=actor;
++        User m=User.externalManager(actor,"s-"+actor,actor+"@example.test","합성 관리자",org); users.saveAndFlush(m); managerId=m.getPublicId();
++        User c=User.builder().name("합성 고객").role(UserRole.CUSTOMER).build(); c.assignOrganization(org); users.saveAndFlush(c); customer=c.getPublicId();
++        Relation relation=Relation.create(m,c); relation.assignOrganization(org); relations.saveAndFlush(relation);
++        CustomerEvent e=CustomerEvent.createPlanned(c,OffsetDateTime.parse("2026-12-01T10:00:00Z"),"상담","기존 메모"); e.assignOrganization(org); events.saveAndFlush(e); event=e.getPublicId();
++        principal=new GatewayUserDetails(actor,org,"MANAGER",m.getPublicId());
++        sessionId=UUID.randomUUID(); token=ai.prepare(principal,event,customer,sessionId).token();
++    }
++    AiMemoAppendService.Request req(UUID id,long version,String text) { return new AiMemoAppendService.Request(customer,id,version,text,sessionId,token); }
++    @Test void appendThenOldNormalEditRejectsAndReplayDoesNotWrite() {
++        UUID intent=UUID.randomUUID(); var first=ai.append(principal,event,req(intent,0,"추가")); assertFalse(first.replayed()); assertEquals(1,first.revision());
++        assertTrue(ai.append(principal,event,req(intent,0,"추가")).replayed());
++        assertThrows(RuntimeException.class,()->ai.append(principal,event,req(intent,0,"변경")));
++        CustomerEventUpdateRequest update=new CustomerEventUpdateRequest(); update.setNote("오래된 편집"); update.setExpectedRevision(0L);
++        assertThrows(RuntimeException.class,()->normal.update(org,event,update));
++        assertEquals("기존 메모\n추가",events.findByOrganizationIdAndPublicId(org,event).orElseThrow().getNote());
++    }
++    @Test void ordinaryEditThenStaleAppendAndMissingVersionReject() {
++        CustomerEventUpdateRequest missing=new CustomerEventUpdateRequest(); missing.setNote("누락"); assertThrows(RuntimeException.class,()->normal.update(org,event,missing));
++        CustomerEventUpdateRequest good=new CustomerEventUpdateRequest(); good.setNote("일반 편집"); good.setExpectedRevision(0L); assertEquals(1,normal.update(org,event,good).revision());
++        assertThrows(RuntimeException.class,()->ai.append(principal,event,req(UUID.randomUUID(),0,"오래된 추가")));
++        assertEquals("일반 편집",events.findByOrganizationIdAndPublicId(org,event).orElseThrow().getNote());
++    }
++    @Test void springEndpointEnforcesAuthenticationAndConflict() throws Exception {
++        UUID intent=UUID.randomUUID();
++        String payload="{\"customerId\":\"%s\",\"intentId\":\"%s\",\"expectedRevision\":0,\"addition\":\"추가\",\"sessionId\":\"%s\",\"token\":\"%s\"}".formatted(customer,intent,sessionId,token);
++        String other="{\"customerId\":\"%s\",\"intentId\":\"%s\",\"expectedRevision\":0,\"addition\":\"변경\",\"sessionId\":\"%s\",\"token\":\"%s\"}".formatted(customer,intent,sessionId,token);
++        mvc.perform(post("/customer-events/"+event+"/ai-memo-append").contentType(MediaType.APPLICATION_JSON).content(payload)).andExpect(status().isForbidden());
++        mvc.perform(post("/customer-events/"+event+"/ai-memo-append").header("X-Gateway-Secret","test-gateway-internal-secret").header("X-User-Id",actorId).header("X-Organization-Id",UUID.randomUUID()).header("X-Role","MANAGER").header("X-Public-Id",managerId).contentType(MediaType.APPLICATION_JSON).content(payload)).andExpect(status().isForbidden());
++        mvc.perform(post("/customer-events/"+event+"/ai-memo-append").header("X-Gateway-Secret","test-gateway-internal-secret").header("X-User-Id",actorId).header("X-Organization-Id",org).header("X-Role","MANAGER").header("X-Public-Id",managerId).contentType(MediaType.APPLICATION_JSON).content(payload)).andExpect(status().isOk());
++        mvc.perform(post("/customer-events/"+event+"/ai-memo-append").header("X-Gateway-Secret","test-gateway-internal-secret").header("X-User-Id",actorId).header("X-Organization-Id",org).header("X-Role","MANAGER").header("X-Public-Id",managerId).contentType(MediaType.APPLICATION_JSON).content(payload)).andExpect(status().isOk());
++        mvc.perform(post("/customer-events/"+event+"/ai-memo-append").header("X-Gateway-Secret","test-gateway-internal-secret").header("X-User-Id",actorId).header("X-Organization-Id",org).header("X-Role","MANAGER").header("X-Public-Id",managerId).contentType(MediaType.APPLICATION_JSON).content(other)).andExpect(status().isConflict());
++        assertEquals("기존 메모\n추가",events.findByOrganizationIdAndPublicId(org,event).orElseThrow().getNote());
++    }
++    @Test void forgedExpiredAndMismatchedBindingCannotWrite() {
++        assertThrows(RuntimeException.class,()->ai.append(principal,event,new AiMemoAppendService.Request(customer,UUID.randomUUID(),0L,"추가",sessionId,UUID.randomUUID())));
++        assertThrows(RuntimeException.class,()->ai.append(principal,event,new AiMemoAppendService.Request(customer,UUID.randomUUID(),0L,"추가",UUID.randomUUID(),token)));
++        ai.expireSynthetic(principal,sessionId);
++        assertThrows(RuntimeException.class,()->ai.append(principal,event,req(UUID.randomUUID(),0,"추가")));
++        assertEquals("기존 메모",events.findByOrganizationIdAndPublicId(org,event).orElseThrow().getNote());
++    }
++    record Target(UUID customer, UUID event) {}
++    Target otherTarget() {
++        User m=users.findByExternalAccountId(actorId).orElseThrow();
++        User c=User.builder().name("다른 합성 고객").role(UserRole.CUSTOMER).build(); c.assignOrganization(org); users.saveAndFlush(c);
++        Relation r=Relation.create(m,c); r.assignOrganization(org); relations.saveAndFlush(r);
++        CustomerEvent e=CustomerEvent.createPlanned(c,OffsetDateTime.parse("2026-12-02T10:00:00Z"),"다른 상담","메모"); e.assignOrganization(org); events.saveAndFlush(e);
++        return new Target(c.getPublicId(),e.getPublicId());
++    }
++    void lockSessionForTest() {
++        String key="synthetic-session:"+actorId+":"+org+":"+sessionId;
++        jdbc.queryForObject("SELECT pg_advisory_xact_lock(hashtextextended(?, 0)) IS NULL",Boolean.class,key);
++    }
++    void waitForBlockedAdvisory() {
++        for (int i=0;i<100;i++) {
++            Integer count=jdbc.queryForObject("SELECT count(*) FROM pg_locks WHERE locktype='advisory' AND NOT granted",Integer.class);
++            if(count!=null && count>0) return;
++            try { Thread.sleep(20); } catch(InterruptedException e) { Thread.currentThread().interrupt(); throw new IllegalStateException(e); }
++        }
++        fail("waiting operation did not block on the session lock");
++    }
++    @Test void newerPreparationWinsBeforeBlockedOldSave() throws Exception {
++        Target other=otherTarget(); ExecutorService pool=Executors.newSingleThreadExecutor();
++        try {
++            final Future<?>[] pending=new Future<?>[1];
++            tx.executeWithoutResult(status -> {
++                lockSessionForTest(); pending[0]=pool.submit(()->ai.append(principal,event,req(UUID.randomUUID(),0,"오래된 추가")));
++                waitForBlockedAdvisory(); ai.prepare(principal,other.event(),other.customer(),sessionId);
++            });
++            assertThrows(ExecutionException.class,()->pending[0].get(10,TimeUnit.SECONDS));
++            assertEquals("기존 메모",events.findByOrganizationIdAndPublicId(org,event).orElseThrow().getNote());
++        } finally {pool.shutdownNow();}
++    }
++    @Test void oldSaveCompletesBeforeBlockedNewPreparation() throws Exception {
++        Target other=otherTarget(); ExecutorService pool=Executors.newSingleThreadExecutor();
++        try {
++            final Future<AiMemoAppendService.Preparation>[] pending=new Future[1];
++            tx.executeWithoutResult(status -> {
++                lockSessionForTest(); pending[0]=pool.submit(()->ai.prepare(principal,other.event(),other.customer(),sessionId));
++                waitForBlockedAdvisory(); assertFalse(ai.append(principal,event,req(UUID.randomUUID(),0,"먼저 저장")).replayed());
++            });
++            assertNotNull(pending[0].get(10,TimeUnit.SECONDS).token());
++            assertEquals("기존 메모\n먼저 저장",events.findByOrganizationIdAndPublicId(org,event).orElseThrow().getNote());
++            assertThrows(RuntimeException.class,()->ai.append(principal,event,req(UUID.randomUUID(),0,"이전 토큰")));
++        } finally {pool.shutdownNow();}
++    }
++    @Test void denyOtherOrganizationAndConcurrentDuplicate() throws Exception {
++        UserPrincipal other=new GatewayUserDetails(principal.getAccountId(),UUID.randomUUID(),"MANAGER",principal.getPublicId());
++        assertThrows(RuntimeException.class,()->ai.append(other,event,req(UUID.randomUUID(),0,"침범")));
++        UUID intent=UUID.randomUUID(); ExecutorService pool=Executors.newFixedThreadPool(2); CountDownLatch gate=new CountDownLatch(1);
++        try { Callable<AiMemoAppendService.Receipt> task=()->{gate.await(); return ai.append(principal,event,req(intent,0,"추가"));}; var a=pool.submit(task); var b=pool.submit(task); gate.countDown();
++            assertNotEquals(a.get(10,TimeUnit.SECONDS).replayed(),b.get(10,TimeUnit.SECONDS).replayed());
++            assertEquals("기존 메모\n추가",events.findByOrganizationIdAndPublicId(org,event).orElseThrow().getNote());
++        } finally {pool.shutdownNow();}
++    }
++}
+diff --git a/carelog-be/src/test/java/carelog/carelog/preparation/AtomicSavePostgresIntegrationTest.java b/carelog-be/src/test/java/carelog/carelog/preparation/AtomicSavePostgresIntegrationTest.java
+new file mode 100644
+index 0000000..b14d4d8
+--- /dev/null
++++ b/carelog-be/src/test/java/carelog/carelog/preparation/AtomicSavePostgresIntegrationTest.java
+@@ -0,0 +1,288 @@
++package carelog.carelog.preparation;
++
++import carelog.carelog.CarelogApplication;
++import carelog.carelog.PostgreSqlTestContainerConfiguration;
++import carelog.carelog.customerevent.domain.*;
++import carelog.carelog.user.domain.*;
++import carelog.carelog.relation.domain.*;
++import carelog.carelog.auth.app.GatewayUserDetails;
++import carelog.carelog.auth.app.UserPrincipal;
++import org.springframework.security.core.Authentication;
++import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
++import org.springframework.security.core.authority.SimpleGrantedAuthority;
++import org.junit.jupiter.api.*;
++import org.springframework.beans.factory.annotation.Autowired;
++import org.springframework.boot.test.context.SpringBootTest;
++import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
++import org.springframework.boot.test.web.server.LocalServerPort;
++import org.springframework.test.web.servlet.MockMvc;
++import org.springframework.http.MediaType;
++import carelog.carelog.customerevent.app.CustomerEventService;
++import carelog.carelog.customerevent.web.dto.CustomerEventUpdateRequest;
++import com.fasterxml.jackson.databind.ObjectMapper;
++import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
++import org.springframework.context.annotation.Import;
++import org.springframework.jdbc.core.JdbcTemplate;
++import org.springframework.test.context.ActiveProfiles;
++import org.springframework.transaction.support.TransactionTemplate;
++import java.time.OffsetDateTime;
++import java.util.*;
++import java.util.concurrent.*;
++import java.util.concurrent.atomic.AtomicBoolean;
++import static org.junit.jupiter.api.Assertions.*;
++
++/** 실제 Event 저장소와 테스트 전용 의도 테이블을 쓰는 합성 실험. 운영 인가/스키마가 아니다. */
++@SpringBootTest(classes = CarelogApplication.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {"carelog.ai-memo.enabled=true", "server.address=127.0.0.1"})
++@AutoConfigureMockMvc
++@ActiveProfiles("test")
++@Import(PostgreSqlTestContainerConfiguration.class)
++class AtomicSavePostgresIntegrationTest {
++    @Autowired CustomerEventRepository events;
++    @Autowired UserRepository users;
++    @Autowired RelationRepository relations;
++    @Autowired JdbcTemplate jdbc;
++    @Autowired TransactionTemplate tx;
++    @Autowired MockMvc mvc;
++    @LocalServerPort int springPort;
++    @Autowired ObjectMapper json;
++    @Autowired CustomerEventService normal;
++    UUID org, event, actor, customerId;
++    User manager; Relation relation; Authentication authentication;
++    AtomicBoolean authorized;
++    long revision;
++
++    @BeforeEach void setup() {
++        jdbc.execute("CREATE TABLE IF NOT EXISTS synthetic_save_intents (actor uuid NOT NULL, intent uuid NOT NULL, event uuid NOT NULL, expected bigint NOT NULL, addition text NOT NULL, PRIMARY KEY(actor,intent))");
++        jdbc.execute("CREATE TABLE IF NOT EXISTS synthetic_event_versions (event uuid PRIMARY KEY, version bigint NOT NULL)");
++        jdbc.execute("CREATE OR REPLACE FUNCTION synthetic_increment_event_version() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN UPDATE synthetic_event_versions SET version=version+1 WHERE event=NEW.public_id; RETURN NEW; END $$");
++        jdbc.execute("DROP TRIGGER IF EXISTS synthetic_event_version ON customer_events");
++        jdbc.execute("CREATE TRIGGER synthetic_event_version AFTER UPDATE ON customer_events FOR EACH ROW EXECUTE FUNCTION synthetic_increment_event_version()");
++        org=UUID.randomUUID(); actor=UUID.randomUUID(); authorized=new AtomicBoolean(true);
++        User user=User.builder().name("합성 고객").role(UserRole.CUSTOMER).build(); user.assignOrganization(org); users.saveAndFlush(user); customerId=user.getPublicId();
++        UUID externalId=UUID.randomUUID(); actor=externalId; manager=User.externalManager(externalId, "synthetic-"+externalId, externalId+"@example.test", "합성 관리자", org); users.saveAndFlush(manager);
++        relation=Relation.create(manager,user); relation.assignOrganization(org); relations.saveAndFlush(relation);
++        UserPrincipal principal=new GatewayUserDetails(externalId,org,"MANAGER",manager.getPublicId());
++        authentication=UsernamePasswordAuthenticationToken.authenticated(principal,null,List.of(new SimpleGrantedAuthority("ROLE_MANAGER")));
++        CustomerEvent e=CustomerEvent.createPlanned(user, OffsetDateTime.parse("2026-12-01T10:00:00Z"), "상담", "기존 메모"); e.assignOrganization(org); events.saveAndFlush(e); event=e.getPublicId();
++        jdbc.update("INSERT INTO synthetic_event_versions(event,version) VALUES (?,0)",event); revision=0;
++    }
++    String save(UUID intent, UUID target, long expected, String addition) {
++        return save(intent, target, expected, addition, false);
++    }
++    String save(UUID intent, UUID target, long expected, String addition, boolean abort) {
++        if (!authorized.get()) return "UNAVAILABLE";
++        return tx.execute(status -> {
++            // actor/intent를 먼저 직렬화하여 다른 Event를 대상으로 한 동시 재사용도 충돌시킨다.
++            jdbc.queryForObject("SELECT pg_advisory_xact_lock(hashtextextended(?, 0)) IS NULL", Boolean.class, actor+":"+intent);
++            if (!authorized.get()) return "UNAVAILABLE";
++            var e=events.findByOrganizationIdAndPublicIdForUpdate(org,target);
++            if (e.isEmpty() || e.get().getStatus()!=CustomerEventStatus.PLANNED) return "UNAVAILABLE";
++            var prior=jdbc.query("SELECT event, expected, addition FROM synthetic_save_intents WHERE actor=? AND intent=?", (rs,n) -> new Prior(rs.getObject(1,UUID.class),rs.getLong(2),rs.getString(3)), actor,intent);
++            if (!prior.isEmpty()) return prior.get(0).equals(new Prior(target,expected,addition)) ? "REPLAYED" : "CONFLICT";
++            Long currentVersion=jdbc.queryForObject("SELECT version FROM synthetic_event_versions WHERE event=?",Long.class,target);
++            if (currentVersion == null || expected != currentVersion) return "CONFLICT";
++            e.get().updateNote(e.get().getNote()+"\n"+addition); events.saveAndFlush(e.get());
++            jdbc.update("INSERT INTO synthetic_save_intents(actor,intent,event,expected,addition) VALUES (?,?,?,?,?)",actor,intent,target,expected,addition);
++            if (abort) throw new IllegalStateException("synthetic transaction failure");
++            return "APPLIED";
++        });
++    }
++    // 테스트 전용 조합: 검증된 Spring 인증 객체와 실제 사용자/관계 저장소를 사용한다.
++    String saveWithRealRelation(Authentication auth, UUID requestedOrg, UUID customer, UUID intent, long expected, String addition) {
++        if (auth == null || !auth.isAuthenticated() || !(auth.getPrincipal() instanceof UserPrincipal p)
++                || auth.getAuthorities().stream().noneMatch(a -> a.getAuthority().equals("ROLE_MANAGER"))
++                || !Objects.equals(p.getOrganizationId(),requestedOrg)) return "UNAVAILABLE";
++        return tx.execute(status -> {
++            var m=users.findByExternalAccountId(p.getAccountId());
++            if (m.isEmpty() || m.get().getRole()!=UserRole.MANAGER || !Objects.equals(m.get().getOrganizationId(),requestedOrg)
++                    || !Objects.equals(m.get().getPublicId(),p.getPublicId())) return "UNAVAILABLE";
++            var c=users.findByOrganizationIdAndRoleAndPublicId(requestedOrg,UserRole.CUSTOMER,customer);
++            if (c.isEmpty()) return "UNAVAILABLE";
++            var r=relations.findByManagerAndCustomerForUpdate(m.get(),c.get());
++            if (r.isEmpty() || r.get().getStatus()!=RelationStatus.ACTIVE || !Objects.equals(r.get().getOrganizationId(),requestedOrg)) return "UNAVAILABLE";
++            // 원본 Event가 요청 고객에 속하는지도 저장 전에 확인한다.
++            var selected=events.findByOrganizationIdAndPublicIdForUpdate(requestedOrg,event);
++            if (selected.isEmpty() || !Objects.equals(selected.get().getCustomer().getPublicId(),customer)) return "UNAVAILABLE";
++            return save(intent,event,expected,addition);
++        });
++    }
++    record Prepared(String text, long revision) {}
++    Prepared prepareWithRealRelation(Authentication auth) {
++        if (auth == null || !auth.isAuthenticated() || !(auth.getPrincipal() instanceof UserPrincipal p)
++                || auth.getAuthorities().stream().noneMatch(a -> a.getAuthority().equals("ROLE_MANAGER"))
++                || !Objects.equals(p.getOrganizationId(),org)) return null;
++        return tx.execute(status -> {
++            var m=users.findByExternalAccountId(p.getAccountId());
++            var c=users.findByOrganizationIdAndRoleAndPublicId(org,UserRole.CUSTOMER,customerId);
++            if (m.isEmpty() || c.isEmpty() || !Objects.equals(m.get().getPublicId(),p.getPublicId()) || !Objects.equals(m.get().getOrganizationId(),org)) return null;
++            var r=relations.findByManagerAndCustomerForUpdate(m.get(),c.get());
++            if (r.isEmpty() || r.get().getStatus()!=RelationStatus.ACTIVE || !Objects.equals(r.get().getOrganizationId(),org)) return null;
++            var e=events.findByOrganizationIdAndPublicIdForUpdate(org,event);
++            if (e.isEmpty() || e.get().getStatus()!=CustomerEventStatus.PLANNED || !Objects.equals(e.get().getCustomer().getPublicId(),customerId)) return null;
++            return new Prepared("방문 목적: " + e.get().getDescriptor(), e.get().getRevision());
++        });
++    }
++    String normalEdit(long expected, String replacement) {
++        if (!authorized.get()) return "UNAVAILABLE";
++        return tx.execute(status -> {
++            if (!authorized.get()) return "UNAVAILABLE";
++            var e=events.findByOrganizationIdAndPublicIdForUpdate(org,event);
++            if (e.isEmpty()) return "UNAVAILABLE";
++            Long current=jdbc.queryForObject("SELECT version FROM synthetic_event_versions WHERE event=?",Long.class,event);
++            if (current == null || current != expected) return "CONFLICT";
++            e.get().updateNote(replacement); events.saveAndFlush(e.get());
++            return "APPLIED";
++        });
++    }
++    record Prior(UUID event, long expected, String addition) {}
++    @Test void staleReplayAndAuthorization() {
++        UUID id=UUID.randomUUID();
++        assertEquals("CONFLICT", save(id,event,revision+1,"추가"));
++        assertEquals("APPLIED", save(id,event,revision,"추가"));
++        assertEquals("REPLAYED", save(id,event,revision,"추가"));
++        assertEquals("CONFLICT", save(id,event,revision,"다른 내용"));
++        assertEquals("기존 메모\n추가",events.findByOrganizationIdAndPublicId(org,event).orElseThrow().getNote());
++        authorized.set(false); assertEquals("UNAVAILABLE",save(id,event,revision,"추가"));
++    }
++    @Test void interveningEventEditRejectsOldRevision() {
++        tx.executeWithoutResult(status -> {
++            CustomerEvent current = events.findByOrganizationIdAndPublicIdForUpdate(org,event).orElseThrow();
++            current.updateNote("다른 사용자의 메모"); events.saveAndFlush(current);
++        });
++        assertEquals("CONFLICT", save(UUID.randomUUID(),event,revision,"추가"));
++        assertEquals("다른 사용자의 메모",events.findByOrganizationIdAndPublicId(org,event).orElseThrow().getNote());
++    }
++    @Test void failureRollsBackEventIntentAndVersionTogether() {
++        UUID id=UUID.randomUUID();
++        assertThrows(IllegalStateException.class, () -> save(id,event,revision,"추가",true));
++        assertEquals("기존 메모", events.findByOrganizationIdAndPublicId(org,event).orElseThrow().getNote());
++        assertEquals(0L,jdbc.queryForObject("SELECT version FROM synthetic_event_versions WHERE event=?",Long.class,event));
++        assertEquals(0,jdbc.queryForObject("SELECT count(*) FROM synthetic_save_intents WHERE actor=? AND intent=?",Integer.class,actor,id));
++        assertEquals("APPLIED",save(id,event,revision,"추가"));
++    }
++    @Test void versionDoesNotReturnToOriginalAfterChangesAreReverted() {
++        tx.executeWithoutResult(status -> { CustomerEvent e=events.findByOrganizationIdAndPublicIdForUpdate(org,event).orElseThrow(); e.updateNote("임시 변경"); events.saveAndFlush(e); });
++        tx.executeWithoutResult(status -> { CustomerEvent e=events.findByOrganizationIdAndPublicIdForUpdate(org,event).orElseThrow(); e.updateNote("기존 메모"); events.saveAndFlush(e); });
++        assertEquals(2L,jdbc.queryForObject("SELECT version FROM synthetic_event_versions WHERE event=?",Long.class,event));
++        assertEquals("CONFLICT",save(UUID.randomUUID(),event,revision,"추가"));
++    }
++    java.net.http.HttpResponse<String> callSpring(String path, String payload, UUID requestedOrg) throws Exception {
++        var request=java.net.http.HttpRequest.newBuilder(java.net.URI.create("http://127.0.0.1:"+springPort+"/api/v1/customer-events/"+event+path))
++            .header("Content-Type","application/json").header("X-Gateway-Secret","test-gateway-internal-secret")
++            .header("X-User-Id",actor.toString()).header("X-Organization-Id",requestedOrg.toString())
++            .header("X-Role","MANAGER").header("X-Public-Id",manager.getPublicId().toString())
++            .POST(java.net.http.HttpRequest.BodyPublishers.ofString(payload)).build();
++        return java.net.http.HttpClient.newHttpClient().send(request,java.net.http.HttpResponse.BodyHandlers.ofString());
++    }
++    @Test void localBrowserSyntheticSuccessDeniedAndStale() throws Exception {
++        // loopback에만 노출되는 테스트 전용 화면. 생성된 자격은 합성 테스트 객체다.
++        var server=com.sun.net.httpserver.HttpServer.create(new java.net.InetSocketAddress("127.0.0.1",0),0);
++        AtomicBoolean denyPrepare=new AtomicBoolean(false); AtomicBoolean denySave=new AtomicBoolean(false); java.util.concurrent.atomic.AtomicReference<Long> boundRevision=new java.util.concurrent.atomic.AtomicReference<>(); java.util.concurrent.atomic.AtomicReference<UUID> boundToken=new java.util.concurrent.atomic.AtomicReference<>(); UUID browserSession=UUID.randomUUID();
++        server.createContext("/", exchange -> {
++            String path=exchange.getRequestURI().getPath(); String body; String type;
++            type="text/plain; charset=utf-8";
++            int statusCode=200;
++            if (path.equals("/prepare")) {
++                try {
++                    String payload=json.writeValueAsString(Map.of("customerId",customerId,"sessionId",browserSession));
++                    var result=callSpring("/synthetic-prepare",payload,denyPrepare.get()?UUID.randomUUID():org);
++                    statusCode=result.statusCode();
++                    if(statusCode==200) { var data=json.readTree(result.body()).get("data"); boundRevision.set(data.get("revision").asLong()); boundToken.set(UUID.fromString(data.get("token").asText())); body=data.get("summary").asText(); }
++                    else { boundRevision.set(null); boundToken.set(null); body="UNAVAILABLE"; }
++                } catch(Exception e) { throw new java.io.IOException(e); }
++            } else if (path.equals("/deny-next")) { denyPrepare.set(true); boundRevision.set(null); boundToken.set(null); body="OK"; }
++            else if (path.equals("/allow")) { denyPrepare.set(false); body="OK"; }
++            else if (path.equals("/deny-save")) { denySave.set(true); body="OK"; }
++            else if (path.equals("/note-check")) { body=events.findByOrganizationIdAndPublicId(org,event).orElseThrow().getNote(); }
++            else if (path.equals("/advance")) {
++                CustomerEventUpdateRequest edit=new CustomerEventUpdateRequest(); edit.setExpectedRevision(boundRevision.get()); edit.setNote("다른 사용자의 최신 메모"); normal.update(org,event,edit); body="OK";
++            } else if (path.equals("/save")) {
++                Long expected=boundRevision.getAndSet(null); UUID token=boundToken.getAndSet(null);
++                if(expected==null || token==null) { statusCode=403; body="UNAVAILABLE"; }
++                else {
++                    String addition=new String(exchange.getRequestBody().readAllBytes(),java.nio.charset.StandardCharsets.UTF_8);
++                    String payload=json.writeValueAsString(Map.of("customerId",customerId,"intentId",UUID.randomUUID(),"expectedRevision",expected,"addition",addition,"sessionId",browserSession,"token",token));
++                    try {
++                        var result=callSpring("/ai-memo-append",payload,denySave.getAndSet(false)?UUID.randomUUID():org);
++                        statusCode=result.statusCode(); body=statusCode==200?"APPLIED":statusCode==409?"CONFLICT":"UNAVAILABLE";
++                    } catch(Exception e) { throw new java.io.IOException(e); }
++                }
++            } else { statusCode=404; body="NOT_FOUND"; }
++            byte[] data=body.getBytes(java.nio.charset.StandardCharsets.UTF_8); exchange.getResponseHeaders().set("Content-Type",type);
++            exchange.sendResponseHeaders(statusCode,data.length); try (var out=exchange.getResponseBody()) { out.write(data); }
++        });
++        server.start();
++        Process vite=null;
++        try {
++            int fePort; try (var socket=new java.net.ServerSocket(0,0,java.net.InetAddress.getByName("127.0.0.1"))) { fePort=socket.getLocalPort(); }
++            ProcessBuilder viteBuilder=new ProcessBuilder("/workspace/.cloud-setup/tools/node/bin/node", "/workspace/carelog-fe/node_modules/vite/bin/vite.js", "--config", "vite.synthetic.config.ts", "--mode", "test", "--port", Integer.toString(fePort), "--strictPort");
++            viteBuilder.directory(new java.io.File("/workspace/work/carelog-local-browser-fe")); viteBuilder.environment().put("SYNTHETIC_BACKEND_URL","http://127.0.0.1:"+server.getAddress().getPort()); viteBuilder.environment().put("VITE_SYNTHETIC_PANEL","enabled");
++            viteBuilder.redirectErrorStream(true).redirectOutput(ProcessBuilder.Redirect.DISCARD); vite=viteBuilder.start();
++            String origin="http://127.0.0.1:"+fePort;
++            boolean ready=false; for (int i=0;i<100 && vite.isAlive();i++) { try { var c=(java.net.HttpURLConnection)new java.net.URL(origin+"/local-proof.html").openConnection(); c.setConnectTimeout(100); if(c.getResponseCode()==200) {ready=true;break;} } catch (java.io.IOException ignored) {} Thread.sleep(100); }
++            assertTrue(ready,"Vite synthetic panel did not start");
++            String script="""
++              const {chromium}=require('/workspace/carelog-fe/node_modules/.pnpm/node_modules/playwright');
++              (async()=>{ const b=await chromium.launch({executablePath:'/usr/bin/chromium',args:['--no-sandbox']});
++                const p=await b.newPage(); p.setDefaultTimeout(8000); await p.addInitScript(()=>{ window.__CARELOG_TEST_INITIALIZATION__={authAdapterOptions:{bootstrap:'authenticated'}}; });
++                const open=async()=>{ await p.goto(process.argv[1]+'/app/events/followup-tenant-1'); try { await p.locator('[data-assistant-entry=planned-event]').click(); } catch(e) { throw new Error('page '+p.url()+' '+await p.locator('body').innerText()+' '+e); } await p.locator('[data-assistant-page]').waitFor(); };
++                await open(); if(await p.getByText('방문 목적: 상담',{exact:true}).count()) throw new Error('summary visible before auth');
++                await p.request.post(process.argv[1]+'/synthetic/deny-next'); let response=p.waitForResponse(r=>r.url().endsWith('/synthetic/prepare')); await p.locator('[data-assistant-suggested-action]').first().click();
++                if((await response).status()!==403) throw new Error('expected denied preparation'); await p.locator('[data-assistant-error]').waitFor();
++                if(await p.getByText('방문 목적: 상담',{exact:true}).count()) throw new Error('denied summary visible');
++                await p.request.post(process.argv[1]+'/synthetic/allow'); await open(); response=p.waitForResponse(r=>r.url().endsWith('/synthetic/prepare')); await p.locator('[data-assistant-suggested-action]').first().click();
++                if((await response).status()!==200) throw new Error('prepare failed'); await p.locator('[data-assistant-result]').waitFor();
++                await p.locator('[data-assistant-add-to-memo]').click(); await p.locator('[data-assistant-memo]').fill('거부된 내용'); await p.request.post(process.argv[1]+'/synthetic/deny-save'); response=p.waitForResponse(r=>r.url().endsWith('/synthetic/save')); await p.locator('[data-assistant-memo-save]').click();
++                if((await response).status()!==403) throw new Error('expected actual endpoint denied'); if((await (await p.request.post(process.argv[1]+'/synthetic/note-check')).text())!=='기존 메모') throw new Error('denied request wrote');
++                await open(); await p.locator('[data-assistant-suggested-action]').first().click(); await p.locator('[data-assistant-result]').waitFor();
++                await p.locator('[data-assistant-add-to-memo]').click(); await p.locator('[data-assistant-memo]').fill('화면에서 확인한 내용'); response=p.waitForResponse(r=>r.url().endsWith('/synthetic/save')); await p.locator('[data-assistant-memo-save]').click();
++                if((await response).status()!==200) throw new Error('save failed'); await p.locator('[data-assistant-save-confirmation]').waitFor();
++                await open(); await p.locator('[data-assistant-suggested-action]').first().click(); await p.locator('[data-assistant-result]').waitFor(); await p.locator('[data-assistant-add-to-memo]').click(); await p.locator('[data-assistant-memo]').fill('오래된 내용'); await p.request.post(process.argv[1]+'/synthetic/advance');
++                response=p.waitForResponse(r=>r.url().endsWith('/synthetic/save')); await p.locator('[data-assistant-memo-save]').click(); if((await response).status()!==409) throw new Error('expected conflict');
++                await b.close(); console.log('assistant browser: 403 200 200 409');
++              })().catch(e=>{console.error(e);process.exit(1)});
++              """;
++            Process process=new ProcessBuilder("node","-e",script,origin).redirectErrorStream(true).start();
++            assertTrue(process.waitFor(30,TimeUnit.SECONDS)); String output=new String(process.getInputStream().readAllBytes(),java.nio.charset.StandardCharsets.UTF_8);
++            assertEquals(0,process.exitValue(),output); assertTrue(output.contains("assistant browser: 403 200 200 409"),output);
++            assertEquals("다른 사용자의 최신 메모",events.findByOrganizationIdAndPublicId(org,event).orElseThrow().getNote());
++        } finally { if(vite!=null) vite.destroyForcibly(); server.stop(0); }
++    }
++    @Test void actualRelationGateAndAtomicSave() {
++        UUID id=UUID.randomUUID();
++        assertEquals("UNAVAILABLE",saveWithRealRelation(null,org,customerId,id,revision,"추가"));
++        assertEquals("UNAVAILABLE",saveWithRealRelation(authentication,UUID.randomUUID(),customerId,id,revision,"추가"));
++        assertEquals("UNAVAILABLE",saveWithRealRelation(authentication,org,UUID.randomUUID(),id,revision,"추가"));
++        assertEquals("CONFLICT",saveWithRealRelation(authentication,org,customerId,id,revision+1,"추가"));
++        assertEquals("APPLIED",saveWithRealRelation(authentication,org,customerId,id,revision,"추가"));
++        assertEquals("REPLAYED",saveWithRealRelation(authentication,org,customerId,id,revision,"추가"));
++        assertEquals("CONFLICT",saveWithRealRelation(authentication,org,customerId,id,revision,"다른 추가"));
++        assertEquals("기존 메모\n추가",events.findByOrganizationIdAndPublicId(org,event).orElseThrow().getNote());
++        tx.executeWithoutResult(status -> { Relation r=relations.findById(relation.getId()).orElseThrow(); r.updateStatus(RelationStatus.TERMINATED); relations.saveAndFlush(r); });
++        assertEquals("UNAVAILABLE",saveWithRealRelation(authentication,org,customerId,id,revision,"추가"));
++        assertEquals("기존 메모\n추가",events.findByOrganizationIdAndPublicId(org,event).orElseThrow().getNote());
++    }
++    @Test void staleNormalEditCannotOverwriteEarlierAiAppend() {
++        long oldRevision=revision;
++        assertEquals("APPLIED",save(UUID.randomUUID(),event,oldRevision,"AI 확인 문구"));
++        assertEquals("CONFLICT",normalEdit(oldRevision,"늦은 일반 편집"));
++        assertEquals("기존 메모\nAI 확인 문구",events.findByOrganizationIdAndPublicId(org,event).orElseThrow().getNote());
++        assertEquals(1L,jdbc.queryForObject("SELECT version FROM synthetic_event_versions WHERE event=?",Long.class,event));
++    }
++    @Test void staleAiAppendCannotOverwriteEarlierNormalEdit() {
++        long oldRevision=revision;
++        assertEquals("APPLIED",normalEdit(oldRevision,"먼저 저장된 일반 편집"));
++        assertEquals("CONFLICT",save(UUID.randomUUID(),event,oldRevision,"늦은 AI 확인 문구"));
++        assertEquals("먼저 저장된 일반 편집",events.findByOrganizationIdAndPublicId(org,event).orElseThrow().getNote());
++        assertEquals(1L,jdbc.queryForObject("SELECT version FROM synthetic_event_versions WHERE event=?",Long.class,event));
++    }
++    @Test void concurrentSameIntentCommitsOneAppend() throws Exception {
++        UUID id=UUID.randomUUID(); ExecutorService pool=Executors.newFixedThreadPool(2); CountDownLatch start=new CountDownLatch(1);
++        try { Callable<String> task=()->{start.await(); return save(id,event,revision,"추가");};
++            Future<String> one=pool.submit(task), two=pool.submit(task); start.countDown();
++            assertEquals(Set.of("APPLIED","REPLAYED"),Set.of(one.get(10,TimeUnit.SECONDS),two.get(10,TimeUnit.SECONDS)));
++            assertEquals("기존 메모\n추가",events.findByOrganizationIdAndPublicId(org,event).orElseThrow().getNote());
++            assertEquals(1,jdbc.queryForObject("SELECT count(*) FROM synthetic_save_intents WHERE actor=? AND intent=?",Integer.class,actor,id));
++        } finally {pool.shutdownNow();}
++    }
++}
+diff --git a/carelog-be/src/test/java/carelog/carelog/preparation/PlannedVisitExperimentTest.java b/carelog-be/src/test/java/carelog/carelog/preparation/PlannedVisitExperimentTest.java
+new file mode 100644
+index 0000000..fc0e201
+--- /dev/null
++++ b/carelog-be/src/test/java/carelog/carelog/preparation/PlannedVisitExperimentTest.java
+@@ -0,0 +1,60 @@
++package carelog.carelog.preparation;
++
++import org.junit.jupiter.api.Test;
++import java.util.*;
++import java.util.concurrent.*;
++import static org.junit.jupiter.api.Assertions.*;
++import static carelog.carelog.preparation.PlannedVisitExperiment.*;
++
++class PlannedVisitExperimentTest {
++    static final Scope SCOPE = new Scope("W1", "C1", "E1");
++    static final Scope OTHER = new Scope("W1", "C1", "E2");
++    static final class Fake implements VisitAccess, AtomicSave {
++        boolean authorized = true; boolean planned = true; String revision = "v1"; String note = "이전 상담 내용 확인";
++        int reads; int writes; final Map<String, SaveIntent> intents = new HashMap<>();
++        public synchronized Optional<Visit> authorizedRead(Scope scope) {
++            if (!authorized || !SCOPE.equals(scope)) return Optional.empty();
++            reads++; return Optional.of(new Visit(SCOPE, revision, planned, note));
++        }
++        public synchronized SaveResult appendIfAuthorized(SaveIntent intent) {
++            if (!authorized || !(SCOPE.equals(intent.scope()) || OTHER.equals(intent.scope())) || !planned) return SaveResult.UNAVAILABLE;
++            SaveIntent prior = intents.get(intent.id());
++            if (prior != null) return prior.equals(intent) ? SaveResult.REPLAYED : SaveResult.CONFLICT;
++            if (!SCOPE.equals(intent.scope())) return SaveResult.UNAVAILABLE;
++            if (!revision.equals(intent.confirmedRevision())) return SaveResult.CONFLICT;
++            note += "\n" + intent.addition(); revision = "v2"; writes++; intents.put(intent.id(), intent);
++            return SaveResult.APPLIED;
++        }
++    }
++    static SaveIntent intent() { return new SaveIntent("intent1", SCOPE, "v1", "확인한 추가 내용"); }
++    @Test void preparationRequiresCurrentPermissionAndStableOriginal() {
++        Fake f = new Fake(); PlannedVisitExperiment app = new PlannedVisitExperiment(f, f);
++        assertEquals(Optional.of("방문 목적: 이전 상담 내용 확인"), app.prepare(SCOPE));
++        f.authorized = false; int reads = f.reads; assertTrue(app.prepare(SCOPE).isEmpty()); assertEquals(reads, f.reads);
++        f.authorized = true; assertTrue(app.prepare(OTHER).isEmpty()); f.planned = false; assertTrue(app.prepare(SCOPE).isEmpty());
++        f.planned = true; VisitAccess revoked = scope -> { Optional<Visit> v = f.authorizedRead(scope); f.authorized = false; return v; };
++        assertTrue(new PlannedVisitExperiment(revoked, f).prepare(SCOPE).isEmpty());
++    }
++    @Test void savePreservesPriorNoteAndReplaysOnlyTheSameIntent() {
++        Fake f = new Fake(); PlannedVisitExperiment app = new PlannedVisitExperiment(f, f);
++        assertEquals(SaveResult.APPLIED, app.save(intent())); assertEquals("이전 상담 내용 확인\n확인한 추가 내용", f.note);
++        assertEquals(SaveResult.REPLAYED, app.save(intent())); assertEquals(1, f.writes);
++        assertEquals(SaveResult.CONFLICT, app.save(new SaveIntent("intent1", SCOPE, "v1", "변경된 내용")));
++        assertEquals(SaveResult.CONFLICT, app.save(new SaveIntent("intent1", OTHER, "v1", "확인한 추가 내용"))); assertEquals(1, f.writes);
++        f.authorized = false; assertEquals(SaveResult.UNAVAILABLE, app.save(intent())); assertEquals(1, f.writes);
++    }
++    @Test void staleOrUnauthorizedOrChangedTargetCannotWrite() {
++        Fake f = new Fake(); PlannedVisitExperiment app = new PlannedVisitExperiment(f, f);
++        f.revision = "v2"; assertEquals(SaveResult.CONFLICT, app.save(intent()));
++        f.revision = "v1"; f.authorized = false; assertEquals(SaveResult.UNAVAILABLE, app.save(intent()));
++        f.authorized = true; assertEquals(SaveResult.UNAVAILABLE, app.save(new SaveIntent("intent1", OTHER, "v1", "추가")));
++        f.planned = false; assertEquals(SaveResult.UNAVAILABLE, app.save(intent())); assertEquals(0, f.writes);
++    }
++    @Test void concurrentReplaysProduceExactlyOneWrite() throws Exception {
++        Fake f = new Fake(); PlannedVisitExperiment app = new PlannedVisitExperiment(f, f); ExecutorService pool = Executors.newFixedThreadPool(2);
++        try { CountDownLatch start = new CountDownLatch(1); Callable<SaveResult> call = () -> { start.await(); return app.save(intent()); };
++            Future<SaveResult> a = pool.submit(call), b = pool.submit(call); start.countDown();
++            assertEquals(Set.of(SaveResult.APPLIED, SaveResult.REPLAYED), Set.of(a.get(5, TimeUnit.SECONDS), b.get(5, TimeUnit.SECONDS))); assertEquals(1, f.writes);
++        } finally { pool.shutdownNow(); }
++    }
++}
+diff --git a/carelog-be/src/test/java/carelog/carelog/preparation/SyntheticPreparationTest.java b/carelog-be/src/test/java/carelog/carelog/preparation/SyntheticPreparationTest.java
+new file mode 100644
+index 0000000..48a5acd
+--- /dev/null
++++ b/carelog-be/src/test/java/carelog/carelog/preparation/SyntheticPreparationTest.java
+@@ -0,0 +1,76 @@
++package carelog.carelog.preparation;
++
++import org.junit.jupiter.api.Test;
++import java.util.*;
++import java.util.concurrent.*;
++import java.util.concurrent.atomic.AtomicInteger;
++import static org.junit.jupiter.api.Assertions.*;
++import static carelog.carelog.preparation.SyntheticPreparation.*;
++
++/** 합성 전용 계약 실험. 운영 인가, 저장소, 모델, HTTP 연결이 아니다. */
++class SyntheticPreparationTest {
++    static final class Fixture implements FixtureAccess {
++        volatile Snapshot value = GOOD;
++        int reads;
++        public Snapshot read(Scope scope) { reads++; return value; }
++    }
++    @Test void authorizedReturnsExactKoreanAndEvidenceAndReopens() {
++        Fixture f = new Fixture(); Session s = new Session(f, SyntheticPreparation::deterministic); s.select(SCOPE);
++        assertEquals(Optional.of(EXPECTED), s.prepare(SCOPE)); assertEquals(Optional.of(EXPECTED), s.reopen());
++        assertEquals(List.of(EVENT, HISTORY), s.reopen().orElseThrow().evidence());
++    }
++    @Test void deniedOrWrongSelectionNeverCallsGenerator() {
++        AtomicInteger calls = new AtomicInteger(); Fixture f = new Fixture();
++        Session s = new Session(f, x -> { calls.incrementAndGet(); return EXPECTED; }); s.select(SCOPE);
++        for (Snapshot denied : List.of(new Snapshot(SCOPE, false, true, EVENT, List.of(HISTORY)), new Snapshot(SCOPE, true, false, EVENT, List.of(HISTORY)), new Snapshot(new Scope("W2", "C1", "E1"), true, true, EVENT, List.of(HISTORY)), new Snapshot(new Scope("W1", "C2", "E1"), true, true, EVENT, List.of(HISTORY)))) {
++            f.value = denied; assertTrue(s.prepare(SCOPE).isEmpty());
++        }
++        assertTrue(s.prepare(new Scope("W1", "C1", "E2")).isEmpty()); assertEquals(0, calls.get());
++    }
++    @Test void mixedUnapprovedHistoryNeverReachesGenerator() {
++        Fixture f = new Fixture(); AtomicInteger calls = new AtomicInteger();
++        f.value = new Snapshot(SCOPE, true, true, EVENT, List.of(HISTORY, new Source("H2.note", "v1", "excluded")));
++        Session s = new Session(f, x -> { calls.incrementAndGet(); return EXPECTED; }); s.select(SCOPE);
++        assertTrue(s.prepare(SCOPE).isEmpty()); assertEquals(0, calls.get()); assertTrue(s.reopen().isEmpty());
++    }
++    @Test void delayedDifferentSelectionDoesNotInvalidateResultOrInflightRequest() throws Exception {
++        Fixture f = new Fixture(); CountDownLatch entered = new CountDownLatch(1), release = new CountDownLatch(1);
++        Session s = new Session(f, x -> { entered.countDown(); try { release.await(); } catch (InterruptedException e) { Thread.currentThread().interrupt(); throw new IllegalStateException(e); } return EXPECTED; });
++        s.select(SCOPE); ExecutorService pool = Executors.newSingleThreadExecutor();
++        try {
++            Future<Optional<Briefing>> pending = pool.submit(() -> s.prepare(SCOPE)); assertTrue(entered.await(5, TimeUnit.SECONDS));
++            int reads = f.reads; assertTrue(s.prepare(new Scope("W1", "C1", "E2")).isEmpty()); assertEquals(reads, f.reads);
++            release.countDown(); assertEquals(Optional.of(EXPECTED), pending.get(5, TimeUnit.SECONDS));
++            assertTrue(s.prepare(new Scope("W1", "C1", "E2")).isEmpty()); assertEquals(Optional.of(EXPECTED), s.reopen());
++        } finally { release.countDown(); pool.shutdownNow(); }
++    }
++    @Test void rejectsAlteredClaimsAndEvidence() {
++        for (Briefing bad : List.of(new Briefing(EXPECTED.purpose(), "일정 변경이 확정되었습니다.", EXPECTED.check(), EXPECTED.question(), EXPECTED.evidence()), new Briefing(EXPECTED.purpose(), EXPECTED.context(), EXPECTED.check(), EXPECTED.question(), List.of(EVENT)), new Briefing(EXPECTED.purpose(), EXPECTED.context(), EXPECTED.check(), EXPECTED.question(), List.of(EVENT, new Source("other", "v1", "secret"))))) {
++            Session s = new Session(new Fixture(), x -> bad); s.select(SCOPE); assertTrue(s.prepare(SCOPE).isEmpty()); assertTrue(s.reopen().isEmpty());
++        }
++    }
++    @Test void rechecksRevocationAndSourceChangesAndDiscards() {
++        Fixture f = new Fixture(); Session s = new Session(f, SyntheticPreparation::deterministic); s.select(SCOPE);
++        assertTrue(s.prepare(SCOPE).isPresent()); f.value = new Snapshot(SCOPE, false, true, EVENT, List.of(HISTORY)); assertTrue(s.reopen().isEmpty());
++        f.value = GOOD; assertTrue(s.reopen().isEmpty()); assertTrue(s.prepare(SCOPE).isPresent());
++        f.value = new Snapshot(SCOPE, true, true, new Source(EVENT.id(), "v2", EVENT.text()), List.of(HISTORY)); assertTrue(s.reopen().isEmpty());
++    }
++    @Test void lateResponseAfterSelectionChangeOrCancelIsDiscarded() throws Exception {
++        for (boolean cancel : List.of(false, true)) {
++            Fixture f = new Fixture(); CountDownLatch entered = new CountDownLatch(1), release = new CountDownLatch(1);
++            Session s = new Session(f, x -> { entered.countDown(); try { release.await(); } catch (InterruptedException e) { Thread.currentThread().interrupt(); throw new IllegalStateException(e); } return EXPECTED; });
++            s.select(SCOPE); ExecutorService pool = Executors.newSingleThreadExecutor();
++            try { Future<Optional<Briefing>> pending = pool.submit(() -> s.prepare(SCOPE)); assertTrue(entered.await(5, TimeUnit.SECONDS)); if (cancel) s.cancel(); else s.select(new Scope("W1", "C1", "E2")); release.countDown(); assertTrue(pending.get(5, TimeUnit.SECONDS).isEmpty()); assertTrue(s.reopen().isEmpty()); } finally { release.countDown(); pool.shutdownNow(); }
++        }
++    }
++    @Test void olderRequestCannotReplaceNewerResult() throws Exception {
++        Fixture f = new Fixture(); CountDownLatch entered = new CountDownLatch(1), release = new CountDownLatch(1); AtomicInteger calls = new AtomicInteger();
++        Session s = new Session(f, x -> { if (calls.incrementAndGet() == 1) { entered.countDown(); try { release.await(); } catch (InterruptedException e) { Thread.currentThread().interrupt(); throw new IllegalStateException(e); } } return EXPECTED; });
++        s.select(SCOPE); ExecutorService pool = Executors.newSingleThreadExecutor();
++        try { Future<Optional<Briefing>> old = pool.submit(() -> s.prepare(SCOPE)); assertTrue(entered.await(5, TimeUnit.SECONDS)); assertEquals(Optional.of(EXPECTED), s.prepare(SCOPE)); release.countDown(); assertTrue(old.get(5, TimeUnit.SECONDS).isEmpty()); assertEquals(Optional.of(EXPECTED), s.reopen()); } finally { release.countDown(); pool.shutdownNow(); }
++    }
++    @Test void sourceChangesDuringExecutionAndClosedSessionFailClosed() {
++        Fixture f = new Fixture(); Session s = new Session(f, x -> { f.value = new Snapshot(SCOPE, false, true, EVENT, List.of(HISTORY)); return EXPECTED; }); s.select(SCOPE);
++        assertTrue(s.prepare(SCOPE).isEmpty()); s.close(); f.value = GOOD; assertTrue(s.prepare(SCOPE).isEmpty()); assertTrue(s.reopen().isEmpty());
++    }
++}
+diff --git a/carelog-be/src/test/resources/db/migration/V11__customer_event_memo_intents.sql b/carelog-be/src/test/resources/db/migration/V11__customer_event_memo_intents.sql
+new file mode 100644
+index 0000000..a517455
+--- /dev/null
++++ b/carelog-be/src/test/resources/db/migration/V11__customer_event_memo_intents.sql
+@@ -0,0 +1,10 @@
++CREATE TABLE customer_event_memo_intents (
++    actor_id uuid NOT NULL,
++    intent_id uuid NOT NULL,
++    organization_id uuid NOT NULL,
++    customer_id uuid NOT NULL,
++    event_id uuid NOT NULL,
++    expected_revision bigint NOT NULL,
++    addition text NOT NULL,
++    PRIMARY KEY (actor_id, intent_id)
++);

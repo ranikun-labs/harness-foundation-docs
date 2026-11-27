@@ -1,0 +1,224 @@
+diff --git a/integration-fixtures/conversation/README.md b/integration-fixtures/conversation/README.md
+new file mode 100644
+index 0000000..10e17f7
+--- /dev/null
++++ b/integration-fixtures/conversation/README.md
+@@ -0,0 +1,9 @@
++# Local synthetic conversation fixture
++
++The opt-in local test route `/app/synthetic-conversation` is mounted inside the existing app router and shell; the review start page links to it only when Vite runs in development with `VITE_SYNTHETIC_CONVERSATION=true`. The standalone fixture entry remains available for comparison. Neither entry is an authorized production feature. The route and UI are disabled in production builds and when the flag is absent.
++
++The route uses the isolated synthetic PostgreSQL prototype `/workspace/work/finance-conversation-synthetic` commit `9acb5b1e5cc509b3f6f6637cf9e77f8f795d74e9`. Vite enables the same-origin `/synthetic-conversations` proxy only in serve mode with the flag and an HTTP `127.0.0.1` `CONVERSATION_FIXTURE_TARGET`. The browser explicitly selects a per-tab synthetic actor; the client sends that fixture identity and the proxy forwards it. With no selected identity, the UI stays signed out and the backend returns 401. Switching actors or using the synthetic logout remounts the screen and clears the visible conversation. These headers are user-controlled test data, not real authentication. The conversation selector is independent of the Journal fixture token and does not establish shared application logout or identity switching. Use only synthetic data. Answers are fixed fixture text; PolicyGuard and output validation are not connected.
++
++From the FE repository, `node integration-fixtures/conversation/verify.mjs` starts disposable local PostgreSQL, backend and loopback Vite, navigates from `/app`, and runs Chromium temporary/opt-in/save/backend restart/resume/delete, then removes the container. It requires the referenced backend candidate with `npm ci` in `local-conversation`, Docker image `postgres:16-alpine`, installed FE dependencies and `/usr/bin/chromium`; it binds Vite port 5179. `node integration-fixtures/conversation/verify-disabled.mjs` checks flag-off navigation and direct route on port 5180. The browser checks switching between synthetic owners and tenants and synthetic logout; the backend verifier additionally covers fixture scope and idempotency. In the shared dependency test environment font files generated Vite filesystem warnings; the functionality test passed.
++
++This does not establish real identity authorization, production migration or retention, provider validation, recovery, or production readiness. The test proxy and route must remain unavailable in production.
+diff --git a/integration-fixtures/conversation/index.html b/integration-fixtures/conversation/index.html
+new file mode 100644
+index 0000000..4611833
+--- /dev/null
++++ b/integration-fixtures/conversation/index.html
+@@ -0,0 +1 @@
++<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>대화 합성 실험</title></head><body><div id="root"></div><script type="module" src="./main.tsx"></script></body></html>
+diff --git a/integration-fixtures/conversation/main.tsx b/integration-fixtures/conversation/main.tsx
+new file mode 100644
+index 0000000..3e7499b
+--- /dev/null
++++ b/integration-fixtures/conversation/main.tsx
+@@ -0,0 +1,3 @@
++import { createRoot } from 'react-dom/client';
++import { SyntheticConversationPage } from '../../src/features/synthetic-conversation/SyntheticConversationPage';
++if (import.meta.env.DEV && import.meta.env.VITE_SYNTHETIC_CONVERSATION === 'true') createRoot(document.getElementById('root')!).render(<SyntheticConversationPage />);
+diff --git a/integration-fixtures/conversation/verify-disabled.mjs b/integration-fixtures/conversation/verify-disabled.mjs
+new file mode 100644
+index 0000000..a1a31e5
+--- /dev/null
++++ b/integration-fixtures/conversation/verify-disabled.mjs
+@@ -0,0 +1,10 @@
++import assert from 'node:assert/strict';
++import {spawn} from 'node:child_process';
++import {once} from 'node:events';
++import {createRequire} from 'node:module';
++const {chromium}=createRequire(import.meta.url)('playwright');
++const env={...process.env};delete env.VITE_SYNTHETIC_CONVERSATION;delete env.CONVERSATION_FIXTURE_TARGET;
++const vite=spawn(process.execPath,['node_modules/vite/bin/vite.js','--host','127.0.0.1','--port','5180','--strictPort'],{env,stdio:['ignore','pipe','pipe']});let browser;
++try{let available=false;for(let i=0;i<60;i++){try{if((await fetch('http://127.0.0.1:5180/app')).ok){available=true;break;}}catch{}await new Promise(r=>setTimeout(r,250));}assert.ok(available);
++ browser=await chromium.launch({headless:true,executablePath:'/usr/bin/chromium',args:['--no-sandbox']});const page=await browser.newPage();await page.goto('http://127.0.0.1:5180/app');await page.waitForLoadState('networkidle');assert.equal(await page.getByRole('link',{name:'로컬 합성 대화 열기'}).count(),0);await page.goto('http://127.0.0.1:5180/app/synthetic-conversation');await page.waitForLoadState('networkidle');assert.equal(await page.getByRole('heading',{name:'대화 합성 실험'}).count(),0);console.log('Flag-off app navigation and direct route disabled PASS');
++}finally{if(browser)await browser.close();vite.kill();await once(vite,'exit');}
+diff --git a/integration-fixtures/conversation/verify.mjs b/integration-fixtures/conversation/verify.mjs
+new file mode 100644
+index 0000000..82bac41
+--- /dev/null
++++ b/integration-fixtures/conversation/verify.mjs
+@@ -0,0 +1,26 @@
++import assert from 'node:assert/strict';
++import { spawn, execFileSync } from 'node:child_process';
++import { once } from 'node:events';
++import { createRequire } from 'node:module';
++const backend='/workspace/work/finance-conversation-synthetic';
++const require=createRequire(import.meta.url);const {chromium}=require('playwright');
++const pg=createRequire(backend+'/local-conversation/package.json')('pg');
++const name='finance-react-conversation-'+process.pid;const docker=(...args)=>execFileSync('docker',args,{encoding:'utf8'}).trim();let server,vite,browser;
++async function stop(child){child.kill();await once(child,'exit');}
++try{
++ docker('run','--rm','-d','--name',name,'-e','POSTGRES_PASSWORD=fixture-only','-e','POSTGRES_DB=conversation_fixture','-p','127.0.0.1::5432','postgres:16-alpine');
++ const db=`postgres://postgres:fixture-only@127.0.0.1:${docker('port',name,'5432/tcp').split(':').pop()}/conversation_fixture`;let ready=false;
++ for(let i=0;i<60;i++){const client=new pg.Client({connectionString:db});try{await client.connect();await client.end();ready=true;break;}catch{await new Promise(r=>setTimeout(r,250));}}assert.ok(ready);
++ async function startServer(port){server=spawn(process.execPath,['local-conversation/server.mjs'],{cwd:backend,env:{...process.env,CONVERSATION_DATABASE_URL:db,CONVERSATION_PORT:port||'0'},stdio:['ignore','pipe','inherit']});const [v]=await once(server.stdout,'data');return v.toString().trim();}
++ const target=await startServer();const port=new URL(target).port;
++ vite=spawn(process.execPath,['node_modules/vite/bin/vite.js','--host','127.0.0.1','--port','5179','--strictPort'],{env:{...process.env,VITE_SYNTHETIC_CONVERSATION:'true',CONVERSATION_FIXTURE_TARGET:target},stdio:['ignore','pipe','inherit']});
++ let available=false;for(let i=0;i<60;i++){try{const r=await fetch('http://127.0.0.1:5179/app');if(r.ok){available=true;break;}}catch{}await new Promise(r=>setTimeout(r,250));}assert.ok(available,'vite did not start');
++ browser=await chromium.launch({headless:true,executablePath:'/usr/bin/chromium',args:['--no-sandbox']});const page=await browser.newPage();
++ await page.goto('http://127.0.0.1:5179/app');await page.getByRole('link',{name:'로컬 합성 대화 열기'}).click();await page.getByText('합성 사용자를 선택하세요.').waitFor();assert.equal(await page.evaluate(async()=> (await fetch('/synthetic-conversations')).status),401);await page.getByLabel('로컬 합성 사용자').selectOption('fixture-a');await page.getByRole('heading',{name:'대화 합성 실험'}).waitFor();await page.getByRole('button',{name:'새 대화'}).click();await page.getByLabel('질문').fill('임시 질문');await page.getByRole('button',{name:'보내기'}).click();await page.getByText('나: 임시 질문').waitFor();assert.equal(await page.getByRole('button',{name:'저장된 대화'}).count(),0);
++ await page.getByLabel('이 대화를 저장할게요').check();await page.getByRole('button',{name:'새 대화'}).click();await page.getByText('저장할 대화를 만들었습니다.').waitFor();await page.getByLabel('질문').fill('금리와 채권의 관계는?');await page.getByRole('button',{name:'보내기'}).click();await page.getByText('나: 금리와 채권의 관계는?').waitFor();await page.getByText('답변: 합성 예시 답변입니다. 실제 금융 분석이 아닙니다.').waitFor();
++ await page.getByLabel('로컬 합성 사용자').selectOption('fixture-b');await page.getByRole('heading',{name:'대화 합성 실험'}).waitFor();await page.waitForTimeout(200);assert.equal(await page.getByRole('button',{name:'저장된 대화'}).count(),0);assert.equal(await page.getByText('나: 금리와 채권의 관계는?').count(),0);
++ await page.getByLabel('로컬 합성 사용자').selectOption('fixture-c');await page.waitForTimeout(200);assert.equal(await page.getByRole('button',{name:'저장된 대화'}).count(),0);
++ await page.getByRole('button',{name:'합성 사용자 로그아웃'}).click();await page.getByText('합성 사용자를 선택하세요.').waitFor();await page.reload();await page.getByText('합성 사용자를 선택하세요.').waitFor();assert.equal(await page.getByRole('button',{name:'저장된 대화'}).count(),0);
++ await page.getByLabel('로컬 합성 사용자').selectOption('fixture-a');await stop(server);server=null;await startServer(port);await page.reload();await page.getByRole('button',{name:'저장된 대화'}).click();await page.getByText('나: 금리와 채권의 관계는?').waitFor();await page.getByRole('button',{name:'삭제'}).click();await page.getByText('대화를 삭제했습니다.').waitFor();assert.equal(await page.getByRole('button',{name:'저장된 대화'}).count(),0);
++ console.log('Finance app route/React/Vite proxy → local PostgreSQL: temporary, opt-in, identity switch/logout isolation, restart/resume, delete PASS');
++}finally{if(browser)await browser.close();if(vite)await stop(vite);if(server)await stop(server);try{docker('rm','-f',name);}catch{}}
+diff --git a/src/app/AppRouter.tsx b/src/app/AppRouter.tsx
+index a7740de..ee8dbad 100644
+--- a/src/app/AppRouter.tsx
++++ b/src/app/AppRouter.tsx
+@@ -44,6 +44,9 @@ const LOCALE_BASE = PUBLIC_ROUTE_PATHS.localeHome;
+ const LazyTabLayout = lazy(() =>
+   import('@/components/layout/TabLayout').then(({ TabLayout }) => ({ default: TabLayout })),
+ );
++const SyntheticConversationPage = import.meta.env.DEV && import.meta.env.VITE_SYNTHETIC_CONVERSATION === 'true'
++  ? lazy(() => import('@/features/synthetic-conversation/SyntheticConversationPage').then(({ SyntheticConversationPage }) => ({ default: SyntheticConversationPage })))
++  : null;
+ const LazyAskPage = lazy(() =>
+   import('@/pages/AskPage').then(({ AskPage }) => ({ default: AskPage })),
+ );
+@@ -288,6 +291,9 @@ export function AppRouter({
+             {/* Adaptive primary navigation 셸 = Review/Journal primary surfaces */}
+             <Route element={<LazyTabLayout journalReadPort={activeJournalReadPort} />}>
+               <Route index element={<LazyHomePage />} />
++              {SyntheticConversationPage && (
++                <Route path={toRelativeUnder(APP_BASE, APP_ROUTE_PATHS.syntheticConversation)} element={<SyntheticConversationPage />} />
++              )}
+               <Route
+                 path={toRelativeUnder(APP_BASE, APP_ROUTE_PATHS.ask)}
+                 element={<LazyAskPage />}
+diff --git a/src/constants/routes.ts b/src/constants/routes.ts
+index 67fc1a6..29e9e71 100644
+--- a/src/constants/routes.ts
++++ b/src/constants/routes.ts
+@@ -41,6 +41,7 @@ export const APP_ROUTE_PATHS = {
+   appHome: APP_BASE,
+   onboarding: `${APP_BASE}/onboarding`,
+   ask: `${APP_BASE}/ask`,
++  syntheticConversation: `${APP_BASE}/synthetic-conversation`,
+   journalList: `${APP_BASE}/journal`,
+   journalNew: `${APP_BASE}/journal/new`,
+   journalDetail: `${APP_BASE}/journal/:id`,
+diff --git a/src/features/synthetic-conversation/SyntheticConversationPage.tsx b/src/features/synthetic-conversation/SyntheticConversationPage.tsx
+new file mode 100644
+index 0000000..ba4b11d
+--- /dev/null
++++ b/src/features/synthetic-conversation/SyntheticConversationPage.tsx
+@@ -0,0 +1,31 @@
++import { useEffect, useState } from 'react';
++
++type Message = {role: 'user' | 'assistant'; text: string};
++type Conversation = {id: string; title: string};
++const base = '/synthetic-conversations';
++async function api<T>(actor: string, path: string, method = 'GET', body?: unknown): Promise<T> {
++  const res = await fetch(base + path, {method, headers: {'content-type':'application/json', 'x-fixture-actor':actor}, body: body === undefined ? undefined : JSON.stringify(body)});
++  if (!res.ok) throw new Error('요청을 완료하지 못했습니다.');
++  return (res.status === 204 ? null : await res.json()) as T;
++}
++export function SyntheticConversationPage() {
++  const [actor, setActor] = useState(() => { const saved = sessionStorage.getItem('syntheticConversationActor') ?? ''; return ['fixture-a', 'fixture-b', 'fixture-c'].includes(saved) ? saved : ''; });
++  function switchActor(value: string) {
++    if (['fixture-a', 'fixture-b', 'fixture-c'].includes(value)) sessionStorage.setItem('syntheticConversationActor', value);
++    else sessionStorage.removeItem('syntheticConversationActor');
++    setActor(value);
++  }
++  return <><div className="px-5 pt-5"><label>로컬 합성 사용자 <select aria-label="로컬 합성 사용자" value={actor} onChange={e => switchActor(e.target.value)}><option value="">선택 안 함</option><option value="fixture-a">사용자 A</option><option value="fixture-b">사용자 B</option><option value="fixture-c">다른 조직 사용자</option></select></label> <button onClick={() => switchActor('')}>합성 사용자 로그아웃</button></div>{actor ? <Conversation key={actor} actor={actor} /> : <p className="px-5">합성 사용자를 선택하세요.</p>}</>;
++}
++function Conversation({actor}: {actor: string}) {
++  const [saved, setSaved] = useState(false); const [id, setId] = useState<string | null>(null);
++  const [conversations, setConversations] = useState<Conversation[]>([]); const [messages, setMessages] = useState<Message[]>([]);
++  const [text,setText] = useState(''); const [status,setStatus] = useState(''); const [busy,setBusy] = useState(false);
++  const refresh = async () => setConversations(await api<Conversation[]>(actor, ''));
++  useEffect(() => { void refresh().catch(() => setStatus('저장된 대화를 불러오지 못했습니다.')); }, []);
++  async function create() { try { setMessages([]);setId(null); if (saved) {const c=await api<Conversation>(actor, '', 'POST', {save:true});setId(c.id);await refresh();setStatus('저장할 대화를 만들었습니다.');} else setStatus('저장하지 않는 임시 대화입니다.'); } catch {setStatus('대화를 만들지 못했습니다.');} }
++  async function open(c: Conversation) { try {const data=await api<{messages: Message[]}>(actor, '/' +c.id);setId(c.id);setMessages(data.messages);setStatus('저장된 대화를 열었습니다.');}catch{setStatus('대화를 열지 못했습니다.');} }
++  async function remove(c: Conversation) {try {await api(actor, '/'+c.id,'DELETE');if(id===c.id){setId(null);setMessages([]);}await refresh();setStatus('대화를 삭제했습니다.');}catch{setStatus('대화를 삭제하지 못했습니다.');}}
++  async function submit(e: React.FormEvent) { e.preventDefault(); const input=text.trim();if(!input||busy)return;setText('');setBusy(true);try { if (!id) {setMessages(v=>[...v,{role:'user',text:input},{role:'assistant',text:'합성 예시 답변입니다. 실제 금융 분석이 아닙니다.'}]);} else {const key=crypto.randomUUID();await api(actor, '/'+id+'/messages','POST',{key,text:input});await api(actor, '/'+id+'/complete','POST',{key});setMessages((await api<{messages:Message[]}>(actor, '/'+id)).messages);} }catch{setStatus('질문을 처리하지 못했습니다.');}finally{setBusy(false);} }
++  return <div style={{maxWidth:700, margin:'3rem auto',padding:'0 1rem',fontFamily:'system-ui'}}><h1>대화 합성 실험</h1><p>로컬 시험용 합성 답변입니다. 저장한 대화는 로컬 시험 데이터베이스에 남습니다.</p><label><input type="checkbox" checked={saved} onChange={e=>setSaved(e.target.checked)}/> 이 대화를 저장할게요 (로컬 합성 시험)</label> <button disabled={busy} onClick={()=>void create()}>새 대화</button><h2>저장된 대화</h2><ul>{conversations.map(c=><li key={c.id}><button disabled={busy} onClick={()=>void open(c)}>{c.title}</button> <button disabled={busy} onClick={()=>void remove(c)}>삭제</button></li>)}</ul><h2>현재 대화</h2><div>{messages.map((m,i)=><p key={i}>{m.role==='user'?'나: ':'답변: '}{m.text}</p>)}</div><form onSubmit={e=>void submit(e)}><label>질문 <input value={text} maxLength={2000} required onChange={e=>setText(e.target.value)} /></label> <button disabled={busy}>보내기</button></form><p role="status">{status}</p></div>;
++}
+diff --git a/src/pages/HomePage.tsx b/src/pages/HomePage.tsx
+index d31335b..9d4a6dd 100644
+--- a/src/pages/HomePage.tsx
++++ b/src/pages/HomePage.tsx
+@@ -77,6 +77,9 @@ export function HomePage() {
+         </p>
+       </header>
+ 
++      {import.meta.env.DEV && import.meta.env.VITE_SYNTHETIC_CONVERSATION === 'true' && (
++        <Link to={APP_ROUTE_PATHS.syntheticConversation}>로컬 합성 대화 열기</Link>
++      )}
+       <Card className="border-border bg-card min-w-0 rounded-2xl p-5 shadow-sm sm:p-7">
+         <form className="flex min-w-0 flex-col gap-4" onSubmit={handleSubmit} noValidate>
+           <p className="text-muted-foreground text-sm leading-5 break-keep">
+diff --git a/vite.config.ts b/vite.config.ts
+index 0fcaf77..00ee2a2 100644
+--- a/vite.config.ts
++++ b/vite.config.ts
+@@ -27,35 +27,29 @@ export default defineConfig(({ mode, command }) => {
+     )
+       throw new Error('Local analysis requires an HTTP loopback proxy target');
+   }
++  const fixtureEnabled = command === 'serve' && process.env.NODE_ENV !== 'production' && env.VITE_SYNTHETIC_CONVERSATION === 'true';
++  const fixtureTarget = process.env.CONVERSATION_FIXTURE_TARGET?.trim();
++  if (fixtureEnabled) {
++    let url: URL;
++    try { url = new URL(fixtureTarget ?? ''); } catch { throw new Error('Conversation fixture requires a loopback target'); }
++    if (url.protocol !== 'http:' || url.hostname !== '127.0.0.1' || url.username || url.password || url.pathname !== '/')
++      throw new Error('Conversation fixture requires an HTTP 127.0.0.1 target');
++  }
+   return {
+     plugins: [react(), tailwindcss()],
+     // Development-only LAN seam. The browser and application code keep the same-origin
+     // `/finance/**` contract; the backend origin is supplied by the local environment once the
+     // Mac mini target is known. No host or port is invented in the repository.
+-    ...(financeApiProxyTarget
+-      ? {
+-          server: {
+-            proxy: {
+-              '/finance': {
+-                target: financeApiProxyTarget,
+-                changeOrigin: false,
+-                secure: false,
+-              },
+-            },
+-          },
+-          // Used only by the local Playwright harness, which starts a test API beside preview.
+-          // Normal preview runs remain same-origin and do not invent a backend target.
+-          preview: {
+-            proxy: {
+-              '/finance': {
+-                target: financeApiProxyTarget,
+-                changeOrigin: false,
+-                secure: false,
+-              },
+-            },
+-          },
+-        }
+-      : {}),
++    ...((financeApiProxyTarget || fixtureEnabled) ? {
++      server: { proxy: {
++        ...(financeApiProxyTarget ? { '/finance': { target: financeApiProxyTarget, changeOrigin: false, secure: false } } : {}),
++        ...(fixtureEnabled ? { '/synthetic-conversations': {
++          target: fixtureTarget!, changeOrigin: false,
++          rewrite: (value: string) => value.replace(/^\/synthetic-conversations/, '/conversations'),
++        } } : {}),
++      } },
++      ...(financeApiProxyTarget ? { preview: { proxy: { '/finance': { target: financeApiProxyTarget, changeOrigin: false, secure: false } } } } : {}),
++    } : {}),
+     resolve: {
+       alias: {
+         '@': path.resolve(__dirname, './src'),

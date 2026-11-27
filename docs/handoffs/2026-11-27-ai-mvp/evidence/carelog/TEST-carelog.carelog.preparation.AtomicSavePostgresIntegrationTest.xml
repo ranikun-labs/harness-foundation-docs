@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="carelog.carelog.preparation.AtomicSavePostgresIntegrationTest" tests="9" skipped="0" failures="0" errors="0" timestamp="2026-11-27T14:32:20.606Z" hostname="ad27729e0681" time="4.325">
+  <properties/>
+  <testcase name="interveningEventEditRejectsOldRevision()" classname="carelog.carelog.preparation.AtomicSavePostgresIntegrationTest" time="0.038"/>
+  <testcase name="staleAiAppendCannotOverwriteEarlierNormalEdit()" classname="carelog.carelog.preparation.AtomicSavePostgresIntegrationTest" time="0.032"/>
+  <testcase name="localBrowserSyntheticSuccessDeniedAndStale()" classname="carelog.carelog.preparation.AtomicSavePostgresIntegrationTest" time="4.017"/>
+  <testcase name="failureRollsBackEventIntentAndVersionTogether()" classname="carelog.carelog.preparation.AtomicSavePostgresIntegrationTest" time="0.036"/>
+  <testcase name="staleReplayAndAuthorization()" classname="carelog.carelog.preparation.AtomicSavePostgresIntegrationTest" time="0.029"/>
+  <testcase name="concurrentSameIntentCommitsOneAppend()" classname="carelog.carelog.preparation.AtomicSavePostgresIntegrationTest" time="0.03"/>
+  <testcase name="staleNormalEditCannotOverwriteEarlierAiAppend()" classname="carelog.carelog.preparation.AtomicSavePostgresIntegrationTest" time="0.03"/>
+  <testcase name="actualRelationGateAndAtomicSave()" classname="carelog.carelog.preparation.AtomicSavePostgresIntegrationTest" time="0.076"/>
+  <testcase name="versionDoesNotReturnToOriginalAfterChangesAreReverted()" classname="carelog.carelog.preparation.AtomicSavePostgresIntegrationTest" time="0.025"/>
+  <system-out><![CDATA[2026-11-27T23:32:22.977+09:00 ERROR 108136 --- [carelog] [HTTP-Dispatcher] c.c.common.config.aop.LoggingAspect      : ❌ [Exception] AiMemoAppendService.prepare - CustomException: 접근 권한이 없습니다.
+2026-11-27T23:32:22.978+09:00 ERROR 108136 --- [carelog] [HTTP-Dispatcher] c.c.common.config.aop.LoggingAspect      : ❌ [Exception] AiMemoAppendController.prepare - CustomException: 접근 권한이 없습니다.
+2026-11-27T23:32:22.978+09:00  WARN 108136 --- [carelog] [HTTP-Dispatcher] c.c.c.w.e.GlobalExceptionHandler         : CustomException occurred: 접근 권한이 없습니다.
+2026-11-27T23:32:23.564+09:00 ERROR 108136 --- [carelog] [HTTP-Dispatcher] c.c.common.config.aop.LoggingAspect      : ❌ [Exception] AiMemoAppendService.append - CustomException: 접근 권한이 없습니다.
+2026-11-27T23:32:23.566+09:00 ERROR 108136 --- [carelog] [HTTP-Dispatcher] c.c.common.config.aop.LoggingAspect      : ❌ [Exception] AiMemoAppendController.append - CustomException: 접근 권한이 없습니다.
+2026-11-27T23:32:23.566+09:00  WARN 108136 --- [carelog] [HTTP-Dispatcher] c.c.c.w.e.GlobalExceptionHandler         : CustomException occurred: 접근 권한이 없습니다.
+2026-11-27T23:32:24.619+09:00 ERROR 108136 --- [carelog] [HTTP-Dispatcher] c.c.common.config.aop.LoggingAspect      : ❌ [Exception] AiMemoAppendService.append - CustomException: 이벤트가 변경되었습니다. 다시 확인해 주세요.
+2026-11-27T23:32:24.619+09:00 ERROR 108136 --- [carelog] [HTTP-Dispatcher] c.c.common.config.aop.LoggingAspect      : ❌ [Exception] AiMemoAppendController.append - CustomException: 이벤트가 변경되었습니다. 다시 확인해 주세요.
+2026-11-27T23:32:24.620+09:00  WARN 108136 --- [carelog] [HTTP-Dispatcher] c.c.c.w.e.GlobalExceptionHandler         : CustomException occurred: 이벤트가 변경되었습니다. 다시 확인해 주세요.
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
